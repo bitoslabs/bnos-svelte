@@ -23,6 +23,7 @@
 	const isPublicRoute = $derived(
 		page.url.pathname === '/login' || page.url.pathname.startsWith('/setup')
 	);
+	const isPosRoute = $derived(page.url.pathname === '/pos');
 
 	registerIcons();
 
@@ -51,13 +52,15 @@
 	{@render children()}
 {:else}
 	<div class="app-shell flex min-h-screen">
-		<aside
-			class="app-sidebar-shell app-chrome sticky top-0 hidden h-screen w-64 shrink-0 border-r border-[var(--glass-border)] lg:flex lg:flex-col"
-		>
-			<AppSidebar />
-		</aside>
+		{#if !isPosRoute}
+			<aside
+				class="app-sidebar-shell app-chrome sticky top-0 hidden h-screen w-64 shrink-0 border-r border-[var(--glass-border)] lg:flex lg:flex-col"
+			>
+				<AppSidebar />
+			</aside>
+		{/if}
 
-		{#if drawerOpen}
+		{#if drawerOpen && !isPosRoute}
 			<button
 				type="button"
 				aria-label="Close menu"
@@ -72,8 +75,14 @@
 		{/if}
 
 		<div class="flex min-w-0 flex-1 flex-col">
-			<AppTopbar onmenutoggle={() => (drawerOpen = true)} />
-			<main class="app-main min-w-0 flex-1 px-5 pt-3 pb-24 lg:pb-8">
+			{#if !isPosRoute}
+				<AppTopbar onmenutoggle={() => (drawerOpen = true)} />
+			{/if}
+			<main
+				class={isPosRoute
+					? 'app-main min-w-0 flex-1 p-0'
+					: 'app-main min-w-0 flex-1 px-5 pt-3 pb-24 lg:pb-8'}
+			>
 				<div class="w-full">
 					{@render children()}
 				</div>
@@ -81,7 +90,9 @@
 		</div>
 	</div>
 
-	<BottomTabBar />
+	{#if !isPosRoute}
+		<BottomTabBar />
+	{/if}
 {/if}
 
 <ModeWatcher />

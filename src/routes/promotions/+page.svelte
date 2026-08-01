@@ -44,7 +44,7 @@
 	function badge(v: { type: string; value: number }) { return v.type === 'percent' ? `${v.value}%` : v.type === 'bogo' ? 'BOGO' : `${v.value}`; }
 </script>
 
-<svelte:head><title>bdGo OS · Promotions</title></svelte:head>
+<svelte:head><title>BNOS · Promotions</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">

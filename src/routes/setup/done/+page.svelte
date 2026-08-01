@@ -34,7 +34,7 @@
 			icon="lucide:layout-dashboard"
 			onclick={() => goto(resolve('/'), { replaceState: true })}
 		>
-			Enter bdGo OS
+			Enter BNOS
 		</Button>
 		<Button
 			color="neutral"

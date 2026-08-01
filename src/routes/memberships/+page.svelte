@@ -52,7 +52,7 @@
 	const tabs = [{ id: 'plans' as Tab, label: 'Plans', icon: 'lucide:layers' }, { id: 'subscriptions' as Tab, label: 'Subscriptions', icon: 'lucide:badge-check' }, { id: 'checkins' as Tab, label: 'Check-ins', icon: 'lucide:door-open' }];
 </script>
 
-<svelte:head><title>bdGo OS · Memberships</title></svelte:head>
+<svelte:head><title>BNOS · Memberships</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">

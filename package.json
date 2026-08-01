@@ -3,7 +3,7 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
-	"description": "bdGo OS — BNOS point-of-sale & commerce, rebuilt on SvelteKit with the Nostr/GLO data standard (@bitos/bnos-core).",
+	"description": "BNOS point-of-sale & commerce, rebuilt on SvelteKit with the Nostr/GLO data standard (@bitos/bnos-core).",
 	"dependencies": {
 		"@bitos/bnos-core": "file:../packages/bnos-core",
 		"@iconify-json/lucide": "^1.2.117",

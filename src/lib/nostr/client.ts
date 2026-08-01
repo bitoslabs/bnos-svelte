@@ -15,7 +15,10 @@ import { relays } from './relay.svelte';
 export async function warmRelays() {
 	if (!relays.online) return;
 	try {
-		await preconnectRelays(relays.activeNormalized);
+		const targets = relays.readableNormalized.length
+			? relays.readableNormalized
+			: relays.writableNormalized;
+		await preconnectRelays(targets);
 	} catch {
 		/* best effort */
 	}
@@ -25,9 +28,9 @@ export type NostrFilter = Parameters<typeof queryRelays>[1];
 
 /** Query relays for events matching a filter. Resolves to [] when offline. */
 export async function fetchEvents(filter: NostrFilter): Promise<NostrEvent[]> {
-	if (!relays.online || !relays.activeNormalized.length) return [];
+	if (!relays.online || !relays.readableNormalized.length) return [];
 	try {
-		return await queryRelays(relays.activeNormalized, filter);
+		return await queryRelays(relays.readableNormalized, filter);
 	} catch (e) {
 		console.warn('[nostr] query failed', e);
 		return [];
@@ -36,9 +39,9 @@ export async function fetchEvents(filter: NostrFilter): Promise<NostrEvent[]> {
 
 /** Publish a signed event to all configured relays. No-op when offline. */
 export async function sendEvent(event: NostrEvent): Promise<boolean> {
-	if (!relays.online || !relays.activeNormalized.length) return false;
+	if (!relays.online || !relays.writableNormalized.length) return false;
 	try {
-		await publishToRelays(event, relays.activeNormalized);
+		await publishToRelays(event, relays.writableNormalized);
 		return true;
 	} catch (e) {
 		console.warn('[nostr] publish failed', e);

@@ -107,7 +107,7 @@
 	]);
 </script>
 
-<svelte:head><title>bdGo OS · Dashboard</title></svelte:head>
+<svelte:head><title>BNOS · Dashboard</title></svelte:head>
 
 <div class="space-y-6 pt-1 pb-12">
 	<!-- Welcome header -->

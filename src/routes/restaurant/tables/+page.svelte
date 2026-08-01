@@ -16,7 +16,7 @@
 		s === 'occupied' ? 'error' : s === 'reserved' ? 'warning' : 'success';
 </script>
 
-<svelte:head><title>bdGo OS · Tables</title></svelte:head>
+<svelte:head><title>BNOS · Tables</title></svelte:head>
 
 <div class="space-y-4">
 	<div>

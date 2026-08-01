@@ -27,7 +27,7 @@
 		<h1
 			class="font-display text-[16px] font-semibold tracking-tight text-[var(--ui-text-highlighted)]"
 		>
-			{current?.label ?? 'bdGo OS'}
+			{current?.label ?? 'BNOS'}
 		</h1>
 		<p class="truncate text-[11.5px] text-[var(--ui-text-dimmed)]">
 			{page.url.pathname}

@@ -56,7 +56,7 @@
 	const totalRevenue = $derived(orders.reduce((s, o) => s + (o.data.total ?? 0), 0));
 </script>
 
-<svelte:head><title>bdGo OS · Reports</title></svelte:head>
+<svelte:head><title>BNOS · Reports</title></svelte:head>
 
 <div class="space-y-4">
 	<div>

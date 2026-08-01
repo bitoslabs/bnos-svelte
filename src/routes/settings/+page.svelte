@@ -17,7 +17,7 @@
 	function saveOrg() { tenant.persist(); toast.success('Organization saved'); }
 </script>
 
-<svelte:head><title>bdGo OS · Settings · Organization</title></svelte:head>
+<svelte:head><title>BNOS · Settings · Organization</title></svelte:head>
 
 <div class="space-y-5">
 	<!-- Organization -->

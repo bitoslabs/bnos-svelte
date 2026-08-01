@@ -25,7 +25,7 @@
 	);
 </script>
 
-<svelte:head><title>bdGo OS · Kitchen</title></svelte:head>
+<svelte:head><title>BNOS · Kitchen</title></svelte:head>
 
 <div class="space-y-4">
 	<div>

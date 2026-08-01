@@ -1,15 +1,15 @@
-# bdGo OS — Svelte
+# BNOS — Svelte
 
-bdGo OS (Bitcoin Network Operations System) point-of-sale & commerce, rebuilt on
+BNOS (Bitcoin Network Operations System) point-of-sale & commerce, rebuilt on
 **SvelteKit** with the **Nostr / GLO** data standard from
 [`@bitos/bnos-core`](../packages/bnos-core).
 
-This is a port of the original Vue/Nuxt app ([`../bdgo-os`](../bdgo-os)):
+This is an open-source Svelte port of the original Vue/Nuxt app ([`../bdgo-os`](../bdgo-os)):
 
 | Concern | Source | How it maps here |
 | --- | --- | --- |
 | **Data standard** (Nostr kinds + GLO model) | [`../packages/bnos-core`](../packages/bnos-core) | `src/lib/nostr/*` — every record is a GLO object carrying its Nostr kind (e.g. `catalog.product` → kind `30100`, `commerce.order` → `30200`). |
-| **UX / component patterns** | [`~/Desktop/projects/school/school-erp-svelte`](../../projects/school/school-erp-svelte) | Design system (`src/app.css`), UI primitives (`src/lib/components/ui/*`), theme store, icon registry. macOS-inspired, Tailwind v4, Svelte 5 runes. |
+| **UX / component patterns** | Internal Svelte design-system reference | Design system (`src/app.css`), UI primitives (`src/lib/components/ui/*`), theme store, icon registry. macOS-inspired, Tailwind v4, Svelte 5 runes. |
 | **UX flows / steps** | [`../bdgo-os`](../bdgo-os) | Routes mirror bdgo-os pages 1:1: `login` → `setup/*` wizard → dashboard / POS / orders / catalog / … |
 
 ## Data layer
@@ -35,7 +35,7 @@ methods (matching bdgo-os):
 - **nsec / hex private key**
 
 Snapshots are persisted with the canonical BNOS storage keys, so this client is
-interoperable with bdgo-os and bnos-space.
+interoperable with other BNOS clients, including bdgo-os and bnos-space.
 
 ## Structure
 
@@ -72,4 +72,5 @@ yarn run build
 ## Acknowledgments
 
 Built on the foundational architecture of the **Bitcoin Network Operations
-System**, with thanks to **BitDigo** for sponsorship and support.
+System**, with thanks to **BitDigo** for sponsorship and support of the open
+BNOS ecosystem.

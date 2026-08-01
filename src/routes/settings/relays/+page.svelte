@@ -20,7 +20,7 @@
 		<div>
 			<h2 class="font-display text-[15px] font-semibold tracking-tight">Relays</h2>
 			<p class="text-[12px] text-[var(--ui-text-muted)]">
-				{relays.relays.length} configured · {relays.activeRelays.length} active · {relays.online ? 'online' : 'offline'}
+				{relays.relays.length} configured · {relays.readableRelays.length} read · {relays.writableRelays.length} write · {relays.online ? 'online' : 'offline'}
 			</p>
 		</div>
 	</div>
@@ -35,11 +35,15 @@
 				>
 					{url}
 				</span>
-				<div class="flex items-center gap-2">
-					<Badge color={relays.isActive(url) ? 'success' : 'neutral'}>
-						{relays.isActive(url) ? 'On' : 'Off'}
-					</Badge>
-					<Switch checked={relays.isActive(url)} onCheckedChange={(active) => relays.setActive(url, active)} />
+				<div class="flex items-center gap-3">
+					<div class="flex items-center gap-1.5">
+						<Badge color={relays.canRead(url) ? 'success' : 'neutral'}>R</Badge>
+						<Switch checked={relays.canRead(url)} onCheckedChange={(enabled) => relays.setPermission(url, 'read', enabled)} />
+					</div>
+					<div class="flex items-center gap-1.5">
+						<Badge color={relays.canWrite(url) ? 'primary' : 'neutral'}>W</Badge>
+						<Switch checked={relays.canWrite(url)} onCheckedChange={(enabled) => relays.setPermission(url, 'write', enabled)} />
+					</div>
 				</div>
 				<Button color="neutral" variant="ghost" size="icon-sm" icon="lucide:x" onclick={() => relays.remove(url)} />
 			</li>

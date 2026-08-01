@@ -64,7 +64,7 @@
 			>
 				<Icon name="lucide:zap" class="size-5 text-white" />
 			</div>
-			<span class="font-display text-lg font-bold tracking-tight">bdGo OS</span>
+			<span class="font-display text-lg font-bold tracking-tight">BNOS</span>
 		</a>
 		<span class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
 			Setup · step {idx + 1} of {setupSteps.length}

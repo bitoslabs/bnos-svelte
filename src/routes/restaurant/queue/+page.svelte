@@ -16,7 +16,7 @@
 	);
 </script>
 
-<svelte:head><title>bdGo OS · Order Queue</title></svelte:head>
+<svelte:head><title>BNOS · Order Queue</title></svelte:head>
 
 <div class="space-y-4">
 	<div>

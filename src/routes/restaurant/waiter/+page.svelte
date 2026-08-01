@@ -15,7 +15,7 @@
 	);
 </script>
 
-<svelte:head><title>bdGo OS · Waiter</title></svelte:head>
+<svelte:head><title>BNOS · Waiter</title></svelte:head>
 
 <div class="space-y-4">
 	<div>

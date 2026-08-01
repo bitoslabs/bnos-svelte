@@ -41,7 +41,7 @@
 	}
 </script>
 
-<svelte:head><title>bdGo OS · Staff</title></svelte:head>
+<svelte:head><title>BNOS · Staff</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">

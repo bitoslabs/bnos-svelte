@@ -83,7 +83,7 @@
 	}
 </script>
 
-<svelte:head><title>bdGo OS · Orders</title></svelte:head>
+<svelte:head><title>BNOS · Orders</title></svelte:head>
 
 <div class="space-y-4">
 	<!-- header + KPIs -->

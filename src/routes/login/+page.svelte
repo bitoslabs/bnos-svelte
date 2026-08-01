@@ -86,7 +86,7 @@
 	function confirmCreate() {
 		if (!generated) return;
 		session.loginWithNsec(generated.nsec);
-		toast.success('Welcome to bdGo OS', 'Your new Nostr identity is ready.');
+		toast.success('Welcome to BNOS', 'Your new Nostr identity is ready.');
 		generated = null;
 		view = 'login';
 		routeAfterLogin();
@@ -111,7 +111,7 @@
 				<Icon name="lucide:zap" class="size-7 text-white" />
 			</div>
 			<h1 class="font-display text-2xl font-bold tracking-tight">Welcome back</h1>
-			<p class="mt-1.5 text-sm text-[var(--ui-text-muted)]">Sign in to bdGo OS with your Nostr identity</p>
+			<p class="mt-1.5 text-sm text-[var(--ui-text-muted)]">Sign in to BNOS with your Nostr identity</p>
 		</div>
 
 		<!-- Card -->

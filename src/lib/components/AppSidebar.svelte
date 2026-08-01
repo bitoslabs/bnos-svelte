@@ -33,7 +33,7 @@
 	<!-- Brand -->
 	<a
 		href="/"
-		aria-label="Go to bdGo OS dashboard"
+		aria-label="Go to BNOS dashboard"
 		class="app-sidebar-brand flex h-16 items-center gap-3 border-b border-[var(--glass-border)] px-5 transition-colors hover:bg-[var(--ui-bg-accented)]"
 		onclick={() => onnavigate?.()}
 	>
@@ -44,9 +44,9 @@
 			<Icon name="lucide:zap" class="relative size-5 text-white" />
 		</div>
 		<div class="leading-tight">
-			<div class="font-display text-[17px] font-bold tracking-tight">bdGo OS</div>
+			<div class="font-display text-[17px] font-bold tracking-tight">BNOS</div>
 			<div class="text-[10px] font-semibold tracking-[0.18em] text-[var(--ui-text-dimmed)] uppercase">
-				Bitcoin POS
+				Open-source POS
 			</div>
 		</div>
 	</a>

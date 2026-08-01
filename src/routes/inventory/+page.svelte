@@ -86,7 +86,7 @@
 	const dlgTitle = $derived({ adjustments: 'New stock adjustment', suppliers: 'Add supplier', orders: 'New purchase order' }[dlgKind]);
 </script>
 
-<svelte:head><title>bdGo OS · Inventory</title></svelte:head>
+<svelte:head><title>BNOS · Inventory</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">

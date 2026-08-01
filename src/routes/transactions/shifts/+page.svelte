@@ -39,7 +39,7 @@
 	}
 </script>
 
-<svelte:head><title>bdGo OS · Shifts</title></svelte:head>
+<svelte:head><title>BNOS · Shifts</title></svelte:head>
 
 <div class="space-y-4">
 	<div><h1 class="font-display text-xl font-bold tracking-tight">Shifts & cash drawer</h1><p class="text-[12.5px] text-[var(--ui-text-muted)]">Open/close shifts, record cash movements · kinds 30520/30521</p></div>

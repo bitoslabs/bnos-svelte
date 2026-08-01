@@ -10,7 +10,7 @@
 <div class="space-y-5">
 	<div class="surface-card flex flex-col items-center gap-3 p-8 text-center">
 		<div class="grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 shadow-lg shadow-primary-500/25"><Icon name="lucide:zap" class="size-8 text-white" /></div>
-		<div><h2 class="font-display text-xl font-bold tracking-tight">bdGo OS</h2><p class="text-[12.5px] text-[var(--ui-text-muted)]">Bitcoin Network Operations System · v0.1.0</p></div>
+		<div><h2 class="font-display text-xl font-bold tracking-tight">BNOS</h2><p class="text-[12.5px] text-[var(--ui-text-muted)]">Bitcoin Network Operations System · v0.1.0</p></div>
 		<div class="flex items-center gap-1.5 text-[11.5px] text-[var(--ui-text-dimmed)]"><span class="live-dot"></span>Signed in as {truncateNpub(session.npub ?? '', 10, 6)}</div>
 	</div>
 	<div class="surface-card divide-y divide-[var(--ui-border-muted)] text-[13px]">

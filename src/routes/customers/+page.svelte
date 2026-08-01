@@ -94,7 +94,7 @@
 	}
 </script>
 
-<svelte:head><title>bdGo OS · Customers</title></svelte:head>
+<svelte:head><title>BNOS · Customers</title></svelte:head>
 
 <div class="space-y-5">
 	<div class="flex flex-wrap items-end justify-between gap-3">

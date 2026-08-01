@@ -51,7 +51,7 @@
 	function catMeta(c: ExpenseCategory) { return EXPENSE_CATEGORIES.find((x) => x.value === c) ?? EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1]; }
 </script>
 
-<svelte:head><title>bdGo OS · Expenses</title></svelte:head>
+<svelte:head><title>BNOS · Expenses</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">

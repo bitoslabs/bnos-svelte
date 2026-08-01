@@ -24,7 +24,7 @@
 	<div>
 		<h2 class="font-display text-xl font-bold tracking-tight">Nostr relays</h2>
 		<p class="mt-1 text-[13.5px] text-[var(--ui-text-muted)]">
-			Relays carry your signed records between devices. Only switched-on relays are used for sync.
+			Relays carry your signed records between devices. Set which relays can read sync data and which can receive writes.
 		</p>
 	</div>
 
@@ -47,11 +47,15 @@
 				>
 					{url}
 				</span>
-				<div class="flex items-center gap-2">
-					<span class="text-[11px] font-semibold uppercase tracking-wider text-[var(--ui-text-dimmed)]">
-						{relays.isActive(url) ? 'On' : 'Off'}
-					</span>
-					<Switch checked={relays.isActive(url)} onCheckedChange={(active) => relays.setActive(url, active)} />
+				<div class="flex items-center gap-3">
+					<div class="flex items-center gap-1.5">
+						<span class="text-[11px] font-semibold uppercase tracking-wider text-[var(--ui-text-dimmed)]">R</span>
+						<Switch checked={relays.canRead(url)} onCheckedChange={(enabled) => relays.setPermission(url, 'read', enabled)} />
+					</div>
+					<div class="flex items-center gap-1.5">
+						<span class="text-[11px] font-semibold uppercase tracking-wider text-[var(--ui-text-dimmed)]">W</span>
+						<Switch checked={relays.canWrite(url)} onCheckedChange={(enabled) => relays.setPermission(url, 'write', enabled)} />
+					</div>
 				</div>
 				<button
 					type="button"
@@ -70,6 +74,6 @@
 	</Button>
 
 	<p class="text-[11.5px] text-[var(--ui-text-dimmed)]">
-		Default set: {DEFAULT_RELAYS.join(', ')} · {relays.activeRelays.length} active
+		Default set: {DEFAULT_RELAYS.join(', ')} · {relays.readableRelays.length} read · {relays.writableRelays.length} write
 	</p>
 </div>

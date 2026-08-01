@@ -151,7 +151,7 @@ class GloStore {
 
 	/** Pull the latest events for a type from relays and merge locally. */
 	sync = async (type: string, limit = 200) => {
-		if (!session.pubkey || !relays.online || !relays.activeNormalized.length) return;
+		if (!session.pubkey || !relays.online || !relays.readableNormalized.length) return;
 		if (this.syncing.has(type)) return;
 		this.syncing = new Set(this.syncing).add(type);
 		try {
