@@ -28,7 +28,9 @@
 			left: 'right-full mr-1.5 top-0'
 		}[side]
 	);
-	const alignClass = $derived({ start: 'left-0', center: 'left-1/2 -translate-x-1/2', end: 'right-0' }[align]);
+	const alignClass = $derived(
+		{ start: 'left-0', center: 'left-1/2 -translate-x-1/2', end: 'right-0' }[align]
+	);
 
 	$effect(() => {
 		if (!open) return;
@@ -62,7 +64,7 @@
 	{#if open}
 		<div
 			class={cn(
-				'animate-rise absolute z-50 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-0 text-[var(--ui-text)] shadow-xl shadow-black/10 outline-none',
+				'animate-rise absolute z-50 rounded-xl border border-[var(--ui-border-muted)] bg-[var(--surface-bg)] p-1.5 text-[var(--ui-text)] shadow-[var(--shadow-pop)] outline-none',
 				sideClass,
 				alignClass,
 				cls

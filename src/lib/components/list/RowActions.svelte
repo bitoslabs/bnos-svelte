@@ -43,7 +43,13 @@
 	}
 
 	function onPointerDown(e: PointerEvent) {
-		if (open && root && !root.contains(e.target as Node) && menuEl && !menuEl.contains(e.target as Node)) {
+		if (
+			open &&
+			root &&
+			!root.contains(e.target as Node) &&
+			menuEl &&
+			!menuEl.contains(e.target as Node)
+		) {
 			open = false;
 		}
 	}
@@ -67,7 +73,7 @@
 	{#if open}
 		<div
 			bind:this={menuEl}
-			class="animate-rise fixed z-50 min-w-[170px] rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-1.5 shadow-xl shadow-black/10"
+			class="animate-rise fixed z-50 min-w-[170px] rounded-xl border border-[var(--ui-border-muted)] bg-[var(--surface-bg)] p-1.5 shadow-[var(--shadow-pop)] outline-none"
 			style={`top:${pos.top}px;left:${pos.left}px`}
 			role="menu"
 		>
@@ -78,8 +84,10 @@
 						type="button"
 						role="menuitem"
 						class={cn(
-							'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[12.5px] font-medium transition-colors hover:bg-[var(--ui-bg-accented)]',
-							action.danger ? 'text-[var(--tone-error-text)]' : 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'
+							'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[12.5px] font-semibold transition-colors',
+							action.danger
+								? 'text-[var(--tone-error-text)] hover:bg-[var(--tone-error-bg)]'
+								: 'text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)] hover:text-[var(--ui-text)]'
 						)}
 						onclick={() => {
 							action.onSelect();

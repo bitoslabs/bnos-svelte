@@ -5,6 +5,9 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
+	import Menu from '$lib/components/ui/Menu.svelte';
+	import MenuItem from '$lib/components/ui/MenuItem.svelte';
+	import MenuDivider from '$lib/components/ui/MenuDivider.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -320,7 +323,8 @@
 						</Badge>
 					</div>
 					<p class="truncate text-[12.5px] text-[var(--ui-text-muted)]">
-						{tenant.state.organizationName || 'BNOS'} · {tenant.state.locationName || 'Main branch'} · {dateLabel} · {clockLabel}
+						{tenant.state.organizationName || 'BNOS'} · {tenant.state.locationName || 'Main branch'} ·
+						{dateLabel} · {clockLabel}
 					</p>
 				</div>
 			</div>
@@ -347,7 +351,13 @@
 						Last receipt
 					</Button>
 				{/if}
-				<Button color="neutral" variant="subtle" size="sm" icon="lucide:list-ordered" href="/orders">
+				<Button
+					color="neutral"
+					variant="subtle"
+					size="sm"
+					icon="lucide:list-ordered"
+					href="/orders"
+				>
 					Orders
 				</Button>
 				<Button color="neutral" variant="subtle" size="sm" icon="lucide:package" href="/catalog">
@@ -507,32 +517,32 @@
 			<aside
 				class="hidden min-h-0 flex-col overflow-hidden border-l border-[var(--ui-border-muted)] bg-[var(--surface-bg)] lg:flex"
 			>
-		<header
-			class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-4 py-3"
-		>
-			<div class="flex items-center gap-2">
-				<Icon name="lucide:shopping-cart" class="size-4 text-primary-500" />
-				<h2 class="font-display text-[15px] font-semibold tracking-tight">Current sale</h2>
-				{#if cart.itemCount}<Badge color="primary">{cart.itemCount}</Badge>{/if}
-			</div>
-			{#if !cart.isEmpty}
-				<button
-					type="button"
-					class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
-					onclick={() => cart.clear()}>Clear</button
+				<header
+					class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-4 py-3"
 				>
-			{/if}
-		</header>
-		{#if cart.isEmpty}
-			<div class="px-4 py-10 text-center text-[12.5px] text-[var(--ui-text-dimmed)]">
-				Tap a product to start a sale.
-			</div>
-		{:else}
-			<div class="min-h-0 flex-1 overflow-y-auto">
-				{@render cartContent()}
-			</div>
-			{@render tenderBlock()}
-		{/if}
+					<div class="flex items-center gap-2">
+						<Icon name="lucide:shopping-cart" class="size-4 text-primary-500" />
+						<h2 class="font-display text-[15px] font-semibold tracking-tight">Current sale</h2>
+						{#if cart.itemCount}<Badge color="primary">{cart.itemCount}</Badge>{/if}
+					</div>
+					{#if !cart.isEmpty}
+						<button
+							type="button"
+							class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
+							onclick={() => cart.clear()}>Clear</button
+						>
+					{/if}
+				</header>
+				{#if cart.isEmpty}
+					<div class="px-4 py-10 text-center text-[12.5px] text-[var(--ui-text-dimmed)]">
+						Tap a product to start a sale.
+					</div>
+				{:else}
+					<div class="min-h-0 flex-1 overflow-y-auto">
+						{@render cartContent()}
+					</div>
+					{@render tenderBlock()}
+				{/if}
 			</aside>
 		</div>
 	</div>
@@ -615,61 +625,65 @@
 		<ul class="divide-y divide-[var(--ui-border-muted)]">
 			{#each cart.items as line (line.key)}
 				<li class="py-2.5">
-				<div class="flex items-center gap-2">
-					<div class="min-w-0 flex-1">
-						<div class="truncate text-[13px] font-semibold">
-							{line.name}{#if line.variantName}
-								<span class="font-normal text-[var(--ui-text-dimmed)]">· {line.variantName}</span
-								>{/if}
+					<div class="flex items-center gap-2">
+						<div class="min-w-0 flex-1">
+							<div class="truncate text-[13px] font-semibold">
+								{line.name}{#if line.variantName}
+									<span class="font-normal text-[var(--ui-text-dimmed)]">· {line.variantName}</span
+									>{/if}
+							</div>
+							<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
+								{formatMoney(line.unitPrice, currency)} each{#if line.modifiers?.length}
+									· +{formatMoney(
+										line.modifiers.reduce((s, m) => s + m.priceAdjustment, 0),
+										currency
+									)}{/if}
+							</div>
+							{#if line.note}
+								<div class="mt-0.5 text-[11px] text-[var(--ui-text-muted)] italic">
+									“{line.note}”
+								</div>
+							{/if}
 						</div>
-						<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
-							{formatMoney(line.unitPrice, currency)} each{#if line.modifiers?.length}
-								· +{formatMoney(
-									line.modifiers.reduce((s, m) => s + m.priceAdjustment, 0),
-									currency
-								)}{/if}
+						<div class="flex items-center gap-1">
+							<button
+								type="button"
+								onclick={() => cart.dec(line.key)}
+								class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+								aria-label="Decrease"><Icon name="lucide:minus" class="size-3.5" /></button
+							>
+							<span class="w-6 text-center text-[13px] font-semibold tabular-nums"
+								>{line.quantity}</span
+							>
+							<button
+								type="button"
+								onclick={() => cart.inc(line.key)}
+								class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+								aria-label="Increase"><Icon name="lucide:plus" class="size-3.5" /></button
+							>
 						</div>
-						{#if line.note}
-							<div class="mt-0.5 text-[11px] text-[var(--ui-text-muted)] italic">“{line.note}”</div>
-						{/if}
+						<div class="w-20 text-right text-[13px] font-semibold tabular-nums">
+							{formatMoney(cart.lineAmount(line), currency)}
+						</div>
 					</div>
-					<div class="flex items-center gap-1">
-						<button
-							type="button"
-							onclick={() => cart.dec(line.key)}
-							class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-							aria-label="Decrease"><Icon name="lucide:minus" class="size-3.5" /></button
+					<div class="mt-1 flex justify-end">
+						<Menu
+							id={`cart-line-${line.key}`}
+							label="Line actions"
+							placement="bottom-end"
+							triggerClass="grid size-6 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+							triggerActiveClass="bg-[var(--ui-bg-accented)] text-[var(--ui-text)]"
 						>
-						<span class="w-6 text-center text-[13px] font-semibold tabular-nums"
-							>{line.quantity}</span
-						>
-						<button
-							type="button"
-							onclick={() => cart.inc(line.key)}
-							class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-							aria-label="Increase"><Icon name="lucide:plus" class="size-3.5" /></button
-						>
+							{#snippet trigger()}<Icon name="lucide:ellipsis" class="size-3.5" />{/snippet}
+							<MenuItem icon="lucide:pencil-line" onclick={() => openNote(line.key)}
+								>Edit note</MenuItem
+							>
+							<MenuDivider />
+							<MenuItem tone="danger" icon="lucide:trash-2" onclick={() => cart.remove(line.key)}
+								>Remove</MenuItem
+							>
+						</Menu>
 					</div>
-					<div class="w-20 text-right text-[13px] font-semibold tabular-nums">
-						{formatMoney(cart.lineAmount(line), currency)}
-					</div>
-				</div>
-				<div
-					class="mt-1 flex justify-end gap-3 text-[10.5px] font-semibold text-[var(--ui-text-dimmed)]"
-				>
-					<button
-						type="button"
-						class="hover:text-[var(--ui-text)]"
-						onclick={() => openNote(line.key)}
-						><Icon name="lucide:pencil-line" class="mr-0.5 inline size-3" />Note</button
-					>
-					<button
-						type="button"
-						class="hover:text-[var(--tone-error-text)]"
-						onclick={() => cart.remove(line.key)}
-						><Icon name="lucide:trash-2" class="mr-0.5 inline size-3" />Remove</button
-					>
-				</div>
 				</li>
 			{/each}
 		</ul>

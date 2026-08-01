@@ -6,6 +6,10 @@
 
 	const groups: { label: string; items: { to: string; icon: string; label: string }[] }[] = [
 		{
+			label: 'Account',
+			items: [{ to: '/settings/account', icon: 'lucide:user-cog', label: 'Nostr identity' }]
+		},
+		{
 			label: 'Store',
 			items: [
 				{ to: '/settings', icon: 'lucide:building-2', label: 'Organization' },
@@ -38,10 +42,24 @@
 		<nav class="space-y-4">
 			{#each groups as g (g.label)}
 				<div>
-					<div class="px-3 pb-1.5 text-[10px] font-semibold tracking-[0.16em] text-[var(--ui-text-dimmed)] uppercase">{g.label}</div>
+					<div
+						class="px-3 pb-1.5 text-[10px] font-semibold tracking-[0.16em] text-[var(--ui-text-dimmed)] uppercase"
+					>
+						{g.label}
+					</div>
 					{#each g.items as it (it.to)}
-						<a href={it.to} class="mb-0.5 flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors {active(it.to) ? 'is-active-surface' : 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}">
-							<Icon name={it.icon} class="size-4 {active(it.to) ? 'text-primary-500' : 'text-[var(--ui-text-dimmed)]'}" />{it.label}
+						<a
+							href={it.to}
+							class="mb-0.5 flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors {active(
+								it.to
+							)
+								? 'is-active-surface'
+								: 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
+						>
+							<Icon
+								name={it.icon}
+								class="size-4 {active(it.to) ? 'text-primary-500' : 'text-[var(--ui-text-dimmed)]'}"
+							/>{it.label}
 						</a>
 					{/each}
 				</div>

@@ -15,6 +15,7 @@
 	import AppTopbar from '$lib/components/AppTopbar.svelte';
 	import BottomTabBar from '$lib/components/mobile/BottomTabBar.svelte';
 	import Toaster from '$lib/components/ui/Toaster.svelte';
+	import { popovers } from '$lib/stores/popovers.svelte';
 	import favicon from '$lib/assets/favicon.svg';
 
 	let { children } = $props();
@@ -44,9 +45,23 @@
 			void goto(resolve('/setup'), { replaceState: true });
 		}
 	});
+
+	// Global dropdown-menu handling: one menu open at a time, close on outside
+	// pointerdown or Escape. Individual `Menu` triggers stopPropagation on open.
+	function onGlobalPointerDown(e: PointerEvent) {
+		const t = e.target as Element | null;
+		if (t && t.closest('[role="menu"]')) return;
+		if (t && t.closest('[aria-haspopup="menu"]')) return;
+		popovers.close();
+	}
+	function onGlobalKey(e: KeyboardEvent) {
+		if (e.key === 'Escape') popovers.close();
+	}
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
+
+<svelte:window onpointerdown={onGlobalPointerDown} onkeydown={onGlobalKey} />
 
 {#if isPublicRoute}
 	{@render children()}
