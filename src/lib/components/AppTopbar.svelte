@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
 	import { findNavItem } from '$lib/nav';
 	import { relays } from '$nostr/relay.svelte';
-	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import {
 		preferences,
 		accentOptions,
@@ -23,7 +24,7 @@
 
 	function handleSearch(e: KeyboardEvent) {
 		if (e.key === 'Enter' && searchQuery.trim()) {
-			goto('/orders?q=' + encodeURIComponent(searchQuery.trim()));
+			goto(resolve(`/orders?q=${encodeURIComponent(searchQuery.trim())}`));
 			showSearch = false;
 			searchQuery = '';
 		}
@@ -38,19 +39,10 @@
 	let relayOpen = $state(false);
 
 	// Sync state for quick-settings sync button
-	let syncState = $state<'idle' | 'syncing' | 'done' | 'failed'>('idle');
+	const syncState = $derived(dataSync.status);
 
 	async function syncWorkspace() {
-		syncState = 'syncing';
-		try {
-			const ALL_TYPES = ['organization','catalog.product','catalog.category','catalog.unit','commerce.order','commerce.payment','crm.customer','commerce.expense','inventory.adjustment','inventory.supplier','staff.member','commerce.shift','promotion','membership.plan','membership.subscription'];
-			await glo.syncAll(ALL_TYPES);
-			syncState = 'done';
-			setTimeout(() => { syncState = 'idle'; }, 2000);
-		} catch {
-			syncState = 'failed';
-			setTimeout(() => { syncState = 'idle'; }, 2000);
-		}
+		await dataSync.manualSync();
 	}
 </script>
 
@@ -91,11 +83,10 @@
 	<!-- Quick search -->
 	{#if showSearch}
 		<div class="relative flex items-center">
-			<Icon name="lucide:search" class="absolute left-2.5 size-4 text-[var(--ui-text-dimmed)]" />
-			<input
-				autofocus
-				bind:value={searchQuery}
-				onkeydown={handleSearch}
+				<Icon name="lucide:search" class="absolute left-2.5 size-4 text-[var(--ui-text-dimmed)]" />
+				<input
+					bind:value={searchQuery}
+					onkeydown={handleSearch}
 				type="text"
 				placeholder="Search orders..."
 				class="w-44 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] py-1.5 pr-3 pl-8 text-[13px] focus:w-56 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-all"
@@ -115,7 +106,7 @@
 
 	<!-- Notifications -->
 	<a
-		href="/notifications"
+		href={resolve('/notifications')}
 		class="relative grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 		aria-label="Notifications"
 		title="Notifications"
@@ -146,7 +137,7 @@
 						</span>
 						<span class="text-[13px] font-semibold">{relays.online ? 'Connected' : 'Offline'}</span>
 					</div>
-					<a href="/settings/relays" class="text-[11.5px] font-semibold text-primary-600 hover:underline dark:text-primary-400">Manage</a>
+					<a href={resolve('/settings/relays')} class="text-[11.5px] font-semibold text-primary-600 hover:underline dark:text-primary-400">Manage</a>
 				</div>
 
 				<div class="space-y-1.5">
@@ -183,8 +174,7 @@
 						const btn = document.getElementById('sync-btn-text');
 						if (btn) btn.textContent = 'Syncing…';
 						try {
-							const ALL_TYPES = ['organization','catalog.product','catalog.category','catalog.unit','commerce.order','commerce.payment','crm.customer','commerce.expense','inventory.adjustment','inventory.supplier','staff.member','commerce.shift','promotion','membership.plan','membership.subscription'];
-							await glo.syncAll(ALL_TYPES);
+							await dataSync.manualSync();
 							if (btn) {
 								btn.textContent = '✓ Synced';
 								setTimeout(() => { if (btn) btn.textContent = 'Sync all data'; }, 2000);
@@ -276,15 +266,15 @@
 
 				<!-- Links -->
 				<div class="border-t border-[var(--ui-border-muted)] pt-3">
-					<a href="/settings" class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]">
+					<a href={resolve('/settings')} class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]">
 						<Icon name="lucide:settings" class="size-4" />
 						All Settings
 					</a>
-					<a href="/settings/appearance" class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]">
+					<a href={resolve('/settings/appearance')} class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]">
 						<Icon name="lucide:palette" class="size-4" />
 						Appearance Settings
 					</a>
-					<a href="/settings/about" class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]">
+					<a href={resolve('/settings/about')} class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]">
 						<Icon name="lucide:info" class="size-4" />
 						About BNOS
 					</a>

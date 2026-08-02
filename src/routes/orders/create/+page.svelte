@@ -6,16 +6,14 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, titleCase } from '$lib/utils/format';
 	import { TYPE, type Order, type OrderLine, type Product, type Customer, type OrderType, type OrderSource, type ShippingInfo, type PickupInfo } from '$lib/domain';
 
 	onMount(() => {
-		glo.hydrate(TYPE.product);
-		glo.hydrate(TYPE.customer);
-		glo.hydrate(TYPE.order);
-		void glo.sync(TYPE.product);
+		dataSync.pageSync([TYPE.product, TYPE.customer, TYPE.order], { scope: 'order-create' });
 	});
 
 	const currency = $derived(tenant.state.currency);

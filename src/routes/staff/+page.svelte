@@ -13,6 +13,7 @@
 	import RowActions from '$lib/components/list/RowActions.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { initialsFrom, formatMoney } from '$lib/utils/format';
 	import { TYPE, statusColor, type Staff, type UserRole } from '$lib/domain';
@@ -31,8 +32,7 @@
 	};
 
 	onMount(() => {
-		glo.hydrate(TYPE.staff);
-		void glo.sync(TYPE.staff);
+		dataSync.pageSync([TYPE.staff], { scope: 'staff' });
 	});
 
 	const staff = $derived(glo.all<Staff, typeof TYPE.staff>(TYPE.staff));

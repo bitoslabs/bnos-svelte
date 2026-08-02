@@ -8,6 +8,7 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, relativeTime, titleCase } from '$lib/utils/format';
@@ -16,9 +17,7 @@
 	const id = $derived(page.params.id);
 
 	onMount(() => {
-		glo.hydrate(TYPE.order);
-		glo.hydrate(TYPE.payment);
-		void glo.sync(TYPE.order);
+		dataSync.pageSync([TYPE.order, TYPE.payment], { scope: 'order-detail' });
 	});
 
 	const order = $derived(glo.get(TYPE.order, id ?? '') as GloObject<Order, typeof TYPE.order> | undefined);

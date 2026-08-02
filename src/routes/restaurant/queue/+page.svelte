@@ -3,11 +3,11 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
-	import Select from '$lib/components/ui/Select.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { relativeTime } from '$lib/utils/format';
 
@@ -32,8 +32,7 @@
 	let timer: ReturnType<typeof setInterval>;
 
 	onMount(() => {
-		glo.hydrate(QUEUE_TYPE);
-		glo.hydrate('restaurant.table');
+		dataSync.pageSync([QUEUE_TYPE, 'restaurant.table'], { scope: 'restaurant-queue' });
 		timer = setInterval(() => tick++, 30_000);
 	});
 	onDestroy(() => clearInterval(timer));

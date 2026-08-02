@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 
 	// ── Types ──
@@ -30,9 +30,6 @@
 		{ value: 'reserved', label: 'Reserved', color: 'warning' },
 		{ value: 'cleaning', label: 'Cleaning', color: 'info' }
 	];
-
-	const statusColor = (s: TableStatus) =>
-		s === 'available' ? 'success' : s === 'occupied' ? 'error' : s === 'reserved' ? 'warning' : 'info';
 
 	const statusBg = (s: TableStatus) =>
 		s === 'available'
@@ -71,8 +68,7 @@
 	}
 
 	onMount(() => {
-		glo.hydrate(TABLE_TYPE);
-		glo.hydrate('commerce.order');
+		dataSync.pageSync([TABLE_TYPE, 'commerce.order'], { scope: 'restaurant-tables' });
 	});
 
 	// ── State ──

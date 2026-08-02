@@ -40,16 +40,21 @@ export function startOfMonth(d: Date): number {
 	return x.getTime();
 }
 
+export function startOfToday(): number {
+	return startOfDay(new Date());
+}
+
 /** Flatten GLO order objects into the lightweight rows the dashboard reads. */
 export function toOrderRows(
 	objects: { id: string; data: DashboardOrder }[],
-	paymentLookup?: Map<string, string>
+	paymentLookup?: Record<string, string>
 ): OrderRow[] {
 	return objects.map((o) => {
 		const d = o.data;
 		const atMs = new Date(d.occurredAt || 0).getTime();
 		const method = d.method
-			?? (paymentLookup ? (paymentLookup.get(o.id) ?? 'cash') : 'cash');
+			?? paymentLookup?.[o.id]
+			?? 'cash';
 		return {
 			id: o.id,
 			number: d.number ?? o.id.slice(0, 8),

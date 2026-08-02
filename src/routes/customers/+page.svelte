@@ -12,11 +12,12 @@
 	import RowActions, { type RowAction } from '$lib/components/list/RowActions.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatInt, formatMoney, initialsFrom } from '$lib/utils/format';
 	import { tenant } from '$nostr/tenant.svelte';
 	import type { GloCustomer, GloObject } from '@bitos/bnos-core/glo';
-	import type { CustomerSegment } from '$lib/domain';
+	import { TYPE, type CustomerSegment } from '$lib/domain';
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 
 	type CustomerRow = GloObject<GloCustomer, 'crm.customer'>;
@@ -31,8 +32,7 @@
 	];
 
 	onMount(() => {
-		glo.hydrate('crm.customer');
-		void glo.sync('crm.customer');
+		dataSync.pageSync([TYPE.customer], { scope: 'customers' });
 	});
 
 	const customers = $derived(glo.all<GloCustomer, 'crm.customer'>('crm.customer'));

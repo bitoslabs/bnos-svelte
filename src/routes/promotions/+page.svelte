@@ -11,6 +11,7 @@
 	import Pagination from '$lib/components/list/Pagination.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney } from '$lib/utils/format';
@@ -21,11 +22,9 @@
 	let tab = $state<Tab>('promotions');
 
 	onMount(() => {
-		glo.hydrate(TYPE.coupon);
-		glo.hydrate(TYPE.promotion);
-		glo.hydrate(TYPE.product);
-		glo.hydrate(TYPE.category);
-		void glo.syncAll([TYPE.coupon, TYPE.promotion]);
+		dataSync.pageSync([TYPE.coupon, TYPE.promotion, TYPE.product, TYPE.category], {
+			scope: 'promotions'
+		});
 	});
 
 	const currency = $derived(tenant.state.currency);

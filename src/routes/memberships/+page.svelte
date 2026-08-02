@@ -11,6 +11,7 @@
 	import Pagination from '$lib/components/list/Pagination.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, relativeTime } from '$lib/utils/format';
@@ -18,7 +19,11 @@
 
 	type Tab = 'plans' | 'subscriptions' | 'checkins';
 	let tab = $state<Tab>('plans');
-	onMount(() => { glo.hydrate(TYPE.membership); glo.hydrate(TYPE.membershipSubscription); glo.hydrate(TYPE.membershipCheckIn); void glo.syncAll([TYPE.membership, TYPE.membershipSubscription, TYPE.membershipCheckIn]); });
+	onMount(() => {
+		dataSync.pageSync([TYPE.membership, TYPE.membershipSubscription, TYPE.membershipCheckIn], {
+			scope: 'memberships'
+		});
+	});
 
 	const currency = $derived(tenant.state.currency);
 	const plans = $derived(glo.all<Membership, typeof TYPE.membership>(TYPE.membership));

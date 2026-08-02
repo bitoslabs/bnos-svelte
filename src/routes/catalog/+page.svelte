@@ -19,6 +19,7 @@
 	import StockBadge from '$lib/components/ui/StockBadge.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney } from '$lib/utils/format';
@@ -36,12 +37,10 @@
 	let tab = $state<Tab>('products');
 
 	onMount(() => {
-		glo.hydrate(TYPE.product);
-		glo.hydrate(TYPE.category);
-		glo.hydrate(TYPE.unit);
-		glo.hydrate(TYPE.modifierGroup);
 		loadBundles();
-		void glo.syncAll([TYPE.product, TYPE.category, TYPE.unit, TYPE.modifierGroup]);
+		dataSync.pageSync([TYPE.product, TYPE.category, TYPE.unit, TYPE.modifierGroup], {
+			scope: 'catalog'
+		});
 	});
 
 	// ── Bundles (localStorage) ──

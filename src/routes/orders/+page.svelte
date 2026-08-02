@@ -11,16 +11,15 @@
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, formatInt, relativeTime, titleCase } from '$lib/utils/format';
 	import { toOrderRows, type DashboardOrder, type OrderRow } from '$lib/dashboard/metrics';
-	import { statusColor } from '$lib/domain';
+	import { TYPE, statusColor } from '$lib/domain';
 
 	onMount(() => {
-		glo.hydrate('commerce.order');
-		glo.hydrate('commerce.payment');
-		void glo.sync('commerce.order');
+		dataSync.pageSync([TYPE.order, TYPE.payment], { scope: 'orders' });
 	});
 
 	const currency = $derived(tenant.state.currency);

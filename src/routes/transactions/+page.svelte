@@ -10,6 +10,7 @@
 	import Pagination from '$lib/components/list/Pagination.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -19,9 +20,7 @@
 	import { TYPE, type Shift } from '$lib/domain';
 
 	onMount(() => {
-		glo.hydrate('commerce.order');
-		glo.hydrate(TYPE.shift);
-		void glo.sync('commerce.order');
+		dataSync.pageSync([TYPE.order, TYPE.payment, TYPE.shift], { scope: 'transactions' });
 	});
 
 	const currency = $derived(tenant.state.currency);

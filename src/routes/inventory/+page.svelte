@@ -13,6 +13,7 @@
 	import RowActions from '$lib/components/list/RowActions.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, relativeTime } from '$lib/utils/format';
@@ -22,11 +23,9 @@
 	let tab = $state<Tab>('overview');
 
 	onMount(() => {
-		glo.hydrate(TYPE.product);
-		glo.hydrate(TYPE.adjustment);
-		glo.hydrate(TYPE.supplier);
-		glo.hydrate(TYPE.purchaseOrder);
-		void glo.syncAll([TYPE.product, TYPE.adjustment, TYPE.supplier, TYPE.purchaseOrder]);
+		dataSync.pageSync([TYPE.product, TYPE.adjustment, TYPE.supplier, TYPE.purchaseOrder], {
+			scope: 'inventory'
+		});
 	});
 
 	const currency = $derived(tenant.state.currency);

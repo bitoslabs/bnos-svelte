@@ -6,17 +6,17 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { ALL_OPERATIONAL_DATA_TYPES, dataSync } from '$nostr/sync.svelte';
 
 	let syncState = $state<'syncing' | 'done' | 'skipped'>('syncing');
 
 	onMount(async () => {
 		try {
-			await glo.syncAll([
-				'organization', 'catalog.product', 'catalog.category', 'catalog.unit',
-				'crm.customer', 'commerce.order', 'commerce.payment', 'commerce.expense',
-				'inventory.adjustment', 'staff.member', 'commerce.shift',
-				'promotion', 'membership.plan', 'membership.subscription', 'location'
-			]);
+			await dataSync.syncTypes(ALL_OPERATIONAL_DATA_TYPES, {
+				force: true,
+				scope: 'setup-done',
+				silent: true
+			});
 			// Restore tenant from synced data
 			glo.hydrate('organization');
 			glo.hydrate('location');

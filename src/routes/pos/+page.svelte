@@ -10,6 +10,7 @@
 	import MenuDivider from '$lib/components/ui/MenuDivider.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatInt, formatMoney } from '$lib/utils/format';
@@ -31,13 +32,18 @@
 	let now = $state(new Date());
 
 	onMount(() => {
-		glo.hydrate(TYPE.product);
-		glo.hydrate(TYPE.category);
-		glo.hydrate(TYPE.modifierGroup);
-		glo.hydrate(TYPE.adjustment);
-		glo.hydrate(TYPE.shift);
-		glo.hydrate(TYPE.order);
-		void glo.syncAll([TYPE.product, TYPE.category, TYPE.modifierGroup, TYPE.adjustment, TYPE.shift, TYPE.order]);
+		dataSync.pageSync(
+			[
+				TYPE.product,
+				TYPE.category,
+				TYPE.modifierGroup,
+				TYPE.adjustment,
+				TYPE.shift,
+				TYPE.order,
+				TYPE.promotion
+			],
+			{ scope: 'pos' }
+		);
 
 		const timer = window.setInterval(() => {
 			now = new Date();
@@ -47,7 +53,6 @@
 	});
 
 	// Active promotions
-	glo.hydrate(TYPE.promotion);
 	const activePromotions = $derived(
 		glo.all<any, typeof TYPE.promotion>(TYPE.promotion).filter((p) => {
 			const d = p.data;

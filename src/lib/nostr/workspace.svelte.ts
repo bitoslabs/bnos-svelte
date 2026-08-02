@@ -5,8 +5,6 @@ import { glo } from './store.svelte';
 import { tenant } from './tenant.svelte';
 
 const WORKSPACE_TYPES = ['organization', 'location'] as const;
-const WORKSPACE_SYNC_STAMP_KEY = 'bnos:workspace:last-full-sync-at';
-const WORKSPACE_SYNC_COOLDOWN_MS = 90_000;
 
 function sleep(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
@@ -85,16 +83,4 @@ export async function resolveWorkspace(options: { allowRelaySync?: boolean } = {
 
 export function hasActiveWorkspaceContext() {
 	return !!tenant.state.setupComplete && !!tenant.state.organizationId;
-}
-
-export function shouldRunWorkspaceSync() {
-	if (typeof localStorage === 'undefined') return true;
-	const raw = localStorage.getItem(WORKSPACE_SYNC_STAMP_KEY);
-	const lastRunAt = raw ? Number(raw) || 0 : 0;
-	return Date.now() - lastRunAt > WORKSPACE_SYNC_COOLDOWN_MS;
-}
-
-export function markWorkspaceSyncAt(timestamp = Date.now()) {
-	if (typeof localStorage === 'undefined') return;
-	localStorage.setItem(WORKSPACE_SYNC_STAMP_KEY, String(timestamp));
 }

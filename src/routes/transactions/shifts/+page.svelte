@@ -6,12 +6,15 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, relativeTime } from '$lib/utils/format';
 	import { TYPE, statusColor, type Shift, type CashEvent } from '$lib/domain';
 
-	onMount(() => { glo.hydrate(TYPE.shift); glo.hydrate(TYPE.cashEvent); void glo.syncAll([TYPE.shift, TYPE.cashEvent]); });
+	onMount(() => {
+		dataSync.pageSync([TYPE.shift, TYPE.cashEvent], { scope: 'shifts' });
+	});
 
 	const currency = $derived(tenant.state.currency);
 	const shifts = $derived(glo.all<Shift, typeof TYPE.shift>(TYPE.shift));

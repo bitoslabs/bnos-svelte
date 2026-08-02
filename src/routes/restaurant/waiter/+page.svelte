@@ -6,12 +6,11 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { relativeTime } from '$lib/utils/format';
 	import type { GloOrder } from '@bitos/bnos-core/glo';
 	import type { Staff } from '$lib/domain';
-
-	type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'served' | 'completed';
 
 	interface WaiterAssignment {
 		orderId: string;
@@ -21,9 +20,9 @@
 	const WAITER_TYPE = 'restaurant.waiter-assignment';
 
 	onMount(() => {
-		glo.hydrate('commerce.order');
-		glo.hydrate('identity.staff');
-		glo.hydrate(WAITER_TYPE);
+		dataSync.pageSync(['commerce.order', 'identity.staff', WAITER_TYPE], {
+			scope: 'restaurant-waiter'
+		});
 	});
 
 	// ── Data ──

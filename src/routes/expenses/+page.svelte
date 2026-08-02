@@ -13,6 +13,7 @@
 	import RowActions from '$lib/components/list/RowActions.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, relativeTime } from '$lib/utils/format';
@@ -20,8 +21,7 @@
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 
 	onMount(() => {
-		glo.hydrate(TYPE.expense);
-		void glo.sync(TYPE.expense);
+		dataSync.pageSync([TYPE.expense], { scope: 'expenses' });
 	});
 
 	const currency = $derived(tenant.state.currency);

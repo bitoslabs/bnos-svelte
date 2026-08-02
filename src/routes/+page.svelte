@@ -8,6 +8,7 @@
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { session } from '$nostr/session.svelte';
+	import { CORE_DATA_TYPES, dataSync } from '$nostr/sync.svelte';
 	import { formatMoney, formatInt, relativeTime } from '$lib/utils/format';
 	import {
 		toOrderRows,
@@ -18,31 +19,12 @@
 		orderTypeSegments,
 		topProducts,
 		greeting,
+		startOfToday,
 		type DashboardOrder
 	} from '$lib/dashboard/metrics';
 	import type { GloProduct, GloCustomer } from '@bitos/bnos-core/glo';
 
-	const DASHBOARD_SYNC_TYPES = [
-		'commerce.order',
-		'commerce.payment',
-		'catalog.product',
-		'crm.customer',
-		'commerce.expense',
-		'inventory.adjustment',
-		'staff.member',
-		'commerce.shift',
-		'promotion'
-	] as const;
-	const AUTO_SYNC_COOLDOWN_MS = 45_000;
-	const SYNC_STAMP_KEY = 'bnos:dashboard:last-sync-at';
-
 	let clock = $state('');
-
-	function startToday() {
-		const x = new Date();
-		x.setHours(0, 0, 0, 0);
-		return x.getTime();
-	}
 
 	function hasDashboardCache() {
 		return (
@@ -56,8 +38,7 @@
 	async function waitForHydration() {
 		let attempts = 0;
 		while (attempts < 20) {
-			const hydrated = DASHBOARD_SYNC_TYPES
-				.slice(0, 4)
+			const hydrated = ['commerce.order', 'commerce.payment', 'catalog.product', 'crm.customer']
 				.every((type) => glo.isHydrated(type));
 			if (hydrated) return;
 			await new Promise((resolve) => setTimeout(resolve, 80));
@@ -65,53 +46,24 @@
 		}
 	}
 
-	function getLastSyncAt() {
-		if (typeof localStorage === 'undefined') return 0;
-		const raw = localStorage.getItem(SYNC_STAMP_KEY);
-		return raw ? Number(raw) || 0 : 0;
-	}
-
-	function setLastSyncAt(value: number) {
-		if (typeof localStorage === 'undefined') return;
-		localStorage.setItem(SYNC_STAMP_KEY, String(value));
-	}
-
-	async function runDashboardSync() {
-		try {
-			await glo.syncAll([...DASHBOARD_SYNC_TYPES]);
-			setLastSyncAt(Date.now());
-		} catch {
-			// Silent background refresh only.
-		}
-	}
-
 	onMount(() => {
-		for (const type of DASHBOARD_SYNC_TYPES) {
-			glo.hydrate(type);
-		}
+		dataSync.hydrate(CORE_DATA_TYPES);
 
 		void (async () => {
 			await waitForHydration();
 
 			const hasCache = hasDashboardCache();
 			const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
-			const lastSyncAt = getLastSyncAt();
-			const isFresh = Date.now() - lastSyncAt < AUTO_SYNC_COOLDOWN_MS;
 
 			if (hasCache) {
-				if (!isOffline && !isFresh) {
-					const kickoff = () => void runDashboardSync();
-					if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-						window.requestIdleCallback(kickoff, { timeout: 1200 });
-					} else {
-						setTimeout(kickoff, 250);
-					}
+				if (!isOffline) {
+					dataSync.backgroundOperationalSync();
 				}
 				return;
 			}
 
 			if (!isOffline) {
-				await runDashboardSync();
+				dataSync.backgroundOperationalSync();
 			}
 		})();
 
@@ -132,17 +84,17 @@
 
 	// Build payment method lookup: orderId → method
 	const paymentMethodMap = $derived.by(() => {
-		const payments = glo.all<any, 'commerce.payment'>('commerce.payment');
-		const m = new Map<string, string>();
+		const payments = glo.all<Record<string, unknown>, 'commerce.payment'>('commerce.payment');
+		const methods: Record<string, string> = {};
 		for (const p of payments) {
-			const oid = (p.data as any).orderId;
-			if (oid) m.set(oid, (p.data as any).method ?? 'cash');
+			const oid = typeof p.data.orderId === 'string' ? p.data.orderId : '';
+			if (oid) methods[oid] = typeof p.data.method === 'string' ? p.data.method : 'cash';
 		}
-		return m;
+		return methods;
 	});
 
 	const rows = $derived(toOrderRows(orderObjects as never, paymentMethodMap));
-	const todayRows = $derived(rows.filter((o) => o.atMs >= startToday()));
+	const todayRows = $derived(rows.filter((o) => o.atMs >= startOfToday()));
 	const currency = $derived(tenant.state.currency);
 
 	const m = $derived(metricsSummary(rows));
@@ -165,7 +117,7 @@
 
 	const quickActions = $derived([
 		{
-			to: '/pos',
+			to: resolve('/pos'),
 			icon: 'lucide:scan-line',
 			label: 'New sale',
 			desc: 'Open the POS',
@@ -173,7 +125,7 @@
 			bg: 'bg-primary-500/10'
 		},
 		{
-			to: '/orders',
+			to: resolve('/orders'),
 			icon: 'lucide:receipt-text',
 			label: 'Orders',
 			desc: `${m.allTimeCount} total`,
@@ -181,7 +133,7 @@
 			bg: 'bg-blue-500/10'
 		},
 		{
-			to: '/catalog',
+			to: resolve('/catalog'),
 			icon: 'lucide:package',
 			label: 'Catalog',
 			desc: `${productCount} products`,
@@ -189,7 +141,7 @@
 			bg: 'bg-orange-500/10'
 		},
 		{
-			to: '/customers',
+			to: resolve('/customers'),
 			icon: 'lucide:users',
 			label: 'Customers',
 			desc: `${customerCount} people`,
@@ -225,11 +177,11 @@
 
 	<!-- Quick actions -->
 	<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-		{#each quickActions as action (action.label)}
-			<a
-				href={resolve(action.to)}
-				class="surface-card group flex items-center gap-3 p-4 transition-colors hover:border-[var(--ui-border-accented)]"
-			>
+			{#each quickActions as action (action.label)}
+				<a
+					href={action.to}
+					class="surface-card group flex items-center gap-3 p-4 transition-colors hover:border-[var(--ui-border-accented)]"
+				>
 				<div class="grid size-10 shrink-0 place-items-center rounded-xl {action.bg} {action.color}">
 					<Icon name={action.icon} class="size-5" />
 				</div>

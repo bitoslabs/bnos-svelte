@@ -12,13 +12,11 @@
 	import { relays } from '$nostr/relay.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { warmRelays } from '$nostr/client';
-	import { glo } from '$nostr/store.svelte';
 	import {
 		hasActiveWorkspaceContext,
-		markWorkspaceSyncAt,
 		resolveWorkspace,
-		shouldRunWorkspaceSync
 	} from '$nostr/workspace.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import { sidebarState, loadCollapsed as loadSidebarCollapsed } from '$lib/sidebar-state.svelte';
 	import AppTopbar from '$lib/components/AppTopbar.svelte';
@@ -79,34 +77,9 @@
 		}
 	});
 
-	// Sync all data from relays once after login (new device / fresh session)
+	// Hydrate immediately, then sync operational data quietly in the background.
 	let postLoginSyncDone = false;
 	let postLoginSyncState = $state<'idle' | 'checking-workspace' | 'done'>('idle');
-	const ALL_DATA_TYPES = [
-		'organization',
-		'catalog.product',
-		'catalog.category',
-		'catalog.unit',
-		'catalog.modifier-group',
-		'catalog.bundle',
-		'commerce.order',
-		'commerce.payment',
-		'crm.customer',
-		'commerce.expense',
-		'inventory.adjustment',
-		'inventory.supplier',
-		'inventory.purchase-order',
-		'staff.member',
-		'commerce.shift',
-		'promotion',
-		'membership.plan',
-		'membership.subscription',
-		'restaurant.table',
-		'restaurant.order',
-		'blocked.entry',
-		'settings.payment-method',
-		'location',
-	];
 
 	$effect(() => {
 		if (!session.isAuthenticated || !tenant.hydrated || !relays.hydrated) return;
@@ -115,46 +88,8 @@
 		postLoginSyncDone = true;
 
 		void warmRelays();
-
-		for (const type of ALL_DATA_TYPES) {
-			glo.hydrate(type);
-		}
-
-		if (relays.online && session.pubkey && shouldRunWorkspaceSync()) {
-			void glo.syncAll(ALL_DATA_TYPES).then(() => {
-				for (const type of ALL_DATA_TYPES) {
-					glo.hydrate(type);
-				}
-				// Restore tenant context from synced org data
-				const orgs = glo.all('organization');
-				if (orgs.length > 0 && !tenant.state.setupComplete) {
-					const org = orgs[0];
-					const d = org.data as Record<string, unknown>;
-					tenant.configure({
-						organizationId: org.id,
-						organizationName: (d.name as string) ?? '',
-						organizationCode: (d.code as string) ?? '',
-						currency: (d.currency as string) ?? 'USD'
-					});
-					tenant.completeSetup();
-				}
-				// Restore location/branch
-				const locations = glo.all('location');
-				if (locations.length > 0 && !tenant.state.locationId) {
-					const loc = locations[0];
-					tenant.configure({
-						locationId: loc.id,
-						locationName: ((loc.data as Record<string, unknown>).name as string) ?? 'Main'
-					});
-				}
-				markWorkspaceSyncAt();
-				postLoginSyncState = 'idle';
-			}).catch(() => {
-				postLoginSyncState = 'idle';
-			});
-		} else {
-			postLoginSyncState = 'idle';
-		}
+		dataSync.backgroundOperationalSync();
+		postLoginSyncState = 'idle';
 	});
 
 	// Global dropdown-menu handling: one menu open at a time, close on outside
