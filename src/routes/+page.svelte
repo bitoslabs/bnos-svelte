@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -19,18 +20,100 @@
 		greeting,
 		type DashboardOrder
 	} from '$lib/dashboard/metrics';
-	import type { GloOrder, GloProduct, GloCustomer } from '@bitos/bnos-core/glo';
+	import type { GloProduct, GloCustomer } from '@bitos/bnos-core/glo';
+
+	const DASHBOARD_SYNC_TYPES = [
+		'commerce.order',
+		'commerce.payment',
+		'catalog.product',
+		'crm.customer',
+		'commerce.expense',
+		'inventory.adjustment',
+		'staff.member',
+		'commerce.shift',
+		'promotion'
+	] as const;
+	const AUTO_SYNC_COOLDOWN_MS = 45_000;
+	const SYNC_STAMP_KEY = 'bnos:dashboard:last-sync-at';
+
+	let clock = $state('');
+
+	function startToday() {
+		const x = new Date();
+		x.setHours(0, 0, 0, 0);
+		return x.getTime();
+	}
+
+	function hasDashboardCache() {
+		return (
+			glo.all('commerce.order').length > 0 ||
+			glo.all('commerce.payment').length > 0 ||
+			glo.all('catalog.product').length > 0 ||
+			glo.all('crm.customer').length > 0
+		);
+	}
+
+	async function waitForHydration() {
+		let attempts = 0;
+		while (attempts < 20) {
+			const hydrated = DASHBOARD_SYNC_TYPES
+				.slice(0, 4)
+				.every((type) => glo.isHydrated(type));
+			if (hydrated) return;
+			await new Promise((resolve) => setTimeout(resolve, 80));
+			attempts++;
+		}
+	}
+
+	function getLastSyncAt() {
+		if (typeof localStorage === 'undefined') return 0;
+		const raw = localStorage.getItem(SYNC_STAMP_KEY);
+		return raw ? Number(raw) || 0 : 0;
+	}
+
+	function setLastSyncAt(value: number) {
+		if (typeof localStorage === 'undefined') return;
+		localStorage.setItem(SYNC_STAMP_KEY, String(value));
+	}
+
+	async function runDashboardSync() {
+		try {
+			await glo.syncAll([...DASHBOARD_SYNC_TYPES]);
+			setLastSyncAt(Date.now());
+		} catch {
+			// Silent background refresh only.
+		}
+	}
 
 	onMount(() => {
-		glo.hydrate('commerce.order');
-		glo.hydrate('commerce.payment');
-		glo.hydrate('catalog.product');
-		glo.hydrate('crm.customer');
-		void glo.syncAll([
-			'commerce.order', 'commerce.payment', 'catalog.product', 'crm.customer',
-			'commerce.expense', 'inventory.adjustment', 'staff.member', 'commerce.shift',
-			'promotion'
-		]);
+		for (const type of DASHBOARD_SYNC_TYPES) {
+			glo.hydrate(type);
+		}
+
+		void (async () => {
+			await waitForHydration();
+
+			const hasCache = hasDashboardCache();
+			const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+			const lastSyncAt = getLastSyncAt();
+			const isFresh = Date.now() - lastSyncAt < AUTO_SYNC_COOLDOWN_MS;
+
+			if (hasCache) {
+				if (!isOffline && !isFresh) {
+					const kickoff = () => void runDashboardSync();
+					if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+						window.requestIdleCallback(kickoff, { timeout: 1200 });
+					} else {
+						setTimeout(kickoff, 250);
+					}
+				}
+				return;
+			}
+
+			if (!isOffline) {
+				await runDashboardSync();
+			}
+		})();
 
 		// live clock
 		const tick = () =>
@@ -71,14 +154,6 @@
 	const recent = $derived([...rows].sort((a, b) => b.atMs - a.atMs).slice(0, 8));
 	const productCount = $derived(glo.all<GloProduct, 'catalog.product'>('catalog.product').length);
 	const customerCount = $derived(glo.all<GloCustomer, 'crm.customer'>('crm.customer').length);
-
-	let clock = $state('');
-
-	function startToday() {
-		const x = new Date();
-		x.setHours(0, 0, 0, 0);
-		return x.getTime();
-	}
 
 	function statusColor(status: string): 'success' | 'info' | 'warning' | 'neutral' {
 		const s = status.toLowerCase();
@@ -152,7 +227,7 @@
 	<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
 		{#each quickActions as action (action.label)}
 			<a
-				href={action.to}
+				href={resolve(action.to)}
 				class="surface-card group flex items-center gap-3 p-4 transition-colors hover:border-[var(--ui-border-accented)]"
 			>
 				<div class="grid size-10 shrink-0 place-items-center rounded-xl {action.bg} {action.color}">
@@ -388,7 +463,7 @@
 				>
 					<h3 class="font-display text-[15px] font-semibold tracking-tight">Recent orders</h3>
 					<a
-						href="/orders"
+						href={resolve('/orders')}
 						class="text-[12.5px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
 						>View all</a
 					>
@@ -401,7 +476,7 @@
 							description="Start a sale from the POS to see orders appear here, signed and synced over Nostr."
 						>
 							{#snippet actions()}
-								<Button color="primary" size="sm" icon="lucide:scan-line" href="/pos"
+								<Button color="primary" size="sm" icon="lucide:scan-line" href={resolve('/pos')}
 									>Open POS</Button
 								>
 							{/snippet}
@@ -411,7 +486,7 @@
 					<div class="divide-y divide-[var(--ui-border-muted)]">
 						{#each recent as o (o.id)}
 							<a
-								href="/orders/{o.id}"
+								href={resolve(`/orders/${o.id}`)}
 								class="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-[var(--ui-bg-accented)]"
 							>
 								<div

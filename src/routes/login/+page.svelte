@@ -8,7 +8,6 @@
 	import { session, hasNip07Extension } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { relays } from '$nostr/relay.svelte';
-	import { glo } from '$nostr/store.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { setMode, mode } from 'mode-watcher';
 
@@ -34,25 +33,12 @@
 		relays.load();
 		hasExtension = hasNip07Extension();
 		if (session.isAuthenticated) {
-			// Check if workspace exists in IndexedDB
-			glo.hydrate('organization');
-			const orgs = glo.all('organization');
-			if (orgs.length > 0 && !tenant.state.setupComplete) {
-				// Auto-restore workspace
-				const d = orgs[0].data as Record<string, unknown>;
-				tenant.configure({
-					organizationId: orgs[0].id,
-					organizationName: (d.name as string) ?? '',
-					currency: (d.currency as string) ?? 'USD'
-				});
-				tenant.completeSetup();
-			}
 			routeAfterLogin();
 		}
 	});
 
 	function routeAfterLogin() {
-		void goto(tenant.state.setupComplete ? '/' : '/setup', { replaceState: true });
+		void goto('/', { replaceState: true });
 	}
 
 	async function handleExtension() {

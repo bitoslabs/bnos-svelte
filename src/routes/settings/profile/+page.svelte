@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { browser } from '$app/environment';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -78,11 +79,24 @@
 
 	async function copy(text: string, field: string) {
 		try {
-			await navigator.clipboard.writeText(text);
+			if (navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(text);
+			} else {
+				const input = document.createElement('textarea');
+				input.value = text;
+				input.setAttribute('readonly', '');
+				input.style.position = 'fixed';
+				input.style.opacity = '0';
+				document.body.appendChild(input);
+				input.select();
+				document.execCommand('copy');
+				document.body.removeChild(input);
+			}
 			copiedField = field;
+			toast.success('Copied to clipboard');
 			setTimeout(() => (copiedField = ''), 2000);
-		} catch {
-			toast.error('Copy failed');
+		} catch (e) {
+			toast.error('Copy failed', e instanceof Error ? e.message : undefined);
 		}
 	}
 
@@ -107,21 +121,6 @@
 	// ── identity actions ──
 	let importOpen = $state(false);
 	let importKey = $state('');
-
-	function downloadKey() {
-		if (!snap?.nsec) return;
-		const blob = new Blob(
-			[`BNOS Nostr private key\nnpub: ${snap.npub}\nnsec: ${snap.nsec}\n\nKeep this secret. Anyone with it controls your identity.`],
-			{ type: 'text/plain' }
-		);
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `bnos-key-${snap.npub.slice(0, 12)}.txt`;
-		a.click();
-		URL.revokeObjectURL(url);
-		toast.success('Key file downloaded');
-	}
 
 	function doImport() {
 		const k = importKey.trim();
@@ -172,7 +171,7 @@
 		session.logout();
 		tenant.reset();
 		toast.info('Signed out');
-		await goto('/login', { replaceState: true });
+		await goto(resolve('/login'), { replaceState: true });
 	}
 </script>
 

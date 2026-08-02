@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { tenant, makeOrganizationObject } from '$nostr/tenant.svelte';
 	import { relays } from '$nostr/relay.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { upsertOrganizationSettingsFromTenant } from '$nostr/organization-settings';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { truncateNpub, titleCase } from '$lib/utils/format';
 
@@ -13,6 +15,7 @@
 	let publishStatus = $state('');
 
 	const orgId = $derived(tenant.state.organizationId || 'org-' + (session.pubkey?.slice(0, 8) ?? 'seed'));
+	const locationId = $derived(tenant.state.locationId || 'loc-main');
 	const productCount = $derived(glo.all('catalog.product').length);
 
 	const rows = $derived([
@@ -43,9 +46,28 @@
 				currency: tenant.state.currency,
 				code: tenant.state.organizationCode || tenant.state.organizationName.slice(0, 3).toUpperCase(),
 				status: 'active'
-			} as any);
-			await glo.upsert('organization', org.data, { id: org.id });
+			} as unknown as Parameters<typeof makeOrganizationObject>[0]);
 			tenant.configure({ organizationId: orgId });
+			await glo.upsert('organization', org.data, {
+				id: org.id,
+				scope: { organizationId: org.id }
+			});
+			await glo.upsert('location', {
+				name: tenant.state.locationName || 'Main Branch',
+				code: 'main',
+				type: 'store',
+				status: 'active'
+			}, {
+				id: locationId,
+				scope: { organizationId: org.id, locationId }
+			});
+			tenant.configure({ organizationId: orgId, locationId });
+			upsertOrganizationSettingsFromTenant({
+				...tenant.state,
+				organizationId: orgId,
+				locationId,
+				locationName: tenant.state.locationName || 'Main Branch'
+			});
 
 			// Publish to relays (don't block on failure — local-first)
 			publishStatus = 'Publishing to Nostr…';
@@ -59,7 +81,7 @@
 			}
 
 			tenant.completeSetup();
-			await goto('/setup/done');
+			await goto(resolve('/setup/done'));
 		} catch (e) {
 			toast.error('Could not create workspace', e instanceof Error ? e.message : undefined);
 		} finally {

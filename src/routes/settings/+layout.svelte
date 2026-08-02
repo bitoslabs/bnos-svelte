@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/ui/Icon.svelte';
 
@@ -14,11 +15,10 @@
 		{
 			label: 'Store',
 			items: [
-				{ to: '/settings/organization', icon: 'lucide:building-2', label: 'Organization' },
+				{ to: '/settings/organization', icon: 'lucide:building-2', label: 'Workspace' },
 				{ to: '/settings/store', icon: 'lucide:store', label: 'Store profile' },
 				{ to: '/settings/general', icon: 'lucide:sliders-horizontal', label: 'General' },
 				{ to: '/settings/features', icon: 'lucide:layout-grid', label: 'Features' },
-				{ to: '/settings/branches', icon: 'lucide:map-pin', label: 'Branches' },
 				{ to: '/settings/payment-methods', icon: 'lucide:credit-card', label: 'Payment methods' },
 				{ to: '/settings/receipt', icon: 'lucide:receipt-text', label: 'Receipt' },
 				{ to: '/settings/bitcoin', icon: 'lucide:bitcoin', label: 'Bitcoin' }
@@ -69,7 +69,7 @@
 					</div>
 					{#each g.items as it (it.to)}
 						<a
-							href={it.to}
+							href={resolve(it.to)}
 							class="mb-0.5 flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors {active(
 								it.to
 							)

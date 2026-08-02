@@ -9,39 +9,16 @@
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { tenant, type BusinessModel, type BusinessType } from '$nostr/tenant.svelte';
+	import {
+		readOrganizationSettings,
+		writeOrganizationSettings,
+		upsertOrganizationSettingsFromTenant,
+		type CompanySettings as Company,
+		type BranchSettings as Branch,
+		type OrganizationSettingsSnapshot as OrgSettings
+	} from '$nostr/organization-settings';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { browser } from '$app/environment';
-
-	const KEY = 'bnos-os:settings-organization';
-
-	// ── Types ──
-	interface Company {
-		code: string;
-		name: string;
-		businessModel: BusinessModel;
-		businessType: BusinessType;
-		currency: string;
-		enableTax: boolean;
-		taxRate: number;
-	}
-
-	interface Branch {
-		id: string;
-		code: string;
-		storeId: string;
-		name: string;
-		address: string;
-		phone: string;
-		email: string;
-		status: 'active' | 'inactive';
-	}
-
-	interface OrgSettings {
-		companies: Company[];
-		branches: Branch[];
-		activeCompanyId: string;
-		activeBranchId: string;
-	}
 
 	// ── State ──
 	let companies = $state<Company[]>([]);
@@ -105,13 +82,12 @@
 
 	// ── Derived ──
 	const activeCompanyName = $derived(
-		companies.find((c) => c.code === activeCompanyId)?.name ?? ''
+		companies.find((c) => c.id === activeCompanyId)?.name ?? ''
 	);
 	const activeBranchName = $derived(
-		branches.find((b) => b.code === activeBranchId)?.name ?? ''
+		branches.find((b) => b.id === activeBranchId)?.name ?? ''
 	);
 	const companyCount = $derived(companies.length);
-	const hasCompanies = $derived(companies.length > 0);
 	const filteredSwitchBranches = $derived(
 		switchCompanyId ? branches.filter((b) => b.storeId === switchCompanyId) : []
 	);
@@ -124,19 +100,20 @@
 	function loadSettings() {
 		if (!browser) return;
 		try {
-			const raw = localStorage.getItem(KEY);
-			if (raw) {
-				const s: OrgSettings = JSON.parse(raw);
+			const s = readOrganizationSettings();
+			if (s) {
 				companies = s.companies ?? [];
 				branches = s.branches ?? [];
 				activeCompanyId = s.activeCompanyId ?? (tenant.state.organizationId || '');
 				activeBranchId = s.activeBranchId ?? (tenant.state.locationId || '');
 			} else {
 				// Seed from tenant if available
+				upsertOrganizationSettingsFromTenant(tenant.state);
 				activeCompanyId = tenant.state.organizationId || '';
 				activeBranchId = tenant.state.locationId || '';
 				if (tenant.state.organizationId && tenant.state.organizationName) {
 					companies = [{
+						id: tenant.state.organizationId,
 						code: tenant.state.organizationCode || tenant.state.organizationId,
 						name: tenant.state.organizationName,
 						businessModel: tenant.state.businessModel,
@@ -144,6 +121,18 @@
 						currency: tenant.state.currency,
 						enableTax: tenant.state.defaultTaxRate > 0,
 						taxRate: tenant.state.defaultTaxRate
+					}];
+				}
+				if (tenant.state.locationId && tenant.state.organizationId) {
+					branches = [{
+						id: tenant.state.locationId,
+						code: tenant.state.locationId,
+						storeId: tenant.state.organizationId,
+						name: tenant.state.locationName || 'Main Branch',
+						address: '',
+						phone: '',
+						email: '',
+						status: 'active'
 					}];
 				}
 			}
@@ -155,7 +144,7 @@
 	function persist() {
 		if (!browser) return;
 		const s: OrgSettings = { companies, branches, activeCompanyId, activeBranchId };
-		localStorage.setItem(KEY, JSON.stringify(s));
+		writeOrganizationSettings(s);
 	}
 
 	// ── Lifecycle ──
@@ -198,17 +187,29 @@
 	}
 
 	function syncTenant() {
-		const company = companies.find((c) => c.code === activeCompanyId);
-		const branch = branches.find((b) => b.code === activeBranchId);
+		const company = companies.find((c) => c.id === activeCompanyId);
+		const branch = branches.find((b) => b.id === activeBranchId);
 		tenant.configure({
-			organizationId: activeCompanyId,
+			organizationId: company?.id ?? '',
 			organizationCode: company?.code ?? '',
 			organizationName: company?.name ?? '',
 			businessModel: company?.businessModel ?? 'single',
 			businessType: company?.businessType ?? 'retail',
 			currency: company?.currency ?? 'USD',
 			defaultTaxRate: company?.enableTax ? company.taxRate : 0,
-			locationId: activeBranchId || null,
+			locationId: branch?.id ?? null,
+			locationName: branch?.name ?? ''
+		});
+		upsertOrganizationSettingsFromTenant({
+			...tenant.state,
+			organizationId: company?.id ?? '',
+			organizationCode: company?.code ?? '',
+			organizationName: company?.name ?? '',
+			businessModel: company?.businessModel ?? 'single',
+			businessType: company?.businessType ?? 'retail',
+			currency: company?.currency ?? 'USD',
+			defaultTaxRate: company?.enableTax ? company.taxRate : 0,
+			locationId: branch?.id ?? null,
 			locationName: branch?.name ?? ''
 		});
 	}
@@ -250,13 +251,6 @@
 			const idx = companies.findIndex((c) => c.code === editingCompanyCode);
 			if (idx >= 0) {
 				companies[idx] = { ...companies[idx], ...companyForm };
-				// If code changed, update active + branches
-				if (companyForm.code !== editingCompanyCode) {
-					if (activeCompanyId === editingCompanyCode) activeCompanyId = companyForm.code;
-					branches = branches.map((b) =>
-						b.storeId === editingCompanyCode ? { ...b, storeId: companyForm.code } : b
-					);
-				}
 			}
 			toast.success('Company updated');
 		} else {
@@ -265,13 +259,13 @@
 				toast.error('Code already used');
 				return;
 			}
-			companies = [...companies, { ...companyForm }];
+			companies = [...companies, { id: crypto.randomUUID(), ...companyForm }];
 			toast.success('Company created');
 		}
 
 		// Auto-activate first company
 		if (!activeCompanyId && companies.length === 1) {
-			activeCompanyId = companies[0].code;
+			activeCompanyId = companies[0].id;
 		}
 
 		companyModalOpen = false;
@@ -279,13 +273,13 @@
 		syncTenant();
 	}
 
-	function handleDeleteCompany(code: string) {
+	function handleDeleteCompany(id: string) {
 		if (!browser) return;
-		if (!confirm(`Delete company "${code}"? This will also remove all associated branches.`))
+		if (!confirm(`Delete company? This will also remove all associated branches.`))
 			return;
-		companies = companies.filter((c) => c.code !== code);
-		branches = branches.filter((b) => b.storeId !== code);
-		if (activeCompanyId === code) {
+		companies = companies.filter((c) => c.id !== id);
+		branches = branches.filter((b) => b.storeId !== id);
+		if (activeCompanyId === id) {
 			activeCompanyId = '';
 			activeBranchId = '';
 		}
@@ -379,7 +373,7 @@
 		if (!confirm(`Delete branch "${label}"?`)) return;
 		branches = branches.filter((b) => b.id !== id);
 		const removed = branches.find((b) => b.id === id);
-		if (removed && activeBranchId === removed.code) {
+		if (removed && activeBranchId === removed.id) {
 			activeBranchId = '';
 		}
 		persist();
@@ -390,7 +384,7 @@
 	function resetAll() {
 		if (!browser) return;
 		if (!confirm('Reset organization settings? This removes all companies and branches.')) return;
-		localStorage.removeItem(KEY);
+		writeOrganizationSettings({ companies: [], branches: [], activeCompanyId: '', activeBranchId: '' });
 		companies = [];
 		branches = [];
 		activeCompanyId = '';
@@ -401,18 +395,18 @@
 	}
 </script>
 
-<svelte:head><title>Organization · Settings</title></svelte:head>
+<svelte:head><title>Workspace · Settings</title></svelte:head>
 
 <div class="space-y-5">
 	<div>
-		<h1 class="font-display text-xl font-bold tracking-tight">Organization</h1>
+		<h1 class="font-display text-xl font-bold tracking-tight">Workspace</h1>
 		<p class="text-[12.5px] text-[var(--ui-text-muted)]">
-			Manage companies, branches, and business configuration
+			Manage workspace structure, active branch, and business configuration in one place
 		</p>
 	</div>
 
 	<!-- Active Context Card -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section id="workspace-context" class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:badge-check" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">Active context</h2>
@@ -469,7 +463,7 @@
 				</p>
 				<Select
 					bind:value={switchCompanyId}
-					options={[{ value: '', label: 'Select company…' }, ...companies.map((c) => ({ value: c.code, label: c.name }))]}
+					options={[{ value: '', label: 'Select company…' }, ...companies.map((c) => ({ value: c.id, label: c.name }))]}
 					size="sm"
 					class="w-full"
 					onchange={handleSwitchCompany}
@@ -477,7 +471,7 @@
 				{#if switchCompanyId}
 					<Select
 						bind:value={switchBranchId}
-						options={[{ value: '', label: 'Select branch…' }, ...filteredSwitchBranches.map((b) => ({ value: b.code, label: `${b.name} (${b.code})` }))]}
+						options={[{ value: '', label: 'Select branch…' }, ...filteredSwitchBranches.map((b) => ({ value: b.id, label: `${b.name} (${b.code})` }))]}
 						size="sm"
 						class="w-full"
 						onchange={handleSwitchBranch}
@@ -488,7 +482,7 @@
 	</section>
 
 	<!-- Companies List -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section id="branches" class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center justify-between gap-2 px-5 py-3">
 			<div class="flex items-center gap-2">
 				<Icon name="lucide:building-2" class="size-4 text-primary-500" />
@@ -512,12 +506,12 @@
 				</EmptyState>
 			</div>
 		{:else}
-			{#each companies as company (company.code)}
+			{#each companies as company (company.id)}
 				<div class="px-5 py-4">
 					<div class="flex items-start justify-between gap-3">
 						<div class="flex items-start gap-3 min-w-0">
 							<div
-								class="grid size-9 shrink-0 place-items-center rounded-xl text-[12px] font-bold text-white {activeCompanyId === company.code ? 'bg-primary-500' : 'bg-[var(--ui-text-dimmed)]'}"
+								class="grid size-9 shrink-0 place-items-center rounded-xl text-[12px] font-bold text-white {activeCompanyId === company.id ? 'bg-primary-500' : 'bg-[var(--ui-text-dimmed)]'}"
 							>
 								{company.name?.charAt(0)?.toUpperCase() || '?'}
 							</div>
@@ -529,7 +523,7 @@
 									<span class="text-[10px] text-[var(--ui-text-muted)]">{company.businessModel}</span>
 									<span class="text-[10px] text-[var(--ui-text-dimmed)]">•</span>
 									<span class="text-[10px] text-[var(--ui-text-muted)]">{company.currency}</span>
-									{#if activeCompanyId === company.code}
+									{#if activeCompanyId === company.id}
 										<Badge color="success">Active</Badge>
 									{/if}
 								</div>
@@ -547,7 +541,7 @@
 								variant="ghost"
 								size="icon-sm"
 								icon="lucide:trash-2"
-								onclick={() => handleDeleteCompany(company.code)}
+								onclick={() => handleDeleteCompany(company.id)}
 							/>
 						</div>
 					</div>
@@ -556,18 +550,18 @@
 					<div class="mt-3 ml-12">
 						<div class="mb-1.5 flex items-center justify-between">
 							<p class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-								Branches <span class="font-normal">({getBranchesForCompany(company.code).length})</span>
+								Branches <span class="font-normal">({getBranchesForCompany(company.id).length})</span>
 							</p>
 							<button
 								type="button"
 								class="flex items-center gap-0.5 text-[10px] font-semibold text-primary-600 hover:text-primary-500 dark:text-primary-400"
-								onclick={() => openBranchModal(company.code)}
+								onclick={() => openBranchModal(company.id)}
 							>
 								<Icon name="lucide:plus" class="size-[10px]" />
 								Add branch
 							</button>
 						</div>
-						{#each getBranchesForCompany(company.code) as branch (branch.id)}
+						{#each getBranchesForCompany(company.id) as branch (branch.id)}
 							<div
 								class="group flex items-center justify-between rounded-lg px-2.5 py-1.5 transition-colors hover:bg-[var(--ui-bg-accented)]"
 							>
@@ -576,7 +570,7 @@
 									<span class="truncate text-[12px] text-[var(--ui-text-muted)]">{branch.name}</span>
 									<span class="font-mono text-[10px] text-[var(--ui-text-dimmed)]">{branch.code}</span>
 									<Badge color={branch.status === 'active' ? 'success' : 'neutral'}>{branch.status}</Badge>
-									{#if activeBranchId === branch.code}
+									{#if activeBranchId === branch.id}
 										<Badge color="info">Active</Badge>
 									{/if}
 								</div>
@@ -584,7 +578,7 @@
 									<button
 										type="button"
 										class="grid size-5 place-items-center rounded text-[var(--ui-text-dimmed)] transition-colors hover:text-sky-500"
-										onclick={() => openBranchModal(company.code, branch)}
+										onclick={() => openBranchModal(company.id, branch)}
 									>
 										<Icon name="lucide:pencil" class="size-[10px]" />
 									</button>
@@ -598,7 +592,7 @@
 								</div>
 							</div>
 						{/each}
-						{#if getBranchesForCompany(company.code).length === 0}
+						{#if getBranchesForCompany(company.id).length === 0}
 							<p class="px-2.5 py-1.5 text-[11px] text-[var(--ui-text-dimmed)] italic">No branches</p>
 						{/if}
 					</div>

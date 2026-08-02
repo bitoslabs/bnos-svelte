@@ -13,6 +13,12 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { warmRelays } from '$nostr/client';
 	import { glo } from '$nostr/store.svelte';
+	import {
+		hasActiveWorkspaceContext,
+		markWorkspaceSyncAt,
+		resolveWorkspace,
+		shouldRunWorkspaceSync
+	} from '$nostr/workspace.svelte';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import { sidebarState, loadCollapsed as loadSidebarCollapsed } from '$lib/sidebar-state.svelte';
 	import AppTopbar from '$lib/components/AppTopbar.svelte';
@@ -25,6 +31,8 @@
 
 	let { children } = $props();
 	let drawerOpen = $state(false);
+	let workspaceResolutionPending = false;
+	let workspaceResolutionPubkey = '';
 
 	const isPublicRoute = $derived(
 		page.url.pathname === '/login' || page.url.pathname.startsWith('/setup')
@@ -45,75 +53,26 @@
 
 	$effect(() => {
 		if (isPublicRoute || !session.hydrated || !tenant.hydrated) return;
+		if (workspaceResolutionPubkey !== (session.pubkey ?? '')) {
+			workspaceResolutionPubkey = session.pubkey ?? '';
+			workspaceResolutionPending = false;
+		}
 		if (!session.isAuthenticated) {
 			void goto(resolve('/login'), { replaceState: true });
-		} else if (!tenant.state.setupComplete) {
-			// New device: localStorage empty, check IndexedDB + relays before redirecting to setup
-			glo.hydrate('organization');
-			glo.hydrate('location');
+		} else if (!tenant.state.setupComplete && !workspaceResolutionPending) {
+			workspaceResolutionPending = true;
+			postLoginSyncState = 'checking-workspace';
 			queueMicrotask(async () => {
-				// Step 1: Wait for IndexedDB hydration (local cache, fast)
-				let attempts = 0;
-				while (!glo.isHydrated('organization') && attempts < 20) {
-					await new Promise(r => setTimeout(r, 100));
-					attempts++;
-				}
-				let orgs = glo.all('organization');
-				// Step 2: If not in IndexedDB, sync from relays (new device)
-				if (orgs.length === 0 && session.pubkey) {
-					// Show sync overlay while pulling from relays
-					postLoginSyncState = 'syncing';
-					// Wait for relays to be ready (max 5s)
-					let relayWait = 0;
-					while (!relays.hydrated && relayWait < 50) {
-						await new Promise(r => setTimeout(r, 100));
-						relayWait++;
+				const workspace = await resolveWorkspace();
+				workspaceResolutionPending = false;
+				if (workspace.found) {
+					postLoginSyncDone = false;
+					postLoginSyncState = workspace.source === 'relay' ? 'done' : 'idle';
+					if (workspace.source === 'relay') {
+						setTimeout(() => (postLoginSyncState = 'idle'), 2000);
 					}
-					// Warm relay connections
-					try { await warmRelays(); } catch {}
-					// Small delay for connections to establish
-					await new Promise(r => setTimeout(r, 500));
-					// Try syncing org + all key types
-					try {
-						await glo.sync('organization');
-						await glo.sync('location');
-						// Also sync key business data
-						await glo.sync('catalog.product');
-						await glo.sync('commerce.order');
-						await glo.sync('crm.customer');
-						await glo.sync('commerce.payment');
-						// Re-hydrate after sync
-						glo.hydrate('organization');
-						glo.hydrate('location');
-						await new Promise(r => setTimeout(r, 500));
-						orgs = glo.all('organization');
-					} catch { /* network error */ }
-					postLoginSyncState = 'idle';
-				}
-				// Step 3: Check again after relay sync
-				if (orgs.length > 0) {
-					// Workspace found — restore tenant context
-					const org = orgs[0];
-					const d = org.data as Record<string, unknown>;
-					tenant.configure({
-						organizationId: org.id,
-						organizationName: (d.name as string) ?? '',
-						organizationCode: (d.code as string) ?? '',
-						currency: (d.currency as string) ?? 'USD'
-					});
-					tenant.completeSetup();
-					const locations = glo.all('location');
-					if (locations.length > 0) {
-						const loc = locations[0];
-						tenant.configure({
-							locationId: loc.id,
-							locationName: ((loc.data as Record<string, unknown>).name as string) ?? 'Main'
-						});
-					}
-					// Trigger full data sync in background
-					postLoginSyncDone = false; // reset so post-login sync effect fires
 				} else {
-					// No workspace found locally or on relays → genuine new user → go to setup
+					postLoginSyncState = 'idle';
 					void goto(resolve('/setup'), { replaceState: true });
 				}
 			});
@@ -122,7 +81,7 @@
 
 	// Sync all data from relays once after login (new device / fresh session)
 	let postLoginSyncDone = false;
-	let postLoginSyncState = $state<'idle' | 'syncing' | 'done'>('idle');
+	let postLoginSyncState = $state<'idle' | 'checking-workspace' | 'done'>('idle');
 	const ALL_DATA_TYPES = [
 		'organization',
 		'catalog.product',
@@ -152,8 +111,8 @@
 	$effect(() => {
 		if (!session.isAuthenticated || !tenant.hydrated || !relays.hydrated) return;
 		if (postLoginSyncDone) return;
+		if (!hasActiveWorkspaceContext()) return;
 		postLoginSyncDone = true;
-		postLoginSyncState = 'syncing';
 
 		void warmRelays();
 
@@ -161,7 +120,7 @@
 			glo.hydrate(type);
 		}
 
-		if (relays.online && session.pubkey) {
+		if (relays.online && session.pubkey && shouldRunWorkspaceSync()) {
 			void glo.syncAll(ALL_DATA_TYPES).then(() => {
 				for (const type of ALL_DATA_TYPES) {
 					glo.hydrate(type);
@@ -188,15 +147,13 @@
 						locationName: ((loc.data as Record<string, unknown>).name as string) ?? 'Main'
 					});
 				}
-				postLoginSyncState = 'done';
-				setTimeout(() => (postLoginSyncState = 'idle'), 3000);
+				markWorkspaceSyncAt();
+				postLoginSyncState = 'idle';
 			}).catch(() => {
-				postLoginSyncState = 'done';
-				setTimeout(() => (postLoginSyncState = 'idle'), 3000);
+				postLoginSyncState = 'idle';
 			});
 		} else {
-			postLoginSyncState = 'done';
-			setTimeout(() => (postLoginSyncState = 'idle'), 2000);
+			postLoginSyncState = 'idle';
 		}
 	});
 
@@ -264,7 +221,7 @@
 	{/if}
 {/if}
 
-{#if !isPublicRoute && postLoginSyncState === 'syncing'}
+{#if !isPublicRoute && postLoginSyncState === 'checking-workspace'}
 	<div class="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--ui-bg)]/80 backdrop-blur-sm">
 		<div class="flex flex-col items-center gap-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--surface-bg)] p-8 shadow-2xl">
 			<div class="relative">
@@ -274,17 +231,10 @@
 				</div>
 			</div>
 			<div class="text-center">
-				<p class="font-display text-[15px] font-bold">Syncing workspace</p>
-				<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">Pulling your data from Nostr relays…</p>
+				<p class="font-display text-[15px] font-bold">Checking workspace</p>
+				<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">Restoring your active workspace and branch…</p>
 			</div>
 		</div>
-	</div>
-{/if}
-
-{#if !isPublicRoute && postLoginSyncState === 'done'}
-	<div class="fixed bottom-20 right-4 z-50 flex items-center gap-2 rounded-xl border border-[var(--tone-success-bg)] bg-[var(--surface-bg)] px-4 py-2.5 shadow-lg animate-rise lg:bottom-4">
-		<Icon name="lucide:check-circle-2" class="size-5 text-[var(--tone-success-text)]" />
-		<span class="text-[13px] font-semibold">Workspace synced</span>
 	</div>
 {/if}
 

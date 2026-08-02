@@ -32,16 +32,16 @@ import {
 	isGloObject,
 	type GloObject,
 	type GloObjectType,
+	type GloScope,
 	type GloVisibility,
 	type KnownGloObjectType
 } from '@bitos/bnos-core/glo';
 import { signNostrEvent, type NostrEvent } from '@bitos/bnos-core';
-import { get as idbGet, set as idbSet, del as idbDel, keys as idbKeys } from 'idb-keyval';
+import { get as idbGet, set as idbSet } from 'idb-keyval';
 import { session } from './session.svelte';
 import { relays } from './relay.svelte';
 import { tenant } from './tenant.svelte';
 import { fetchEvents, sendEvent } from './client';
-import { toast } from '$lib/stores/toast.svelte';
 
 const STORAGE_PREFIX = 'bnos-os:glo:';
 
@@ -282,14 +282,23 @@ class GloStore {
 	upsert = async <TData>(
 		type: string,
 		data: TData,
-		opts: { id?: string; visibility?: GloVisibility; extensions?: Record<string, unknown> } = {}
+		opts: {
+			id?: string;
+			visibility?: GloVisibility;
+			extensions?: Record<string, unknown>;
+			scope?: Partial<GloScope>;
+		} = {}
 	): Promise<GloObject<TData, string>> => {
 		const id = opts.id ?? uid();
 		const existing = this.collections.find(type, id);
 		const object = createGloObject<TData, string>({
 			type,
 			id,
-			scope: { ...tenant.scope, ownerPubkey: session.pubkey ?? undefined },
+			scope: {
+				...tenant.scope,
+				...(opts.scope ?? {}),
+				ownerPubkey: opts.scope?.ownerPubkey ?? session.pubkey ?? undefined
+			},
 			visibility: opts.visibility ?? existing?.visibility ?? 'organization',
 			data,
 			extensions: opts.extensions as never
