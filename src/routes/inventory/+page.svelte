@@ -4,6 +4,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import ListToolbar from '$lib/components/list/ListToolbar.svelte';
@@ -15,20 +16,217 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, relativeTime } from '$lib/utils/format';
-	import { TYPE, statusColor, type StockAdjustment, type Supplier, type PurchaseOrder } from '$lib/domain';
+	import { TYPE, statusColor, type StockAdjustment, type Supplier, type PurchaseOrder, type Product } from '$lib/domain';
 
-	type Tab = 'adjustments' | 'suppliers' | 'orders';
-	let tab = $state<Tab>('adjustments');
+	type Tab = 'overview' | 'counts' | 'adjustments' | 'suppliers' | 'orders';
+	let tab = $state<Tab>('overview');
 
 	onMount(() => {
+		glo.hydrate(TYPE.product);
 		glo.hydrate(TYPE.adjustment);
 		glo.hydrate(TYPE.supplier);
 		glo.hydrate(TYPE.purchaseOrder);
-		void glo.syncAll([TYPE.adjustment, TYPE.supplier, TYPE.purchaseOrder]);
+		void glo.syncAll([TYPE.product, TYPE.adjustment, TYPE.supplier, TYPE.purchaseOrder]);
 	});
 
 	const currency = $derived(tenant.state.currency);
+
+	// ── Tracked products (for Overview & Counts) ──
+	const allProducts = $derived(glo.all<Product, typeof TYPE.product>(TYPE.product));
+	const trackedProducts = $derived(
+		allProducts.filter((p) => p.data.trackInventory === true)
+	);
+
+	// ── Mock stock levels (in a real app, from inventory records) ──
+	// For now, use product.inventory or default 0
+	function getStock(p: Product): number {
+		return ((p as any).stockLevel ?? 0) as number;
+	}
+	function getLowThreshold(p: Product): number {
+		return (p.inventory?.lowStockThreshold ?? 5) as number;
+	}
+	function stockStatus(p: Product): 'in_stock' | 'low_stock' | 'out_of_stock' {
+		const s = getStock(p);
+		if (s <= 0) return 'out_of_stock';
+		if (s <= getLowThreshold(p)) return 'low_stock';
+		return 'in_stock';
+	}
+
+	// ── Stats cards ──
+	const stats = $derived.by(() => {
+		const total = trackedProducts.length;
+		let inStock = 0, lowStock = 0, outOfStock = 0;
+		for (const p of trackedProducts) {
+			const st = stockStatus(p.data);
+			if (st === 'in_stock') inStock++;
+			else if (st === 'low_stock') lowStock++;
+			else outOfStock++;
+		}
+		return { total, inStock, lowStock, outOfStock };
+	});
+
+	// ── Stock count sessions (localStorage) ──
+	const COUNTS_KEY = 'bnos-os:stock-counts';
+	type CountSession = {
+		id: string;
+		date: string;
+		status: 'draft' | 'in_progress' | 'completed';
+		items: { productId: string; productName: string; expected: number; counted: number | null }[];
+	};
+	let countSessions = $state<CountSession[]>([]);
+	let activeCountId = $state<string | null>(null);
+
+	function loadCounts() {
+		try {
+			const raw = localStorage.getItem(COUNTS_KEY);
+			countSessions = raw ? JSON.parse(raw) : [];
+		} catch { countSessions = []; }
+	}
+	function saveCounts() {
+		localStorage.setItem(COUNTS_KEY, JSON.stringify(countSessions));
+	}
+	function newCount() {
+		const items = trackedProducts.map((p) => ({
+			productId: p.id,
+			productName: String(p.data.name ?? 'Unknown'),
+			expected: getStock(p.data),
+			counted: null
+		}));
+		const session: CountSession = {
+			id: 'cnt-' + Date.now().toString().slice(-8),
+			date: new Date().toISOString(),
+			status: 'in_progress',
+			items
+		};
+		countSessions = [session, ...countSessions];
+		saveCounts();
+		activeCountId = session.id;
+	}
+	function activeCount() {
+		return countSessions.find((s) => s.id === activeCountId) ?? null;
+	}
+	function setCounted(productId: string, val: number | null) {
+		const s = activeCount();
+		if (!s) return;
+		const item = s.items.find((i) => i.productId === productId);
+		if (item) item.counted = val;
+		saveCounts();
+		countSessions = [...countSessions];
+	}
+	async function completeCount() {
+		const s = activeCount();
+		if (!s) return;
+
+		// Write adjustments for each variance found
+		for (const item of s.items) {
+			if (item.counted === null) continue;
+			const diff = item.counted - item.expected;
+			if (diff === 0) continue;
+
+			const adjType = diff > 0 ? 'increase' : 'decrease';
+			const adjQty = Math.abs(diff);
+
+			try {
+				await glo.upsert<StockAdjustment>(TYPE.adjustment, {
+					productId: item.productId,
+					productName: item.productName,
+					type: adjType,
+					quantity: adjQty,
+					reason: 'Stock count adjustment',
+					referenceType: 'count',
+					occurredAt: new Date().toISOString()
+				});
+
+				// Update product stock to counted value
+				const product = glo.get(TYPE.product, item.productId);
+				if (product) {
+					await glo.upsert(TYPE.product, {
+						...(product.data as Record<string, unknown>),
+						stockLevel: item.counted
+					}, { id: product.id });
+				}
+			} catch (e) {
+				console.warn('[inventory] count adjustment failed for', item.productId, e);
+			}
+		}
+
+		s.status = 'completed';
+		saveCounts();
+		countSessions = [...countSessions];
+		activeCountId = null;
+		toast.success('Stock count completed');
+	}
+	function deleteCount(id: string) {
+		countSessions = countSessions.filter((s) => s.id !== id);
+		if (activeCountId === id) activeCountId = null;
+		saveCounts();
+	}
+
+	// ── Overview filtering ──
+	let overviewSearch = $state('');
+	let overviewFilter = $state<'all' | 'in_stock' | 'low_stock' | 'out_of_stock'>('all');
+
+	const overviewList = $derived.by(() => {
+		const q = overviewSearch.toLowerCase();
+		return trackedProducts
+			.filter((p) => {
+				const name = String(p.data.name ?? '').toLowerCase();
+				if (q && !name.includes(q)) return false;
+				if (overviewFilter !== 'all' && stockStatus(p.data) !== overviewFilter) return false;
+				return true;
+			})
+			.sort((a, b) => String(a.data.name ?? '').localeCompare(String(b.data.name ?? '')));
+	});
+
+	// ── Quick adjust dialog ──
+	let adjDlgOpen = $state(false);
+	let adjProduct = $state<{ id: string; name: string }>({ id: '', name: '' });
+	let adjQty = $state(1);
+	let adjDir = $state<'increase' | 'decrease'>('increase');
+	let adjReason = $state('');
+
+	function openQuickAdjust(id: string, name: string) {
+		adjProduct = { id, name };
+		adjQty = 1;
+		adjDir = 'increase';
+		adjReason = '';
+		adjDlgOpen = true;
+	}
+	async function saveQuickAdjust() {
+		try {
+			await glo.upsert<StockAdjustment>(TYPE.adjustment, {
+				productId: adjProduct.id,
+				productName: adjProduct.name,
+				type: adjDir,
+				quantity: Number(adjQty) || 0,
+				reason: adjReason.trim() || 'Manual adjustment',
+				occurredAt: new Date().toISOString()
+			});
+
+			// After saving adjustment, update product stock
+			const product = glo.get(TYPE.product, adjProduct.id);
+			if (product) {
+				const currentStock = (product.data as any).stockLevel ?? 0;
+				const adjQtyNum = Math.abs(Number(adjQty) || 0);
+				const newStock = adjDir === 'increase'
+					? currentStock + adjQtyNum
+					: Math.max(0, currentStock - adjQtyNum);
+				await glo.upsert(TYPE.product, {
+					...(product.data as Record<string, unknown>),
+					stockLevel: newStock
+				}, { id: product.id });
+			}
+
+			toast.success('Adjustment saved');
+			adjDlgOpen = false;
+		} catch (e) {
+			toast.error('Save failed', e instanceof Error ? e.message : undefined);
+		}
+	}
+
 	const tabs: { id: Tab; label: string; icon: string; count: () => number }[] = [
+		{ id: 'overview', label: 'Overview', icon: 'lucide:layout-dashboard', count: () => trackedProducts.length },
+		{ id: 'counts', label: 'Counts', icon: 'lucide:clipboard-check', count: () => countSessions.length },
 		{ id: 'adjustments', label: 'Adjustments', icon: 'lucide:arrow-up-down', count: () => glo.all(TYPE.adjustment).length },
 		{ id: 'suppliers', label: 'Suppliers', icon: 'lucide:truck', count: () => glo.all(TYPE.supplier).length },
 		{ id: 'orders', label: 'Purchase Orders', icon: 'lucide:clipboard-list', count: () => glo.all(TYPE.purchaseOrder).length }
@@ -58,16 +256,51 @@
 	let dlgOpen = $state(false);
 	let dlgKind = $state<Tab>('adjustments');
 	let aProduct = $state(''); let aQty = $state(1); let aType = $state<'increase' | 'decrease'>('increase'); let aReason = $state('');
+	let adjProductSearch = $state('');
+	let adjProductResults = $derived(
+		adjProductSearch.trim()
+			? allProducts.filter((p) => String(p.data.name ?? '').toLowerCase().includes(adjProductSearch.trim().toLowerCase())).slice(0, 8)
+			: []
+	);
+	let adjSelectedProduct = $state<{ id: string; name: string } | null>(null);
 	let sName = $state(''); let sContact = $state(''); let sPhone = $state(''); let sTerms = $state('');
-	let poSupplier = $state(''); let poLines = $state(''); // "Product x5@1000" lines
+	let poSupplier = $state(''); let poLines = $state('');
 
-	function openCreate(t: Tab) { dlgKind = t; aProduct = ''; aQty = 1; aType = 'increase'; aReason = ''; sName = sContact = sPhone = sTerms = ''; poSupplier = ''; poLines = ''; dlgOpen = true; }
+	function openCreate(t: Tab) {
+		if (t === 'overview' || t === 'counts') return;
+		dlgKind = t; aProduct = ''; aQty = 1; aType = 'increase'; aReason = ''; adjSelectedProduct = null; adjProductSearch = ''; sName = sContact = sPhone = sTerms = ''; poSupplier = ''; poLines = ''; dlgOpen = true;
+	}
 
 	async function save() {
 		try {
 			if (dlgKind === 'adjustments') {
-				if (!aProduct.trim()) return toast.warning('Product required');
-				await glo.upsert<StockAdjustment>(TYPE.adjustment, { productName: aProduct.trim(), type: aType, quantity: Number(aQty) || 0, reason: aReason.trim() || 'Manual adjustment', occurredAt: new Date().toISOString() });
+				const prodId = adjSelectedProduct?.id ?? null;
+				const prodName = adjSelectedProduct?.name ?? aProduct.trim();
+				if (!prodName) return toast.warning('Select a product');
+				// Try to find the product by id or name for stock update
+				const matchedProduct = prodId
+					? allProducts.find((p) => p.id === prodId)
+					: allProducts.find((p) => String(p.data.name ?? '').toLowerCase() === prodName.toLowerCase());
+				await glo.upsert<StockAdjustment>(TYPE.adjustment, {
+					productId: matchedProduct?.id ?? prodId ?? undefined,
+					productName: prodName,
+					type: aType,
+					quantity: Number(aQty) || 0,
+					reason: aReason.trim() || 'Manual adjustment',
+					occurredAt: new Date().toISOString()
+				});
+				// Update product stock if matched
+				if (matchedProduct) {
+					const currentStock = (matchedProduct.data as any).stockLevel ?? 0;
+					const adjQtyNum = Math.abs(Number(aQty) || 0);
+					const newStock = aType === 'increase'
+						? currentStock + adjQtyNum
+						: Math.max(0, currentStock - adjQtyNum);
+					await glo.upsert(TYPE.product, {
+						...(matchedProduct.data as Record<string, unknown>),
+						stockLevel: newStock
+					}, { id: matchedProduct.id });
+				}
 			} else if (dlgKind === 'suppliers') {
 				if (!sName.trim()) return toast.warning('Name required');
 				await glo.upsert<Supplier>(TYPE.supplier, { name: sName.trim(), contactName: sContact.trim() || undefined, phone: sPhone.trim() || undefined, paymentTerms: sTerms.trim() || undefined, status: 'active' });
@@ -83,7 +316,10 @@
 		} catch (e) { toast.error('Save failed', e instanceof Error ? e.message : undefined); }
 	}
 	function del(t: string, id: string) { glo.remove(t, id); toast.info('Removed'); }
-	const dlgTitle = $derived({ adjustments: 'New stock adjustment', suppliers: 'Add supplier', orders: 'New purchase order' }[dlgKind]);
+	const dlgTitle = $derived({ adjustments: 'New stock adjustment', suppliers: 'Add supplier', orders: 'New purchase order' }[dlgKind as 'adjustments' | 'suppliers' | 'orders'] ?? '');
+
+	// load counts on mount
+	$effect(() => { loadCounts(); });
 </script>
 
 <svelte:head><title>BNOS · Inventory</title></svelte:head>
@@ -92,10 +328,38 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">Inventory</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Stock, suppliers & purchase orders</p>
+			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Stock, counts, suppliers & purchase orders</p>
 		</div>
-		<Button color="primary" icon="lucide:plus" onclick={() => openCreate(tab)}>New {tab === 'adjustments' ? 'adjustment' : tab === 'suppliers' ? 'supplier' : 'order'}</Button>
+		{#if tab === 'overview'}
+			<Button color="primary" icon="lucide:arrow-up-down" onclick={() => openCreate('adjustments')}>New adjustment</Button>
+		{:else if tab === 'counts'}
+			<Button color="primary" icon="lucide:plus" onclick={newCount}>New Count</Button>
+		{:else}
+			<Button color="primary" icon="lucide:plus" onclick={() => openCreate(tab)}>New {tab === 'adjustments' ? 'adjustment' : tab === 'suppliers' ? 'supplier' : 'order'}</Button>
+		{/if}
 	</div>
+
+	<!-- Stats cards -->
+	{#if trackedProducts.length > 0}
+		<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+			<div class="data-panel flex items-center gap-3 p-4">
+				<div class="flex size-10 items-center justify-center rounded-xl bg-[var(--ui-bg-accented)]"><Icon name="lucide:package" class="size-5 text-[var(--ui-text-muted)]" /></div>
+				<div><div class="text-[11px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">Total Products</div><div class="text-lg font-bold tabular-nums">{stats.total}</div></div>
+			</div>
+			<div class="data-panel flex items-center gap-3 p-4">
+				<div class="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10"><Icon name="lucide:check-circle" class="size-5 text-emerald-500" /></div>
+				<div><div class="text-[11px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">In Stock</div><div class="text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{stats.inStock}</div></div>
+			</div>
+			<div class="data-panel flex items-center gap-3 p-4">
+				<div class="flex size-10 items-center justify-center rounded-xl bg-amber-500/10"><Icon name="lucide:alert-triangle" class="size-5 text-amber-500" /></div>
+				<div><div class="text-[11px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">Low Stock</div><div class="text-lg font-bold tabular-nums text-amber-600 dark:text-amber-400">{stats.lowStock}</div></div>
+			</div>
+			<div class="data-panel flex items-center gap-3 p-4">
+				<div class="flex size-10 items-center justify-center rounded-xl bg-rose-500/10"><Icon name="lucide:x-circle" class="size-5 text-rose-500" /></div>
+				<div><div class="text-[11px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">Out of Stock</div><div class="text-lg font-bold tabular-nums text-rose-600 dark:text-rose-400">{stats.outOfStock}</div></div>
+			</div>
+		</div>
+	{/if}
 
 	<div class="segmented inline-flex w-fit gap-1 p-1">
 		{#each tabs as t (t.id)}
@@ -105,7 +369,148 @@
 		{/each}
 	</div>
 
-	{#if tab === 'adjustments'}
+	<!-- ── OVERVIEW TAB ── -->
+	{#if tab === 'overview'}
+		{#if trackedProducts.length === 0}
+			<EmptyState icon="lucide:layout-dashboard" title="No tracked products" description="Enable 'Track inventory' on products to see stock overview.">
+			</EmptyState>
+		{:else}
+			<!-- Search + filter -->
+			<div class="flex flex-wrap items-center gap-2">
+				<div class="flex-1 min-w-[200px]"><Input bind:value={overviewSearch} icon="lucide:search" placeholder="Search product…" class="w-full" /></div>
+				<Select bind:value={overviewFilter} options={[
+					{ value: 'all', label: 'All' },
+					{ value: 'in_stock', label: 'In Stock' },
+					{ value: 'low_stock', label: 'Low Stock' },
+					{ value: 'out_of_stock', label: 'Out of Stock' }
+				]} />
+			</div>
+
+			{#if overviewList.length === 0}
+				<EmptyState icon="lucide:search-x" title="No products match" description="Try a different search or filter." />
+			{:else}
+				<div class="data-panel">
+					<div class="overflow-x-auto">
+						<table class="table-surface w-full text-left">
+							<thead><tr>
+								<th class="px-5 py-2.5">Product</th>
+								<th class="px-5 py-2.5">SKU</th>
+								<th class="px-5 py-2.5 text-right">Price</th>
+								<th class="px-5 py-2.5 text-right">Stock</th>
+								<th class="px-5 py-2.5">Status</th>
+								<th class="px-5 py-2.5 text-right">Value</th>
+								<th class="w-10 px-5 py-2.5"></th>
+							</tr></thead>
+							<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+								{#each overviewList as p (p.id)}
+									{@const st = stockStatus(p.data)}
+									{@const stock = getStock(p.data)}
+									<tr>
+										<td class="px-5 py-3">
+											<div class="flex items-center gap-2">
+												{#if (p.data as any).image}
+													<img src={(p.data as any).image} alt="" class="size-8 rounded-lg object-cover" />
+												{/if}
+												<span class="font-semibold">{p.data.name}</span>
+											</div>
+										</td>
+										<td class="px-5 py-3 font-mono text-[11.5px] text-[var(--ui-text-dimmed)]">{p.data.sku ?? '—'}</td>
+										<td class="px-5 py-3 text-right tabular-nums">{formatMoney((p.data as any).price ?? 0, (p.data as any).currency ?? currency)}</td>
+										<td class="px-5 py-3 text-right"><Badge color={st === 'in_stock' ? 'success' : st === 'low_stock' ? 'warning' : 'error'}>{stock}</Badge></td>
+										<td class="px-5 py-3">
+											{#if st === 'in_stock'}<Badge color="success">In Stock</Badge>
+											{:else if st === 'low_stock'}<Badge color="warning">Low Stock</Badge>
+											{:else}<Badge color="error">Out of Stock</Badge>{/if}
+										</td>
+										<td class="px-5 py-3 text-right font-semibold tabular-nums">{formatMoney(stock * ((p.data as any).price ?? 0), currency)}</td>
+										<td class="px-5 py-3 text-right">
+											<Button size="sm" variant="subtle" icon="lucide:arrow-up-down" onclick={() => openQuickAdjust(p.id, String(p.data.name ?? 'Unknown'))}>Adjust</Button>
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			{/if}
+		{/if}
+
+	<!-- ── COUNTS TAB ── -->
+	{:else if tab === 'counts'}
+		{#if !activeCountId && countSessions.length === 0}
+			<EmptyState icon="lucide:clipboard-check" title="No stock counts" description="Start a stocktake session to reconcile inventory.">
+				{#snippet actions()}<Button color="primary" size="sm" icon="lucide:plus" onclick={newCount}>New Count</Button>{/snippet}
+			</EmptyState>
+		{:else if activeCountId && activeCount()}
+			{@const ac = activeCount()!}
+			<!-- Count form -->
+			<div class="flex items-center justify-between gap-3">
+				<div>
+					<h2 class="font-display text-base font-bold">{ac.id}</h2>
+					<p class="text-[12px] text-[var(--ui-text-muted)]">{relativeTime(ac.date)} · {ac.items.filter((i) => i.counted !== null).length}/{ac.items.length} counted</p>
+				</div>
+				<div class="flex gap-2">
+					<Button color="neutral" variant="ghost" onclick={() => (activeCountId = null)}>Back</Button>
+					<Button color="primary" icon="lucide:check" onclick={completeCount}>Complete</Button>
+				</div>
+			</div>
+			<div class="data-panel">
+				<table class="table-surface w-full text-left">
+					<thead><tr>
+						<th class="px-5 py-2.5">Product</th>
+						<th class="px-5 py-2.5 text-right">Expected</th>
+						<th class="px-5 py-2.5 text-right">Counted</th>
+						<th class="px-5 py-2.5 text-right">Diff</th>
+					</tr></thead>
+					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+						{#each ac.items as item (item.productId)}
+							{@const diff = item.counted !== null ? item.counted - item.expected : null}
+							<tr>
+								<td class="px-5 py-3 font-semibold">{item.productName}</td>
+								<td class="px-5 py-3 text-right tabular-nums text-[var(--ui-text-muted)]">{item.expected}</td>
+								<td class="px-5 py-3 text-right">
+									<input type="number" value={item.counted ?? ''} oninput={(e) => setCounted(item.productId, e.currentTarget.value === '' ? null : Number(e.currentTarget.value))}
+										class="w-20 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2 py-1 text-right text-[13px] focus:outline-none focus:border-[var(--ui-color-primary-500)]" />
+								</td>
+								<td class="px-5 py-3 text-right tabular-nums">
+									{#if diff === null}<span class="text-[var(--ui-text-dimmed)]">—</span>
+									{:else if diff === 0}<span class="text-[var(--ui-text-muted)]">0</span>
+									{:else if diff! > 0}<span class="font-semibold text-emerald-600 dark:text-emerald-400">+{diff}</span>
+									{:else}<span class="font-semibold text-rose-600 dark:text-rose-400">{diff}</span>{/if}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{:else}
+			<!-- Session list -->
+			<div class="data-panel">
+				<table class="table-surface w-full text-left">
+					<thead><tr>
+						<th class="px-5 py-2.5">Session</th>
+						<th class="px-5 py-2.5">Date</th>
+						<th class="px-5 py-2.5">Status</th>
+						<th class="px-5 py-2.5 text-right">Progress</th>
+						<th class="w-10 px-5 py-2.5"></th>
+					</tr></thead>
+					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+						{#each countSessions as s (s.id)}
+							<tr class="cursor-pointer hover:bg-[var(--ui-bg-accented)]" onclick={() => (activeCountId = s.id)}>
+								<td class="px-5 py-3 font-mono text-[12.5px] font-semibold">{s.id}</td>
+								<td class="px-5 py-3 text-[var(--ui-text-muted)]">{relativeTime(s.date)}</td>
+								<td class="px-5 py-3"><Badge color={s.status === 'completed' ? 'success' : s.status === 'in_progress' ? 'info' : 'neutral'}>{s.status.replace('_', ' ')}</Badge></td>
+								<td class="px-5 py-3 text-right tabular-nums">{s.items.filter((i) => i.counted !== null).length}/{s.items.length}</td>
+								<td class="px-5 py-3 text-right"><RowActions actions={[[{ label: 'Delete', icon: 'lucide:trash-2', danger: true, onSelect: () => deleteCount(s.id) }]]} /></td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+
+	<!-- ── ADJUSTMENTS TAB ── -->
+	{:else if tab === 'adjustments'}
 		{#if adjustments.length || adjCtrl.search}<ListToolbar bind:search={adjCtrl.search} bind:sortKey={adjCtrl.sortKey} bind:sortDir={adjCtrl.sortDir} viewMode={adjCtrl.viewMode} sortItems={adjCtrl.sortItems} allowViewModes={['table']} applySort={adjCtrl.applySort} searchPlaceholder="Search product…" />{/if}
 		{#if adjCtrl.list.length === 0}
 			<EmptyState icon="lucide:arrow-up-down" title="No stock adjustments" description="Record increases or decreases to keep stock accurate.">
@@ -135,6 +540,8 @@
 				<Pagination controls={adjCtrl} />
 			</div>
 		{/if}
+
+	<!-- ── SUPPLIERS TAB ── -->
 	{:else if tab === 'suppliers'}
 		{#if suppliers.length || supCtrl.search}<ListToolbar bind:search={supCtrl.search} bind:sortKey={supCtrl.sortKey} bind:sortDir={supCtrl.sortDir} viewMode={supCtrl.viewMode} sortItems={supCtrl.sortItems} allowViewModes={['table']} applySort={supCtrl.applySort} searchPlaceholder="Search supplier…" />{/if}
 		{#if supCtrl.list.length === 0}
@@ -164,6 +571,8 @@
 				<Pagination controls={supCtrl} />
 			</div>
 		{/if}
+
+	<!-- ── PURCHASE ORDERS TAB ── -->
 	{:else}
 		{#if orders.length || poCtrl.search}<ListToolbar bind:search={poCtrl.search} bind:sortKey={poCtrl.sortKey} bind:sortDir={poCtrl.sortDir} viewMode={poCtrl.viewMode} sortItems={poCtrl.sortItems} allowViewModes={['table']} applySort={poCtrl.applySort} searchPlaceholder="Search PO no…" />{/if}
 		{#if poCtrl.list.length === 0}
@@ -198,10 +607,63 @@
 	{/if}
 </div>
 
+<!-- Quick Adjust Dialog -->
+<Dialog bind:open={adjDlgOpen} title="Quick Adjust">
+	<div class="space-y-3">
+		<div class="text-[13px] font-semibold text-[var(--ui-text-muted)]">{adjProduct.name}</div>
+		{#if adjProduct.id}
+			{@const prod = allProducts.find((p) => p.id === adjProduct.id)}
+			{#if prod}
+				<div class="flex items-center gap-2 rounded-lg bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px]">
+					<Icon name="lucide:boxes" class="size-4 text-[var(--ui-text-dimmed)]" />
+					<span class="text-[var(--ui-text-muted)]">Current stock:</span>
+					<span class="font-bold">{(prod.data as any).stockLevel ?? 0}</span>
+					<span class="ml-auto text-[var(--ui-text-dimmed)]">→ New: <span class="font-bold text-primary-600 dark:text-primary-400">{(adjDir === 'increase' ? ((allProducts.find((p) => p.id === adjProduct.id)?.data as any)?.stockLevel ?? 0) + Math.abs(Number(adjQty) || 0) : Math.max(0, ((allProducts.find((p) => p.id === adjProduct.id)?.data as any)?.stockLevel ?? 0) - Math.abs(Number(adjQty) || 0)))}</span></span>
+				</div>
+			{/if}
+		{/if}
+		<div class="segmented flex gap-1 p-1">
+			<button type="button" onclick={() => (adjDir = 'increase')} class="flex-1 rounded-md px-3 py-1.5 text-[12px] font-semibold {adjDir === 'increase' ? 'bg-[var(--ui-bg-elevated)]' : 'text-[var(--ui-text-muted)]'}">Increase</button>
+			<button type="button" onclick={() => (adjDir = 'decrease')} class="flex-1 rounded-md px-3 py-1.5 text-[12px] font-semibold {adjDir === 'decrease' ? 'bg-[var(--ui-bg-elevated)]' : 'text-[var(--ui-text-muted)]'}">Decrease</button>
+		</div>
+		<label class="block"><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Quantity</span><Input bind:value={adjQty} type="number" min="0" class="w-full" /></label>
+		<label class="block"><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Reason</span><Input bind:value={adjReason} class="w-full" /></label>
+	</div>
+	{#snippet footer()}<Button color="neutral" variant="ghost" onclick={() => (adjDlgOpen = false)}>Cancel</Button><Button color="primary" icon="lucide:check" onclick={saveQuickAdjust}>Save</Button>{/snippet}
+</Dialog>
+
+<!-- Create Dialog (adjustments / suppliers / orders) -->
 <Dialog bind:open={dlgOpen} title={dlgTitle}>
 	{#if dlgKind === 'adjustments'}
 		<div class="space-y-3">
-			<label class="block"><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Product</span><Input bind:value={aProduct} class="w-full" /></label>
+			<label class="block">
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Product</span>
+				{#if adjSelectedProduct}
+					<div class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2">
+						<Icon name="lucide:package" class="size-4 text-[var(--ui-text-dimmed)]" />
+						<span class="flex-1 truncate text-[13px] font-semibold">{adjSelectedProduct.name}</span>
+						<button type="button" onclick={() => { adjSelectedProduct = null; adjProductSearch = ''; aProduct = ''; }} class="text-[var(--ui-text-dimmed)] hover:text-[var(--tone-error-text)]">
+							<Icon name="lucide:x" class="size-4" />
+						</button>
+					</div>
+				{:else}
+					<div class="relative">
+						<Input bind:value={adjProductSearch} placeholder="Search product by name…" icon="lucide:search" class="w-full" />
+						{#if adjProductResults.length > 0}
+							<div class="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--surface-bg)] shadow-lg">
+								{#each adjProductResults as p (p.id)}
+									<button type="button" onclick={() => { adjSelectedProduct = { id: p.id, name: String(p.data.name ?? 'Unknown') }; aProduct = String(p.data.name ?? ''); adjProductSearch = ''; }}
+										class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] transition-colors hover:bg-[var(--ui-bg-accented)]">
+										<Icon name="lucide:package" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
+										<span class="flex-1 truncate font-medium">{p.data.name ?? 'Unnamed'}</span>
+										<span class="text-[11px] text-[var(--ui-text-dimmed)]">Stock: {(p.data as any).stockLevel ?? 0}</span>
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
+			</label>
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Type</span>
 					<div class="segmented flex gap-1 p-1">

@@ -4,17 +4,26 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import Popover from '$lib/components/ui/Popover.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { setupSteps, stepIndex } from './steps';
 	import { relays } from '$nostr/relay.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+	import { glo } from '$nostr/store.svelte';
+	import { preferences, accentOptions } from '$lib/theme/preferences.svelte';
+	import { setMode, mode } from 'mode-watcher';
 
 	let { children } = $props();
+
+	let quickOpen = $state(false);
 
 	onMount(() => {
 		session.load();
 		tenant.load();
+		preferences.load();
+		preferences.apply();
+		relays.load();
 	});
 
 	// Guard: setup requires a session.
@@ -23,6 +32,12 @@
 			void goto(resolve('/login'), { replaceState: true });
 		}
 	});
+
+	async function signOut() {
+		session.logout();
+		tenant.reset();
+		await goto('/login', { replaceState: true });
+	}
 
 	const currentSlug = $derived(
 		(page.url.pathname.split('/setup/')[1] ?? 'identity') as (typeof setupSteps)[number]['slug']
@@ -34,12 +49,12 @@
 	const isOptionalStep = $derived(currentSlug === 'catalog');
 	const blockedReason = $derived.by(() => {
 		if (currentSlug === 'identity' && !session.isAuthenticated) return 'Sign in before continuing.';
+		if (currentSlug === 'relays' && relays.activeRelays.length === 0)
+			return 'Keep at least one relay switched on.';
 		if (currentSlug === 'company' && !tenant.state.organizationName.trim())
 			return 'Add your company name first.';
 		if (currentSlug === 'branch' && !tenant.state.locationName.trim())
 			return 'Name your primary branch first.';
-		if (currentSlug === 'relays' && relays.activeRelays.length === 0)
-			return 'Keep at least one relay switched on.';
 		return '';
 	});
 	const canProceed = $derived(!blockedReason && idx >= 0 && idx < setupSteps.length - 1);
@@ -66,9 +81,63 @@
 			</div>
 			<span class="font-display text-lg font-bold tracking-tight">BNOS</span>
 		</a>
-		<span class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-			Setup · step {idx + 1} of {setupSteps.length}
-		</span>
+
+		<div class="flex items-center gap-1.5">
+			<span class="mr-2 hidden text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase sm:inline">
+				Setup · step {idx + 1} of {setupSteps.length}
+			</span>
+
+			<!-- Theme toggle -->
+			<button
+				type="button"
+				onclick={() => setMode(mode.current === 'dark' ? 'light' : 'dark')}
+				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+				aria-label="Toggle theme"
+				title="Toggle theme"
+			>
+				<Icon name={mode.current === 'dark' ? 'lucide:sun' : 'lucide:moon'} class="size-[18px]" />
+			</button>
+
+			<!-- Quick settings -->
+		<Popover bind:open={quickOpen} align="end" side="bottom">
+				{#snippet trigger()}
+					<Icon name="lucide:sliders-horizontal" class="size-[18px]" />
+				{/snippet}
+				{#snippet content()}
+					<div class="w-64 space-y-4 p-1">
+						<!-- Color mode -->
+						<div>
+							<div class="mb-1.5 px-1 text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">Appearance</div>
+							<div class="flex gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
+								<button type="button" onclick={() => setMode('light')} class="flex-1 rounded-md py-1.5 text-[11.5px] font-semibold {mode.current === 'light' ? 'bg-[var(--ui-bg-elevated)] shadow-sm' : 'text-[var(--ui-text-dimmed)]'}">Light</button>
+								<button type="button" onclick={() => setMode('dark')} class="flex-1 rounded-md py-1.5 text-[11.5px] font-semibold {mode.current === 'dark' ? 'bg-[var(--ui-bg-elevated)] shadow-sm' : 'text-[var(--ui-text-dimmed)]'}">Dark</button>
+								<button type="button" onclick={() => setMode('system')} class="flex-1 rounded-md py-1.5 text-[11.5px] font-semibold {mode.current === 'dark' ? 'text-[var(--ui-text-dimmed)]' : 'bg-[var(--ui-bg-elevated)] shadow-sm'}">Auto</button>
+							</div>
+						</div>
+						<!-- Accent color -->
+						<div>
+							<div class="mb-1.5 px-1 text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">Accent</div>
+							<div class="flex flex-wrap gap-1.5 px-1">
+								{#each accentOptions as opt (opt.key)}
+									<button type="button" onclick={() => { preferences.setAccent(opt.key) }} class="size-6 rounded-full border-2 transition-transform {preferences.state.accent === opt.key ? 'border-[var(--ui-text)] scale-110' : 'border-transparent'}" style="background: {opt.hex}" title={opt.label}></button>
+								{/each}
+							</div>
+						</div>
+					</div>
+				{/snippet}
+			</Popover>
+
+			<!-- Sign out -->
+			<button
+				type="button"
+				onclick={signOut}
+				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
+				aria-label="Sign out"
+				title="Sign out"
+			>
+				<Icon name="lucide:log-out" class="size-[18px]" />
+			</button>
+		</div>
 	</header>
 
 	<!-- Progress bar -->

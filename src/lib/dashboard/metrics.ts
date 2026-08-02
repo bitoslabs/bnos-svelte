@@ -42,18 +42,21 @@ export function startOfMonth(d: Date): number {
 
 /** Flatten GLO order objects into the lightweight rows the dashboard reads. */
 export function toOrderRows(
-	objects: { id: string; data: DashboardOrder }[]
+	objects: { id: string; data: DashboardOrder }[],
+	paymentLookup?: Map<string, string>
 ): OrderRow[] {
 	return objects.map((o) => {
 		const d = o.data;
 		const atMs = new Date(d.occurredAt || 0).getTime();
+		const method = d.method
+			?? (paymentLookup ? (paymentLookup.get(o.id) ?? 'cash') : 'cash');
 		return {
 			id: o.id,
 			number: d.number ?? o.id.slice(0, 8),
 			status: d.status ?? 'completed',
 			total: d.total ?? 0,
 			items: d.lines?.length ?? 0,
-			method: d.method ?? 'cash',
+			method,
 			type: d.fulfillmentType ?? 'pos',
 			atMs: Number.isFinite(atMs) ? atMs : 0
 		};

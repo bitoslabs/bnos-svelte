@@ -23,9 +23,14 @@
 
 	onMount(() => {
 		glo.hydrate('commerce.order');
+		glo.hydrate('commerce.payment');
 		glo.hydrate('catalog.product');
 		glo.hydrate('crm.customer');
-		void glo.syncAll(['commerce.order', 'catalog.product', 'crm.customer']);
+		void glo.syncAll([
+			'commerce.order', 'commerce.payment', 'catalog.product', 'crm.customer',
+			'commerce.expense', 'inventory.adjustment', 'staff.member', 'commerce.shift',
+			'promotion'
+		]);
 
 		// live clock
 		const tick = () =>
@@ -41,7 +46,19 @@
 	});
 
 	const orderObjects = $derived(glo.all<DashboardOrder, 'commerce.order'>('commerce.order'));
-	const rows = $derived(toOrderRows(orderObjects as never));
+
+	// Build payment method lookup: orderId → method
+	const paymentMethodMap = $derived.by(() => {
+		const payments = glo.all<any, 'commerce.payment'>('commerce.payment');
+		const m = new Map<string, string>();
+		for (const p of payments) {
+			const oid = (p.data as any).orderId;
+			if (oid) m.set(oid, (p.data as any).method ?? 'cash');
+		}
+		return m;
+	});
+
+	const rows = $derived(toOrderRows(orderObjects as never, paymentMethodMap));
 	const todayRows = $derived(rows.filter((o) => o.atMs >= startToday()));
 	const currency = $derived(tenant.state.currency);
 
@@ -365,7 +382,7 @@
 			</div>
 
 			<!-- Recent orders -->
-			<div class="data-panel">
+			<div class="surface-card overflow-hidden">
 				<div
 					class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-5 py-3.5"
 				>
@@ -391,30 +408,37 @@
 						</EmptyState>
 					</div>
 				{:else}
-					<table class="table-surface w-full text-left">
-						<thead class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-							<tr>
-								<th class="px-5 py-2.5 font-semibold">Order</th>
-								<th class="px-5 py-2.5 font-semibold">Status</th>
-								<th class="px-5 py-2.5 text-right font-semibold">Total</th>
-								<th class="px-5 py-2.5 text-right font-semibold">When</th>
-							</tr>
-						</thead>
-						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
-							{#each recent as o (o.id)}
-								<tr>
-									<td class="px-5 py-3 font-mono text-[12.5px]">{o.number}</td>
-									<td class="px-5 py-3"><Badge color={statusColor(o.status)}>{o.status}</Badge></td>
-									<td class="px-5 py-3 text-right font-semibold tabular-nums"
-										>{formatMoney(o.total, currency)}</td
-									>
-									<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
-										>{relativeTime(o.atMs)}</td
-									>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
+					<div class="divide-y divide-[var(--ui-border-muted)]">
+						{#each recent as o (o.id)}
+							<a
+								href="/orders/{o.id}"
+								class="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-[var(--ui-bg-accented)]"
+							>
+								<div
+									class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400"
+								>
+									<Icon name="lucide:receipt-text" class="size-4" />
+								</div>
+								<div class="min-w-0 flex-1">
+									<div class="flex items-center gap-2">
+											<span class="text-[13px] font-semibold">{o.number}</span>
+											<Badge color={statusColor(o.status)}>{o.status}</Badge>
+									</div>
+										<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
+											{o.items} item{o.items !== 1 ? 's' : ''} · {relativeTime(o.atMs)}
+										</p>
+									</div>
+									<div class="text-right">
+										<div class="text-[13px] font-bold tabular-nums">{formatMoney(o.total, currency)}</div>
+											<div class="mt-0.5 flex items-center justify-end gap-1 text-[10.5px] font-semibold text-[var(--ui-text-dimmed)]">
+												<Icon name={o.method === 'cash' ? 'lucide:banknote' : o.method === 'card' ? 'lucide:credit-card' : o.method === 'qr' ? 'lucide:qr-code' : o.method === 'lightning' ? 'lucide:zap' : 'lucide:circle-dot'} class="size-3" />
+												<span class="capitalize">{o.method}</span>
+											</div>
+									</div>
+								</a
+							>
+						{/each}
+					</div>
 				{/if}
 			</div>
 		</div>

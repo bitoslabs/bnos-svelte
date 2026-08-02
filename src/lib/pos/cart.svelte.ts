@@ -48,6 +48,7 @@ export interface HeldOrder {
 	items: CartLine[];
 	discount: CartDiscount;
 	customerName?: string;
+	customerId?: string | null;
 	tableId?: string;
 	covers?: number;
 	heldAt: string;
@@ -113,6 +114,8 @@ class PosCart {
 	tableId = $state('');
 	covers = $state(1);
 	held = $state<HeldOrder[]>(readJson<HeldOrder[]>(HELD_KEY, []));
+	customerId: string | null = $state(null);
+	appliedPromotionId: string | null = $state(null);
 	lastCompleted = $state<CompletedSale | null>(null);
 
 	private heldCounter = readJson<number>(HELD_KEY + ':seq', 0) || 0;
@@ -218,6 +221,8 @@ class PosCart {
 		this.items = [];
 		this.discount = { ...NO_DISCOUNT };
 		this.customerName = '';
+		this.customerId = null;
+		this.appliedPromotionId = null;
 		this.tableId = '';
 		this.covers = 1;
 		this.persist();
@@ -233,8 +238,12 @@ class PosCart {
 			this.covers = 1;
 		}
 	}
-	setCustomer(name: string) {
+	setCustomer(name: string, id?: string) {
 		this.customerName = name;
+		this.customerId = id ?? null;
+	}
+	setPromotion(id: string | null) {
+		this.appliedPromotionId = id;
 	}
 	setTable(id: string) {
 		this.tableId = id;
@@ -253,6 +262,7 @@ class PosCart {
 			items: structuredClone($state.snapshot(this.items)) as CartLine[],
 			discount: { ...this.discount },
 			customerName: this.customerName || undefined,
+			customerId: this.customerId ?? undefined,
 			tableId: this.orderType === 'dine_in' ? this.tableId || undefined : undefined,
 			covers: this.orderType === 'dine_in' ? this.covers : undefined,
 			heldAt: new Date().toISOString()
@@ -271,6 +281,7 @@ class PosCart {
 		this.discount = order.discount;
 		this.orderType = order.orderType;
 		this.customerName = order.customerName ?? '';
+		this.customerId = order.customerId ?? null;
 		this.tableId = order.tableId ?? '';
 		this.covers = order.covers ?? 1;
 		this.persistHeld();
@@ -308,6 +319,7 @@ class PosCart {
 			totals,
 			orderType: this.orderType,
 			customerName: this.customerName || undefined,
+			customerId: this.customerId ?? undefined,
 			tableId: this.orderType === 'dine_in' ? this.tableId || undefined : undefined,
 			covers: this.orderType === 'dine_in' ? this.covers : undefined,
 			branchId: tenant.state.locationId ?? undefined,
@@ -315,7 +327,8 @@ class PosCart {
 			discount:
 				this.discount.value > 0
 					? { type: this.discount.type, value: this.discount.value }
-					: undefined
+					: undefined,
+			method,
 		});
 		const payment = buildPayment({
 			amount: totals.total,
@@ -334,6 +347,64 @@ class PosCart {
 		} catch (e) {
 			console.warn('[pos] checkout persist failed', e);
 			toast.error('Sale saved locally', 'Relay sync will retry.');
+		}
+
+		// ── Post-checkout data flows ──
+
+		// A. Decrement stock for each product
+		for (const line of lines) {
+			if (line.productId) {
+				const product = glo.get(TYPE.product, line.productId);
+				if (product) {
+					const currentStock = (product.data as any).stockLevel ?? 0;
+					try {
+						await glo.upsert(TYPE.product, {
+							...(product.data as Record<string, unknown>),
+							stockLevel: Math.max(0, currentStock - line.quantity)
+						}, { id: product.id });
+					} catch (e) {
+						console.warn('[pos] stock decrement failed for', line.productId, e);
+					}
+				}
+			}
+		}
+
+		// B. Update customer spend tracking
+		if (this.customerId || this.customerName) {
+			try {
+				let cust: any = null;
+				if (this.customerId) {
+					cust = glo.get(TYPE.customer, this.customerId);
+				} else {
+					const customers = glo.all<any, typeof TYPE.customer>(TYPE.customer);
+					cust = customers.find((c) => c.data.name === this.customerName);
+				}
+				if (cust) {
+					await glo.upsert(TYPE.customer, {
+						...(cust.data as Record<string, unknown>),
+						totalSpend: (cust.data.totalSpend ?? 0) + totals.total,
+						totalOrders: (cust.data.totalOrders ?? 0) + 1,
+						lastOrderAt: completedAt
+					}, { id: cust.id });
+				}
+			} catch (e) {
+					console.warn('[pos] customer update failed', e);
+			}
+		}
+
+		// C. Track promotion usage
+		if (this.appliedPromotionId) {
+			try {
+				const promo = glo.get(TYPE.promotion, this.appliedPromotionId);
+				if (promo) {
+					await glo.upsert(TYPE.promotion, {
+						...(promo.data as Record<string, unknown>),
+						currentUsage: ((promo.data as any).currentUsage ?? 0) + 1
+					}, { id: promo.id });
+				}
+			} catch (e) {
+					console.warn('[pos] promotion usage increment failed', e);
+			}
 		}
 
 		const sale: CompletedSale = {

@@ -530,6 +530,17 @@
 	.data-panel > .sticky {
 		margin-top: 0;
 	}
+	/* Bordered panel — used for table/grid views with pagination */
+	.bordered-panel {
+		background-color: var(--surface-bg);
+		border: 1px solid var(--ui-border);
+		border-radius: calc(var(--ui-radius) + 0.25rem);
+		box-shadow: var(--surface-shadow);
+		overflow: hidden;
+	}
+	.bordered-panel > .sticky {
+		margin-top: 0;
+	}
 	.table-surface thead th {
 		background-color: var(--table-head-bg);
 		border-bottom: 1px solid var(--ui-border-muted);
@@ -680,6 +691,9 @@
 	.animate-fade {
 		animation: os-fade 0.3s ease both;
 	}
+	.animate-slide-in-left {
+		animation: os-slide-in-left 0.3s cubic-bezier(0.22, 0.7, 0.3, 1) both;
+	}
 	@keyframes os-rise {
 		from {
 			opacity: 0;
@@ -695,6 +709,16 @@
 			opacity: 0;
 		}
 		to {
+			opacity: 1;
+		}
+	}
+	@keyframes os-slide-in-left {
+		from {
+			transform: translateX(-100%);
+			opacity: 0.6;
+		}
+		to {
+			transform: translateX(0);
 			opacity: 1;
 		}
 	}

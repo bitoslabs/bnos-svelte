@@ -7,20 +7,40 @@
 	const groups: { label: string; items: { to: string; icon: string; label: string }[] }[] = [
 		{
 			label: 'Account',
-			items: [{ to: '/settings/account', icon: 'lucide:user-cog', label: 'Nostr identity' }]
+			items: [
+				{ to: '/settings/profile', icon: 'lucide:user', label: 'Profile' },
+			]
 		},
 		{
 			label: 'Store',
 			items: [
-				{ to: '/settings', icon: 'lucide:building-2', label: 'Organization' },
+				{ to: '/settings/organization', icon: 'lucide:building-2', label: 'Organization' },
+				{ to: '/settings/store', icon: 'lucide:store', label: 'Store profile' },
+				{ to: '/settings/general', icon: 'lucide:sliders-horizontal', label: 'General' },
+				{ to: '/settings/features', icon: 'lucide:layout-grid', label: 'Features' },
 				{ to: '/settings/branches', icon: 'lucide:map-pin', label: 'Branches' },
 				{ to: '/settings/payment-methods', icon: 'lucide:credit-card', label: 'Payment methods' },
-				{ to: '/settings/receipt', icon: 'lucide:receipt-text', label: 'Receipt' }
+				{ to: '/settings/receipt', icon: 'lucide:receipt-text', label: 'Receipt' },
+				{ to: '/settings/bitcoin', icon: 'lucide:bitcoin', label: 'Bitcoin' }
+			]
+		},
+		{
+			label: 'Hardware',
+			items: [
+				{ to: '/settings/hardware', icon: 'lucide:cpu', label: 'Hardware' },
+				{ to: '/settings/printers', icon: 'lucide:printer', label: 'Printers' }
+			]
+		},
+		{
+			label: 'Billing',
+			items: [
+				{ to: '/settings/billing', icon: 'lucide:credit-card', label: 'Plan & billing' }
 			]
 		},
 		{
 			label: 'System',
 			items: [
+				{ to: '/settings/notifications', icon: 'lucide:bell', label: 'Notifications' },
 				{ to: '/settings/relays', icon: 'lucide:radio', label: 'Relays' },
 				{ to: '/settings/appearance', icon: 'lucide:palette', label: 'Appearance' },
 				{ to: '/settings/data', icon: 'lucide:database', label: 'Data' },
@@ -37,7 +57,7 @@
 
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-[15rem_1fr]">
 	<!-- sub-nav -->
-	<aside class="lg:sticky lg:top-20 lg:h-fit">
+	<aside class="lg:sticky lg:top-20 lg:h-fit lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1 lg:pb-4">
 		<h1 class="mb-3 font-display text-xl font-bold tracking-tight">Settings</h1>
 		<nav class="space-y-4">
 			{#each groups as g (g.label)}

@@ -50,7 +50,7 @@ export function truncateNpub(npub: string, head = 8, tail = 6): string {
 }
 
 export function relativeTime(isoOrEpoch: string | number): string {
-	const t = typeof isoOrEpoch === 'number' ? isoOrEpoch * 1000 : new Date(isoOrEpoch).getTime();
+	const t = typeof isoOrEpoch === 'number' ? isoOrEpoch : new Date(isoOrEpoch).getTime();
 	if (!Number.isFinite(t)) return '';
 	const diff = Date.now() - t;
 	const abs = Math.abs(diff);

@@ -13,12 +13,21 @@
 	}: {
 		open?: boolean;
 		title?: string;
-		size?: 'sm' | 'md' | 'lg';
+		size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'auto';
 		children?: Snippet;
 		footer?: Snippet;
 	} = $props();
 
-	const width = $derived(size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-2xl' : 'max-w-md');
+	const width = $derived(
+		size === 'xs' ? 'max-w-xs' :
+		size === 'sm' ? 'max-w-sm' :
+		size === 'md' ? 'max-w-md' :
+		size === 'lg' ? 'max-w-2xl' :
+		size === 'xl' ? 'max-w-4xl' :
+		size === '2xl' ? 'max-w-6xl' :
+		size === 'auto' ? 'max-w-[calc(100vw-2rem)]' :
+		'max-w-md'
+	);
 	const onKey = (e: KeyboardEvent) => {
 		if (open && e.key === 'Escape') open = false;
 	};
@@ -39,7 +48,7 @@
 			in:scale={{ duration: 160, start: 0.96 }}
 			out:scale={{ duration: 120, start: 0.98 }}
 			class={cn(
-				'relative w-full overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] shadow-2xl shadow-black/20',
+				'relative flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] shadow-2xl shadow-black/20',
 				width
 			)}
 			role="dialog"
@@ -58,11 +67,11 @@
 					</button>
 				</header>
 			{/if}
-			<div class="px-5 py-4">
+			<div class="flex-1 overflow-y-auto px-5 py-4">
 				{#if children}{@render children()}{/if}
 			</div>
 			{#if footer}
-				<footer class="flex items-center justify-end gap-2 border-t border-[var(--ui-border-muted)] px-5 py-3.5">
+				<footer class="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--ui-border-muted)] px-5 py-3.5">
 					{@render footer()}
 				</footer>
 			{/if}

@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import ListToolbar from '$lib/components/list/ListToolbar.svelte';
 	import SortableTh from '$lib/components/list/SortableTh.svelte';
@@ -9,11 +11,16 @@
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+	import { session } from '$nostr/session.svelte';
+	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, formatInt, relativeTime } from '$lib/utils/format';
 	import { toOrderRows, type DashboardOrder, type OrderRow } from '$lib/dashboard/metrics';
+	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
+	import { TYPE, type Shift } from '$lib/domain';
 
 	onMount(() => {
 		glo.hydrate('commerce.order');
+		glo.hydrate(TYPE.shift);
 		void glo.sync('commerce.order');
 	});
 
@@ -21,6 +28,10 @@
 	const orderObjects = $derived(glo.all<DashboardOrder, 'commerce.order'>('commerce.order'));
 
 	const METHODS = ['__all__', 'cash', 'card', 'qr', 'lightning'] as const;
+	// Raw data viewer
+	let rawOpen = $state(false);
+	let rawItem = $state<any>(null);
+
 	let methodFilter = $state<string>('__all__');
 
 	const ledger = $derived(
@@ -48,6 +59,94 @@
 
 	const inflow = $derived(ledger.reduce((s, o) => s + o.total, 0));
 	const count = $derived(ledger.length);
+
+	// ── Shift management ──
+	const shifts = $derived(glo.all<Shift, typeof TYPE.shift>(TYPE.shift));
+	const activeShift = $derived(shifts.find((s) => s.data.status === 'active'));
+
+	let closeShiftDlg = $state(false);
+	let closeOpeningCash = $state<number | ''>('');
+	let closeCountedCash = $state<number | ''>('');
+
+	function openShiftPanel() {
+		closeOpeningCash = activeShift?.data.openingCash ?? '';
+		closeCountedCash = '';
+		closeShiftDlg = true;
+	}
+
+	async function openShift() {
+		const openingCash = typeof closeOpeningCash === 'number' ? closeOpeningCash : Number(closeOpeningCash) || 0;
+		try {
+			await glo.upsert<Shift>(TYPE.shift, {
+				number: 'SFT-' + Date.now().toString().slice(-6),
+				status: 'active',
+				openedAt: new Date().toISOString(),
+				openingCash,
+				staffId: session.pubkey ?? undefined,
+				staffName: session.snapshot?.npub ?? undefined,
+				branchId: tenant.state.locationId ?? undefined,
+				terminalId: undefined,
+				currency
+			});
+			toast.success('Shift opened');
+		} catch (e) {
+			toast.error('Failed to open shift', e instanceof Error ? e.message : undefined);
+		}
+	}
+
+	async function closeShift() {
+		if (!activeShift) return;
+		const shift = activeShift;
+		const endedAt = new Date().toISOString();
+
+		// Compute actual totals from orders during shift period
+		const shiftOrders = glo.all<any, 'commerce.order'>('commerce.order').filter((o) => {
+			const d = o.data as any;
+			return d.cashierPubkey === shift.data.staffId
+				&& new Date(d.occurredAt).getTime() >= new Date(shift.data.openedAt).getTime()
+				&& new Date(d.occurredAt).getTime() <= new Date(endedAt).getTime();
+		});
+
+		const totalSales = shiftOrders.reduce((sum, o) => sum + (o.data.total ?? 0), 0);
+		const totalOrders = shiftOrders.length;
+		const cashOrders = shiftOrders.filter((o) => (o.data as any).method === 'cash');
+		const cashSales = cashOrders.reduce((sum, o) => sum + (o.data.total ?? 0), 0);
+		const cardOrders = shiftOrders.filter((o) => (o.data as any).method === 'card');
+		const cardSales = cardOrders.reduce((sum, o) => sum + (o.data.total ?? 0), 0);
+		const lightningOrders = shiftOrders.filter((o) => (o.data as any).method === 'lightning');
+		const lightningSales = lightningOrders.reduce((sum, o) => sum + (o.data.total ?? 0), 0);
+		const qrOrders = shiftOrders.filter((o) => (o.data as any).method === 'qr');
+		const qrSales = qrOrders.reduce((sum, o) => sum + (o.data.total ?? 0), 0);
+		const otherSales = totalSales - cashSales - cardSales - lightningSales - qrSales;
+
+		const countedCash = typeof closeCountedCash === 'number' ? closeCountedCash : Number(closeCountedCash) || 0;
+		const openingCash = shift.data.openingCash ?? 0;
+		const expectedCash = openingCash + cashSales;
+		const difference = countedCash - expectedCash;
+
+		try {
+			await glo.upsert<Shift>(TYPE.shift, {
+				...shift.data,
+				status: 'closed',
+				closedAt: endedAt,
+				closingCash: countedCash,
+				expectedCash,
+				difference,
+				variance: difference,
+				totalSales,
+				totalOrders,
+				cashSales,
+				cardSales,
+				lightningSales,
+				qrSales,
+				otherSales
+			}, { id: shift.id });
+			toast.success('Shift closed', `Sales: ${formatMoney(totalSales, currency)}`);
+			closeShiftDlg = false;
+		} catch (e) {
+			toast.error('Failed to close shift', e instanceof Error ? e.message : undefined);
+		}
+	}
 </script>
 
 <svelte:head><title>BNOS · Transactions</title></svelte:head>
@@ -75,6 +174,43 @@
 				{formatMoney(count ? inflow / count : 0, currency)}
 			</div>
 		</div>
+	</div>
+
+	<!-- Shift panel -->
+	<div class="surface-card p-4">
+		<div class="flex flex-wrap items-center justify-between gap-3">
+			<div class="flex items-center gap-3">
+				<div class="flex size-10 items-center justify-center rounded-xl {activeShift ? 'bg-emerald-500/10' : 'bg-[var(--ui-bg-accented)]'}">
+					<Icon name={activeShift ? 'lucide:circle-check' : 'lucide:circle'} class="size-5 {activeShift ? 'text-emerald-500' : 'text-[var(--ui-text-muted)]'}" />
+				</div>
+				<div>
+					<div class="text-[13px] font-semibold">{activeShift ? 'Shift Active' : 'No Active Shift'}</div>
+					{#if activeShift}
+						<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">Opened {relativeTime(activeShift.data.openedAt)}</div>
+					{:else}
+						<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">Open a shift to track sales</div>
+					{/if}
+				</div>
+			</div>
+			<div class="flex gap-2">
+				{#if activeShift}
+					<Button color="error" variant="subtle" size="sm" icon="lucide:square" onclick={openShiftPanel}>Close Shift</Button>
+				{:else}
+					<div class="flex items-center gap-2">
+						<Input bind:value={closeOpeningCash} type="number" min="0" step="0.01" placeholder="Opening cash" class="w-36" />
+						<Button color="primary" variant="subtle" size="sm" icon="lucide:play" onclick={openShift}>Open Shift</Button>
+					</div>
+				{/if}
+			</div>
+		</div>
+		{#if activeShift?.data.totalSales != null}
+			<div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+				<div><span class="text-[11px] text-[var(--ui-text-dimmed)]">Total Sales</span><div class="font-bold tabular-nums">{formatMoney(activeShift.data.totalSales ?? 0, currency)}</div></div>
+				<div><span class="text-[11px] text-[var(--ui-text-dimmed)]">Orders</span><div class="font-bold tabular-nums">{formatInt(activeShift.data.totalOrders ?? 0)}</div></div>
+				<div><span class="text-[11px] text-[var(--ui-text-dimmed)]">Cash Sales</span><div class="font-bold tabular-nums">{formatMoney(activeShift.data.cashSales ?? 0, currency)}</div></div>
+				<div><span class="text-[11px] text-[var(--ui-text-dimmed)]">Card Sales</span><div class="font-bold tabular-nums">{formatMoney(activeShift.data.cardSales ?? 0, currency)}</div></div>
+			</div>
+		{/if}
 	</div>
 
 	{#if ledger.length || controls.search}
@@ -187,3 +323,28 @@
 		</div>
 	{/if}
 </div>
+
+<RawDataDialog bind:open={rawOpen} data={rawItem} title="Transaction Raw Data" />
+
+<!-- Close Shift Dialog -->
+{#if closeShiftDlg}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true">
+		<div class="w-full max-w-md rounded-2xl bg-[var(--ui-bg-elevated)] p-5 shadow-xl border border-[var(--ui-border)]">
+			<h3 class="mb-4 font-display text-base font-bold">Close Shift</h3>
+			<div class="space-y-3">
+				<div class="rounded-lg bg-[var(--ui-bg-accented)] p-3 text-[12.5px]">
+					<div>Opened: <span class="font-semibold">{activeShift ? relativeTime(activeShift.data.openedAt) : ''}</span></div>
+					<div>Opening Cash: <span class="font-semibold tabular-nums">{formatMoney(activeShift?.data.openingCash ?? 0, currency)}</span></div>
+				</div>
+				<label class="block">
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Counted Cash</span>
+					<Input bind:value={closeCountedCash} type="number" step="0.01" placeholder="0.00" class="w-full" />
+				</label>
+			</div>
+			<div class="mt-4 flex justify-end gap-2">
+				<Button color="neutral" variant="ghost" onclick={() => (closeShiftDlg = false)}>Cancel</Button>
+				<Button color="error" icon="lucide:square" onclick={closeShift}>Close Shift</Button>
+			</div>
+		</div>
+	</div>
+{/if}

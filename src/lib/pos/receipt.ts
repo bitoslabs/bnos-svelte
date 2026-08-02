@@ -38,6 +38,7 @@ export interface BuildOrderInput {
 	discount?: { type: 'percent' | 'fixed'; value: number };
 	note?: string;
 	occurredAt?: string;
+	method?: string;
 }
 
 export function buildOrder(input: BuildOrderInput): Order {
@@ -76,6 +77,7 @@ export function buildOrder(input: BuildOrderInput): Order {
 		fulfillmentType: input.orderType ?? 'pos',
 		notes: input.note,
 		occurredAt,
+		method: input.method,
 		// bdgo-os extension fields:
 		type: input.orderType,
 		customerName: input.customerName,

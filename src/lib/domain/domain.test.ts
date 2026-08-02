@@ -94,6 +94,7 @@ describe('standardized data model field coverage', () => {
 			lines: [
 				{
 					id: 'l1',
+					productId: 'p1',
 					name: 'Coffee',
 					quantity: 2,
 					unitPrice: 35_000,

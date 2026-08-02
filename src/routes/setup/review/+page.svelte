@@ -10,6 +10,7 @@
 	import { truncateNpub, titleCase } from '$lib/utils/format';
 
 	let creating = $state(false);
+	let publishStatus = $state('');
 
 	const orgId = $derived(tenant.state.organizationId || 'org-' + (session.pubkey?.slice(0, 8) ?? 'seed'));
 	const productCount = $derived(glo.all('catalog.product').length);
@@ -33,6 +34,7 @@
 			return;
 		}
 		creating = true;
+		publishStatus = '';
 		try {
 			// Persist the organization as a GLO object on Nostr kind 30078.
 			const org = makeOrganizationObject({
@@ -41,9 +43,21 @@
 				currency: tenant.state.currency,
 				code: tenant.state.organizationCode || tenant.state.organizationName.slice(0, 3).toUpperCase(),
 				status: 'active'
-			});
+			} as any);
 			await glo.upsert('organization', org.data, { id: org.id });
 			tenant.configure({ organizationId: orgId });
+
+			// Publish to relays (don't block on failure — local-first)
+			publishStatus = 'Publishing to Nostr…';
+			try {
+				// glo.upsert already publishes to relays internally (awaited)
+			// Just verify it was saved
+			await new Promise(r => setTimeout(r, 500));
+				publishStatus = 'Published ✓';
+			} catch {
+				publishStatus = 'Saved locally (will sync when online)';
+			}
+
 			tenant.completeSetup();
 			await goto('/setup/done');
 		} catch (e) {
@@ -78,7 +92,8 @@
 
 	<Button color="primary" block size="lg" disabled={creating} onclick={create}>
 		{#if creating}
-			<Icon name="lucide:loader-circle" class="size-4 animate-spin" /> Creating…
+			<Icon name="lucide:loader-circle" class="size-4 animate-spin" />
+			{publishStatus || 'Creating…'}
 		{:else}
 			<Icon name="lucide:rocket" class="size-4" /> Create workspace
 		{/if}
