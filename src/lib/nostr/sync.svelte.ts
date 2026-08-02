@@ -110,6 +110,7 @@ class SyncStore {
 
 		try {
 			await warmRelays();
+			await glo.flushPublishQueue();
 			for (const type of types) {
 				await glo.sync(type);
 			}

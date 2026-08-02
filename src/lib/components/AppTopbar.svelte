@@ -38,10 +38,27 @@
 	let quickOpen = $state(false);
 	let relayOpen = $state(false);
 
-	// Sync state for quick-settings sync button
 	const syncState = $derived(dataSync.status);
+	const syncLabel = $derived.by(() => {
+		if (syncState === 'syncing') return 'Syncing all data...';
+		if (syncState === 'done') return 'All data synced';
+		if (syncState === 'failed') return 'Sync failed';
+		return 'Sync all data';
+	});
+	const syncIcon = $derived.by(() => {
+		if (syncState === 'syncing') return 'lucide:loader-circle';
+		if (syncState === 'done') return 'lucide:check';
+		if (syncState === 'failed') return 'lucide:x';
+		return 'lucide:refresh-cw';
+	});
+	const syncIconClass = $derived.by(() => {
+		if (syncState === 'syncing') return 'size-3.5 animate-spin';
+		if (syncState === 'done') return 'size-3.5 text-emerald-500';
+		if (syncState === 'failed') return 'size-3.5 text-[var(--tone-error-text)]';
+		return 'size-3.5';
+	});
 
-	async function syncWorkspace() {
+	async function syncAllData() {
 		await dataSync.manualSync();
 	}
 </script>
@@ -170,24 +187,12 @@
 
 				<button
 					type="button"
-					onclick={async () => {
-						const btn = document.getElementById('sync-btn-text');
-						if (btn) btn.textContent = 'Syncing…';
-						try {
-							await dataSync.manualSync();
-							if (btn) {
-								btn.textContent = '✓ Synced';
-								setTimeout(() => { if (btn) btn.textContent = 'Sync all data'; }, 2000);
-							}
-						} catch {
-							if (btn) btn.textContent = 'Sync failed';
-							setTimeout(() => { if (btn) btn.textContent = 'Sync all data'; }, 2000);
-						}
-					}}
-					class="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)]"
+					onclick={syncAllData}
+					disabled={syncState === 'syncing'}
+					class="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-60"
 				>
-					<Icon name="lucide:refresh-cw" class="size-3.5" />
-					<span id="sync-btn-text">Sync all data</span>
+					<Icon name={syncIcon} class={syncIconClass} />
+					<span>{syncLabel}</span>
 				</button>
 			</div>
 		{/snippet}
@@ -244,23 +249,16 @@
 					</div>
 				</div>
 
-				<!-- Sync workspace -->
+				<!-- Manual sync -->
 				<div class="border-t border-[var(--ui-border-muted)] pt-3">
 					<button
 						type="button"
-						onclick={syncWorkspace}
+						onclick={syncAllData}
 						disabled={syncState === 'syncing'}
-						class="flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)] disabled:opacity-60"
+						class="flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-60"
 					>
-						{#if syncState === 'syncing'}
-							<Icon name="lucide:loader-circle" class="size-3.5 animate-spin" /> Syncing…
-						{:else if syncState === 'done'}
-							<Icon name="lucide:check" class="size-3.5 text-emerald-500" /> ✓ Synced
-						{:else if syncState === 'failed'}
-							<Icon name="lucide:x" class="size-3.5 text-[var(--tone-error-text)]" /> Sync failed
-						{:else}
-							<Icon name="lucide:refresh-cw" class="size-3.5" /> Sync workspace
-						{/if}
+						<Icon name={syncIcon} class={syncIconClass} />
+						<span>{syncLabel}</span>
 					</button>
 				</div>
 

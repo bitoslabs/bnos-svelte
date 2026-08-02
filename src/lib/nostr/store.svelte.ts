@@ -24,6 +24,7 @@
  *     active `$derived` / `$effect` automatically.
  */
 import { browser } from '$app/environment';
+import { SvelteSet } from 'svelte/reactivity';
 import {
 	createGloObject,
 	createGloEventTemplate,
@@ -44,6 +45,7 @@ import { tenant } from './tenant.svelte';
 import { fetchEvents, sendEvent } from './client';
 
 const STORAGE_PREFIX = 'bnos-os:glo:';
+const PUBLISH_QUEUE_KEY = 'bnos-os:glo:publish-queue';
 
 function uid(): string {
 	if (browser && crypto.randomUUID) return crypto.randomUUID();
@@ -51,6 +53,11 @@ function uid(): string {
 }
 
 type AnyGloObject = GloObject<unknown>;
+type QueuedPublish = {
+	type: string;
+	object: AnyGloObject;
+	queuedAt: number;
+};
 
 // ─── IndexedDB read/write helpers ────────────────────────────────────────────
 
@@ -72,6 +79,25 @@ async function writeLocal(type: string, items: AnyGloObject[]) {
 		await idbSet(STORAGE_PREFIX + type, plain);
 	} catch (e) {
 		console.warn('[glo] IndexedDB write failed', type, e);
+	}
+}
+
+async function readPublishQueue(): Promise<QueuedPublish[]> {
+	if (!browser) return [];
+	try {
+		const queued = await idbGet<QueuedPublish[]>(PUBLISH_QUEUE_KEY);
+		return Array.isArray(queued) ? queued.filter((item) => item?.type && isGloObject(item.object)) : [];
+	} catch {
+		return [];
+	}
+}
+
+async function writePublishQueue(items: QueuedPublish[]) {
+	if (!browser) return;
+	try {
+		await idbSet(PUBLISH_QUEUE_KEY, JSON.parse(JSON.stringify(items)));
+	} catch (e) {
+		console.warn('[glo] publish queue write failed', e);
 	}
 }
 
@@ -235,7 +261,8 @@ class GloStore {
 	private collections = new ReactiveCollections();
 
 	hydrating = $state(false);
-	syncing = $state<Set<string>>(new Set());
+	syncing = new SvelteSet<string>();
+	publishQueueSize = $state(0);
 
 	/** Global version counter — bumps on every mutation + hydration. */
 	version = $state(0);
@@ -243,6 +270,17 @@ class GloStore {
 	bump() {
 		this.version++;
 	}
+
+	private queuePublish = async (type: string, object: GloObject<unknown>) => {
+		const queued = await readPublishQueue();
+		const key = `${type}:${object.id}`;
+		const next = [
+			{ type, object: object as AnyGloObject, queuedAt: Date.now() },
+			...queued.filter((item) => `${item.type}:${item.object.id}` !== key)
+		];
+		await writePublishQueue(next);
+		this.publishQueueSize = next.length;
+	};
 
 	/** Run one-time migration from localStorage to IndexedDB. */
 	migrate = async () => {
@@ -325,23 +363,27 @@ class GloStore {
 	};
 
 	/** Batch upsert (for relay sync merges). */
-	batchUpsert = (type: string, objects: AnyGloObject[]) => {
-		if (!objects.length) return;
-		// Ensure data is loaded — if not hydrated, the set() below replaces [].
-		const current = this.collections.get(type);
-		const byId = new Map(current.map((o) => [o.id, o]));
-		for (const obj of objects) {
-			byId.set(obj.id, obj);
-		}
-		this.collections.set(type, [...byId.values()]);
-		this.bump();
+		batchUpsert = (type: string, objects: AnyGloObject[]) => {
+			if (!objects.length) return;
+			// Ensure data is loaded — if not hydrated, the set() below replaces [].
+			const current = this.collections.get(type);
+			const byId: Record<string, AnyGloObject> = Object.fromEntries(current.map((o) => [o.id, o]));
+			for (const obj of objects) {
+				byId[obj.id] = obj;
+			}
+			this.collections.set(type, Object.values(byId));
+			this.bump();
 		// Broadcast to other tabs.
 		getBroadcastChannel()?.postMessage({ type: 'batch', collectionType: type });
 	};
 
 	/** Sign + publish a GLO object as a Nostr event. */
-	private publish = async (type: string, object: GloObject<unknown>) => {
-		if (!session.snapshot || !relays.online) return;
+	private publish = async (type: string, object: GloObject<unknown>, options: { queueOnFailure?: boolean } = {}) => {
+		const { queueOnFailure = true } = options;
+		if (!session.snapshot || !relays.online || !relays.writableNormalized.length) {
+			if (queueOnFailure) await this.queuePublish(type, object);
+			return false;
+		}
 		try {
 			const template = createGloEventTemplate(object, {
 				client: 'bdgo-os',
@@ -354,18 +396,44 @@ class GloStore {
 				nsec: session.snapshot.nsec,
 				extensionSigner: session.extensionSigner ?? undefined
 			});
-			await sendEvent(event as NostrEvent);
+			const published = await sendEvent(event as NostrEvent);
+			if (!published && queueOnFailure) await this.queuePublish(type, object);
+			return published;
 		} catch (e) {
 			console.warn('[glo] publish failed', e);
+			if (queueOnFailure) await this.queuePublish(type, object);
+			return false;
 		}
 	};
 
+	/** Retry locally saved writes that failed to publish earlier. */
+	flushPublishQueue = async () => {
+		if (!session.snapshot || !relays.online || !relays.writableNormalized.length) return 0;
+		const queued = await readPublishQueue();
+		if (!queued.length) {
+			this.publishQueueSize = 0;
+			return 0;
+		}
+
+		const remaining: QueuedPublish[] = [];
+		let publishedCount = 0;
+		for (const item of queued) {
+			const published = await this.publish(item.type, item.object, { queueOnFailure: false });
+			if (published) publishedCount++;
+			else remaining.push(item);
+		}
+		await writePublishQueue(remaining);
+		this.publishQueueSize = remaining.length;
+		return publishedCount;
+	};
+
 	/** Pull the latest events for a type from relays and merge locally. */
-	sync = async (type: string, limit = 200) => {
-		if (!session.pubkey || !relays.online || !relays.readableNormalized.length) return;
-		if (this.syncing.has(type)) return;
-		this.syncing = new Set(this.syncing).add(type);
-		try {
+		sync = async (type: string, limit = 200) => {
+			if (!session.pubkey || !relays.online || !relays.readableNormalized.length) return;
+			if (this.syncing.has(type)) return;
+			this.syncing.add(type);
+			try {
+			await this.flushPublishQueue();
 			const filter = createGloFilter({
 				types: [type],
 				authors: [session.pubkey],
@@ -382,12 +450,10 @@ class GloStore {
 				}
 			}
 			if (incoming.length) this.batchUpsert(type, incoming);
-		} finally {
-			const next = new Set(this.syncing);
-			next.delete(type);
-			this.syncing = next;
-		}
-	};
+			} finally {
+				this.syncing.delete(type);
+			}
+		};
 
 	/** Sync everything the app cares about. */
 	syncAll = async (types: string[]) => {
