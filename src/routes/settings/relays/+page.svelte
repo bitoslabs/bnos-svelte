@@ -6,6 +6,12 @@
 	import { relays, DEFAULT_RELAYS } from '$nostr/relay.svelte';
 
 	let newRelay = $state('');
+	type TestState = {
+		status: 'idle' | 'testing' | 'ok' | 'failed';
+		ms?: number;
+		message?: string;
+	};
+	let relayTests = $state<Record<string, TestState>>({});
 
 	onMount(() => relays.load());
 
@@ -22,6 +28,51 @@
 
 	function toggleWrite(url: string) {
 		relays.setPermission(url, 'write', !relays.canWrite(url));
+	}
+
+	function testRelay(url: string) {
+		relayTests = { ...relayTests, [url]: { status: 'testing' } };
+		const startedAt = performance.now();
+		let socket: WebSocket | null = null;
+		let settled = false;
+
+		const finish = (state: TestState) => {
+			if (settled) return;
+			settled = true;
+			try {
+				socket?.close();
+			} catch {
+				/* noop */
+			}
+			relayTests = { ...relayTests, [url]: state };
+		};
+
+		const timeout = window.setTimeout(() => {
+			finish({ status: 'failed', message: 'Timeout' });
+		}, 6000);
+
+		try {
+			socket = new WebSocket(url);
+			socket.onopen = () => {
+				window.clearTimeout(timeout);
+				finish({ status: 'ok', ms: Math.round(performance.now() - startedAt) });
+			};
+			socket.onerror = () => {
+				window.clearTimeout(timeout);
+				finish({ status: 'failed', message: 'Failed' });
+			};
+		} catch {
+			window.clearTimeout(timeout);
+			finish({ status: 'failed', message: 'Invalid' });
+		}
+	}
+
+	function testLabel(url: string) {
+		const state = relayTests[url];
+		if (!state || state.status === 'idle') return 'Not tested';
+		if (state.status === 'testing') return 'Testing...';
+		if (state.status === 'ok') return `${state.ms ?? 0} ms`;
+		return state.message ?? 'Failed';
 	}
 </script>
 
@@ -66,9 +117,22 @@
 				></span>
 
 				<!-- URL -->
-				<span class="min-w-0 flex-1 truncate font-mono text-[12.5px] text-[var(--ui-text)]">
-					{url}
-				</span>
+				<div class="min-w-0 flex-1">
+					<div class="truncate font-mono text-[12.5px] text-[var(--ui-text)]">
+						{url}
+					</div>
+					<div
+						class="mt-0.5 text-[10.5px] font-semibold"
+						class:text-emerald-600={relayTests[url]?.status === 'ok'}
+						class:dark:text-emerald-400={relayTests[url]?.status === 'ok'}
+						class:text-amber-600={relayTests[url]?.status === 'testing'}
+						class:dark:text-amber-400={relayTests[url]?.status === 'testing'}
+						class:text-[var(--tone-error-text)]={relayTests[url]?.status === 'failed'}
+						class:text-[var(--ui-text-dimmed)]={!relayTests[url] || relayTests[url]?.status === 'idle'}
+					>
+						{testLabel(url)}
+					</div>
+				</div>
 
 				<!-- R / W toggle buttons -->
 				<div class="flex items-center gap-1.5">
@@ -97,6 +161,19 @@
 						aria-pressed={relays.canWrite(url)}
 					>
 						W
+					</button>
+					<button
+						type="button"
+						class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--interactive-hover-bg)] hover:text-[var(--ui-text)] disabled:cursor-wait disabled:opacity-60"
+						onclick={() => testRelay(url)}
+						disabled={relayTests[url]?.status === 'testing'}
+						aria-label="Test connection for {url}"
+						title="Test connection"
+					>
+							<Icon
+								name={relayTests[url]?.status === 'testing' ? 'lucide:loader-circle' : 'lucide:wifi'}
+								class="size-3.5 {relayTests[url]?.status === 'testing' ? 'animate-spin' : ''}"
+							/>
 					</button>
 				</div>
 

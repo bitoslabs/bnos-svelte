@@ -12,11 +12,13 @@ import {
 import type { Product, Order, Customer } from './index';
 
 describe('domain kind registry', () => {
-	it('derives every kind from the authoritative GLO map (no hard-coded numbers)', () => {
+	it('derives every kind from the authoritative GLO map plus app BNOS overrides', () => {
 		for (const key of Object.keys(TYPE) as (keyof typeof TYPE)[]) {
 			const type = TYPE[key];
 			const expected = (GLO_KIND_BY_TYPE as Record<string, number>)[type] ?? 30078;
-			expect(KIND[key]).toBe(expected);
+			if (key === 'shift') expect(KIND[key]).toBe(30520);
+			else if (key === 'cashEvent') expect(KIND[key]).toBe(30521);
+			else expect(KIND[key]).toBe(expected);
 		}
 	});
 
@@ -45,11 +47,11 @@ describe('domain kind registry', () => {
 			'loyaltyPoints',
 			'membership',
 			'membershipSubscription',
-			'membershipCheckIn',
-			'shift',
-			'cashEvent'
+			'membershipCheckIn'
 		] as const;
 		for (const key of extensions) expect(KIND[key]).toBe(30078);
+		expect(KIND.shift).toBe(30520);
+		expect(KIND.cashEvent).toBe(30521);
 	});
 
 	it('exposes a reverse kind → types index', () => {

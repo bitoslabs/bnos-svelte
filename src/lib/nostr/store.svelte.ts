@@ -29,6 +29,12 @@ import {
 	createGloObject,
 	createGloEventTemplate,
 	createGloFilter,
+	createGloIdentifier,
+	createGloTags,
+	decodeGloContent,
+	encodeGloContent,
+	getTagValue,
+	getGloKindForType,
 	parseGloEvent,
 	isGloObject,
 	type GloObject,
@@ -37,7 +43,7 @@ import {
 	type GloVisibility,
 	type KnownGloObjectType
 } from '@bitos/bnos-core/glo';
-import { signNostrEvent, type NostrEvent } from '@bitos/bnos-core';
+import { NOSTR_KINDS, signNostrEvent, type NostrEvent } from '@bitos/bnos-core';
 import { get as idbGet, set as idbSet } from 'idb-keyval';
 import { session } from './session.svelte';
 import { relays } from './relay.svelte';
@@ -46,18 +52,85 @@ import { fetchEvents, sendEvent } from './client';
 
 const STORAGE_PREFIX = 'bnos-os:glo:';
 const PUBLISH_QUEUE_KEY = 'bnos-os:glo:publish-queue';
+const KIND_UPGRADE_PREFIX = 'bnos-os:glo:kind-upgraded:';
+const APP_KIND_BY_TYPE: Record<string, number> = {
+	shift: NOSTR_KINDS.SHIFT,
+	'cash-event': NOSTR_KINDS.CASH_EVENT
+};
 
 function uid(): string {
 	if (browser && crypto.randomUUID) return crypto.randomUUID();
 	return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-type AnyGloObject = GloObject<unknown>;
+type AnyGloObject = GloObject<unknown> & { __eventCreatedAt?: number };
 type QueuedPublish = {
 	type: string;
 	object: AnyGloObject;
 	queuedAt: number;
 };
+
+function toTimestamp(value: unknown): number {
+	if (typeof value === 'number' && Number.isFinite(value)) return value;
+	if (typeof value !== 'string') return 0;
+	const parsed = Date.parse(value);
+	return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function objectTimestamp(object: AnyGloObject): number {
+	const data = object.data && typeof object.data === 'object' ? object.data as Record<string, unknown> : {};
+	return Math.max(
+		toTimestamp(data.updatedAt),
+		toTimestamp(data.createdAt),
+		(object.__eventCreatedAt ?? 0) * 1000
+	);
+}
+
+function stampData<TData>(data: TData, existing?: AnyGloObject): TData {
+	if (!data || typeof data !== 'object' || Array.isArray(data)) return data;
+	const now = new Date().toISOString();
+	const current = existing?.data && typeof existing.data === 'object'
+		? existing.data as Record<string, unknown>
+		: {};
+	return {
+		...(data as Record<string, unknown>),
+		createdAt: (data as Record<string, unknown>).createdAt ?? current.createdAt ?? now,
+		updatedAt: now
+	} as TData;
+}
+
+function appKindForType(type: string) {
+	return APP_KIND_BY_TYPE[type] ?? getGloKindForType(type);
+}
+
+function kindUpgradeKey(type: string) {
+	return `${KIND_UPGRADE_PREFIX}${tenant.state.organizationId || 'no-workspace'}:${type}:${appKindForType(type)}`;
+}
+
+function createAppGloEventTemplate(object: GloObject<unknown>, options: { client?: string; summary?: string } = {}) {
+	const overrideKind = APP_KIND_BY_TYPE[object.type];
+	if (!overrideKind) {
+		return createGloEventTemplate(object, options);
+	}
+	return {
+		kind: overrideKind,
+		created_at: Math.floor(Date.now() / 1000),
+		tags: createGloTags(object, options),
+		content: encodeGloContent(object)
+	};
+}
+
+function parseAppGloEvent(event: NostrEvent): AnyGloObject {
+	try {
+		return parseGloEvent(event as never).object as AnyGloObject;
+	} catch (e) {
+		const object = decodeGloContent(event.content) as AnyGloObject;
+		const overrideKind = APP_KIND_BY_TYPE[object.type];
+		if (!overrideKind || event.kind !== overrideKind) throw e;
+		if (getTagValue(event.tags, 'd') !== createGloIdentifier(object.type, object.id)) throw e;
+		return object;
+	}
+}
 
 // ─── IndexedDB read/write helpers ────────────────────────────────────────────
 
@@ -329,6 +402,7 @@ class GloStore {
 	): Promise<GloObject<TData, string>> => {
 		const id = opts.id ?? uid();
 		const existing = this.collections.find(type, id);
+		const dataWithTimestamps = stampData(data, existing);
 		const object = createGloObject<TData, string>({
 			type,
 			id,
@@ -338,7 +412,7 @@ class GloStore {
 				ownerPubkey: opts.scope?.ownerPubkey ?? session.pubkey ?? undefined
 			},
 			visibility: opts.visibility ?? existing?.visibility ?? 'organization',
-			data,
+			data: dataWithTimestamps,
 			extensions: opts.extensions as never
 		});
 
@@ -363,16 +437,19 @@ class GloStore {
 	};
 
 	/** Batch upsert (for relay sync merges). */
-		batchUpsert = (type: string, objects: AnyGloObject[]) => {
-			if (!objects.length) return;
-			// Ensure data is loaded — if not hydrated, the set() below replaces [].
-			const current = this.collections.get(type);
-			const byId: Record<string, AnyGloObject> = Object.fromEntries(current.map((o) => [o.id, o]));
-			for (const obj of objects) {
+	batchUpsert = (type: string, objects: AnyGloObject[]) => {
+		if (!objects.length) return;
+		// Ensure data is loaded — if not hydrated, the set() below replaces [].
+		const current = this.collections.get(type);
+		const byId: Record<string, AnyGloObject> = Object.fromEntries(current.map((o) => [o.id, o]));
+		for (const obj of objects) {
+			const existing = byId[obj.id];
+			if (!existing || objectTimestamp(obj) >= objectTimestamp(existing)) {
 				byId[obj.id] = obj;
 			}
-			this.collections.set(type, Object.values(byId));
-			this.bump();
+		}
+		this.collections.set(type, Object.values(byId));
+		this.bump();
 		// Broadcast to other tabs.
 		getBroadcastChannel()?.postMessage({ type: 'batch', collectionType: type });
 	};
@@ -385,7 +462,7 @@ class GloStore {
 			return false;
 		}
 		try {
-			const template = createGloEventTemplate(object, {
+			const template = createAppGloEventTemplate(object, {
 				client: 'bdgo-os',
 				summary: `${type} ${object.id}`
 			});
@@ -427,33 +504,58 @@ class GloStore {
 		return publishedCount;
 	};
 
+	private publishLocalKindUpgrade = async (type: string) => {
+		if (!browser || !APP_KIND_BY_TYPE[type]) return;
+		if (!session.snapshot || !relays.online || !relays.writableNormalized.length) return;
+		const stampKey = kindUpgradeKey(type);
+		if (localStorage.getItem(stampKey)) return;
+
+		const localObjects = this.collections.get(type);
+		if (!localObjects.length) {
+			localStorage.setItem(stampKey, String(Date.now()));
+			return;
+		}
+
+		let allPublished = true;
+		for (const object of localObjects) {
+			const published = await this.publish(type, object, { queueOnFailure: true });
+			allPublished &&= published;
+		}
+		if (allPublished) localStorage.setItem(stampKey, String(Date.now()));
+	};
+
 	/** Pull the latest events for a type from relays and merge locally. */
-		sync = async (type: string, limit = 200) => {
-			if (!session.pubkey || !relays.online || !relays.readableNormalized.length) return;
-			if (this.syncing.has(type)) return;
-			this.syncing.add(type);
-			try {
+	sync = async (type: string, limit = 200) => {
+		if (!session.pubkey || !relays.online || !relays.readableNormalized.length) return;
+		if (this.syncing.has(type)) return;
+		this.syncing.add(type);
+		try {
 			await this.flushPublishQueue();
+			await this.publishLocalKindUpgrade(type);
 			const filter = createGloFilter({
 				types: [type],
 				authors: [session.pubkey],
 				organizationId: tenant.state.organizationId || undefined,
 				limit
 			});
+			filter.kinds = [...new Set([...filter.kinds, appKindForType(type)])];
 			const events = await fetchEvents(filter as Parameters<typeof fetchEvents>[0]);
 			const incoming: AnyGloObject[] = [];
 			for (const ev of events) {
 				try {
-					incoming.push(parseGloEvent(ev as never).object);
+					incoming.push({
+						...parseAppGloEvent(ev as NostrEvent),
+						__eventCreatedAt: ev.created_at
+					});
 				} catch {
 					/* skip non-GLO / malformed */
 				}
 			}
 			if (incoming.length) this.batchUpsert(type, incoming);
-			} finally {
-				this.syncing.delete(type);
-			}
-		};
+		} finally {
+			this.syncing.delete(type);
+		}
+	};
 
 	/** Sync everything the app cares about. */
 	syncAll = async (types: string[]) => {

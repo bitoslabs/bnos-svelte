@@ -14,13 +14,15 @@
  *
  * @see @bitos/bnos-core `docs/GLO.md` and `docs/KIND-AUDIT.md`
  */
+import { NOSTR_KINDS } from '@bitos/bnos-core';
 import { GLO_KIND_BY_TYPE, getGloKindForType, type GloObjectType } from '@bitos/bnos-core/glo';
 
 /**
  * The object types bnos-svelte reads and writes.
  *
  * - Known GLO types use their canonical dotted name.
- * - Extension types use a short kebab name; they ride NIP-78 `30078`.
+ * - Extension types use a short kebab name. Most ride NIP-78 `30078`;
+ *   shift/cash-event use their registered BNOS event kinds.
  */
 export const TYPE = {
 	// catalog (known kinds 30100–30103)
@@ -63,11 +65,17 @@ export type DomainType = keyof typeof TYPE;
 export type DomainTypeValue = (typeof TYPE)[DomainType];
 
 /**
- * Authoritative kind for each client type, derived from the standard map.
+ * Authoritative kind for each client type, derived from the standard map
+ * plus app-side BNOS kinds that are not yet in the GLO type map.
  * `KIND.product === 30100`, `KIND.expense === 30078`, etc.
  */
+const APP_KIND_OVERRIDES: Partial<Record<DomainType, number>> = {
+	shift: NOSTR_KINDS.SHIFT,
+	cashEvent: NOSTR_KINDS.CASH_EVENT
+};
+
 export const KIND = Object.fromEntries(
-	(Object.keys(TYPE) as DomainType[]).map((k) => [k, getGloKindForType(TYPE[k])])
+	(Object.keys(TYPE) as DomainType[]).map((k) => [k, APP_KIND_OVERRIDES[k] ?? getGloKindForType(TYPE[k])])
 ) as { [K in DomainType]: number };
 
 /** Reverse lookup: kind number → list of client type keys using it. */

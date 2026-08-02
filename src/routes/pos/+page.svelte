@@ -594,7 +594,7 @@
 			status: 'closed',
 			closedAt: new Date().toISOString(),
 			closingCash
-		});
+		}, { id: openShift.id });
 		toast.success('Shift closed', openShift.data.number);
 		shiftModalOpen = false;
 	}
