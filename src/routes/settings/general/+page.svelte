@@ -135,23 +135,23 @@
 			</div>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div><label class="text-[13px] font-semibold">Sound effects</label><p class="text-[11px] text-[var(--ui-text-dimmed)]">UI click sounds</p></div>
+			<div><div class="text-[13px] font-semibold">Sound effects</div><p class="text-[11px] text-[var(--ui-text-dimmed)]">UI click sounds</p></div>
 			<Switch bind:checked={playSound} />
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div><label class="text-[13px] font-semibold">Payment sound</label><p class="text-[11px] text-[var(--ui-text-dimmed)]">Chime on successful payment</p></div>
+			<div><div class="text-[13px] font-semibold">Payment sound</div><p class="text-[11px] text-[var(--ui-text-dimmed)]">Chime on successful payment</p></div>
 			<Switch bind:checked={paymentSound} />
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div><label class="text-[13px] font-semibold">Auto-print receipt</label><p class="text-[11px] text-[var(--ui-text-dimmed)]">Print automatically after payment</p></div>
+			<div><div class="text-[13px] font-semibold">Auto-print receipt</div><p class="text-[11px] text-[var(--ui-text-dimmed)]">Print automatically after payment</p></div>
 			<Switch bind:checked={autoPrint} />
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div><label class="text-[13px] font-semibold">Confirm before clearing cart</label><p class="text-[11px] text-[var(--ui-text-dimmed)]">Show dialog to prevent accidents</p></div>
+			<div><div class="text-[13px] font-semibold">Confirm before clearing cart</div><p class="text-[11px] text-[var(--ui-text-dimmed)]">Show dialog to prevent accidents</p></div>
 			<Switch bind:checked={confirmClear} />
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div><label class="text-[13px] font-semibold">Compact mode</label><p class="text-[11px] text-[var(--ui-text-dimmed)]">Denser layout, more items visible</p></div>
+			<div><div class="text-[13px] font-semibold">Compact mode</div><p class="text-[11px] text-[var(--ui-text-dimmed)]">Denser layout, more items visible</p></div>
 			<Switch bind:checked={compactMode} />
 		</div>
 	</section>
@@ -163,7 +163,7 @@
 			<h2 class="font-display text-[14px] font-semibold text-[var(--tone-error-text)]">Danger zone</h2>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div><label class="text-[13px] font-semibold">Reset all settings</label><p class="text-[11px] text-[var(--ui-text-dimmed)]">Restore POS settings to defaults</p></div>
+			<div><div class="text-[13px] font-semibold">Reset all settings</div><p class="text-[11px] text-[var(--ui-text-dimmed)]">Restore POS settings to defaults</p></div>
 			<Button color="error" variant="subtle" size="sm" icon="lucide:rotate-ccw" onclick={resetAll}>Reset</Button>
 		</div>
 	</section>

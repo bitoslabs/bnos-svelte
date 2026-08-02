@@ -102,7 +102,19 @@ export const bottomBarItems: NavItem[] = [
 	{ to: '/settings', icon: 'lucide:menu', label: 'More' }
 ];
 
+function normalizePath(path: string) {
+	return path.length > 1 ? path.replace(/\/+$/, '') : path;
+}
+
+export function matchesNavItem(path: string, item: NavItem): boolean {
+	const current = normalizePath(path);
+	const target = normalizePath(item.to);
+	return item.exact ? current === target : current === target || current.startsWith(target + '/');
+}
+
 export function findNavItem(path: string): NavItem | undefined {
-	const norm = path.length > 1 ? path.replace(/\/+$/, '') : path;
-	return flatNav.find((i) => (i.exact ? norm === i.to : norm === i.to || norm.startsWith(i.to + '/')));
+	const norm = normalizePath(path);
+	return [...flatNav]
+		.filter((item) => matchesNavItem(norm, item))
+		.sort((a, b) => normalizePath(b.to).length - normalizePath(a.to).length)[0];
 }

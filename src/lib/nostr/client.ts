@@ -41,8 +41,16 @@ export async function fetchEvents(filter: NostrFilter): Promise<NostrEvent[]> {
 export async function sendEvent(event: NostrEvent): Promise<boolean> {
 	if (!relays.online || !relays.writableNormalized.length) return false;
 	try {
-		await publishToRelays(event, relays.writableNormalized);
-		return true;
+		const [primary] = relays.primaryWritableNormalized;
+		if (!primary) return await publishToRelays(event, relays.writableNormalized);
+
+		const primaryPublished = await publishToRelays(event, [primary], { maxWaitMs: 1800 });
+		const remaining = relays.writableNormalized.filter((url) => url !== primary);
+		if (primaryPublished) {
+			if (remaining.length) void publishToRelays(event, remaining);
+			return true;
+		}
+		return await publishToRelays(event, remaining.length ? remaining : relays.writableNormalized);
 	} catch (e) {
 		console.warn('[nostr] publish failed', e);
 		return false;

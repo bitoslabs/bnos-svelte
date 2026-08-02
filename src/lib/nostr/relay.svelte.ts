@@ -24,6 +24,8 @@ class RelayStore {
 	relays = $state<string[]>([...DEFAULT_RELAYS]);
 	/** Per-relay read/write access. Missing entries default to full access. */
 	permissions = $state<Record<string, RelayPermissions>>({});
+	/** Preferred relay for fast foreground reads/writes. */
+	primaryRelay = $state<string | null>(null);
 	/** Whether the device currently has a network connection. */
 	online = $state(true);
 	hydrated = $state(false);
@@ -48,8 +50,19 @@ class RelayStore {
 		if (!browser) return;
 		localStorage.setItem(
 			STORAGE_KEY,
-			JSON.stringify({ relays: this.relays, permissions: this.permissions })
+			JSON.stringify({ relays: this.relays, permissions: this.permissions, primaryRelay: this.primaryRelay })
 		);
+	};
+
+	private normalizePrimary = (value: unknown, urls = this.relays) => {
+		const [primary] = typeof value === 'string' ? normalizeRelayUrls([value]) : [];
+		if (primary && urls.includes(primary)) return primary;
+		return urls[0] ?? null;
+	};
+
+	private primaryFirst = (urls: string[]) => {
+		if (!this.primaryRelay || !urls.includes(this.primaryRelay)) return urls;
+		return [this.primaryRelay, ...urls.filter((url) => url !== this.primaryRelay)];
 	};
 
 	load = () => {
@@ -61,6 +74,7 @@ class RelayStore {
 				if (Array.isArray(parsed)) {
 					this.relays = normalizeRelayUrls(parsed);
 					this.permissions = this.normalizePermissions(this.relays, {});
+					this.primaryRelay = this.normalizePrimary(null, this.relays);
 				} else if (parsed && typeof parsed === 'object') {
 					const relays = Array.isArray(parsed.relays) ? parsed.relays : [];
 					this.relays = normalizeRelayUrls(relays);
@@ -77,6 +91,7 @@ class RelayStore {
 					} else {
 						this.permissions = this.normalizePermissions(this.relays, parsed.permissions);
 					}
+					this.primaryRelay = this.normalizePrimary(parsed.primaryRelay, this.relays);
 				}
 			}
 		} catch {
@@ -86,6 +101,7 @@ class RelayStore {
 			this.relays = [...DEFAULT_RELAYS];
 			this.permissions = this.defaultPermissions();
 		}
+		this.primaryRelay = this.normalizePrimary(this.primaryRelay, this.relays);
 		this.online = navigator.onLine;
 		this.hydrated = true;
 
@@ -96,6 +112,7 @@ class RelayStore {
 	set = (urls: string[]) => {
 		this.relays = normalizeRelayUrls(urls.length ? urls : DEFAULT_RELAYS);
 		this.permissions = this.normalizePermissions(this.relays, this.permissions);
+		this.primaryRelay = this.normalizePrimary(this.primaryRelay, this.relays);
 		this.save();
 	};
 
@@ -104,14 +121,17 @@ class RelayStore {
 		if (norm && !this.relays.includes(norm)) {
 			this.relays = [...this.relays, norm];
 			this.permissions = { ...this.permissions, [norm]: { read: true, write: true } };
+			this.primaryRelay ??= norm;
 			this.save();
 		}
 	};
 
 	remove = (url: string) => {
 		this.relays = this.relays.filter((r) => r !== url);
-		const { [url]: _removed, ...rest } = this.permissions;
-		this.permissions = rest;
+		this.permissions = Object.fromEntries(
+			Object.entries(this.permissions).filter(([relayUrl]) => relayUrl !== url)
+		);
+		this.primaryRelay = this.normalizePrimary(this.primaryRelay === url ? null : this.primaryRelay, this.relays);
 		this.save();
 	};
 
@@ -137,6 +157,14 @@ class RelayStore {
 	reset = () => {
 		this.relays = normalizeRelayUrls(DEFAULT_RELAYS);
 		this.permissions = this.defaultPermissions();
+		this.primaryRelay = this.relays[0] ?? null;
+		this.save();
+	};
+
+	setPrimary = (url: string) => {
+		const [norm] = normalizeRelayUrls([url]);
+		if (!norm || !this.relays.includes(norm)) return;
+		this.primaryRelay = norm;
 		this.save();
 	};
 
@@ -145,7 +173,7 @@ class RelayStore {
 	}
 
 	get activeRelays() {
-		return this.relays.filter((url) => this.isActive(url));
+		return this.primaryFirst(this.relays.filter((url) => this.isActive(url)));
 	}
 
 	get activeNormalized() {
@@ -153,11 +181,11 @@ class RelayStore {
 	}
 
 	get readableRelays() {
-		return this.relays.filter((url) => this.permissions[url]?.read ?? true);
+		return this.primaryFirst(this.relays.filter((url) => this.permissions[url]?.read ?? true));
 	}
 
 	get writableRelays() {
-		return this.relays.filter((url) => this.permissions[url]?.write ?? true);
+		return this.primaryFirst(this.relays.filter((url) => this.permissions[url]?.write ?? true));
 	}
 
 	get readableNormalized() {
@@ -166,6 +194,18 @@ class RelayStore {
 
 	get writableNormalized() {
 		return normalizeRelayUrls(this.writableRelays);
+	}
+
+	get primaryReadableNormalized() {
+		return this.primaryRelay && this.canRead(this.primaryRelay)
+			? normalizeRelayUrls([this.primaryRelay])
+			: [];
+	}
+
+	get primaryWritableNormalized() {
+		return this.primaryRelay && this.canWrite(this.primaryRelay)
+			? normalizeRelayUrls([this.primaryRelay])
+			: [];
 	}
 
 	canRead = (url: string) => this.permissions[url]?.read ?? true;

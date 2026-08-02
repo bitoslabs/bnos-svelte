@@ -30,6 +30,10 @@
 		relays.setPermission(url, 'write', !relays.canWrite(url));
 	}
 
+	function setPrimary(url: string) {
+		relays.setPrimary(url);
+	}
+
 	function testRelay(url: string) {
 		relayTests = { ...relayTests, [url]: { status: 'testing' } };
 		const startedAt = performance.now();
@@ -85,7 +89,7 @@
 		<div class="flex-1">
 			<h2 class="font-display text-[15px] font-semibold tracking-tight">Relays</h2>
 			<p class="text-[12px] text-[var(--ui-text-muted)]">
-				{relays.relays.length} configured · {relays.readableRelays.length} read · {relays.writableRelays.length} write · {relays.online ? 'online' : 'offline'}
+				{relays.relays.length} configured · {relays.readableRelays.length} read · {relays.writableRelays.length} write · primary first · {relays.online ? 'online' : 'offline'}
 			</p>
 		</div>
 		<Button
@@ -121,21 +125,44 @@
 					<div class="truncate font-mono text-[12.5px] text-[var(--ui-text)]">
 						{url}
 					</div>
-					<div
-						class="mt-0.5 text-[10.5px] font-semibold"
-						class:text-emerald-600={relayTests[url]?.status === 'ok'}
-						class:dark:text-emerald-400={relayTests[url]?.status === 'ok'}
-						class:text-amber-600={relayTests[url]?.status === 'testing'}
-						class:dark:text-amber-400={relayTests[url]?.status === 'testing'}
-						class:text-[var(--tone-error-text)]={relayTests[url]?.status === 'failed'}
-						class:text-[var(--ui-text-dimmed)]={!relayTests[url] || relayTests[url]?.status === 'idle'}
-					>
-						{testLabel(url)}
+					<div class="mt-0.5 flex flex-wrap items-center gap-1.5">
+						{#if relays.primaryRelay === url}
+							<span class="rounded bg-primary-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-primary-600 dark:text-primary-400">
+								Primary
+							</span>
+						{/if}
+						<span
+							class="text-[10.5px] font-semibold"
+							class:text-emerald-600={relayTests[url]?.status === 'ok'}
+							class:dark:text-emerald-400={relayTests[url]?.status === 'ok'}
+							class:text-amber-600={relayTests[url]?.status === 'testing'}
+							class:dark:text-amber-400={relayTests[url]?.status === 'testing'}
+							class:text-[var(--tone-error-text)]={relayTests[url]?.status === 'failed'}
+							class:text-[var(--ui-text-dimmed)]={!relayTests[url] || relayTests[url]?.status === 'idle'}
+						>
+							{testLabel(url)}
+						</span>
 					</div>
 				</div>
 
 				<!-- R / W toggle buttons -->
 				<div class="flex items-center gap-1.5">
+					<button
+						type="button"
+						class="grid size-7 place-items-center rounded-md transition-colors"
+						class:bg-primary-500={relays.primaryRelay === url}
+						class:text-white={relays.primaryRelay === url}
+						class:bg-[var(--ui-bg-accented)]={relays.primaryRelay !== url}
+						class:text-[var(--ui-text-muted)]={relays.primaryRelay !== url}
+						class:hover:bg-[var(--interactive-hover-bg)]={relays.primaryRelay !== url}
+						class:hover:text-[var(--ui-text)]={relays.primaryRelay !== url}
+						onclick={() => setPrimary(url)}
+						aria-label="Set primary relay for {url}"
+						aria-pressed={relays.primaryRelay === url}
+						title="Set primary relay"
+					>
+						<Icon name="lucide:star" class="size-3.5" />
+					</button>
 					<button
 						type="button"
 						class="inline-flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 text-[11px] font-bold transition-colors"
@@ -192,6 +219,6 @@
 
 	<!-- Footer hint -->
 	<p class="text-[11.5px] text-[var(--ui-text-dimmed)]">
-		{DEFAULT_RELAYS.length} default relays available · Tap R or W to toggle read/write access
+		{DEFAULT_RELAYS.length} default relays available · Star one primary relay for fastest foreground sync · R/W controls read/write access
 	</p>
 </div>

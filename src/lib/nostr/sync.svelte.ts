@@ -70,6 +70,15 @@ function shouldSync(scope: string, cooldownMs: number) {
 	return Date.now() - getLastSyncAt(scope) > cooldownMs;
 }
 
+function typeScope(type: string) {
+	return `type:${type}`;
+}
+
+function staleTypes(types: readonly string[], cooldownMs: number) {
+	if (!browser) return [...types];
+	return types.filter((type) => shouldSync(typeScope(type), cooldownMs));
+}
+
 function idle(callback: () => void) {
 	if (!browser) return;
 	if ('requestIdleCallback' in window) {
@@ -99,6 +108,7 @@ class SyncStore {
 		const cooldownMs = options.cooldownMs ?? BACKGROUND_SYNC_COOLDOWN_MS;
 		this.hydrate(types);
 
+		if (!types.length) return false;
 		if (!session.pubkey || !relays.online) return false;
 		if (!options.force && !shouldSync(scope, cooldownMs)) return false;
 
@@ -113,6 +123,7 @@ class SyncStore {
 			await glo.flushPublishQueue();
 			for (const type of types) {
 				await glo.sync(type);
+				setLastSyncAt(typeScope(type));
 			}
 			setLastSyncAt(scope);
 			this.lastSyncedAt = Date.now();
@@ -138,25 +149,35 @@ class SyncStore {
 	backgroundOperationalSync(options: { force?: boolean } = {}) {
 		this.hydrate(ALL_OPERATIONAL_DATA_TYPES);
 		idle(() => {
-			void this.syncTypes(CORE_DATA_TYPES, {
+			const coreTypes = options.force
+				? [...CORE_DATA_TYPES]
+				: staleTypes(CORE_DATA_TYPES, BACKGROUND_SYNC_COOLDOWN_MS);
+			const secondaryTypes = options.force
+				? [...SECONDARY_DATA_TYPES]
+				: staleTypes(SECONDARY_DATA_TYPES, BACKGROUND_SYNC_COOLDOWN_MS * 2);
+
+			void this.syncTypes(coreTypes, {
 				force: options.force,
 				scope: 'core',
 				silent: true
-			}).then(() =>
-				this.syncTypes(SECONDARY_DATA_TYPES, {
+			}).then(() => {
+				if (!secondaryTypes.length) return false;
+				return this.syncTypes(secondaryTypes, {
 					force: options.force,
 					scope: 'secondary',
 					cooldownMs: BACKGROUND_SYNC_COOLDOWN_MS * 2,
 					silent: true
-				})
-			);
+				});
+			});
 		});
 	}
 
 	pageSync(types: readonly string[], options: { force?: boolean; scope?: string } = {}) {
 		this.hydrate(types);
 		idle(() => {
-			void this.syncTypes(types, {
+			const syncTypes = options.force ? [...types] : staleTypes(types, PAGE_SYNC_COOLDOWN_MS);
+			if (!syncTypes.length) return;
+			void this.syncTypes(syncTypes, {
 				force: options.force,
 				scope: options.scope ?? `page:${types.join(',')}`,
 				cooldownMs: PAGE_SYNC_COOLDOWN_MS,

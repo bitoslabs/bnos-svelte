@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
-	import { navSections, type NavItem } from '$lib/nav';
+	import { findNavItem, navSections, type NavItem } from '$lib/nav';
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { truncateNpub, initialsFrom } from '$lib/utils/format';
@@ -14,13 +14,8 @@
 	// Load persisted sidebarState.collapsed preference
 	loadCollapsed();
 
-	function normalizePath(path: string) {
-		return path.length > 1 ? path.replace(/\/+$/, '') : path;
-	}
 	function isActive(item: NavItem) {
-		const current = normalizePath(page.url.pathname);
-		const target = normalizePath(item.to);
-		return item.exact ? current === target : current === target || current.startsWith(target + '/');
+		return findNavItem(page.url.pathname)?.to === item.to;
 	}
 
 	let menuOpen = $state(false);
