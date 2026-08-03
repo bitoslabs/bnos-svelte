@@ -6,6 +6,8 @@
 	import { findNavItem, navSections, type NavItem } from '$lib/nav';
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+import { glo } from '$nostr/store.svelte';
+	import { permissions } from '$lib/permissions.svelte';
 	import { truncateNpub, initialsFrom } from '$lib/utils/format';
 	import { sidebarState, loadCollapsed, toggleCollapsed } from '$lib/sidebar-state.svelte';
 
@@ -18,12 +20,36 @@
 		return findNavItem(page.url.pathname)?.to === item.to;
 	}
 
+	/** Route → (resource, action) gate. Undefined = always visible. */
+	const ROUTE_PERMISSIONS: Record<string, [string, string]> = {
+		'/staff': ['staff', 'read'],
+		'/reports': ['reports', 'read'],
+		'/expenses': ['accounting', 'read'],
+		'/settings': ['settings', 'read']
+	};
+
+	/** Show a nav item unless the active role explicitly denies it. During
+	 *  first-run (no resolved role) everything stays visible. */
+	function canSeeNav(item: NavItem): boolean {
+		if (tenant.state.activeRole === null) return true;
+		const gate = ROUTE_PERMISSIONS[item.to];
+		if (!gate) return true;
+		return permissions.can(gate[0] as never, gate[1] as never);
+	}
+
+	const visibleSections = $derived(
+		navSections
+			.map((section) => ({ ...section, items: section.items.filter(canSeeNav) }))
+			.filter((section) => section.items.length > 0)
+	);
+
 	let menuOpen = $state(false);
 
 	async function signOut() {
 		menuOpen = false;
-		session.logout();
+		await session.logout();
 		tenant.reset();
+		glo.clearAll();
 		await goto('/login');
 	}
 </script>
@@ -55,7 +81,7 @@
 
 	<!-- Navigation -->
 	<nav class="app-nav min-h-0 flex-1 overflow-y-auto {sidebarState.collapsed ? 'px-2' : 'px-3'} py-2">
-		{#each navSections as section (section.label)}
+		{#each visibleSections as section (section.label)}
 			{#if section.feature !== 'restaurant' || tenant.restaurantEnabled}
 			<div class="app-nav-section mb-5">
 				{#if !sidebarState.collapsed}

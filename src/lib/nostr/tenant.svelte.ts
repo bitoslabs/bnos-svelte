@@ -7,6 +7,7 @@
 import { browser } from '$app/environment';
 import { NOSTR_KINDS } from '@bitos/bnos-core';
 import { createGloObject, type GloOrganization } from '@bitos/bnos-core/glo';
+import type { UserRole } from '$lib/domain';
 
 const STORAGE_KEY = 'bnos-os:tenant';
 
@@ -25,6 +26,16 @@ export type BusinessType =
 	| 'wholesale'
 	| 'other';
 
+export interface ActiveStaffInfo {
+	id: string;
+	role: UserRole;
+	customPermissions?: string[];
+	companyId?: string;
+	branchIds?: string[];
+	status?: string;
+	name?: string;
+}
+
 export interface TenantContext {
 	organizationId: string;
 	organizationName: string;
@@ -37,6 +48,12 @@ export interface TenantContext {
 	defaultTaxRate: number;
 	taxIncludedInPrice: boolean;
 	setupComplete: boolean;
+	/** Active staff record id — this user within the org (drives RBAC). */
+	activeStaffId: string | null;
+	/** Active role — drives role-default permission checks. */
+	activeRole: UserRole | null;
+	/** Cached snapshot of the active staff (role + override info). */
+	activeStaffInfo: ActiveStaffInfo | null;
 }
 
 export const DEFAULT_TENANT: TenantContext = {
@@ -50,7 +67,10 @@ export const DEFAULT_TENANT: TenantContext = {
 	currency: 'USD',
 	defaultTaxRate: 0,
 	taxIncludedInPrice: false,
-	setupComplete: false
+	setupComplete: false,
+	activeStaffId: null,
+	activeRole: null,
+	activeStaffInfo: null
 };
 
 function hasTenantChanges(state: TenantContext, patch: Partial<TenantContext>) {
@@ -88,6 +108,24 @@ class TenantStore {
 		if (this.state.setupComplete) return;
 		this.state = { ...this.state, setupComplete: true };
 		this.persist();
+	};
+
+	/** Set the active staff — also sets role + staffInfo (drives `can()`). */
+	setActiveStaff = (staff: ActiveStaffInfo | null) => {
+		const next = {
+			...this.state,
+			activeStaffId: staff?.id ?? null,
+			activeRole: staff?.role ?? null,
+			activeStaffInfo: staff
+		};
+		if (!hasTenantChanges(this.state, next)) return;
+		this.state = next;
+		this.persist();
+	};
+
+	/** Clear only the active-staff context (keeps org/location). */
+	clearActiveStaff = () => {
+		this.setActiveStaff(null);
 	};
 
 	reset = () => {

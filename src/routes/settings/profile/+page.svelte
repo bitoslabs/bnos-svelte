@@ -10,6 +10,7 @@
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import { session, hasNip07Extension } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+import { glo } from '$nostr/store.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { truncateNpub, initialsFrom, titleCase } from '$lib/utils/format';
 
@@ -168,8 +169,9 @@
 	}
 
 	async function signOut() {
-		session.logout();
+		await session.logout();
 		tenant.reset();
+		glo.clearAll();
 		toast.info('Signed out');
 		await goto(resolve('/login'), { replaceState: true });
 	}

@@ -4,10 +4,12 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+import { glo } from '$nostr/store.svelte';
 
-	function signOut() {
-		session.logout();
+	async function signOut() {
+		await session.logout();
 		tenant.reset();
+		glo.clearAll();
 		goto('/login', { replaceState: true });
 	}
 </script>

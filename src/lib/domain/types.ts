@@ -505,7 +505,20 @@ export interface MembershipCheckIn {
 // IDENTITY / STAFF
 // ════════════════════════════════════════════════════════════════════
 
-export type UserRole = 'owner' | 'manager' | 'cashier' | 'waiter' | 'chef' | 'stock';
+export type UserRole =
+	| 'owner'
+	| 'admin'
+	| 'manager'
+	| 'cashier'
+	| 'waiter'
+	| 'chef'
+	| 'stock'
+	| 'warehouse'
+	| 'viewer'
+	| 'franchise_owner'
+	| 'supplier'
+	| 'delivery'
+	| 'customer';
 export type StaffStatus = 'active' | 'inactive' | 'suspended' | 'on_leave' | 'terminated';
 
 /** `identity.staff` — no canonical GLO data type yet; full bnos extension. */

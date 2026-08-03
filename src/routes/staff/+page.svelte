@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
+	import Switch from '$lib/components/ui/Switch.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import ListToolbar from '$lib/components/list/ListToolbar.svelte';
 	import SortableTh from '$lib/components/list/SortableTh.svelte';
@@ -13,29 +15,50 @@
 	import RowActions from '$lib/components/list/RowActions.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { tenant } from '$nostr/tenant.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { initialsFrom, formatMoney } from '$lib/utils/format';
-	import { TYPE, statusColor, type Staff, type UserRole } from '$lib/domain';
-	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
-
-	const ROLES: UserRole[] = ['owner', 'manager', 'cashier', 'waiter', 'chef', 'stock'];
-	const roleIcon: Record<string, string> = {
-		owner: 'lucide:crown',
-		manager: 'lucide:shield-check',
-		cashier: 'lucide:scan-line',
-		waiter: 'lucide:concierge-bell',
-		chef: 'lucide:chef-hat',
-		stock: 'lucide:warehouse',
-		admin: 'lucide:shield-check',
-		server: 'lucide:concierge-bell'
-	};
+	import { initialsFrom, truncateNpub } from '$lib/utils/format';
+	import { hashPin } from '$lib/utils/pin';
+	import {
+		generateKeyPair,
+		normalizePubkey,
+		hexToNpub,
+		isValidPubkeyInput,
+		hasStoredKey,
+		saveStaffKey,
+		removeStaffKey,
+		exportStaffKeysTxt
+	} from '$lib/utils/nostr-keys';
+	import { permissions, getRoleDefaultPermissions, getRolePermissionStrings } from '$lib/permissions.svelte';
+	import {
+		ROLE_LABELS,
+		roleBadgeColor,
+		STAFF_ROLES,
+		PERMISSION_RESOURCES,
+		type PermissionResource
+	} from '$lib/domain/permissions';
+	import { TYPE, statusColor, type Staff, type StaffStatus, type UserRole } from '$lib/domain';
 
 	onMount(() => {
 		dataSync.pageSync([TYPE.staff], { scope: 'staff' });
 	});
 
+	// ── Permission gating ────────────────────────────────────────────
+	const canRead = $derived(permissions.can('staff', 'read') || tenant.state.activeRole === null);
+	const canWrite = $derived(permissions.can('staff', 'write') || tenant.state.activeRole === null);
+	const canDelete = $derived(permissions.can('staff', 'delete') || tenant.state.activeRole === null);
+	const canExport = $derived(permissions.can('settings', 'write'));
+
+	// Redirect away once we *know* the user is denied (not during first-run).
+	$effect(() => {
+		if (tenant.state.activeRole !== null && !permissions.can('staff', 'read')) {
+			void goto('/', { replaceState: true });
+		}
+	});
+
 	const staff = $derived(glo.all<Staff, typeof TYPE.staff>(TYPE.staff));
+	const locations = $derived(glo.all<Record<string, unknown>, typeof TYPE.location>(TYPE.location));
 
 	// ── Stats ──
 	const stats = $derived.by(() => {
@@ -50,14 +73,10 @@
 	});
 
 	// ── Role filter ──
-	// Raw data viewer
-	let rawOpen = $state(false);
-	let rawItem = $state<any>(null);
-
 	let roleFilter = $state<string>('all');
 	const roleFilterOptions = $derived([
 		{ value: 'all', label: 'All roles' },
-		...ROLES.map((r) => ({ value: r, label: r.charAt(0).toUpperCase() + r.slice(1) }))
+		...STAFF_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))
 	]);
 
 	const filteredStaff = $derived(
@@ -80,60 +99,236 @@
 		storageKey: 'staff'
 	});
 
+	const roleIcon: Record<string, string> = {
+		owner: 'lucide:crown',
+		admin: 'lucide:shield-check',
+		manager: 'lucide:users',
+		cashier: 'lucide:scan-line',
+		waiter: 'lucide:concierge-bell',
+		chef: 'lucide:chef-hat',
+		stock: 'lucide:warehouse',
+		warehouse: 'lucide:warehouse',
+		viewer: 'lucide:eye'
+	};
+
+	const STATUSES: StaffStatus[] = ['active', 'inactive', 'suspended', 'on_leave', 'terminated'];
+
 	// ── Add / Edit dialog ──
 	let open = $state(false);
 	let editingId = $state<string | null>(null);
-	let name = $state('');
-	let role = $state<UserRole>('cashier');
-	let email = $state('');
-	let phone = $state('');
-	let pin = $state('');
-	let npub = $state('');
-	let rate = $state<number | ''>('');
+	let generatedNsec = $state<string | null>(null);
+	let showNsec = $state(false);
+
+	interface StaffForm {
+		pubkeyInput: string;
+		name: string;
+		displayName: string;
+		email: string;
+		phone: string;
+		role: UserRole;
+		employeeCode: string;
+		department: string;
+		status: StaffStatus;
+		branchIds: string[];
+		useCustomPermissions: boolean;
+		customPermissions: string[];
+		pin: string;
+		hourlyRate: number | '';
+	}
+
+	function blankForm(): StaffForm {
+		return {
+			pubkeyInput: '',
+			name: '',
+			displayName: '',
+			email: '',
+			phone: '',
+			role: 'cashier',
+			employeeCode: '',
+			department: '',
+			status: 'active',
+			branchIds: [],
+			useCustomPermissions: false,
+			customPermissions: [],
+			pin: '',
+			hourlyRate: ''
+		};
+	}
+	let form = $state<StaffForm>(blankForm());
+
+	const pubkeyState = $derived<'empty' | 'valid' | 'invalid'>(
+		!form.pubkeyInput.trim() ? 'empty' : isValidPubkeyInput(form.pubkeyInput) ? 'valid' : 'invalid'
+	);
+
+	const canSave = $derived(
+		!!form.name.trim() &&
+			pubkeyState !== 'invalid' &&
+			(!!editingId || pubkeyState === 'valid')
+	);
+
+	const permissionPreview = $derived(
+		form.useCustomPermissions
+			? form.customPermissions.length > 0
+				? form.customPermissions
+				: ['No custom permissions']
+			: getRoleDefaultPermissions(form.role).some((p) => p.resource === 'all')
+				? ['All resources (full access)']
+				: getRolePermissionStrings(form.role)
+	);
 
 	function openCreate() {
 		editingId = null;
-		name = email = phone = pin = npub = '';
-		role = 'cashier';
-		rate = '';
+		form = blankForm();
+		generatedNsec = null;
+		showNsec = false;
 		open = true;
 	}
 
 	function openEdit(s: { id: string; data: Staff }) {
 		editingId = s.id;
-		name = s.data.name ?? '';
-		role = s.data.role ?? 'cashier';
-		email = s.data.email ?? '';
-		phone = s.data.phone ?? '';
-		pin = s.data.pin ?? '';
-		npub = s.data.npub ?? '';
-		rate = s.data.hourlyRate ?? '';
+		form = {
+			pubkeyInput: s.data.npub ?? s.data.pubkey ?? '',
+			name: s.data.name ?? '',
+			displayName: s.data.displayName ?? '',
+			email: s.data.email ?? '',
+			phone: s.data.phone ?? '',
+			role: s.data.role ?? 'cashier',
+			employeeCode: s.data.employeeCode ?? '',
+			department: s.data.department ?? '',
+			status: s.data.status ?? 'active',
+			branchIds: [...(s.data.branchIds ?? [])],
+			useCustomPermissions: s.data.customPermissions !== undefined,
+			customPermissions: s.data.customPermissions ? [...s.data.customPermissions] : [],
+			pin: '',
+			hourlyRate: s.data.hourlyRate ?? ''
+		};
+		generatedNsec = null;
+		showNsec = false;
 		open = true;
 	}
 
-	async function save() {
-		if (!name.trim()) return toast.warning('Name required');
-		const payload: Staff = {
-			name: name.trim(),
-			role,
-			status: 'active',
-			email: email.trim() || undefined,
-			phone: phone.trim() || undefined,
-			pin: pin.trim() || undefined,
-			npub: npub.trim() || undefined,
-			hourlyRate: typeof rate === 'number' ? rate : Number(rate) || undefined
-		};
-		if (editingId) {
-			await glo.upsert<Staff>(TYPE.staff, payload, { id: editingId });
-			toast.success('Staff updated', name.trim());
-		} else {
-			await glo.upsert<Staff>(TYPE.staff, payload);
-			toast.success('Staff added', name.trim());
-		}
-		open = false;
+	function toggleBranch(id: string) {
+		form.branchIds = form.branchIds.includes(id)
+			? form.branchIds.filter((b) => b !== id)
+			: [...form.branchIds, id];
 	}
 
-	const npubValid = $derived(npub === '' || npub.startsWith('npub1'));
+	function togglePermission(value: string) {
+		form.customPermissions = form.customPermissions.includes(value)
+			? form.customPermissions.filter((p) => p !== value)
+			: [...form.customPermissions, value];
+	}
+
+	function onCustomToggle(v: boolean) {
+		form.useCustomPermissions = v;
+		form.customPermissions = v ? getRolePermissionStrings(form.role) : [];
+	}
+
+	function onGenerateKey() {
+		const kp = generateKeyPair();
+		form.pubkeyInput = kp.npub;
+		generatedNsec = kp.nsec;
+		showNsec = true;
+		toast.success('New keypair generated — back up the nsec!');
+	}
+
+	async function setPin() {
+		if (!editingId || form.pin.length < 4) return;
+		const existing = staff.find((s) => s.id === editingId);
+		await glo.upsert<Staff>(TYPE.staff, { ...existing!.data, pinHash: await hashPin(form.pin), pin: undefined }, { id: editingId });
+		form.pin = '';
+		toast.success('PIN saved');
+	}
+	async function removePin() {
+		if (!editingId) return;
+		const existing = staff.find((s) => s.id === editingId);
+		await glo.upsert<Staff>(TYPE.staff, { ...existing!.data, pinHash: undefined, pin: undefined }, { id: editingId });
+		toast.success('PIN removed');
+	}
+
+	async function save() {
+		if (!canSave) return;
+		let hexPk = '';
+		let npubDisplay = '';
+		if (form.pubkeyInput.trim()) {
+			try {
+				hexPk = normalizePubkey(form.pubkeyInput);
+				npubDisplay = hexToNpub(hexPk);
+			} catch {
+				toast.error('Invalid pubkey or npub');
+				return;
+			}
+		}
+		if (!editingId && !hexPk) {
+			toast.warning('Pubkey or npub is required for new staff');
+			return;
+		}
+
+		const payload: Staff = {
+			name: form.name.trim(),
+			displayName: form.displayName.trim() || undefined,
+			role: form.role,
+			status: form.status,
+			email: form.email.trim() || undefined,
+			phone: form.phone.trim() || undefined,
+			pubkey: hexPk || undefined,
+			npub: npubDisplay || undefined,
+			companyId: tenant.state.organizationId,
+			companyName: tenant.state.organizationName,
+			companyCode: tenant.state.organizationCode,
+			employeeCode: form.employeeCode.trim() || undefined,
+			department: form.department.trim() || undefined,
+			branchIds: form.branchIds,
+			customPermissions: form.useCustomPermissions ? form.customPermissions : undefined,
+			hourlyRate: typeof form.hourlyRate === 'number' ? form.hourlyRate : Number(form.hourlyRate) || undefined,
+			pin: undefined,
+			pinHash: form.pin.length >= 4 && !editingId ? await hashPin(form.pin) : undefined
+		};
+
+		try {
+			if (editingId) {
+				const existing = staff.find((s) => s.id === editingId);
+				await glo.upsert<Staff>(TYPE.staff, { ...existing!.data, ...payload }, { id: editingId });
+				if (generatedNsec && hexPk) {
+					saveStaffKey({ staffId: editingId, staffName: form.name, pubkey: hexPk, npub: npubDisplay, nsec: generatedNsec, generatedAt: Date.now() });
+				}
+				toast.success('Staff updated', form.name.trim());
+			} else {
+				const obj = await glo.upsert<Staff>(TYPE.staff, payload);
+				if (generatedNsec && hexPk) {
+					saveStaffKey({ staffId: obj.id, staffName: form.name, pubkey: hexPk, npub: npubDisplay, nsec: generatedNsec, generatedAt: Date.now() });
+				}
+				toast.success('Staff added', form.name.trim());
+			}
+			open = false;
+		} catch (e) {
+			toast.error((e as Error).message ?? 'Failed to save staff');
+		}
+	}
+
+	function remove(id: string, name: string) {
+		if (!confirm(`Delete staff member "${name}"?`)) return;
+		glo.remove(TYPE.staff, id);
+		removeStaffKey(id);
+		toast.info('Staff removed');
+	}
+
+	function exportStaff() {
+		try {
+			const blob = new Blob([exportStaffKeysTxt(staff)], { type: 'text/plain' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `staff-backup-${new Date().toISOString().slice(0, 10)}.txt`;
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			URL.revokeObjectURL(url);
+			toast.success('Staff backup exported');
+		} catch (e) {
+			toast.error((e as Error).message);
+		}
+	}
 </script>
 
 <svelte:head><title>BNOS · Staff</title></svelte:head>
@@ -146,7 +341,21 @@
 				{staff.length} member{staff.length === 1 ? '' : 's'} · kind 30500
 			</p>
 		</div>
-		<Button color="primary" icon="lucide:user-plus" onclick={openCreate}>Add staff</Button>
+		<div class="flex items-center gap-2">
+			{#if canExport}
+				<Button
+					color="neutral"
+					variant="subtle"
+					size="sm"
+					icon="lucide:download"
+					disabled={staff.length === 0}
+					onclick={exportStaff}>Export</Button
+				>
+			{/if}
+			{#if canWrite}
+				<Button color="primary" icon="lucide:user-plus" onclick={openCreate}>Add staff</Button>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Stats Cards -->
@@ -196,11 +405,7 @@
 	<!-- Role Filter + List Controls -->
 	<div class="flex flex-wrap items-center gap-3">
 		<div class="w-44">
-			<Select
-				bind:value={roleFilter}
-				options={roleFilterOptions}
-				class="w-full"
-			/>
+			<Select bind:value={roleFilter} options={roleFilterOptions} class="w-full" />
 		</div>
 		<div class="flex-1">
 			{#if filteredStaff.length || controls.search}
@@ -225,9 +430,11 @@
 			description="Add your team — cashiers, waiters, chefs — and assign roles."
 		>
 			{#snippet actions()}
-				<Button color="primary" size="sm" icon="lucide:user-plus" onclick={openCreate}
-					>Add staff</Button
-				>
+				{#if canWrite}
+					<Button color="primary" size="sm" icon="lucide:user-plus" onclick={openCreate}
+						>Add staff</Button
+					>
+				{/if}
 			{/snippet}
 		</EmptyState>
 	{:else if controls.viewMode === 'grid'}
@@ -243,12 +450,11 @@
 						</div>
 						<div class="min-w-0 flex-1">
 							<div class="truncate font-semibold">{s.data.name}</div>
-							<div class="flex items-center gap-1.5 text-[12px] capitalize text-[var(--ui-text-muted)]">
+							<div class="flex items-center gap-1.5 text-[12px] text-[var(--ui-text-muted)]">
 								<Icon name={roleIcon[s.data.role] ?? 'lucide:user'} class="size-3.5" />
-								{s.data.role}
+								{ROLE_LABELS[s.data.role] ?? s.data.role}
 							</div>
 						</div>
-						<!-- Status indicator dot -->
 						<span
 							class="absolute top-3 right-3 size-2.5 rounded-full {(s.data.status ?? 'active') === 'active' ? 'bg-[var(--tone-success-text)]' : 'bg-[var(--ui-text-dimmed)]'}"
 							title={s.data.status ?? 'active'}
@@ -256,11 +462,14 @@
 					</div>
 
 					<div class="flex flex-wrap items-center gap-1.5">
-						<Badge color={statusColor(s.data.role === 'owner' ? 'success' : s.data.role === 'manager' ? 'info' : 'neutral')}>
+						<Badge color={roleBadgeColor(s.data.role)}>
 							<Icon name={roleIcon[s.data.role] ?? 'lucide:user'} class="size-3" />
-							{s.data.role}
+							{ROLE_LABELS[s.data.role] ?? s.data.role}
 						</Badge>
-						<Badge color={statusColor(s.data.status ?? 'active')}>{s.data.status ?? 'active'}</Badge>
+						<Badge color={statusColor(s.data.status ?? 'active')}>{(s.data.status ?? 'active').replace('_', ' ')}</Badge>
+						{#if s.data.pubkey && hasStoredKey(s.data.pubkey)}
+							<Badge color="neutral"><Icon name="lucide:key-round" class="size-3" />backed up</Badge>
+						{/if}
 					</div>
 
 					{#if s.data.email || s.data.phone || s.data.npub}
@@ -278,32 +487,23 @@
 							{#if s.data.npub}
 								<div class="flex items-center gap-1.5 truncate">
 									<Icon name="lucide:key-round" class="size-3 shrink-0" />
-									<span class="truncate">{s.data.npub.slice(0, 12)}…{s.data.npub.slice(-6)}</span>
+									<span class="truncate">{truncateNpub(s.data.npub, 10, 6)}</span>
 								</div>
 							{/if}
 						</div>
 					{/if}
 
-					{#if s.data.hourlyRate}
-						<div class="text-[12px] text-[var(--ui-text-muted)]">
-							<Icon name="lucide:banknote" class="mr-1 inline size-3.5" />
-							{formatMoney(s.data.hourlyRate, 'USD')}/hr
-						</div>
-					{/if}
-
 					<div class="flex items-center justify-end gap-1 border-t border-[var(--ui-border-muted)] pt-2">
-						<Button
-							size="sm"
-							color="neutral"
-							variant="ghost"
-							icon="lucide:pencil-line"
-							onclick={() => openEdit(s)}
-						>
-							Edit
-						</Button>
-						<RowActions
-							actions={[[{ label: 'Delete', icon: 'lucide:trash-2', danger: true, onSelect: () => { glo.remove(TYPE.staff, s.id); toast.info('Removed'); } }]]}
-						/>
+						{#if canWrite}
+							<Button size="sm" color="neutral" variant="ghost" icon="lucide:pencil-line" onclick={() => openEdit(s)}>
+								Edit
+							</Button>
+						{/if}
+						{#if canDelete}
+							<RowActions
+								actions={[[{ label: 'Delete', icon: 'lucide:trash-2', danger: true, onSelect: () => remove(s.id, s.data.name) }]]}
+							/>
+						{/if}
 					</div>
 				</div>
 			{/each}
@@ -327,31 +527,35 @@
 						<tr>
 							<td class="px-5 py-3 font-semibold">{s.data.name}</td>
 							<td class="px-5 py-3">
-								<div class="flex items-center gap-1.5 capitalize text-[var(--ui-text-muted)]">
+								<div class="flex items-center gap-1.5 text-[var(--ui-text-muted)]">
 									<Icon name={roleIcon[s.data.role] ?? 'lucide:user'} class="size-3.5" />
-									{s.data.role}
+									{ROLE_LABELS[s.data.role] ?? s.data.role}
 								</div>
 							</td>
 							<td class="px-5 py-3 text-[var(--ui-text-muted)]">{s.data.email ?? s.data.phone ?? '—'}</td>
 							<td class="px-5 py-3 text-[var(--ui-text-dimmed)]">
 								{#if s.data.npub}
-									<span class="font-mono text-[11px]">{s.data.npub.slice(0, 10)}…{s.data.npub.slice(-4)}</span>
+									<span class="font-mono text-[11px]">{truncateNpub(s.data.npub, 10, 4)}</span>
 								{:else}—{/if}
 							</td>
-							<td class="px-5 py-3"><Badge color={statusColor(s.data.status)}>{s.data.status}</Badge></td>
+							<td class="px-5 py-3"><Badge color={statusColor(s.data.status ?? 'active')}>{(s.data.status ?? 'active').replace('_', ' ')}</Badge></td>
 							<td class="px-5 py-3 text-right">
 								<div class="flex items-center justify-end gap-1">
-									<button
-										type="button"
-										class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-										onclick={() => openEdit(s)}
-										aria-label="Edit"
-									>
-										<Icon name="lucide:pencil-line" class="size-3.5" />
-									</button>
-									<RowActions
-										actions={[[{ label: 'Delete', icon: 'lucide:trash-2', danger: true, onSelect: () => { glo.remove(TYPE.staff, s.id); toast.info('Removed'); } }]]}
-									/>
+									{#if canWrite}
+										<button
+											type="button"
+											class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+											onclick={() => openEdit(s)}
+											aria-label="Edit"
+										>
+											<Icon name="lucide:pencil-line" class="size-3.5" />
+										</button>
+									{/if}
+									{#if canDelete}
+										<RowActions
+											actions={[[{ label: 'Delete', icon: 'lucide:trash-2', danger: true, onSelect: () => remove(s.id, s.data.name) }]]}
+										/>
+									{/if}
 								</div>
 							</td>
 						</tr>
@@ -366,62 +570,200 @@
 <!-- Add / Edit Dialog -->
 <Dialog bind:open={open} title={editingId ? 'Edit staff member' : 'Add staff member'}>
 	<div class="space-y-3">
+		<!-- Identity / pubkey -->
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</span>
-			<Input bind:value={name} icon="lucide:user" class="w-full" />
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
+				Nostr pubkey (npub){#if !editingId} <span class="text-[var(--tone-error-text)]">*</span>{/if}
+			</span>
+			<div class="flex items-center gap-2">
+				<Input
+					bind:value={form.pubkeyInput}
+					icon="lucide:key-round"
+					placeholder="npub1… or 64-char hex"
+					class="w-full"
+				/>
+				{#if generatedNsec}
+					<Button color="neutral" variant="subtle" size="icon" icon={showNsec ? 'lucide:eye-off' : 'lucide:eye'} aria-label="Toggle nsec" onclick={() => (showNsec = !showNsec)} />
+				{/if}
+				<Button color="neutral" variant="subtle" size="icon" icon="lucide:wand-sparkles" aria-label="Generate key" onclick={onGenerateKey} />
+			</div>
+			{#if pubkeyState === 'invalid'}
+				<span class="mt-1 block text-[11px] text-[var(--tone-error-text)]">Invalid pubkey</span>
+			{:else if pubkeyState === 'valid'}
+				<span class="mt-1 block text-[11px] text-[var(--tone-success-text)]">Valid</span>
+			{:else}
+				<span class="mt-1 block text-[11px] text-[var(--ui-text-dimmed)]">
+					Links this staff member to a Nostr identity for login & permissions.
+				</span>
+			{/if}
+			{#if generatedNsec && showNsec}
+				<span class="mt-2 block break-all rounded-lg border border-[var(--tone-warning-text)]/40 bg-[var(--tone-warning-bg)] p-2 font-mono text-[10.5px]">
+					⚠ Back up this nsec — it won't be shown again:<br />{generatedNsec}
+				</span>
+			{/if}
 		</label>
+
+		<div class="grid grid-cols-2 gap-3">
+			<label class="block">
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name <span class="text-[var(--tone-error-text)]">*</span></span>
+				<Input bind:value={form.name} icon="lucide:user" class="w-full" />
+			</label>
+			<label class="block">
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Display name</span>
+				<Input bind:value={form.displayName} class="w-full" />
+			</label>
+		</div>
+
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Role</span>
 				<Select
-					bind:value={role}
-					options={ROLES.map((r) => ({ value: r, label: r.charAt(0).toUpperCase() + r.slice(1) }))}
+					bind:value={form.role}
+					options={STAFF_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
 					class="w-full"
 				/>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">PIN</span>
-				<Input bind:value={pin} icon="lucide:lock" maxlength={6} class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Company</span>
+				<Input value={tenant.state.organizationName || '—'} disabled class="w-full" />
 			</label>
 		</div>
+
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Email</span>
-				<Input bind:value={email} icon="lucide:at-sign" class="w-full" />
+				<Input bind:value={form.email} icon="lucide:at-sign" class="w-full" />
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</span>
-				<Input bind:value={phone} icon="lucide:phone" class="w-full" />
+				<Input bind:value={form.phone} icon="lucide:phone" class="w-full" />
 			</label>
 		</div>
+
+		<div class="grid grid-cols-2 gap-3">
+			<label class="block">
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Employee code</span>
+				<Input bind:value={form.employeeCode} placeholder="EMP-001" class="w-full" />
+			</label>
+			<label class="block">
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Department</span>
+				<Input bind:value={form.department} placeholder="Front of house" class="w-full" />
+			</label>
+		</div>
+
+		<!-- PIN -->
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
-				Nostr pubkey (npub)
-				{#if npub && !npubValid}<span class="text-[var(--tone-error-text)]"> · must start with npub1</span>{/if}
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">POS PIN</span>
+			<div class="flex items-center gap-2">
+				<Input
+					bind:value={form.pin}
+					type="password"
+					inputmode="numeric"
+					maxlength={6}
+					placeholder="••••"
+					class="w-36"
+				/>
+				{#if editingId && form.pin.length >= 4}
+					<Button color="neutral" variant="subtle" size="sm" onclick={setPin}>Set PIN</Button>
+				{/if}
+				{#if editingId && staff.find((s) => s.id === editingId)?.data.pinHash}
+					<Button color="neutral" variant="subtle" size="sm" icon="lucide:x" onclick={removePin}>Remove</Button>
+				{/if}
+			</div>
+			<span class="mt-1 block text-[11px] text-[var(--ui-text-dimmed)]">
+				{editingId && staff.find((s) => s.id === editingId)?.data.pinHash && !form.pin
+					? '✓ PIN set (hashed)'
+					: 'Stored as a SHA-256 hash, never plaintext.'}
 			</span>
-			<Input
-				bind:value={npub}
-				icon="lucide:key-round"
-				placeholder="npub1…"
-				class="w-full"
-			/>
-			{#if !npub}
-				<span class="mt-1 block text-[11px] text-[var(--ui-text-dimmed)]">
-					Optional — links this staff member to a Nostr identity for permissions and payments.
-				</span>
-			{/if}
 		</label>
+
+		<!-- Hourly rate -->
 		<label class="block">
 			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Hourly rate</span>
-			<Input bind:value={rate} type="number" min="0" step="0.5" class="w-full" />
+			<Input bind:value={form.hourlyRate} type="number" min="0" step="0.5" class="w-full" />
 		</label>
+
+		<!-- Status -->
+		<div>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Status</span>
+			<div class="flex flex-wrap gap-2">
+				{#each STATUSES as status (status)}
+					<button
+						type="button"
+						onclick={() => (form.status = status)}
+						class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium capitalize transition-all {form.status === status
+							? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300'
+							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
+					>
+						{status.replace('_', ' ')}
+					</button>
+				{/each}
+			</div>
+		</div>
+
+		<!-- Branch assignment -->
+		<div>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Branches</span>
+			<span class="mb-2 block text-[11px] text-[var(--ui-text-dimmed)]">
+				Empty selection grants company-wide access.
+			</span>
+			<div class="space-y-1.5">
+				{#each locations as branch (branch.id)}
+					<label class="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--ui-border)] px-3 py-2 text-[12.5px] hover:bg-[var(--ui-bg-accented)]">
+						<input
+							type="checkbox"
+							checked={form.branchIds.includes(branch.id)}
+							onchange={() => toggleBranch(branch.id)}
+							class="accent-[var(--ui-color-primary-500)]"
+						/>
+						<span>{(branch.data as { name?: string }).name ?? branch.id}</span>
+					</label>
+				{:else}
+					<span class="text-[11px] text-[var(--ui-text-dimmed)]">No branches configured.</span>
+				{/each}
+			</div>
+		</div>
+
+		<!-- Custom permissions -->
+		<div class="rounded-xl border border-[var(--ui-border)] p-3">
+			<div class="flex items-center justify-between">
+				<span class="text-[12.5px] font-bold">Customize permissions</span>
+				<Switch checked={form.useCustomPermissions} onCheckedChange={onCustomToggle} />
+			</div>
+			{#if form.useCustomPermissions}
+				<div class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+					{#each PERMISSION_RESOURCES as res (res.id)}
+						<div>
+							<p class="mb-1 text-[10.5px] font-bold text-[var(--ui-text-dimmed)] uppercase">{res.name}</p>
+							<div class="flex flex-wrap gap-x-2 gap-y-0.5">
+								{#each res.actions as action (action)}
+									<label class="flex cursor-pointer items-center gap-1 text-[11px] capitalize">
+										<input
+											type="checkbox"
+											checked={form.customPermissions.includes(`${res.id}:${action}`)}
+											onchange={() => togglePermission(`${res.id}:${action}`)}
+											class="accent-[var(--ui-color-primary-500)]"
+										/>
+										{action}
+									</label>
+								{/each}
+							</div>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<div class="mt-2 flex flex-wrap gap-1">
+					{#each permissionPreview as perm (perm)}
+						<Badge color="info">{perm}</Badge>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	</div>
 	{#snippet footer()}
 		<Button color="neutral" variant="ghost" onclick={() => (open = false)}>Cancel</Button>
-		<Button color="primary" icon="lucide:check" onclick={save}>
+		<Button color="primary" icon="lucide:check" disabled={!canSave} onclick={save}>
 			{editingId ? 'Update' : 'Save'}
 		</Button>
 	{/snippet}
 </Dialog>
-
-<RawDataDialog bind:open={rawOpen} data={rawItem} title="Staff Raw Data" />

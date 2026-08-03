@@ -18,7 +18,7 @@ async function waitFor(check: () => boolean, attempts: number, delayMs: number) 
 	return check();
 }
 
-function restoreTenantFromWorkspace() {
+export function restoreTenantFromWorkspace() {
 	const orgs = glo.all<Record<string, unknown>>('organization');
 	if (orgs.length === 0) return false;
 

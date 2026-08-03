@@ -35,8 +35,9 @@
 	});
 
 	async function signOut() {
-		session.logout();
+		await session.logout();
 		tenant.reset();
+		glo.clearAll();
 		await goto('/login', { replaceState: true });
 	}
 

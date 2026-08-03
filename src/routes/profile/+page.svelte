@@ -6,6 +6,7 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+import { glo } from '$nostr/store.svelte';
 	import { relays } from '$nostr/relay.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { truncateNpub } from '$lib/utils/format';
@@ -13,8 +14,9 @@
 	onMount(() => { session.load(); tenant.load(); relays.load(); });
 
 	async function signOut() {
-		session.logout();
+		await session.logout();
 		tenant.reset();
+		glo.clearAll();
 		toast.info('Signed out');
 		await goto('/login', { replaceState: true });
 	}

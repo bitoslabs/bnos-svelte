@@ -109,15 +109,25 @@ function kindUpgradeKey(type: string) {
 
 function createAppGloEventTemplate(object: GloObject<unknown>, options: { client?: string; summary?: string } = {}) {
 	const overrideKind = APP_KIND_BY_TYPE[object.type];
-	if (!overrideKind) {
-		return createGloEventTemplate(object, options);
+	const template = overrideKind
+		? {
+				kind: overrideKind,
+				created_at: Math.floor(Date.now() / 1000),
+				tags: createGloTags(object, options),
+				content: encodeGloContent(object)
+			}
+		: createGloEventTemplate(object, options);
+
+	// Staff records: advertise the member's pubkey as a `p` tag so other devices
+	// (the staff member's own login) can discover their membership via `#p`.
+	// Mirrors the bdgo-os-nuxt staff event convention.
+	if (object.type === 'identity.staff') {
+		const staffPubkey = (object.data as { pubkey?: string } | null)?.pubkey;
+		if (staffPubkey && !template.tags.some((t) => t[0] === 'p')) {
+			template.tags = [...template.tags, ['p', staffPubkey]];
+		}
 	}
-	return {
-		kind: overrideKind,
-		created_at: Math.floor(Date.now() / 1000),
-		tags: createGloTags(object, options),
-		content: encodeGloContent(object)
-	};
+	return template;
 }
 
 function parseAppGloEvent(event: NostrEvent): AnyGloObject {
@@ -324,6 +334,13 @@ class ReactiveCollections {
 		const items = await readLocal(type);
 		this._hydrated.add(type);
 		this._map[type] = items;
+	}
+
+	/** Clear all collections and reset hydration state (for logout). */
+	clearAll() {
+		this._map = {};
+		this._hydrated.clear();
+		this._hydrating.clear();
 	}
 }
 
@@ -563,6 +580,19 @@ class GloStore {
 		await Promise.all(types.map((t) => this.sync(t)));
 	};
 
+	/**
+	 * Clear ALL in-memory GLO collections and reset hydration tracking.
+	 * Call this on logout so the next login starts with zero stale data.
+	 * The IndexedDB wipe is handled by session.logout().
+	 */
+	clearAll = () => {
+		this.collections.clearAll();
+		this.publishQueueSize = 0;
+		this.bump();
+		// Broadcast to other tabs so they also clear.
+		getBroadcastChannel()?.postMessage({ type: 'clear-all' });
+	};
+
 	/** Cross-tab sync: listen for BroadcastChannel messages from other tabs. */
 	initCrossTab = () => {
 		if (!browser) return;
@@ -570,6 +600,10 @@ class GloStore {
 		if (!channel) return;
 		channel.addEventListener('message', (e) => {
 			const msg = e.data;
+			if (msg?.type === 'clear-all') {
+				this.clearAll();
+				return;
+			}
 			if (!msg?.collectionType) return;
 			// Reload this type from IndexedDB into the reactive proxy.
 			void this.collections.reload(msg.collectionType).then(() => this.bump());

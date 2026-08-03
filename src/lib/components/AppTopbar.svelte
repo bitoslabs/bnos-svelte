@@ -9,7 +9,6 @@
 	import { relays } from '$nostr/relay.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
-	import { setMode, mode } from 'mode-watcher';
 
 	let { onmenutoggle }: { onmenutoggle?: () => void } = $props();
 
@@ -226,16 +225,7 @@
 				<AppearanceControls class="px-3.5 py-3.5" />
 
 				<!-- Quick action widgets -->
-				<div class="grid grid-cols-3 gap-1.5 px-3.5 pb-3">
-					<button
-						type="button"
-						onclick={() => setMode(mode.current === 'dark' ? 'light' : 'dark')}
-						class="flex flex-col items-center gap-1 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] py-2.5 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-						title="Toggle theme"
-					>
-						<Icon name={mode.current === 'dark' ? 'lucide:sun' : 'lucide:moon'} class="size-4" />
-						<span class="text-[10px] font-semibold">{mode.current === 'dark' ? 'Light' : 'Dark'}</span>
-					</button>
+				<div class="grid grid-cols-2 gap-1.5 px-3.5 pb-3">
 					<button
 						type="button"
 						onclick={() => { void syncAllData(); }}

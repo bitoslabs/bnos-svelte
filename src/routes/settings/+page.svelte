@@ -7,6 +7,7 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { session } from '$nostr/session.svelte';
+import { glo } from '$nostr/store.svelte';
 	import { preferences } from '$lib/theme/preferences.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { truncateNpub, titleCase } from '$lib/utils/format';
@@ -131,7 +132,7 @@
 					>Show QR</MenuItem
 				>
 				<MenuDivider />
-				<MenuItem tone="danger" icon="lucide:log-out" onclick={() => session.logout()}
+				<MenuItem tone="danger" icon="lucide:log-out" onclick={async () => { await session.logout(); tenant.reset(); glo.clearAll(); await goto('/login', { replaceState: true }); }}
 					>Sign out</MenuItem
 				>
 			</Menu>

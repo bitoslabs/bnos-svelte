@@ -16,6 +16,7 @@
 		hasActiveWorkspaceContext,
 		resolveWorkspace,
 	} from '$nostr/workspace.svelte';
+	import { memberships } from '$nostr/memberships.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import { sidebarState, loadCollapsed as loadSidebarCollapsed } from '$lib/sidebar-state.svelte';
@@ -62,16 +63,23 @@
 			postLoginSyncState = 'checking-workspace';
 			queueMicrotask(async () => {
 				const workspace = await resolveWorkspace();
-				workspaceResolutionPending = false;
 				if (workspace.found) {
+					workspaceResolutionPending = false;
 					postLoginSyncDone = false;
 					postLoginSyncState = workspace.source === 'relay' ? 'done' : 'idle';
 					if (workspace.source === 'relay') {
 						setTimeout(() => (postLoginSyncState = 'idle'), 2000);
 					}
 				} else {
+					// Owner path found nothing — a staff member didn't author the
+					// org/location records, so discover the workspace THROUGH their
+					// staff record (kind 30500, #p = me) before giving up.
+					const staffWorkspace = await memberships.resolveStaffWorkspace();
+					workspaceResolutionPending = false;
 					postLoginSyncState = 'idle';
-					void goto(resolve('/setup'), { replaceState: true });
+					if (!staffWorkspace) {
+						void goto(resolve('/setup'), { replaceState: true });
+					}
 				}
 			});
 		}
@@ -90,6 +98,22 @@
 		void warmRelays();
 		dataSync.backgroundOperationalSync();
 		postLoginSyncState = 'idle';
+
+		// Login → staff matching: resolve this user's staff memberships, then
+		// auto-set the active role. First-run owners get an Owner record created
+		// so the permission system has a role to evaluate. Suspended staff are
+		// routed to /blocked. Skips on public/POS-lightweight routes.
+		const path = page.url.pathname;
+		if (path !== '/login' && !path.startsWith('/setup')) {
+			void (async () => {
+				await memberships.resolve();
+				if (memberships.autoResolve()) return;
+				await memberships.bootstrapOwnerIfMissing();
+				if (tenant.state.activeStaffId) return;
+				const dest = memberships.resolveLoginDestination();
+				if (dest === '/blocked') void goto(resolve('/blocked'), { replaceState: true });
+			})();
+		}
 	});
 
 	// Global dropdown-menu handling: one menu open at a time, close on outside

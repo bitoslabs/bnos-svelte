@@ -90,15 +90,16 @@
 		}
 	}
 
-	function wipeData() {
+	async function wipeData() {
 		if (!browser) return;
 		if (!confirm('Wipe all local data and sign out? This cannot be undone.')) return;
 		for (let i = localStorage.length - 1; i >= 0; i--) {
 			const k = localStorage.key(i);
 			if (k && k.startsWith('bnos-os:')) localStorage.removeItem(k);
 		}
-		session.logout();
+		await session.logout();
 		tenant.reset();
+		glo.clearAll();
 		toast.info('Local data wiped');
 		goto('/login');
 	}
