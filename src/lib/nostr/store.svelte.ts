@@ -123,7 +123,7 @@ function createAppGloEventTemplate(object: GloObject<unknown>, options: { client
 	// Mirrors the bdgo-os-nuxt staff event convention.
 	if (object.type === 'identity.staff') {
 		const staffPubkey = (object.data as { pubkey?: string } | null)?.pubkey;
-		if (staffPubkey && !template.tags.some((t) => t[0] === 'p')) {
+		if (staffPubkey && !template.tags.some((t) => t[0] === 'p' && t[1] === staffPubkey)) {
 			template.tags = [...template.tags, ['p', staffPubkey]];
 		}
 	}

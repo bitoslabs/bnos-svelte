@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -9,10 +10,11 @@
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 	import ListToolbar from '$lib/components/list/ListToolbar.svelte';
 	import SortableTh from '$lib/components/list/SortableTh.svelte';
 	import Pagination from '$lib/components/list/Pagination.svelte';
-	import RowActions from '$lib/components/list/RowActions.svelte';
+	import RowActions, { type RowAction } from '$lib/components/list/RowActions.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -35,17 +37,22 @@
 		ROLE_LABELS,
 		roleBadgeColor,
 		STAFF_ROLES,
-		PERMISSION_RESOURCES,
-		type PermissionResource
+		PERMISSION_RESOURCES
 	} from '$lib/domain/permissions';
-	import { TYPE, statusColor, type Staff, type StaffStatus, type UserRole } from '$lib/domain';
+	import {
+		TYPE,
+		createGloEventTemplate,
+		statusColor,
+		type Staff,
+		type StaffStatus,
+		type UserRole
+	} from '$lib/domain';
 
 	onMount(() => {
 		dataSync.pageSync([TYPE.staff], { scope: 'staff' });
 	});
 
 	// ── Permission gating ────────────────────────────────────────────
-	const canRead = $derived(permissions.can('staff', 'read') || tenant.state.activeRole === null);
 	const canWrite = $derived(permissions.can('staff', 'write') || tenant.state.activeRole === null);
 	const canDelete = $derived(permissions.can('staff', 'delete') || tenant.state.activeRole === null);
 	const canExport = $derived(permissions.can('settings', 'write'));
@@ -53,7 +60,7 @@
 	// Redirect away once we *know* the user is denied (not during first-run).
 	$effect(() => {
 		if (tenant.state.activeRole !== null && !permissions.can('staff', 'read')) {
-			void goto('/', { replaceState: true });
+			void goto(resolve('/'), { replaceState: true });
 		}
 	});
 
@@ -118,6 +125,9 @@
 	let editingId = $state<string | null>(null);
 	let generatedNsec = $state<string | null>(null);
 	let showNsec = $state(false);
+	let rawOpen = $state(false);
+	let rawTitle = $state('Staff Raw Data');
+	let rawItem = $state<unknown>(null);
 
 	interface StaffForm {
 		pubkeyInput: string;
@@ -230,6 +240,49 @@
 		generatedNsec = kp.nsec;
 		showNsec = true;
 		toast.success('New keypair generated — back up the nsec!');
+	}
+
+	function sanitizedStaffObject(s: { id: string; data: Staff }) {
+		const copy = JSON.parse(JSON.stringify(s)) as { id: string; data: Staff };
+		if (copy.data.pinHash) copy.data.pinHash = '[redacted]';
+		if (copy.data.pin) copy.data.pin = undefined;
+		return copy;
+	}
+
+	function openRawData(s: { id: string; data: Staff }) {
+		rawItem = sanitizedStaffObject(s);
+		rawTitle = 'Staff Raw Data';
+		rawOpen = true;
+	}
+
+	function openEventPreview(s: { id: string; data: Staff }) {
+		const object = sanitizedStaffObject(s);
+		const template = createGloEventTemplate(object as never, {
+			client: 'bdgo-os',
+			summary: `${TYPE.staff} ${object.id}`
+		});
+		const staffPubkey = object.data.pubkey;
+		if (staffPubkey && !template.tags.some((tag) => tag[0] === 'p' && tag[1] === staffPubkey)) {
+			template.tags = [...template.tags, ['p', staffPubkey]];
+		}
+		rawItem = {
+			note: 'Unsigned event preview. id, pubkey, and sig are added when the owner signs and publishes.',
+			...template,
+			content: JSON.parse(template.content)
+		};
+		rawTitle = 'Staff Event Preview';
+		rawOpen = true;
+	}
+
+	function staffActions(s: { id: string; data: Staff }): RowAction[][] {
+		const primary: RowAction[] = [
+			{ label: 'View event', icon: 'lucide:radio', onSelect: () => openEventPreview(s) },
+			{ label: 'Raw data', icon: 'lucide:code', onSelect: () => openRawData(s) }
+		];
+		const danger: RowAction[] = canDelete
+			? [{ label: 'Delete', icon: 'lucide:trash-2', danger: true, onSelect: () => remove(s.id, s.data.name) }]
+			: [];
+		return danger.length ? [primary, danger] : [primary];
 	}
 
 	async function setPin() {
@@ -499,11 +552,7 @@
 								Edit
 							</Button>
 						{/if}
-						{#if canDelete}
-							<RowActions
-								actions={[[{ label: 'Delete', icon: 'lucide:trash-2', danger: true, onSelect: () => remove(s.id, s.data.name) }]]}
-							/>
-						{/if}
+						<RowActions actions={staffActions(s)} />
 					</div>
 				</div>
 			{/each}
@@ -551,11 +600,7 @@
 											<Icon name="lucide:pencil-line" class="size-3.5" />
 										</button>
 									{/if}
-									{#if canDelete}
-										<RowActions
-											actions={[[{ label: 'Delete', icon: 'lucide:trash-2', danger: true, onSelect: () => remove(s.id, s.data.name) }]]}
-										/>
-									{/if}
+									<RowActions actions={staffActions(s)} />
 								</div>
 							</td>
 						</tr>
@@ -767,3 +812,5 @@
 		</Button>
 	{/snippet}
 </Dialog>
+
+<RawDataDialog bind:open={rawOpen} data={rawItem} title={rawTitle} />

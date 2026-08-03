@@ -43,12 +43,14 @@ export function hasNip07Extension(): boolean {
  */
 const APP_STORAGE_PREFIXES = [
 	'bnos-os:',
+	'bnos:',
 	'nostr_npub',
 	'nostr_pubkey',
 	'nostr_privkey',
 	'nostr_login',
 	'nostr_auto_sync',
 	'nostr_profile',
+	'nostr_profile_kind0',
 	'pos-global',
 	'active-workspace',
 	'active-company',

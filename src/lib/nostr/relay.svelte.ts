@@ -54,10 +54,15 @@ class RelayStore {
 		);
 	};
 
+	private defaultPrimary = (urls = this.relays) => {
+		const [fallback] = normalizeRelayUrls(DEFAULT_RELAYS).filter((url) => urls.includes(url));
+		return fallback ?? urls[0] ?? null;
+	};
+
 	private normalizePrimary = (value: unknown, urls = this.relays) => {
 		const [primary] = typeof value === 'string' ? normalizeRelayUrls([value]) : [];
 		if (primary && urls.includes(primary)) return primary;
-		return urls[0] ?? null;
+		return this.defaultPrimary(urls);
 	};
 
 	private primaryFirst = (urls: string[]) => {

@@ -1,11 +1,14 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { relays } from '$nostr/relay.svelte';
 	import { warmRelays } from '$nostr/client';
+	import { resolveWorkspace } from '$nostr/workspace.svelte';
+	import { memberships } from '$nostr/memberships.svelte';
 
 	type StepStatus = 'pending' | 'active' | 'done';
 	interface Step { key: string; label: string; icon: string; status: StepStatus; }
@@ -21,6 +24,10 @@
 	let errorMessage = $state('');
 	let timer: ReturnType<typeof setTimeout> | undefined;
 
+	function sleep(ms: number) {
+		return new Promise((resolve) => setTimeout(resolve, ms));
+	}
+
 	function updateStep(key: string, pct: number) {
 		percentage = Math.min(pct, 100);
 		const idx = steps.findIndex((s) => s.key === key);
@@ -32,38 +39,81 @@
 		steps = steps.map((s) => ({ ...s, status: 'done' }));
 	}
 
+	async function restoreWorkspace() {
+		let workspace = await resolveWorkspace({ allowRelaySync: true });
+		if (workspace.found) return true;
+
+		await sleep(250);
+		if (await memberships.resolveStaffWorkspace()) return true;
+
+		await sleep(600);
+		workspace = await resolveWorkspace({ allowRelaySync: true });
+		return workspace.found || (await memberships.resolveStaffWorkspace());
+	}
+
+	async function resolveRole() {
+		await memberships.resolve();
+		if (memberships.autoResolve()) return;
+		await memberships.bootstrapOwnerIfMissing();
+		memberships.autoResolve();
+	}
+
+	function finish() {
+		const dest = memberships.resolveLoginDestination();
+		if (dest === '/blocked') {
+			void goto(resolve('/blocked'), { replaceState: true });
+			return;
+		}
+		if (dest === '/staff') {
+			void goto(resolve('/staff'), { replaceState: true });
+			return;
+		}
+		void goto(resolve('/'), { replaceState: true });
+	}
+
 	onMount(async () => {
+		session.load();
+		tenant.load();
+		relays.load();
+
 		if (!session.isAuthenticated) {
-			await goto('/login', { replaceState: true });
+			await goto(resolve('/login'), { replaceState: true });
 			return;
 		}
 
 		updateStep('connecting', 25);
 		try {
 			await warmRelays();
-			relays.load();
-		} catch (e) {
-			hasError = true;
-			errorMessage = 'Could not connect to relays. You can continue in offline mode.';
+		} catch {
+			/* best-effort: workspace resolution below handles offline/relay gaps */
 		}
 
 		updateStep('syncing', 50);
 		try {
-			// Give stores time to hydrate
-			await new Promise((r) => setTimeout(r, 600));
-			tenant.load();
-		} catch { /* */ }
+			await restoreWorkspace();
+		} catch {
+			/* local-first fallback: show the unresolved state below */
+		}
 
 		updateStep('workspace', 75);
-		await new Promise((r) => setTimeout(r, 400));
+		await resolveRole();
+
+		if (!tenant.state.setupComplete || !tenant.state.organizationId) {
+			if (memberships.myStaffRecords.length) {
+				hasError = true;
+				errorMessage =
+					'We found your staff login, but the workspace has not synced from the owner device yet. Bring the owner device online and retry.';
+				return;
+			}
+			updateStep('redirecting', 95);
+			await goto(resolve('/setup'), { replaceState: true });
+			return;
+		}
 
 		updateStep('redirecting', 95);
-		await new Promise((r) => setTimeout(r, 300));
-
+		await sleep(300);
 		markAllDone();
-		timer = setTimeout(() => {
-			goto(tenant.state.setupComplete ? '/' : '/setup', { replaceState: true });
-		}, 500);
+		timer = setTimeout(finish, 500);
 	});
 
 	onDestroy(() => { if (timer) clearTimeout(timer); });
@@ -73,10 +123,13 @@
 		errorMessage = '';
 		percentage = 0;
 		steps = steps.map((s) => ({ ...s, status: 'pending' }));
-		// Re-trigger by reloading
 		window.location.reload();
 	}
-	function continueOffline() { goto('/', { replaceState: true }); }
+
+	function continueOffline() {
+		const target = memberships.myStaffRecords.length > 0 ? '/login' : '/setup';
+		void goto(resolve(target), { replaceState: true });
+	}
 </script>
 
 <svelte:head><title>Resolving · BNOS</title></svelte:head>
@@ -97,11 +150,10 @@
 				{#if hasError}Connection issue{:else if percentage >= 100}All set!{:else}Setting up your workspace{/if}
 			</h1>
 			<p class="mt-1 text-[12.5px] text-[var(--ui-text-muted)]">
-				{#if hasError}{errorMessage}{:else if percentage >= 100}Redirecting…{:else}Resolving your identity and workspace data{/if}
+				{#if hasError}{errorMessage}{:else if percentage >= 100}Redirecting...{:else}Resolving your identity and workspace data{/if}
 			</p>
 		</div>
 
-		<!-- Progress steps -->
 		<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
 			{#each steps as s (s.key)}
 				<div class="flex items-center gap-3 px-5 py-3.5">
@@ -113,7 +165,6 @@
 			{/each}
 		</div>
 
-		<!-- Progress bar -->
 		<div class="h-2 overflow-hidden rounded-full bg-[var(--ui-bg-muted)]">
 			<div class="h-full rounded-full bg-primary-500 transition-all duration-500" style="width: {percentage}%"></div>
 		</div>

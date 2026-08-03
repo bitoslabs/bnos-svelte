@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { goto } from '$app/navigation';
@@ -101,7 +102,7 @@
 		tenant.reset();
 		glo.clearAll();
 		toast.info('Local data wiped');
-		goto('/login');
+		goto(resolve('/login'));
 	}
 
 	const counts = $derived.by(() => {
@@ -130,14 +131,6 @@
 		return Math.round((total / 1024) * 10) / 10;
 	});
 
-	const storageQuota = $derived.by(() => {
-		if (!browser) return null;
-		// Try to get quota info (may not be available in all browsers)
-		if (navigator.storage?.estimate) {
-			return navigator.storage.estimate();
-		}
-		return null;
-	});
 </script>
 
 <svelte:head><title>Data · Settings</title></svelte:head>

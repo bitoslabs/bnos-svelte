@@ -2,6 +2,9 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { permissionForPath } from '$lib/nav';
+	import { permissions } from '$lib/permissions.svelte';
+	import { tenant } from '$nostr/tenant.svelte';
 
 	let { children } = $props();
 
@@ -53,6 +56,19 @@
 		const p = page.url.pathname;
 		return to === '/settings' ? p === '/settings' : p.startsWith(to);
 	}
+
+	function canSeeSettingsItem(to: string) {
+		if (tenant.state.activeRole === null) return true;
+		const gate = permissionForPath(to);
+		if (!gate) return true;
+		return permissions.can(gate.resource, gate.action);
+	}
+
+	const visibleGroups = $derived(
+		groups
+			.map((group) => ({ ...group, items: group.items.filter((item) => canSeeSettingsItem(item.to)) }))
+			.filter((group) => group.items.length > 0)
+	);
 </script>
 
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-[15rem_1fr]">
@@ -60,7 +76,7 @@
 	<aside class="lg:sticky lg:top-20 lg:h-fit lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1 lg:pb-4">
 		<h1 class="mb-3 font-display text-xl font-bold tracking-tight">Settings</h1>
 		<nav class="space-y-4">
-			{#each groups as g (g.label)}
+			{#each visibleGroups as g (g.label)}
 				<div>
 					<div
 						class="px-3 pb-1.5 text-[10px] font-semibold tracking-[0.16em] text-[var(--ui-text-dimmed)] uppercase"

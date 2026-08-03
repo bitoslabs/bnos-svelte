@@ -11,6 +11,8 @@
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { resolveWorkspace } from '$nostr/workspace.svelte';
+	import { memberships } from '$nostr/memberships.svelte';
 	import { preferences } from '$lib/theme/preferences.svelte';
 	import { setMode, mode } from 'mode-watcher';
 	import AppearanceControls from '$lib/components/AppearanceControls.svelte';
@@ -18,6 +20,7 @@
 	let { children } = $props();
 
 	let quickOpen = $state(false);
+	let resolvingWorkspace = $state(false);
 
 	onMount(() => {
 		session.load();
@@ -38,7 +41,29 @@
 		await session.logout();
 		tenant.reset();
 		glo.clearAll();
-		await goto('/login', { replaceState: true });
+		await goto(resolve('/login'), { replaceState: true });
+	}
+
+	async function manualResolve() {
+		if (resolvingWorkspace) return;
+		resolvingWorkspace = true;
+		try {
+			const workspace = await resolveWorkspace({ allowRelaySync: true });
+			const staffWorkspace = workspace.found ? false : await memberships.resolveStaffWorkspace();
+			await memberships.resolve();
+			memberships.autoResolve();
+
+			if (workspace.found || staffWorkspace || tenant.state.setupComplete) {
+				toast.success('Workspace restored');
+				await goto(resolve('/'), { replaceState: true });
+				return;
+			}
+			toast.warning('No synced workspace found', 'Continue setup or try again after relay sync completes.');
+		} catch (e) {
+			toast.error('Could not resolve workspace', e instanceof Error ? e.message : undefined);
+		} finally {
+			resolvingWorkspace = false;
+		}
 	}
 
 	const currentSlug = $derived(
@@ -88,6 +113,17 @@
 			<span class="mr-2 hidden text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase sm:inline">
 				Setup · step {idx + 1} of {setupSteps.length}
 			</span>
+
+			<button
+				type="button"
+				onclick={manualResolve}
+				disabled={resolvingWorkspace}
+				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:opacity-50"
+				aria-label="Resolve workspace"
+				title="Resolve workspace"
+			>
+				<Icon name={resolvingWorkspace ? 'lucide:loader' : 'lucide:refresh-cw'} class="size-[18px] {resolvingWorkspace ? 'animate-spin' : ''}" />
+			</button>
 
 			<!-- Theme toggle -->
 			<button

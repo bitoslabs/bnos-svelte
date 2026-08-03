@@ -13,6 +13,7 @@
  * Mobile bottom bar: 5 most-used destinations.
  */
 import type { KnownGloObjectType } from '@bitos/bnos-core/glo';
+import type { PermissionAction, PermissionResource } from '$lib/domain/permissions';
 
 export interface NavItem {
 	to: string;
@@ -28,6 +29,41 @@ export interface NavSection {
 	items: NavItem[];
 	feature?: 'restaurant';
 }
+
+export interface RoutePermission {
+	resource: PermissionResource;
+	action: PermissionAction;
+}
+
+export const routePermissions: Record<string, RoutePermission> = {
+	'/pos': { resource: 'pos', action: 'read' },
+	'/orders': { resource: 'orders', action: 'read' },
+	'/customers': { resource: 'customers', action: 'read' },
+	'/transactions/shifts': { resource: 'payments', action: 'read' },
+	'/transactions': { resource: 'payments', action: 'read' },
+	'/catalog': { resource: 'products', action: 'read' },
+	'/inventory': { resource: 'inventory', action: 'read' },
+	'/promotions': { resource: 'discounts', action: 'read' },
+	'/memberships': { resource: 'customers', action: 'read' },
+	'/restaurant': { resource: 'orders', action: 'read' },
+	'/reports': { resource: 'reports', action: 'read' },
+	'/expenses': { resource: 'accounting', action: 'read' },
+	'/staff': { resource: 'staff', action: 'read' },
+	'/settings/organization': { resource: 'settings', action: 'write' },
+	'/settings/store': { resource: 'settings', action: 'write' },
+	'/settings/general': { resource: 'settings', action: 'write' },
+	'/settings/features': { resource: 'settings', action: 'write' },
+	'/settings/payment-methods': { resource: 'settings', action: 'write' },
+	'/settings/receipt': { resource: 'settings', action: 'write' },
+	'/settings/bitcoin': { resource: 'settings', action: 'write' },
+	'/settings/hardware': { resource: 'settings', action: 'write' },
+	'/settings/printers': { resource: 'settings', action: 'write' },
+	'/settings/billing': { resource: 'settings', action: 'write' },
+	'/settings/notifications': { resource: 'settings', action: 'write' },
+	'/settings/relays': { resource: 'settings', action: 'write' },
+	'/settings/data': { resource: 'settings', action: 'write' },
+	'/settings': { resource: 'settings', action: 'read' }
+};
 
 export const navSections: NavSection[] = [
 	{
@@ -117,4 +153,15 @@ export function findNavItem(path: string): NavItem | undefined {
 	return [...flatNav]
 		.filter((item) => matchesNavItem(norm, item))
 		.sort((a, b) => normalizePath(b.to).length - normalizePath(a.to).length)[0];
+}
+
+export function permissionForPath(path: string): RoutePermission | undefined {
+	const current = normalizePath(path);
+	return Object.entries(routePermissions)
+		.filter(([to]) => current === to || current.startsWith(to + '/'))
+		.sort(([a], [b]) => normalizePath(b).length - normalizePath(a).length)[0]?.[1];
+}
+
+export function permissionForNavItem(item: NavItem): RoutePermission | undefined {
+	return permissionForPath(item.to);
 }

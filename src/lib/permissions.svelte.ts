@@ -29,31 +29,42 @@ import type {
 function activeStaff(): { customPermissions?: string[]; branchIds?: string[]; status?: string } | null {
 	const id = tenant.state.activeStaffId;
 	if (!id) return null;
-	const info = tenant.state.activeStaffInfo;
-	if (info) return info;
 	const obj = glo.get(TYPE.staff, id);
-	return (obj?.data as Staff | undefined) ?? null;
+	const live = obj?.data as Staff | undefined;
+	if (live) return live;
+	return tenant.state.activeStaffInfo;
+}
+
+function staffCanUseCurrentBranch(member: { branchIds?: string[]; status?: string } | null, branchId?: string) {
+	if (!member) return true;
+	if (member.status && member.status !== 'active') return false;
+	const targetBranchId = branchId ?? tenant.state.locationId;
+	if (!targetBranchId) return false;
+	const branchIds = member.branchIds ?? [];
+	return branchIds.length === 0 || branchIds.includes(targetBranchId);
 }
 
 /** Resolve custom-permission strings into structured permissions. */
 function customPermissionsToPermissions(strings: string[]): Permission[] {
-	const byResource = new Map<PermissionResource, Set<PermissionAction>>();
+	const byResource: Partial<Record<PermissionResource, PermissionAction[]>> = {};
 	for (const entry of strings) {
 		const [resource, action] = entry.split(':') as [PermissionResource, PermissionAction | 'all'];
 		if (!resource) continue;
-		const set = byResource.get(resource) ?? new Set<PermissionAction>();
+		const actions = byResource[resource] ?? [];
 		if (!action || action === 'all') {
-			for (const a of ['read', 'write', 'delete', 'approve', 'export'] as const) set.add(a);
+			for (const a of ['read', 'write', 'delete', 'approve', 'export'] as const) {
+				if (!actions.includes(a)) actions.push(a);
+			}
 		} else {
-			set.add(action);
+			if (!actions.includes(action)) actions.push(action);
 		}
-		byResource.set(resource, set);
+		byResource[resource] = actions;
 	}
-	return [...byResource.entries()].map(([resource, actions]) => ({
+	return Object.entries(byResource).map(([resource, actions]) => ({
 		resource,
-		actions: [...actions],
+		actions,
 		scope: 'branch'
-	}));
+	})) as Permission[];
 }
 
 /** Effective permissions for the active user (role defaults, or the override). */
@@ -79,6 +90,9 @@ class PermissionsApi {
 
 		// 1) Custom-permission override on the active staff record.
 		const member = activeStaff();
+		if (tenant.state.activeStaffId && !staffCanUseCurrentBranch(member, scopeContext?.branchId)) {
+			return false;
+		}
 		if (tenant.state.activeStaffId && member && member.customPermissions !== undefined) {
 			return customPermissionsAllow(member.customPermissions as string[], resource, action);
 		}
@@ -89,7 +103,7 @@ class PermissionsApi {
 			if (!perm.actions.includes(action)) return false;
 			if (perm.scope === 'global') return true;
 			if (perm.scope === 'branch') {
-				return !!(scopeContext?.branchId || tenant.state.locationId);
+				return staffCanUseCurrentBranch(member, scopeContext?.branchId);
 			}
 			return false;
 		});

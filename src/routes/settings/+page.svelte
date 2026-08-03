@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -7,18 +9,25 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { session } from '$nostr/session.svelte';
-import { glo } from '$nostr/store.svelte';
+	import { glo } from '$nostr/store.svelte';
 	import { preferences } from '$lib/theme/preferences.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { truncateNpub, titleCase } from '$lib/utils/format';
 	import { businessModels, businessTypes, currencies } from '$lib/business';
+	import { permissions } from '$lib/permissions.svelte';
 	import Menu from '$lib/components/ui/Menu.svelte';
 	import MenuItem from '$lib/components/ui/MenuItem.svelte';
 	import MenuDivider from '$lib/components/ui/MenuDivider.svelte';
 
 	onMount(() => preferences.load());
 
+	const canWriteSettings = $derived(permissions.can('settings', 'write') || tenant.state.activeRole === null);
+
 	function saveOrg() {
+		if (!canWriteSettings) {
+			toast.error('Permission denied: write settings');
+			return;
+		}
 		tenant.persist();
 		toast.success('Organization saved');
 	}
@@ -108,7 +117,7 @@ import { glo } from '$nostr/store.svelte';
 				>{/if}
 		</div>
 		<div class="mt-4 flex justify-end">
-			<Button color="primary" icon="lucide:save" onclick={saveOrg}>Save</Button>
+			<Button color="primary" icon="lucide:save" disabled={!canWriteSettings} onclick={saveOrg}>Save</Button>
 		</div>
 	</section>
 
@@ -132,7 +141,7 @@ import { glo } from '$nostr/store.svelte';
 					>Show QR</MenuItem
 				>
 				<MenuDivider />
-				<MenuItem tone="danger" icon="lucide:log-out" onclick={async () => { await session.logout(); tenant.reset(); glo.clearAll(); await goto('/login', { replaceState: true }); }}
+				<MenuItem tone="danger" icon="lucide:log-out" onclick={async () => { await session.logout(); tenant.reset(); glo.clearAll(); await goto(resolve('/login'), { replaceState: true }); }}
 					>Sign out</MenuItem
 				>
 			</Menu>

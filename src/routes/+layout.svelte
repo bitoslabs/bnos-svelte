@@ -26,6 +26,8 @@
 	import PwaPrompt from '$lib/components/PwaPrompt.svelte';
 	import OfflineBadge from '$lib/components/OfflineBadge.svelte';
 	import { popovers } from '$lib/stores/popovers.svelte';
+	import { permissionForPath } from '$lib/nav';
+	import { permissions } from '$lib/permissions.svelte';
 	import favicon from '$lib/assets/favicon.svg';
 
 	let { children } = $props();
@@ -34,7 +36,9 @@
 	let workspaceResolutionPubkey = '';
 
 	const isPublicRoute = $derived(
-		page.url.pathname === '/login' || page.url.pathname.startsWith('/setup')
+		page.url.pathname === '/login' ||
+		page.url.pathname === '/resolve' ||
+		page.url.pathname.startsWith('/setup')
 	);
 	const isPosRoute = $derived(page.url.pathname === '/pos' || page.url.pathname.startsWith('/pos/'));
 
@@ -78,10 +82,19 @@
 					workspaceResolutionPending = false;
 					postLoginSyncState = 'idle';
 					if (!staffWorkspace) {
-						void goto(resolve('/setup'), { replaceState: true });
+						void goto(resolve('/resolve'), { replaceState: true });
 					}
 				}
 			});
+		}
+	});
+
+	$effect(() => {
+		if (isPublicRoute || !session.hydrated || !tenant.hydrated || !session.isAuthenticated) return;
+		if (tenant.state.activeRole === null) return;
+		const gate = permissionForPath(page.url.pathname);
+		if (gate && !permissions.can(gate.resource, gate.action)) {
+			void goto(resolve('/'), { replaceState: true });
 		}
 	});
 

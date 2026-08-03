@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
-	import { findNavItem, navSections, type NavItem } from '$lib/nav';
+	import { findNavItem, navSections, permissionForNavItem, permissionForPath, type NavItem } from '$lib/nav';
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
-import { glo } from '$nostr/store.svelte';
+	import { glo } from '$nostr/store.svelte';
 	import { permissions } from '$lib/permissions.svelte';
-	import { truncateNpub, initialsFrom } from '$lib/utils/format';
 	import { sidebarState, loadCollapsed, toggleCollapsed } from '$lib/sidebar-state.svelte';
 
 	let { onnavigate }: { onnavigate?: () => void } = $props();
@@ -20,21 +20,20 @@ import { glo } from '$nostr/store.svelte';
 		return findNavItem(page.url.pathname)?.to === item.to;
 	}
 
-	/** Route → (resource, action) gate. Undefined = always visible. */
-	const ROUTE_PERMISSIONS: Record<string, [string, string]> = {
-		'/staff': ['staff', 'read'],
-		'/reports': ['reports', 'read'],
-		'/expenses': ['accounting', 'read'],
-		'/settings': ['settings', 'read']
-	};
+	function resolvedHref(to: string) {
+		return resolve(to as '/');
+	}
 
 	/** Show a nav item unless the active role explicitly denies it. During
 	 *  first-run (no resolved role) everything stays visible. */
 	function canSeeNav(item: NavItem): boolean {
+		return canUseRoute(item.to, permissionForNavItem(item));
+	}
+
+	function canUseRoute(to: string, gate = permissionForPath(to)): boolean {
 		if (tenant.state.activeRole === null) return true;
-		const gate = ROUTE_PERMISSIONS[item.to];
 		if (!gate) return true;
-		return permissions.can(gate[0] as never, gate[1] as never);
+		return permissions.can(gate.resource, gate.action);
 	}
 
 	const visibleSections = $derived(
@@ -50,14 +49,14 @@ import { glo } from '$nostr/store.svelte';
 		await session.logout();
 		tenant.reset();
 		glo.clearAll();
-		await goto('/login');
+		await goto(resolve('/login'));
 	}
 </script>
 
 <div class="flex h-full flex-col">
 	<!-- Brand -->
 	<a
-		href="/"
+		href={resolve('/')}
 		aria-label="Go to BNOS dashboard"
 		title={sidebarState.collapsed ? 'BNOS Dashboard' : undefined}
 		class="app-sidebar-brand flex h-16 items-center {sidebarState.collapsed ? 'justify-center px-0' : 'gap-3 px-5'} border-b border-[var(--glass-border)] transition-all hover:bg-[var(--ui-bg-accented)]"
@@ -94,7 +93,7 @@ import { glo } from '$nostr/store.svelte';
 				{#each section.items as item (item.to)}
 					{@const active = isActive(item)}
 					<a
-						href={item.to}
+						href={resolvedHref(item.to)}
 						title={sidebarState.collapsed ? item.label : undefined}
 						class="app-nav-item nav-active group mb-0.5 flex items-center {sidebarState.collapsed ? 'justify-center px-0' : 'gap-3 px-3'} rounded-lg py-2 text-[13.5px] font-medium transition-colors {active
 							? 'nav-active-on is-active-surface'
@@ -171,16 +170,18 @@ import { glo } from '$nostr/store.svelte';
 								</span>
 							</div>
 						</div>
+						{#if canUseRoute('/settings')}
+							<a
+								href={resolve('/settings')}
+								onclick={() => (menuOpen = false)}
+								class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+							>
+								<Icon name="lucide:sliders-horizontal" class="size-4 text-[var(--ui-text-dimmed)]" />
+								Settings
+							</a>
+						{/if}
 						<a
-							href="/settings"
-							onclick={() => (menuOpen = false)}
-							class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-						>
-							<Icon name="lucide:sliders-horizontal" class="size-4 text-[var(--ui-text-dimmed)]" />
-							Settings
-						</a>
-						<a
-							href="/profile"
+							href={resolve('/profile')}
 							onclick={() => (menuOpen = false)}
 							class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 						>
@@ -219,16 +220,18 @@ import { glo } from '$nostr/store.svelte';
 								</span>
 							</div>
 						</div>
+						{#if canUseRoute('/settings')}
+							<a
+								href={resolve('/settings')}
+								onclick={() => (menuOpen = false)}
+								class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+							>
+								<Icon name="lucide:sliders-horizontal" class="size-4 text-[var(--ui-text-dimmed)]" />
+								Settings
+							</a>
+						{/if}
 						<a
-							href="/settings"
-							onclick={() => (menuOpen = false)}
-							class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-						>
-							<Icon name="lucide:sliders-horizontal" class="size-4 text-[var(--ui-text-dimmed)]" />
-							Settings
-						</a>
-						<a
-							href="/profile"
+							href={resolve('/profile')}
 							onclick={() => (menuOpen = false)}
 							class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 						>
