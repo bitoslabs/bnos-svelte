@@ -11,8 +11,9 @@
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { glo } from '$nostr/store.svelte';
-	import { preferences, accentOptions } from '$lib/theme/preferences.svelte';
+	import { preferences } from '$lib/theme/preferences.svelte';
 	import { setMode, mode } from 'mode-watcher';
+	import AppearanceControls from '$lib/components/AppearanceControls.svelte';
 
 	let { children } = $props();
 
@@ -104,27 +105,10 @@
 					<Icon name="lucide:sliders-horizontal" class="size-[18px]" />
 				{/snippet}
 				{#snippet content()}
-					<div class="w-64 space-y-4 p-1">
-						<!-- Color mode -->
-						<div>
-							<div class="mb-1.5 px-1 text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">Appearance</div>
-							<div class="flex gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
-								<button type="button" onclick={() => setMode('light')} class="flex-1 rounded-md py-1.5 text-[11.5px] font-semibold {mode.current === 'light' ? 'bg-[var(--ui-bg-elevated)] shadow-sm' : 'text-[var(--ui-text-dimmed)]'}">Light</button>
-								<button type="button" onclick={() => setMode('dark')} class="flex-1 rounded-md py-1.5 text-[11.5px] font-semibold {mode.current === 'dark' ? 'bg-[var(--ui-bg-elevated)] shadow-sm' : 'text-[var(--ui-text-dimmed)]'}">Dark</button>
-								<button type="button" onclick={() => setMode('system')} class="flex-1 rounded-md py-1.5 text-[11.5px] font-semibold {mode.current === 'dark' ? 'text-[var(--ui-text-dimmed)]' : 'bg-[var(--ui-bg-elevated)] shadow-sm'}">Auto</button>
-							</div>
-						</div>
-						<!-- Accent color -->
-						<div>
-							<div class="mb-1.5 px-1 text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">Accent</div>
-							<div class="flex flex-wrap gap-1.5 px-1">
-								{#each accentOptions as opt (opt.key)}
-									<button type="button" onclick={() => { preferences.setAccent(opt.key) }} class="size-6 rounded-full border-2 transition-transform {preferences.state.accent === opt.key ? 'border-[var(--ui-text)] scale-110' : 'border-transparent'}" style="background: {opt.hex}" title={opt.label}></button>
-								{/each}
-							</div>
-						</div>
-					</div>
-				{/snippet}
+					<div class="w-72 p-1">
+					<AppearanceControls />
+				</div>
+			{/snippet}
 			</Popover>
 
 			<!-- Sign out -->

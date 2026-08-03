@@ -4,15 +4,12 @@
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
+	import AppearanceControls from '$lib/components/AppearanceControls.svelte';
 	import { findNavItem } from '$lib/nav';
 	import { relays } from '$nostr/relay.svelte';
+	import { session } from '$nostr/session.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
-	import {
-		preferences,
-		accentOptions,
-		densityOptions
-	} from '$lib/theme/preferences.svelte';
-	import { setMode, userPrefersMode } from 'mode-watcher';
+	import { setMode, mode } from 'mode-watcher';
 
 	let { onmenutoggle }: { onmenutoggle?: () => void } = $props();
 
@@ -199,82 +196,88 @@
 	</Popover>
 
 	<!-- Quick settings popover -->
-	<Popover bind:open={quickOpen} align="end" side="bottom">
+	<Popover bind:open={quickOpen} align="end" side="bottom" class="w-80 p-0">
 		{#snippet trigger()}
 			<Icon name="lucide:sliders-horizontal" class="size-[18px]" />
 		{/snippet}
 		{#snippet content()}
-			<div class="w-72 space-y-4 p-1">
-				<!-- Color mode (reused from appearance) -->
-				<div>
-					<p class="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">Color mode</p>
-					<div class="segmented inline-flex w-full gap-1 rounded-lg bg-[var(--ui-bg-muted)] p-1">
-						{#each ['light', 'dark', 'system'] as m (m)}
-							<button
-								type="button"
-								onclick={() => setMode(m as 'light' | 'dark' | 'system')}
-								class="flex-1 rounded-md px-3 py-1.5 text-[12px] font-semibold capitalize transition-colors {userPrefersMode.current === m ? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm' : 'text-[var(--ui-text-muted)]'}"
-							>{m}</button>
-						{/each}
+			<div class="w-80 space-y-1 p-0">
+				<!-- Account chip -->
+				<a
+					href={resolve('/profile')}
+					onclick={() => (quickOpen = false)}
+					class="flex items-center gap-3 rounded-t-xl border-b border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3.5 py-3 transition-colors hover:bg-[var(--ui-bg-accented)]"
+				>
+					<div class="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[13px] font-bold text-white shadow-sm">
+						{(session.shortNpub ?? 'B').charAt(0).toUpperCase()}
 					</div>
-				</div>
-
-				<!-- Accent color -->
-				<div>
-					<p class="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">Accent</p>
-					<div class="flex flex-wrap gap-2">
-						{#each accentOptions as opt (opt.key)}
-							<button
-								type="button"
-								onclick={() => preferences.setAccent(opt.key)}
-								class="size-7 rounded-full ring-2 ring-offset-2 ring-offset-[var(--surface-bg)] transition-transform hover:scale-110 {preferences.state.accent === opt.key ? 'ring-primary-500' : 'ring-transparent'}"
-								style="background: {opt.hex}"
-								title={opt.label}
-							></button>
-						{/each}
+					<div class="min-w-0 flex-1">
+						<p class="truncate text-[12.5px] font-semibold text-[var(--ui-text)]">
+							{session.shortNpub ?? 'Account'}
+						</p>
+						<p class="truncate text-[10.5px] text-[var(--ui-text-dimmed)]">
+							{session.npub ?? 'Nostr identity'}
+						</p>
 					</div>
-				</div>
+					<Icon name="lucide:chevron-right" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
+				</a>
 
-				<!-- Density -->
-				<div>
-					<p class="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">Density</p>
-					<div class="segmented inline-flex w-full gap-1 rounded-lg bg-[var(--ui-bg-muted)] p-1">
-						{#each densityOptions as opt (opt.key)}
-							<button
-								type="button"
-								onclick={() => preferences.setDensity(opt.key)}
-								class="flex-1 rounded-md px-3 py-1.5 text-[12px] font-semibold capitalize transition-colors {preferences.state.density === opt.key ? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm' : 'text-[var(--ui-text-muted)]'}"
-							>{opt.label}</button>
-						{/each}
-					</div>
-				</div>
+				<!-- Appearance controls -->
+				<AppearanceControls class="px-3.5 py-3.5" />
 
-				<!-- Manual sync -->
-				<div class="border-t border-[var(--ui-border-muted)] pt-3">
+				<!-- Quick action widgets -->
+				<div class="grid grid-cols-3 gap-1.5 px-3.5 pb-3">
 					<button
 						type="button"
-						onclick={syncAllData}
+						onclick={() => setMode(mode.current === 'dark' ? 'light' : 'dark')}
+						class="flex flex-col items-center gap-1 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] py-2.5 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+						title="Toggle theme"
+					>
+						<Icon name={mode.current === 'dark' ? 'lucide:sun' : 'lucide:moon'} class="size-4" />
+						<span class="text-[10px] font-semibold">{mode.current === 'dark' ? 'Light' : 'Dark'}</span>
+					</button>
+					<button
+						type="button"
+						onclick={() => { void syncAllData(); }}
 						disabled={syncState === 'syncing'}
-						class="flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-60"
+						class="flex flex-col items-center gap-1 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] py-2.5 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:opacity-60"
+						title="Sync data"
 					>
 						<Icon name={syncIcon} class={syncIconClass} />
-						<span>{syncLabel}</span>
+						<span class="text-[10px] font-semibold">Sync</span>
 					</button>
+					<a
+						href={resolve('/settings/relays')}
+						onclick={() => (quickOpen = false)}
+						class="flex flex-col items-center gap-1 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] py-2.5 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+						title="Manage relays"
+					>
+						<span class="relative flex size-4 items-center justify-center">
+							{#if relays.online}
+								<span class="absolute size-2 animate-ping rounded-full bg-emerald-400 opacity-70"></span>
+							{/if}
+							<Icon name="lucide:radio" class="size-4" />
+						</span>
+						<span class="text-[10px] font-semibold">Relays</span>
+					</a>
 				</div>
 
 				<!-- Links -->
-				<div class="border-t border-[var(--ui-border-muted)] pt-3">
-					<a href={resolve('/settings')} class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]">
+				<div class="space-y-0.5 border-t border-[var(--ui-border-muted)] px-1.5 py-1.5">
+					<a href={resolve('/settings')} onclick={() => (quickOpen = false)} class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]">
 						<Icon name="lucide:settings" class="size-4" />
 						All Settings
+						<Icon name="lucide:chevron-right" class="ml-auto size-3.5 text-[var(--ui-text-dimmed)]" />
 					</a>
-					<a href={resolve('/settings/appearance')} class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]">
+					<a href={resolve('/settings/appearance')} onclick={() => (quickOpen = false)} class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]">
 						<Icon name="lucide:palette" class="size-4" />
-						Appearance Settings
+						Appearance
+						<Icon name="lucide:chevron-right" class="ml-auto size-3.5 text-[var(--ui-text-dimmed)]" />
 					</a>
-					<a href={resolve('/settings/about')} class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]">
+					<a href={resolve('/settings/about')} onclick={() => (quickOpen = false)} class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]">
 						<Icon name="lucide:info" class="size-4" />
 						About BNOS
+						<Icon name="lucide:chevron-right" class="ml-auto size-3.5 text-[var(--ui-text-dimmed)]" />
 					</a>
 				</div>
 			</div>
