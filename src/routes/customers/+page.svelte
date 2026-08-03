@@ -15,6 +15,7 @@
 	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatInt, formatMoney, initialsFrom } from '$lib/utils/format';
+	import { newRecordId } from '$lib/utils/record-id';
 	import { tenant } from '$nostr/tenant.svelte';
 	import type { GloCustomer, GloObject } from '@bitos/bnos-core/glo';
 	import { TYPE, type CustomerSegment } from '$lib/domain';
@@ -110,7 +111,7 @@
 			...(notes.trim() ? { notes: notes.trim() } : {}),
 			...(segment !== 'none' ? { segment } : {})
 		};
-		await glo.upsert<GloCustomer>('crm.customer', data);
+		await glo.upsert<GloCustomer>('crm.customer', data, { id: newRecordId('customer') });
 		toast.success('Customer added', name.trim());
 		open = false;
 	}
@@ -145,14 +146,23 @@
 		editOpen = false;
 	}
 
-	function segmentBadge(seg?: string): { label: string; color: 'neutral' | 'primary' | 'success' | 'warning' | 'info' } {
+	function segmentBadge(seg?: string): {
+		label: string;
+		color: 'neutral' | 'primary' | 'success' | 'warning' | 'info';
+	} {
 		switch (seg) {
-			case 'vip': return { label: 'VIP', color: 'warning' };
-			case 'wholesale': return { label: 'Wholesale', color: 'info' };
-			case 'corporate': return { label: 'Corporate', color: 'primary' };
-			case 'regular': return { label: 'Regular', color: 'success' };
-			case 'new': return { label: 'New', color: 'primary' };
-			default: return { label: '—', color: 'neutral' };
+			case 'vip':
+				return { label: 'VIP', color: 'warning' };
+			case 'wholesale':
+				return { label: 'Wholesale', color: 'info' };
+			case 'corporate':
+				return { label: 'Corporate', color: 'primary' };
+			case 'regular':
+				return { label: 'Regular', color: 'success' };
+			case 'new':
+				return { label: 'New', color: 'primary' };
+			default:
+				return { label: '—', color: 'neutral' };
 		}
 	}
 
@@ -167,7 +177,10 @@
 				{
 					label: 'View raw',
 					icon: 'lucide:code',
-					onSelect: () => { rawItem = glo.get('crm.customer', c.id); rawOpen = true; }
+					onSelect: () => {
+						rawItem = glo.get('crm.customer', c.id);
+						rawOpen = true;
+					}
 				},
 				{
 					label: 'View',
@@ -247,7 +260,9 @@
 		>
 			{#snippet actions()}
 				{#if !controls.search}
-					<Button color="primary" size="sm" icon="lucide:user-plus" onclick={openCreate}>Add customer</Button>
+					<Button color="primary" size="sm" icon="lucide:user-plus" onclick={openCreate}
+						>Add customer</Button
+					>
 				{/if}
 			{/snippet}
 		</EmptyState>
@@ -265,7 +280,9 @@
 						<div class="flex items-center gap-2">
 							<span class="truncate font-semibold">{c.data.name ?? 'Unnamed'}</span>
 							{#if segmentBadge(c.data.segment as string | undefined).label !== '—'}
-								<Badge color={segmentBadge(c.data.segment as string | undefined).color}>{segmentBadge(c.data.segment as string | undefined).label}</Badge>
+								<Badge color={segmentBadge(c.data.segment as string | undefined).color}
+									>{segmentBadge(c.data.segment as string | undefined).label}</Badge
+								>
 							{/if}
 						</div>
 						<div class="truncate text-[12px] text-[var(--ui-text-muted)]">
@@ -274,7 +291,9 @@
 						{#if (c.data as { totalOrders?: number }).totalOrders || c.data.totalSpend}
 							<div class="mt-1 flex items-center gap-3 text-[11px] text-[var(--ui-text-dimmed)]">
 								{#if (c.data as { totalOrders?: number }).totalOrders}
-									<span>{formatInt((c.data as { totalOrders?: number }).totalOrders ?? 0)} orders</span>
+									<span
+										>{formatInt((c.data as { totalOrders?: number }).totalOrders ?? 0)} orders</span
+									>
 								{/if}
 								{#if c.data.totalSpend}
 									<span>{formatMoney(c.data.totalSpend as number, currency)}</span>
@@ -346,7 +365,9 @@
 										<div>
 											<span class="font-semibold">{c.data.name ?? 'Unnamed'}</span>
 											{#if (c.data as { npub?: string }).npub}
-												<div class="font-mono text-[10px] text-[var(--ui-text-dimmed)]">{(c.data as { npub?: string }).npub!.slice(0, 16)}…</div>
+												<div class="font-mono text-[10px] text-[var(--ui-text-dimmed)]">
+													{(c.data as { npub?: string }).npub!.slice(0, 16)}…
+												</div>
 											{/if}
 										</div>
 									</div>
@@ -355,12 +376,14 @@
 								<td class="px-5 py-3 text-[var(--ui-text-muted)]">{c.data.email ?? '—'}</td>
 								<td class="px-5 py-3">
 									{#if segmentBadge(c.data.segment as string | undefined).label !== '—'}
-										<Badge color={segmentBadge(c.data.segment as string | undefined).color}>{segmentBadge(c.data.segment as string | undefined).label}</Badge>
+										<Badge color={segmentBadge(c.data.segment as string | undefined).color}
+											>{segmentBadge(c.data.segment as string | undefined).label}</Badge
+										>
 									{:else}
 										<span class="text-[var(--ui-text-dimmed)]">—</span>
 									{/if}
 								</td>
-								<td class="px-5 py-3 text-right tabular-nums text-[var(--ui-text-muted)]">
+								<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums">
 									{#if c.data.totalSpend}
 										{formatMoney(c.data.totalSpend as number, currency)}
 									{:else}
@@ -368,7 +391,9 @@
 									{/if}
 								</td>
 								<td class="px-5 py-3">
-									<Badge color={c.data.status === 'active' ? 'success' : 'neutral'}>{c.data.status ?? 'active'}</Badge>
+									<Badge color={c.data.status === 'active' ? 'success' : 'neutral'}
+										>{c.data.status ?? 'active'}</Badge
+									>
 								</td>
 								<td class="px-5 py-3 text-right"><RowActions actions={rowActions(c)} /></td>
 							</tr>
@@ -390,31 +415,53 @@
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</span
+				>
 				<Input bind:value={phone} icon="lucide:phone" placeholder="+856 …" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Email</span>
-				<Input bind:value={email} icon="lucide:at-sign" placeholder="jane@example.com" class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Email</span
+				>
+				<Input
+					bind:value={email}
+					icon="lucide:at-sign"
+					placeholder="jane@example.com"
+					class="w-full"
+				/>
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Address</span>
-			<Input bind:value={address} icon="lucide:map-pin" placeholder="123 Main St, City" class="w-full" />
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Address</span
+			>
+			<Input
+				bind:value={address}
+				icon="lucide:map-pin"
+				placeholder="123 Main St, City"
+				class="w-full"
+			/>
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">npub (Nostr pubkey)</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>npub (Nostr pubkey)</span
+				>
 				<Input bind:value={npub} icon="lucide:key-round" placeholder="npub1…" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Segment</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Segment</span
+				>
 				<Select bind:value={segment} options={SEGMENTS} class="w-full" />
 			</label>
 		</div>
 		<label class="block">
 			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Notes</span>
-			<Input bind:value={notes} textarea placeholder="Preferences, allergies, VIP notes…" class="w-full" />
+			<Input
+				bind:value={notes}
+				textarea
+				placeholder="Preferences, allergies, VIP notes…"
+				class="w-full"
+			/>
 		</label>
 	</div>
 	{#snippet footer()}
@@ -432,25 +479,32 @@
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</span
+				>
 				<Input bind:value={editPhone} icon="lucide:phone" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Email</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Email</span
+				>
 				<Input bind:value={editEmail} icon="lucide:at-sign" class="w-full" />
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Address</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Address</span
+			>
 			<Input bind:value={editAddress} icon="lucide:map-pin" class="w-full" />
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">npub (Nostr pubkey)</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>npub (Nostr pubkey)</span
+				>
 				<Input bind:value={editNpub} icon="lucide:key-round" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Segment</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Segment</span
+				>
 				<Select bind:value={editSegment} options={SEGMENTS} class="w-full" />
 			</label>
 		</div>

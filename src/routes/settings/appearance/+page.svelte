@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
-	import Switch from '$lib/components/ui/Switch.svelte';
 	import {
 		preferences,
 		accentOptions,
-		densityOptions,
 		surfaceOptions,
 		surfaceTintOptions,
 		neutralOptions,
@@ -15,7 +13,6 @@
 	import { setMode, userPrefersMode } from 'mode-watcher';
 
 	onMount(() => preferences.load());
-	const compact = $derived(preferences.state.density === 'compact');
 
 	const modes = [
 		{ key: 'light', label: 'Light', icon: 'lucide:sun' },

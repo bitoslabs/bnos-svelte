@@ -14,6 +14,7 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatInt, formatMoney } from '$lib/utils/format';
+	import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
 	import {
 		TYPE,
 		statusColor,
@@ -28,10 +29,49 @@
 	import { cart, type OrderType, type CartModifier } from '$lib/pos/cart.svelte';
 	import { computeStock, availableFor, canSell } from '$lib/pos/stock';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import {
+		loadGeneralSettings,
+		loadHardwareSettings,
+		loadReceiptSettings,
+		type GeneralSettings,
+		type HardwareSettings,
+		type ReceiptSettings
+	} from '$lib/settings/local';
+
+	interface PromotionData {
+		status?: string;
+		isActive?: boolean;
+		startDate?: string;
+		endDate?: string;
+		usageLimit?: number;
+		currentUsage?: number;
+		type?: 'percent' | 'fixed';
+		discountType?: 'percent' | 'fixed';
+		value?: number;
+		discountValue?: number;
+		name?: string;
+		description?: string;
+	}
 
 	let now = $state(new Date());
+	let generalSettings = $state<GeneralSettings>(loadGeneralSettings());
+	let hardwareSettings = $state<HardwareSettings>(loadHardwareSettings());
+	let receiptSettings = $state<ReceiptSettings>(loadReceiptSettings());
+
+	function refreshLocalSettings() {
+		generalSettings = loadGeneralSettings();
+		hardwareSettings = loadHardwareSettings();
+		receiptSettings = loadReceiptSettings(tenant.state.organizationName || 'BNOS');
+	}
 
 	onMount(() => {
+		refreshLocalSettings();
+		method = payMethods.includes(generalSettings.defaultPayment)
+			? generalSettings.defaultPayment
+			: 'cash';
+		splitMethod = method;
+
 		dataSync.pageSync(
 			[
 				TYPE.product,
@@ -54,7 +94,7 @@
 
 	// Active promotions
 	const activePromotions = $derived(
-		glo.all<any, typeof TYPE.promotion>(TYPE.promotion).filter((p) => {
+		glo.all<PromotionData, typeof TYPE.promotion>(TYPE.promotion).filter((p) => {
 			const d = p.data;
 			const now = new Date();
 			const active = d.status === 'active' || d.isActive !== false;
@@ -99,15 +139,18 @@
 	let query = $state('');
 	let activeCat = $state<string>('all');
 	const categories = $derived.by(() => {
-		const set = new Set<string>();
-		for (const p of products) if (p.data.categoryId) set.add(p.data.categoryId as string);
-		return ['all', ...set];
+		const categories: string[] = [];
+		for (const p of products) {
+			const categoryId = p.data.categoryId as string | undefined;
+			if (categoryId && !categories.includes(categoryId)) categories.push(categoryId);
+		}
+		return ['all', ...categories];
 	});
 	const filtered = $derived(
 		products.filter((p) => {
 			const matchesCat = activeCat === 'all' || p.data.categoryId === activeCat;
 			const q = query.trim().toLowerCase();
-			const matchesQuery = !q || ((p.data as any).name ?? '').toLowerCase().includes(q);
+			const matchesQuery = !q || (p.data.name ?? '').toLowerCase().includes(q);
 			const sellable = p.data.status !== 'inactive' && p.data.status !== 'archived';
 			return matchesCat && matchesQuery && sellable;
 		})
@@ -148,7 +191,7 @@
 	let sizeSel = $state<SelProduct | null>(null);
 	let modSel = $state<SelProduct | null>(null);
 	let chosenVariant = $state<string>('');
-	let chosenMods = $state<Record<string, Set<string>>>({});
+	let chosenMods = $state<Record<string, string[]>>({});
 	let pendingNote = $state('');
 	let pendingModVariant: { variantId: string; variantName: string; unitPrice: number } | null =
 		null;
@@ -195,7 +238,7 @@
 		if (!sizeSel) return;
 		const v = variants(sizeSel.data).find((x) => x.id === chosenVariant);
 		if (!v) return toast.warning('Pick a size');
-		const price = variantPrice((sizeSel.data as any).price ?? 0, v);
+		const price = variantPrice(sizeSel.data.price ?? 0, v);
 		const available = availableFor(stockMap, sizeSel.obj.id, v.id);
 		const check = canSell({
 			trackInventory: sizeSel.data.trackInventory as boolean | undefined,
@@ -215,16 +258,16 @@
 			pendingModVariant = { variantId, variantName, unitPrice: price };
 			return;
 		}
-		cart.add({ productId: obj.id, name: (obj.data as any).name, unitPrice: price, variantId, variantName });
+		cart.add({ productId: obj.id, name: obj.data.name, unitPrice: price, variantId, variantName });
 	}
 
 	function selectedModifierList(): CartModifier[] {
 		if (!modSel) return [];
 		const out: CartModifier[] = [];
 		for (const g of groupsFor(modSel.data)) {
-			const picked = chosenMods[g.name ?? ''] ?? new Set<string>();
+			const picked = chosenMods[g.name ?? ''] ?? [];
 			for (const opt of g.modifiers ?? g.options ?? []) {
-				if (picked.has(opt.name)) {
+				if (picked.includes(opt.name)) {
 					out.push({
 						groupId: g.name,
 						modifierId: opt.id ?? opt.name,
@@ -238,13 +281,13 @@
 	}
 
 	function toggleMod(group: string, name: string, single: boolean) {
-		const set = new Set(chosenMods[group] ?? []);
-		if (set.has(name)) set.delete(name);
-		else {
-			if (single) set.clear();
-			set.add(name);
-		}
-		chosenMods = { ...chosenMods, [group]: set };
+		const current = chosenMods[group] ?? [];
+		const next = current.includes(name)
+			? current.filter((item) => item !== name)
+			: single
+				? [name]
+				: [...current, name];
+		chosenMods = { ...chosenMods, [group]: next };
 	}
 
 	function confirmModifiers() {
@@ -256,8 +299,8 @@
 		modSel = null;
 		cart.add({
 			productId: obj.id,
-			name: (obj.data as any).name,
-			unitPrice: ctx?.unitPrice ?? (obj.data as any).price ?? 0,
+			name: obj.data.name,
+			unitPrice: ctx?.unitPrice ?? obj.data.price ?? 0,
 			variantId: ctx?.variantId,
 			variantName: ctx?.variantName,
 			modifiers: mods.length ? mods : undefined,
@@ -277,14 +320,9 @@
 		tipAmount = Math.round((cart.totals.subtotal * pct) / 100);
 	}
 
-	// Order note (order-level special instructions)
-	let orderNote = $state('');
-
 	// Grand total includes tip
 	const grandTotal = $derived(cart.totals.total + tipAmount);
-	const change = $derived(
-		Math.max(0, (typeof tendered === 'number' ? tendered : 0) - grandTotal)
-	);
+	const change = $derived(Math.max(0, (typeof tendered === 'number' ? tendered : 0) - grandTotal));
 	const underPayment = $derived(
 		typeof tendered === 'number' && tendered > 0 && tendered < grandTotal
 	);
@@ -293,13 +331,18 @@
 	const quickAmounts = $derived.by(() => {
 		const t = grandTotal;
 		const candidates = [
-			t,                                         // exact
-			Math.ceil(t / 1000) * 1000,               // next 1000 up
-			Math.ceil(t / 5000) * 5000,               // next 5000 up
-			Math.ceil(t / 10000) * 10000,             // next 10000 up
-			20000, 50000, 100000,                      // common denominations
+			t, // exact
+			Math.ceil(t / 1000) * 1000, // next 1000 up
+			Math.ceil(t / 5000) * 5000, // next 5000 up
+			Math.ceil(t / 10000) * 10000, // next 10000 up
+			20000,
+			50000,
+			100000 // common denominations
 		];
-		return [...new Set(candidates)].filter((v) => v > 0).sort((a, b) => a - b).slice(0, 8);
+		return candidates
+			.filter((v, index) => v > 0 && candidates.indexOf(v) === index)
+			.sort((a, b) => a - b)
+			.slice(0, 8);
 	});
 
 	// Split payment state
@@ -307,9 +350,7 @@
 	let splitPayments = $state<{ method: string; amount: number }[]>([]);
 	let splitMethod = $state<string>('cash');
 	let splitAmount = $state<number | ''>('');
-	const splitRemaining = $derived(
-		grandTotal - splitPayments.reduce((s, p) => s + p.amount, 0)
-	);
+	const splitRemaining = $derived(grandTotal - splitPayments.reduce((s, p) => s + p.amount, 0));
 	function addSplitPayment() {
 		const amt = typeof splitAmount === 'number' ? splitAmount : Number(splitAmount) || 0;
 		if (amt <= 0 || amt > splitRemaining + 0.01) {
@@ -348,16 +389,13 @@
 				showSuccessOverlay = true;
 				setTimeout(() => (showSuccessOverlay = false), 1500);
 				broadcastCheckoutSuccess(grandTotal, method);
-				toast.success(
-					'Sale complete',
-					`${formatMoney(grandTotal, currency)} · ${sale.number}`
-				);
+				toast.success('Sale complete', `${formatMoney(grandTotal, currency)} · ${sale.number}`);
 				tendered = '';
 				tipAmount = 0;
-				orderNote = '';
 				resetSplit();
 				cartOpen = false;
 				receiptOpen = true;
+				if (generalSettings.autoPrint && hardwareSettings.printerType !== 'none') printReceipt();
 			}
 		} catch (e) {
 			toast.error('Checkout failed', e instanceof Error ? e.message : undefined);
@@ -379,10 +417,7 @@
 		processing = true;
 		try {
 			const primary = splitPayments[0];
-			const sale = await cart.checkout(
-				primary.method as PaymentMethod,
-				primary.amount
-			);
+			const sale = await cart.checkout(primary.method as PaymentMethod, primary.amount);
 			if (sale) {
 				playSuccessChime();
 				showSuccessOverlay = true;
@@ -394,10 +429,10 @@
 				);
 				resetSplit();
 				tipAmount = 0;
-				orderNote = '';
 				tendered = '';
 				cartOpen = false;
 				receiptOpen = true;
+				if (generalSettings.autoPrint && hardwareSettings.printerType !== 'none') printReceipt();
 			}
 		} catch (e) {
 			toast.error('Checkout failed', e instanceof Error ? e.message : undefined);
@@ -407,21 +442,122 @@
 	}
 
 	function printReceipt() {
+		refreshLocalSettings();
 		if (!cart.lastCompleted) return;
-		const s = cart.lastCompleted;
-		const w = window.open('', '_blank', 'width=400,height=600');
+		if (hardwareSettings.printerType === 'none') {
+			toast.warning('Receipt printer is disabled in Hardware settings');
+			return;
+		}
+		const width = receiptSettings.paperSize === '58mm' ? 320 : 420;
+		const w = window.open('', '_blank', `width=${width},height=700`);
 		if (!w) return;
-		const itemsHtml = s.items
-			.map(
-				(it) =>
-					`<tr><td>${it.quantity}× ${it.name}${it.variantName ? ` (${it.variantName})` : ''}</td><td style="text-align:right">${formatMoney((it.unitPrice + (it.modifiers?.reduce((a, m) => a + m.priceAdjustment, 0) ?? 0)) * it.quantity, currency)}</td></tr>`
-			)
-			.join('');
-		w.document.write(
-			`<html><head><title>Receipt ${s.number}</title><style>body{font-family:monospace;padding:16px;font-size:12px}h2{text-align:center}table{width:100%}td{padding:2px 0}.total{font-weight:bold;font-size:14px;border-top:1px dashed #000;padding-top:8px}</style></head><body><h2>${tenant.state.organizationName || 'BNOS'}</h2><p style="text-align:center">${s.number}</p><hr><table>${itemsHtml}</table><hr><table><tr class="total"><td>TOTAL</td><td style="text-align:right">${formatMoney(s.totals.total, currency)}</td></tr><tr><td>Method</td><td style="text-align:right">${s.method}</td></tr>${s.change > 0 ? `<tr><td>Change</td><td style="text-align:right">${formatMoney(s.change, currency)}</td></tr>` : ''}</table><p style="text-align:center;margin-top:16px">Thank you!</p></body></html>`
-		);
+		w.document.write(buildReceiptHtml());
 		w.document.close();
 		w.print();
+	}
+
+	function escapeHtml(value: unknown) {
+		return String(value ?? '')
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#039;');
+	}
+
+	function recordValue<T>(value: T): T & Record<string, unknown> {
+		return value as T & Record<string, unknown>;
+	}
+
+	function buildReceiptHtml() {
+		const s = cart.lastCompleted!;
+		const receipt = receiptSettings;
+		const paperWidth = receipt.paperSize === '58mm' ? '58mm' : '80mm';
+		const cashier = tenant.state.activeStaffInfo?.name ?? shiftStaffName.trim() ?? '';
+		const lineTotal = (it: (typeof s.items)[number]) =>
+			(it.unitPrice + (it.modifiers?.reduce((a, m) => a + m.priceAdjustment, 0) ?? 0)) *
+			it.quantity;
+		const itemsHtml = s.items
+			.map((it) => {
+				const name = `${it.quantity}x ${it.name}${it.variantName ? ` (${it.variantName})` : ''}`;
+				return `<tr><td>${escapeHtml(name)}</td><td class="right">${escapeHtml(formatMoney(lineTotal(it), currency))}</td></tr>`;
+			})
+			.join('');
+		const headerHtml = [
+			receipt.showLogo && receipt.logoUrl
+				? `<div class="center logo"><img src="${escapeHtml(receipt.logoUrl)}" alt="Logo"></div>`
+				: '',
+			receipt.header ? `<div class="center muted">${escapeHtml(receipt.header)}</div>` : '',
+			receipt.showStoreName
+				? `<h2>${escapeHtml(receipt.storeName || tenant.state.organizationName || 'BNOS')}</h2>`
+				: '',
+			receipt.showPhone && receipt.phone
+				? `<div class="center muted">Tel: ${escapeHtml(receipt.phone)}</div>`
+				: '',
+			receipt.showAddress && receipt.address
+				? `<div class="center muted">${escapeHtml(receipt.address)}</div>`
+				: '',
+			receipt.showTaxId && receipt.taxId
+				? `<div class="center muted">Tax ID: ${escapeHtml(receipt.taxId)}</div>`
+				: ''
+		].join('');
+		const metaHtml = [
+			receipt.showDate
+				? `<tr><td>Date</td><td class="right">${escapeHtml(new Date().toLocaleString())}</td></tr>`
+				: '',
+			receipt.showOrderNumber
+				? `<tr><td>Order</td><td class="right">${escapeHtml(s.number)}</td></tr>`
+				: '',
+			receipt.showCashierName && cashier
+				? `<tr><td>Cashier</td><td class="right">${escapeHtml(cashier)}</td></tr>`
+				: ''
+		].join('');
+		const optionalHtml = [
+			receipt.showBarcode ? `<div class="barcode">${escapeHtml(s.number)}</div>` : '',
+			receipt.showQr && receipt.qrData
+				? `<div class="qr"><div>QR</div><small>${escapeHtml(receipt.qrData)}</small></div>`
+				: ''
+		].join('');
+
+		return `<!doctype html>
+<html>
+<head>
+	<title>Receipt ${escapeHtml(s.number)}</title>
+	<style>
+		@page { size: ${paperWidth} auto; margin: 4mm; }
+		* { box-sizing: border-box; }
+		body { width: ${paperWidth}; margin: 0 auto; padding: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: ${receipt.paperSize === '58mm' ? '10px' : '12px'}; color: #111; }
+		h2 { margin: 4px 0; text-align: center; font-size: 1.25em; }
+		table { width: 100%; border-collapse: collapse; }
+		td { padding: 2px 0; vertical-align: top; }
+		hr { border: 0; border-top: 1px dashed #111; margin: 8px 0; }
+		.right { text-align: right; white-space: nowrap; }
+		.center { text-align: center; }
+		.muted { color: #444; }
+		.total { font-weight: 700; font-size: 1.15em; }
+		.logo img { max-width: 42mm; max-height: 18mm; object-fit: contain; }
+		.barcode { margin: 10px 0 4px; text-align: center; letter-spacing: 3px; font-size: 18px; }
+		.qr { margin: 10px auto 4px; display: grid; min-height: 64px; place-items: center; border: 1px solid #999; text-align: center; }
+		.footer { margin-top: 10px; text-align: center; white-space: pre-wrap; }
+	</style>
+</head>
+<body>
+	${headerHtml}
+	<hr>
+	<table>${metaHtml}</table>
+	<hr>
+	<table>${itemsHtml}</table>
+	<hr>
+	<table>
+		<tr class="total"><td>TOTAL</td><td class="right">${escapeHtml(formatMoney(s.totals.total, currency))}</td></tr>
+		<tr><td>Method</td><td class="right">${escapeHtml(s.method)}</td></tr>
+		${s.change > 0 ? `<tr><td>Change</td><td class="right">${escapeHtml(formatMoney(s.change, currency))}</td></tr>` : ''}
+	</table>
+	${optionalHtml}
+	<hr>
+	<div class="footer">${escapeHtml(receipt.footer)}</div>
+</body>
+</html>`;
 	}
 
 	// ── mobile cart panel + line note ──
@@ -476,11 +612,17 @@
 				const parsed = JSON.parse(stored);
 				if (Array.isArray(parsed) && parsed.length > 0) {
 					return parsed
-						.map((p: unknown) => (typeof p === 'string' ? p : (p as { id?: string; name?: string })?.id ?? (p as { name?: string })?.name))
+						.map((p: unknown) =>
+							typeof p === 'string'
+								? p
+								: ((p as { id?: string; name?: string })?.id ?? (p as { name?: string })?.name)
+						)
 						.filter((v): v is string => !!v);
 				}
 			}
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 		return ['cash', 'card', 'qr', 'lightning'];
 	});
 	const payIcon: Record<string, string> = {
@@ -504,11 +646,16 @@
 
 	function startNewSale() {
 		if (cart.isEmpty) return;
-		cart.clear();
+		clearCart();
 		tipAmount = 0;
-		orderNote = '';
 		resetSplit();
 		toast.info('Started a new sale');
+	}
+
+	function clearCart() {
+		refreshLocalSettings();
+		if (generalSettings.confirmClear && !confirm('Clear the current cart?')) return;
+		cart.clear();
 	}
 
 	// ── A) Custom Item Modal ──
@@ -540,17 +687,18 @@
 
 	// ── B) Shift Gate ──
 	const shifts = $derived(glo.all<Shift, typeof TYPE.shift>(TYPE.shift));
-	const openShift = $derived(shifts.find((s) => !s.data.closedAt && s.data.status !== 'closed') ?? null);
+	const openShift = $derived(
+		shifts.find((s) => !s.data.closedAt && s.data.status !== 'closed') ?? null
+	);
 	let shiftModalOpen = $state(false);
 	// Track whether shifts have been hydrated from IndexedDB.
 	// glo.version is $state — it bumps when hydration completes.
 	let shiftsLoaded = $state(false);
 	$effect(() => {
-		// Read version to track it, then check if hydrated.
-		const _v = glo.version;
-		// Also read shifts length to track changes.
-		const count = shifts.length;
-		console.debug('[pos] shift effect', { version: _v, shiftsCount: count, hydrated: glo.isHydrated(TYPE.shift), hasOpen: !!openShift });
+		const trackedVersion = glo.version;
+		const trackedShiftCount = shifts.length;
+		void trackedVersion;
+		void trackedShiftCount;
 		// Mark loaded once the type has been hydrated (data arrived from IDB).
 		if (glo.isHydrated(TYPE.shift)) {
 			shiftsLoaded = true;
@@ -566,21 +714,26 @@
 		if (!openShift) {
 			shiftModalOpen = true;
 			return false;
-	}
+		}
 		return true;
 	}
 	async function openShiftAction() {
-		const number = `SHF-${Date.now().toString().slice(-6)}`;
-		const openingCash = typeof shiftOpeningCash === 'number' ? shiftOpeningCash : Number(shiftOpeningCash) || 0;
-		await glo.upsert<Shift>(TYPE.shift, {
-			number,
-			status: 'active',
-			openedAt: new Date().toISOString(),
-			openingCash,
-			staffName: shiftStaffName.trim() || undefined,
-			branchId: tenant.state.locationId ?? undefined,
-			currency
-		});
+		const number = nextReadableNumber({ prefix: 'SFT', scope: tenant.state.locationId });
+		const openingCash =
+			typeof shiftOpeningCash === 'number' ? shiftOpeningCash : Number(shiftOpeningCash) || 0;
+		await glo.upsert<Shift>(
+			TYPE.shift,
+			{
+				number,
+				status: 'active',
+				openedAt: new Date().toISOString(),
+				openingCash,
+				staffName: shiftStaffName.trim() || undefined,
+				branchId: tenant.state.locationId ?? undefined,
+				currency
+			},
+			{ id: newRecordId('shift') }
+		);
 		toast.success('Shift opened', number);
 		shiftModalOpen = false;
 		shiftOpeningCash = '';
@@ -588,13 +741,18 @@
 	}
 	async function closeShift() {
 		if (!openShift) return;
-		const closingCash = typeof shiftOpeningCash === 'number' ? shiftOpeningCash : Number(shiftOpeningCash) || 0;
-		await glo.upsert<Shift>(TYPE.shift, {
-			...openShift.data,
-			status: 'closed',
-			closedAt: new Date().toISOString(),
-			closingCash
-		}, { id: openShift.id });
+		const closingCash =
+			typeof shiftOpeningCash === 'number' ? shiftOpeningCash : Number(shiftOpeningCash) || 0;
+		await glo.upsert<Shift>(
+			TYPE.shift,
+			{
+				...openShift.data,
+				status: 'closed',
+				closedAt: new Date().toISOString(),
+				closingCash
+			},
+			{ id: openShift.id }
+		);
 		toast.success('Shift closed', openShift.data.number);
 		shiftModalOpen = false;
 	}
@@ -607,8 +765,14 @@
 
 	// ── C) Payment Success Sound ──
 	function playSuccessChime() {
+		refreshLocalSettings();
+		if (!generalSettings.paymentSound) return;
 		try {
-			const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+			const AudioContextCtor =
+				window.AudioContext ??
+				(window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+			if (!AudioContextCtor) return;
+			const ctx = new AudioContextCtor();
 			const notes = [800, 1000, 1200];
 			notes.forEach((freq, i) => {
 				const osc = ctx.createOscillator();
@@ -625,7 +789,9 @@
 				osc.stop(t0 + 0.1);
 			});
 			setTimeout(() => ctx.close(), 500);
-		} catch { /* audio not available */ }
+		} catch {
+			/* audio not available */
+		}
 	}
 
 	// ── D) History Quick Access ──
@@ -635,8 +801,10 @@
 		return all
 			.slice()
 			.sort((a, b) => {
-				const aTime = typeof a.data.createdAt === 'string' ? a.data.createdAt : '';
-				const bTime = typeof b.data.createdAt === 'string' ? b.data.createdAt : '';
+				const aCreatedAt = recordValue(a.data).createdAt;
+				const bCreatedAt = recordValue(b.data).createdAt;
+				const aTime = typeof aCreatedAt === 'string' ? aCreatedAt : '';
+				const bTime = typeof bCreatedAt === 'string' ? bCreatedAt : '';
 				return bTime.localeCompare(aTime);
 			})
 			.slice(0, 10);
@@ -646,11 +814,10 @@
 	}
 	function gotoOrder(id: string) {
 		historyOpen = false;
-		goto(`/orders/${id}`);
+		goto(resolve('/orders/[id]', { id }));
 	}
 
 	// ── E) More menu (header dropdown) ──
-	let moreMenuOpen = $state(false);
 
 	// ── F) BroadcastChannel for customer display ──
 	let displayChannel: BroadcastChannel | null = null;
@@ -658,7 +825,9 @@
 		if (typeof BroadcastChannel !== 'undefined') {
 			displayChannel = new BroadcastChannel('bnos-customer-display');
 		}
-		return () => { displayChannel?.close(); };
+		return () => {
+			displayChannel?.close();
+		};
 	});
 	// Broadcast cart state whenever it changes
 	$effect(() => {
@@ -669,7 +838,13 @@
 		const orderType = cart.orderType;
 		displayChannel?.postMessage({
 			type: 'cart',
-			items: items.map((l) => ({ name: l.name, quantity: l.quantity, unitPrice: l.unitPrice, variantName: l.variantName, lineTotal: cart.lineAmount(l) })),
+			items: items.map((l) => ({
+				name: l.name,
+				quantity: l.quantity,
+				unitPrice: l.unitPrice,
+				variantName: l.variantName,
+				lineTotal: cart.lineAmount(l)
+			})),
 			total,
 			itemCount,
 			customerName,
@@ -689,7 +864,7 @@
 		<div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 			<div class="flex min-w-0 items-center gap-3">
 				<a
-					href="/"
+					href={resolve('/')}
 					aria-label="Back to dashboard"
 					class="grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-sm shadow-primary-500/25"
 				>
@@ -717,9 +892,12 @@
 					</Badge>
 					<button
 						type="button"
-						onclick={() => { shiftModalOpen = true; shiftOpeningCash = ''; }}
+						onclick={() => {
+							shiftModalOpen = true;
+							shiftOpeningCash = '';
+						}}
 						class="text-[11px] font-semibold text-[var(--tone-error-text)] hover:underline"
-					>Close shift</button
+						>Close shift</button
 					>
 				{/if}
 				<Badge color={lowStockCount > 0 ? 'warning' : 'success'}>
@@ -729,7 +907,7 @@
 				{#if lowStockCount > 0}
 					<Badge color="warning">
 						<Icon name="lucide:triangle-alert" class="size-3.5" />
-						{lowStockCount} low stock
+						{formatInt(lowStockCount)} low stock
 					</Badge>
 				{/if}
 
@@ -756,7 +934,7 @@
 					Custom
 				</Button>
 				<a
-					href="/pos/customer-display"
+					href={resolve('/pos/customer-display')}
 					target="_blank"
 					title="Open customer display"
 					class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
@@ -768,14 +946,24 @@
 				<!-- More options dropdown -->
 				<Menu id="pos-header-more" placement="bottom-end" width="md">
 					{#snippet trigger()}<Icon name="lucide:more-horizontal" class="size-4" />{/snippet}
-					<MenuItem icon="lucide:list-ordered" onclick={() => { openHistory(); moreMenuOpen = false; }}>History</MenuItem>
-					<MenuItem icon="lucide:pause" onclick={() => { heldOpen = true; moreMenuOpen = false; }}>Held orders ({cart.held.length})</MenuItem>
+					<MenuItem icon="lucide:list-ordered" onclick={openHistory}>History</MenuItem>
+					<MenuItem
+						icon="lucide:pause"
+						onclick={() => {
+							heldOpen = true;
+						}}>Held orders ({formatInt(cart.held.length)})</MenuItem
+					>
 					{#if cart.lastCompleted}
-						<MenuItem icon="lucide:receipt" onclick={() => { receiptOpen = true; moreMenuOpen = false; }}>Last receipt</MenuItem>
+						<MenuItem
+							icon="lucide:receipt"
+							onclick={() => {
+								receiptOpen = true;
+							}}>Last receipt</MenuItem
+						>
 					{/if}
 					<MenuDivider />
-					<MenuItem icon="lucide:list-ordered" href="/orders">All orders</MenuItem>
-					<MenuItem icon="lucide:package" href="/catalog">Catalog</MenuItem>
+					<MenuItem icon="lucide:list-ordered" href={resolve('/orders')}>All orders</MenuItem>
+					<MenuItem icon="lucide:package" href={resolve('/catalog')}>Catalog</MenuItem>
 				</Menu>
 			</div>
 		</div>
@@ -783,7 +971,9 @@
 
 	<div class="min-h-0 flex-1 overflow-hidden">
 		<div
-			class="grid h-full min-h-0 gap-4 {cart.isEmpty ? 'lg:grid-cols-1' : 'lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem]'}"
+			class="grid h-full min-h-0 gap-4 {cart.isEmpty
+				? 'lg:grid-cols-1'
+				: 'lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem]'}"
 		>
 			<!-- Product browser -->
 			<section class="flex min-h-0 min-w-0 flex-col overflow-hidden">
@@ -836,14 +1026,16 @@
 							description="Add products in Catalog, or seed samples from Setup -> Catalog to start selling."
 						>
 							{#snippet actions()}
-								<Button color="primary" size="sm" icon="lucide:plus" href="/catalog"
+								<Button color="primary" size="sm" icon="lucide:plus" href={resolve('/catalog')}
 									>Add product</Button
 								>
 							{/snippet}
 						</EmptyState>
 					{:else}
 						<div
-							class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-5 {cart.isEmpty ? 'lg:grid-cols-6 xl:grid-cols-7' : ''}"
+							class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-5 {cart.isEmpty
+								? 'lg:grid-cols-6 xl:grid-cols-7'
+								: ''}"
 							class:pb-24={!cart.isEmpty}
 						>
 							{#each filtered as p (p.id)}
@@ -870,7 +1062,7 @@
 										{#if p.data.variants?.length}
 											<span
 												class="absolute top-1.5 right-1.5 rounded-full bg-black/45 px-1.5 py-0.5 text-[8.5px] font-bold text-white"
-												>{p.data.variants.length} sizes</span
+												>{formatInt(p.data.variants.length)} sizes</span
 											>
 										{:else if groupsFor(p.data).length}
 											<span
@@ -888,7 +1080,7 @@
 									<div class="min-w-0">
 										<div class="truncate text-[12.5px] font-semibold">{p.data.name}</div>
 										<div class="text-[12.5px] font-bold text-primary-600 dark:text-primary-400">
-											{formatMoney((p.data as any).price ?? 0, (p.data as any).currency ?? currency)}
+											{formatMoney(p.data.price ?? 0, p.data.currency ?? currency)}
 										</div>
 										{#if p.data.trackInventory}
 											<div
@@ -910,48 +1102,65 @@
 
 			<!-- Desktop cart sidebar (lg+) — hidden when empty for full-width browsing -->
 			{#if !cart.isEmpty}
-			<aside
-				class="hidden min-h-0 flex-col overflow-hidden border-l border-[var(--ui-border-muted)] bg-[var(--surface-bg)] lg:flex"
-			>
-				<header
-					class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-4 py-3"
+				<aside
+					class="hidden min-h-0 flex-col overflow-hidden border-l border-[var(--ui-border-muted)] bg-[var(--surface-bg)] lg:flex"
 				>
-					<div class="flex items-center gap-2">
-						<Icon name="lucide:shopping-cart" class="size-4 text-primary-500" />
-						<h2 class="font-display text-[15px] font-semibold tracking-tight">Current sale</h2>
-						{#if cart.itemCount}<Badge color="primary">{cart.itemCount}</Badge>{/if}
-					</div>
-					{#if !cart.isEmpty}
-						<button
-							type="button"
-							class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
-							onclick={() => cart.clear()}>Clear</button
-						>
+					<header
+						class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-4 py-3"
+					>
+						<div class="flex items-center gap-2">
+							<Icon name="lucide:shopping-cart" class="size-4 text-primary-500" />
+							<h2 class="font-display text-[15px] font-semibold tracking-tight">Current sale</h2>
+							{#if cart.itemCount}<Badge color="primary">{cart.itemCount}</Badge>{/if}
+						</div>
+						{#if !cart.isEmpty}
+							<button
+								type="button"
+								class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
+								onclick={clearCart}>Clear</button
+							>
+						{/if}
+					</header>
+					{#if cart.isEmpty}
+						<!-- sidebar is hidden when empty; this never shows -->
+					{:else}
+						<div class="min-h-0 flex-1 overflow-y-auto">
+							{@render cartContent()}
+						</div>
+						{@render tenderBlock()}
 					{/if}
-				</header>
-				{#if cart.isEmpty}
-					<!-- sidebar is hidden when empty; this never shows -->
-				{:else}
-					<div class="min-h-0 flex-1 overflow-y-auto">
-						{@render cartContent()}
-					</div>
-					{@render tenderBlock()}
-				{/if}
-			</aside>
+				</aside>
 			{/if}
 		</div>
 	</div>
 
 	<!-- Shift Gate Overlay (only after hydration — avoids flash on refresh) -->
 	{#if shiftsLoaded && !openShift && !shiftModalOpen}
-		<div class="fixed inset-0 z-30 flex items-center justify-center bg-[var(--ui-bg)]/80 backdrop-blur-sm">
-			<div class="mx-4 max-w-sm rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg)] p-6 text-center shadow-xl">
-				<div class="mx-auto mb-3 grid size-12 place-items-center rounded-full bg-[var(--tone-warning-bg)] text-[var(--tone-warning-text)]">
+		<div
+			class="fixed inset-0 z-30 flex items-center justify-center bg-[var(--ui-bg)]/80 backdrop-blur-sm"
+		>
+			<div
+				class="mx-4 max-w-sm rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg)] p-6 text-center shadow-xl"
+			>
+				<div
+					class="mx-auto mb-3 grid size-12 place-items-center rounded-full bg-[var(--tone-warning-bg)] text-[var(--tone-warning-text)]"
+				>
 					<Icon name="lucide:lock" class="size-6" />
 				</div>
 				<h3 class="font-display text-lg font-bold">No active shift</h3>
-				<p class="mt-1 text-[12.5px] text-[var(--ui-text-muted)]">Open a shift to start processing sales.</p>
-				<Button color="primary" class="mt-4" icon="lucide:unlock" onclick={() => { shiftModalOpen = true; shiftOpeningCash = ''; shiftStaffName = ''; }}>
+				<p class="mt-1 text-[12.5px] text-[var(--ui-text-muted)]">
+					Open a shift to start processing sales.
+				</p>
+				<Button
+					color="primary"
+					class="mt-4"
+					icon="lucide:unlock"
+					onclick={() => {
+						shiftModalOpen = true;
+						shiftOpeningCash = '';
+						shiftStaffName = '';
+					}}
+				>
 					Open shift
 				</Button>
 			</div>
@@ -963,7 +1172,9 @@
 {#if showSuccessOverlay}
 	<div class="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center">
 		<div class="rounded-full bg-green-500/20 p-6">
-			<div class="grid size-20 place-items-center rounded-full bg-green-500 text-white shadow-lg shadow-green-500/50">
+			<div
+				class="grid size-20 place-items-center rounded-full bg-green-500 text-white shadow-lg shadow-green-500/50"
+			>
 				<Icon name="lucide:check" class="size-10" />
 			</div>
 		</div>
@@ -1027,7 +1238,7 @@
 				<button
 					type="button"
 					class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
-					onclick={() => cart.clear()}>Clear</button
+					onclick={clearCart}>Clear</button
 				>
 			{/if}
 		</header>
@@ -1092,7 +1303,8 @@
 								type="button"
 								onclick={() => cart.remove(line.key)}
 								class="grid size-6 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
-								aria-label="Remove"><Icon name="lucide:x" class="size-3.5" /></button>
+								aria-label="Remove"><Icon name="lucide:x" class="size-3.5" /></button
+							>
 							<Menu
 								id={`cart-line-${line.key}`}
 								label="Line actions"
@@ -1116,87 +1328,94 @@
 			<button
 				type="button"
 				onclick={() => (orderContextOpen = !orderContextOpen)}
-				class="flex w-full items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text-muted)]"
+				class="flex w-full items-center justify-between text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase hover:text-[var(--ui-text-muted)]"
 			>
 				<span>Order details</span>
 				<div class="flex items-center gap-2">
 					{#if cart.totals.discountAmount > 0}
-						<span class="text-[var(--tone-success-text)]">−{formatMoney(cart.totals.discountAmount, currency)}</span>
+						<span class="text-[var(--tone-success-text)]"
+							>−{formatMoney(cart.totals.discountAmount, currency)}</span
+						>
 					{/if}
 					{#if cart.customerName}
-						<span class="normal-case text-[var(--ui-text-muted)]">{cart.customerName}</span>
+						<span class="text-[var(--ui-text-muted)] normal-case">{cart.customerName}</span>
 					{/if}
-					<Icon name="lucide:chevron-down" class="size-3.5 transition-transform {orderContextOpen ? 'rotate-180' : ''}" />
+					<Icon
+						name="lucide:chevron-down"
+						class="size-3.5 transition-transform {orderContextOpen ? 'rotate-180' : ''}"
+					/>
 				</div>
 			</button>
 			{#if orderContextOpen}
 				<div class="mt-2 space-y-2">
 					<div class="grid grid-cols-4 gap-1">
-				{#each orderTypes as ot (ot.value)}
+						{#each orderTypes as ot (ot.value)}
+							<button
+								type="button"
+								onclick={() => cart.setOrderType(ot.value)}
+								class="flex flex-col items-center gap-0.5 rounded-lg border py-1.5 text-[10px] font-semibold capitalize transition-colors {cart.orderType ===
+								ot.value
+									? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300'
+									: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
+								><Icon name={ot.icon} class="size-4" />{ot.label.replace('-', ' ')}</button
+							>
+						{/each}
+					</div>
+					<Input
+						bind:value={cart.customerName}
+						icon="lucide:user"
+						placeholder="Customer name (optional)"
+						class="w-full"
+					/>
+					{#if cart.orderType === 'dine_in'}
+						<div class="grid grid-cols-2 gap-2">
+							<Input
+								bind:value={cart.tableId}
+								icon="lucide:layout-grid"
+								placeholder="Table"
+								class="w-full"
+							/>
+							<Input
+								type="number"
+								min="1"
+								value={cart.covers}
+								oninput={(e) => cart.setCovers(Number((e.target as HTMLInputElement).value))}
+								icon="lucide:users"
+								placeholder="Covers"
+								class="w-full"
+							/>
+						</div>
+					{/if}
 					<button
 						type="button"
-						onclick={() => cart.setOrderType(ot.value)}
-						class="flex flex-col items-center gap-0.5 rounded-lg border py-1.5 text-[10px] font-semibold capitalize transition-colors {cart.orderType ===
-						ot.value
-							? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300'
-							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
-						><Icon name={ot.icon} class="size-4" />{ot.label.replace('-', ' ')}</button
+						onclick={() => {
+							dType = cart.discount.type;
+							dValue = cart.discount.value || '';
+							discountOpen = true;
+						}}
+						class="flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--ui-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
 					>
-				{/each}
-			</div>
-			<Input
-				bind:value={cart.customerName}
-				icon="lucide:user"
-				placeholder="Customer name (optional)"
-				class="w-full"
-			/>
-			{#if cart.orderType === 'dine_in'}
-				<div class="grid grid-cols-2 gap-2">
-					<Input
-						bind:value={cart.tableId}
-						icon="lucide:layout-grid"
-						placeholder="Table"
-						class="w-full"
-					/>
-					<Input
-						type="number"
-						min="1"
-						value={cart.covers}
-						oninput={(e) => cart.setCovers(Number((e.target as HTMLInputElement).value))}
-						icon="lucide:users"
-						placeholder="Covers"
-						class="w-full"
-					/>
-				</div>
-			{/if}
-			<button
-				type="button"
-				onclick={() => {
-					dType = cart.discount.type;
-					dValue = cart.discount.value || '';
-					discountOpen = true;
-				}}
-				class="flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--ui-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
-			>
-				<span><Icon name="lucide:tag" class="mr-1 inline size-3.5" />Discount</span>
-				{#if cart.totals.discountAmount > 0}<span class="text-[var(--tone-success-text)]"
-						>−{formatMoney(cart.totals.discountAmount, currency)}</span
-					>{:else}<span class="text-[var(--ui-text-dimmed)]">None</span>{/if}
-			</button>
-			{#if activePromotions.length > 0}
-				<button
-					type="button"
-					onclick={() => (promoOpen = true)}
-					class="flex items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3 py-1.5 text-[12px] font-semibold text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-800 dark:bg-primary-950 dark:text-primary-300 dark:hover:bg-primary-900"
-				>
-					<Icon name="lucide:ticket-percent" class="size-3.5" />
-					{selectedPromoId ? 'Promo applied' : 'Promotions'}
-					{#if activePromotions.length > 1}
-						<span class="rounded-full bg-primary-200 px-1.5 text-[10px] dark:bg-primary-800">{activePromotions.length}</span>
+						<span><Icon name="lucide:tag" class="mr-1 inline size-3.5" />Discount</span>
+						{#if cart.totals.discountAmount > 0}<span class="text-[var(--tone-success-text)]"
+								>−{formatMoney(cart.totals.discountAmount, currency)}</span
+							>{:else}<span class="text-[var(--ui-text-dimmed)]">None</span>{/if}
+					</button>
+					{#if activePromotions.length > 0}
+						<button
+							type="button"
+							onclick={() => (promoOpen = true)}
+							class="flex items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3 py-1.5 text-[12px] font-semibold text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-800 dark:bg-primary-950 dark:text-primary-300 dark:hover:bg-primary-900"
+						>
+							<Icon name="lucide:ticket-percent" class="size-3.5" />
+							{selectedPromoId ? 'Promo applied' : 'Promotions'}
+							{#if activePromotions.length > 1}
+								<span class="rounded-full bg-primary-200 px-1.5 text-[10px] dark:bg-primary-800"
+									>{formatInt(activePromotions.length)}</span
+								>
+							{/if}
+						</button>
 					{/if}
-				</button>
-			{/if}
-			</div>
+				</div>
 			{/if}
 		</div>
 
@@ -1238,11 +1457,15 @@
 				<button
 					type="button"
 					onclick={() => (method = m)}
-					class="flex flex-col items-center gap-0.5 rounded-lg border py-1.5 text-[10.5px] font-semibold capitalize transition-colors {method === m
-						? (payActiveColor[m] ?? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300')
+					class="flex flex-col items-center gap-0.5 rounded-lg border py-1.5 text-[10.5px] font-semibold capitalize transition-colors {method ===
+					m
+						? (payActiveColor[m] ??
+							'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300')
 						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
 				>
-					<span class={payColor[m] ?? ''}><Icon name={payIcon[m] ?? 'lucide:wallet'} class="size-4" /></span>
+					<span class={payColor[m] ?? ''}
+						><Icon name={payIcon[m] ?? 'lucide:wallet'} class="size-4" /></span
+					>
 					{m}
 				</button>
 			{/each}
@@ -1251,7 +1474,10 @@
 		<!-- Split payment toggle -->
 		<button
 			type="button"
-			onclick={() => { splitMode = !splitMode; if (!splitMode) resetSplit(); }}
+			onclick={() => {
+				splitMode = !splitMode;
+				if (!splitMode) resetSplit();
+			}}
 			class="flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--ui-border)] px-3 py-1.5 text-[11.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
 		>
 			<span><Icon name="lucide:split" class="mr-1 inline size-3.5" />Split payment</span>
@@ -1261,16 +1487,24 @@
 		{#if splitMode}
 			<!-- Split payment mode -->
 			{#if splitPayments.length > 0}
-				<ul class="divide-y divide-[var(--ui-border-muted)] rounded-lg border border-[var(--ui-border)]">
+				<ul
+					class="divide-y divide-[var(--ui-border-muted)] rounded-lg border border-[var(--ui-border)]"
+				>
 					{#each splitPayments as sp, i (i)}
 						<li class="flex items-center justify-between px-2.5 py-1.5 text-[12px]">
 							<span class="flex items-center gap-1.5 capitalize">
-								<span class={payColor[sp.method] ?? ''}><Icon name={payIcon[sp.method] ?? 'lucide:wallet'} class="size-3.5" /></span>
+								<span class={payColor[sp.method] ?? ''}
+									><Icon name={payIcon[sp.method] ?? 'lucide:wallet'} class="size-3.5" /></span
+								>
 								{sp.method}
 							</span>
 							<span class="flex items-center gap-2">
 								<span class="font-semibold tabular-nums">{formatMoney(sp.amount, currency)}</span>
-								<button type="button" onclick={() => removeSplitPayment(i)} class="text-[var(--tone-error-text)] hover:underline">
+								<button
+									type="button"
+									onclick={() => removeSplitPayment(i)}
+									class="text-[var(--tone-error-text)] hover:underline"
+								>
 									<Icon name="lucide:x" class="size-3.5" />
 								</button>
 							</span>
@@ -1280,26 +1514,32 @@
 			{/if}
 
 			<!-- Remaining balance -->
-			<div class="rounded-lg px-3 py-2 text-center {splitRemaining <= 0.01
-				? 'bg-[var(--tone-success-bg)] text-[var(--tone-success-text)]'
-				: 'bg-[var(--ui-bg-accented)]'}"
+			<div
+				class="rounded-lg px-3 py-2 text-center {splitRemaining <= 0.01
+					? 'bg-[var(--tone-success-bg)] text-[var(--tone-success-text)]'
+					: 'bg-[var(--ui-bg-accented)]'}"
 			>
-				<span class="text-[11px] font-semibold uppercase tracking-wide opacity-70">Remaining</span>
-				<div class="font-display text-xl font-bold tabular-nums">{formatMoney(Math.max(0, splitRemaining), currency)}</div>
+				<span class="text-[11px] font-semibold tracking-wide uppercase opacity-70">Remaining</span>
+				<div class="font-display text-xl font-bold tabular-nums">
+					{formatMoney(Math.max(0, splitRemaining), currency)}
+				</div>
 			</div>
 
 			<!-- Add partial payment -->
 			{#if splitRemaining > 0.01}
-				<div class="grid grid-cols-4 gap-1 mb-1">
+				<div class="mb-1 grid grid-cols-4 gap-1">
 					{#each payMethods as m (m)}
 						<button
 							type="button"
 							onclick={() => (splitMethod = m)}
-							class="flex items-center justify-center gap-1 rounded-lg border py-1 text-[10.5px] font-semibold capitalize transition-colors {splitMethod === m
+							class="flex items-center justify-center gap-1 rounded-lg border py-1 text-[10.5px] font-semibold capitalize transition-colors {splitMethod ===
+							m
 								? (payActiveColor[m] ?? 'border-primary-500 bg-primary-500/10')
 								: 'border-[var(--ui-border)] text-[var(--ui-text-muted)]'}"
 						>
-							<span class={payColor[m] ?? ''}><Icon name={payIcon[m] ?? 'lucide:wallet'} class="size-3" /></span>
+							<span class={payColor[m] ?? ''}
+								><Icon name={payIcon[m] ?? 'lucide:wallet'} class="size-3" /></span
+							>
 							{m}
 						</button>
 					{/each}
@@ -1316,22 +1556,35 @@
 					/>
 					<button
 						type="button"
-						onclick={() => { splitAmount = Math.ceil(splitRemaining); }}
+						onclick={() => {
+							splitAmount = Math.ceil(splitRemaining);
+						}}
 						class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2 text-[10.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
-					>Exact</button>
-					<Button color="primary" variant="subtle" size="sm" icon="lucide:plus" onclick={addSplitPayment}>Add</Button>
+						>Exact</button
+					>
+					<Button
+						color="primary"
+						variant="subtle"
+						size="sm"
+						icon="lucide:plus"
+						onclick={addSplitPayment}>Add</Button
+					>
 				</div>
 			{/if}
 
 			<!-- Complete split checkout -->
 			<div class="grid grid-cols-2 gap-2">
-				<Button color="neutral" variant="subtle" icon="lucide:x" onclick={resetSplit}>Cancel</Button>
+				<Button color="neutral" variant="subtle" icon="lucide:x" onclick={resetSplit}>Cancel</Button
+				>
 				<Button
 					color="primary"
 					disabled={processing || splitRemaining > 0.01}
 					onclick={completeSplitCheckout}
 				>
-					{#if processing}<Icon name="lucide:loader-circle" class="size-4 animate-spin" />…{:else}<Icon name="lucide:check-circle" class="size-4" />Complete{/if}
+					{#if processing}<Icon
+							name="lucide:loader-circle"
+							class="size-4 animate-spin"
+						/>…{:else}<Icon name="lucide:check-circle" class="size-4" />Complete{/if}
 				</Button>
 			</div>
 		{:else}
@@ -1347,10 +1600,24 @@
 						placeholder="Tip"
 						class="flex-1"
 					/>
-					<button type="button" onclick={() => quickTip(10)} class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2 py-1.5 text-[10.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]">10%</button>
-					<button type="button" onclick={() => quickTip(15)} class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2 py-1.5 text-[10.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]">15%</button>
+					<button
+						type="button"
+						onclick={() => quickTip(10)}
+						class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2 py-1.5 text-[10.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
+						>10%</button
+					>
+					<button
+						type="button"
+						onclick={() => quickTip(15)}
+						class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2 py-1.5 text-[10.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
+						>15%</button
+					>
 					{#if tipAmount > 0}
-						<button type="button" onclick={() => (tipAmount = 0)} class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2 py-1.5 text-[10.5px] font-semibold text-[var(--tone-error-text)] hover:bg-[var(--ui-bg-accented)]">
+						<button
+							type="button"
+							onclick={() => (tipAmount = 0)}
+							class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2 py-1.5 text-[10.5px] font-semibold text-[var(--tone-error-text)] hover:bg-[var(--ui-bg-accented)]"
+						>
 							<Icon name="lucide:x" class="size-3.5" />
 						</button>
 					{/if}
@@ -1363,7 +1630,9 @@
 					<span>Tip</span><span class="tabular-nums">+{formatMoney(tipAmount, currency)}</span>
 				</div>
 				<div class="flex justify-between font-display text-[15px] font-bold">
-					<span>Total + Tip</span><span class="text-primary-600 tabular-nums dark:text-primary-400">{formatMoney(grandTotal, currency)}</span>
+					<span>Total + Tip</span><span class="text-primary-600 tabular-nums dark:text-primary-400"
+						>{formatMoney(grandTotal, currency)}</span
+					>
 				</div>
 			{/if}
 
@@ -1379,15 +1648,25 @@
 				<!-- Prominent change display -->
 				{#if typeof tendered === 'number' && tendered > 0}
 					{#if underPayment}
-						<div class="rounded-lg bg-[var(--tone-warning-bg)] px-3 py-2 text-center text-[var(--tone-warning-text)]">
+						<div
+							class="rounded-lg bg-[var(--tone-warning-bg)] px-3 py-2 text-center text-[var(--tone-warning-text)]"
+						>
 							<Icon name="lucide:triangle-alert" class="mb-0.5 inline size-4" />
-							<div class="text-[11px] font-semibold uppercase tracking-wide">Insufficient cash</div>
-							<div class="text-[13px] font-bold tabular-nums">Short by {formatMoney(grandTotal - tendered, currency)}</div>
+							<div class="text-[11px] font-semibold tracking-wide uppercase">Insufficient cash</div>
+							<div class="text-[13px] font-bold tabular-nums">
+								Short by {formatMoney(grandTotal - tendered, currency)}
+							</div>
 						</div>
 					{:else}
-						<div class="rounded-lg bg-[var(--tone-success-bg)] px-3 py-2 text-center text-[var(--tone-success-text)]">
-							<span class="text-[11px] font-semibold uppercase tracking-wide opacity-70">Change</span>
-							<div class="font-display text-2xl font-bold tabular-nums">{formatMoney(change, currency)}</div>
+						<div
+							class="rounded-lg bg-[var(--tone-success-bg)] px-3 py-2 text-center text-[var(--tone-success-text)]"
+						>
+							<span class="text-[11px] font-semibold tracking-wide uppercase opacity-70"
+								>Change</span
+							>
+							<div class="font-display text-2xl font-bold tabular-nums">
+								{formatMoney(change, currency)}
+							</div>
 						</div>
 					{/if}
 				{/if}
@@ -1417,8 +1696,8 @@
 						type="button"
 						onclick={() => (tendered = grandTotal)}
 						class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2.5 py-1.5 text-[10.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
-						title="Set exact amount"
-					>Exact</button>
+						title="Set exact amount">Exact</button
+					>
 				</div>
 			{/if}
 
@@ -1442,7 +1721,7 @@
 {/snippet}
 
 <!-- Size / variant selector -->
-<Dialog open={!!sizeSel} title={(sizeSel?.data as any)?.name ?? 'Select'} size="sm">
+<Dialog open={!!sizeSel} title={sizeSel?.data.name ?? 'Select'} size="sm">
 	{#if sizeSel}
 		<div class="space-y-2">
 			{#each variants(sizeSel.data) as v (v.id)}
@@ -1456,7 +1735,7 @@
 				>
 					<span class="font-semibold">{v.name}</span>
 					<span class="font-bold tabular-nums"
-						>{formatMoney(variantPrice((sizeSel.data as any).price ?? 0, v), currency)}</span
+						>{formatMoney(variantPrice(sizeSel.data.price ?? 0, v), currency)}</span
 					>
 				</button>
 			{/each}
@@ -1469,7 +1748,7 @@
 </Dialog>
 
 <!-- Modifier selector -->
-<Dialog open={!!modSel} title={(modSel?.data as any)?.name ?? 'Options'} size="md">
+<Dialog open={!!modSel} title={modSel?.data.name ?? 'Options'} size="md">
 	{#if modSel}
 		<div class="space-y-4">
 			{#each groupsFor(modSel.data) as g (g.name)}
@@ -1484,7 +1763,7 @@
 					</div>
 					<div class="space-y-1.5">
 						{#each g.modifiers ?? g.options ?? [] as opt (opt.name)}
-							{@const picked = (chosenMods[g.name ?? ''] ?? new Set()).has(opt.name)}
+							{@const picked = (chosenMods[g.name ?? ''] ?? []).includes(opt.name)}
 							<button
 								type="button"
 								onclick={() =>
@@ -1619,13 +1898,19 @@
 				onclick={() => applyPromotion(promo.id)}
 				class="flex w-full items-center gap-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-3 text-left transition-colors hover:bg-[var(--ui-bg-accented)]"
 			>
-				<div class="grid size-10 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 text-white">
+				<div
+					class="grid size-10 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 text-white"
+				>
 					<Icon name="lucide:ticket-percent" class="size-5" />
 				</div>
 				<div class="min-w-0 flex-1">
 					<p class="truncate text-[13px] font-bold">{d.name ?? 'Unnamed promotion'}</p>
 					<p class="truncate text-[11.5px] text-[var(--ui-text-muted)]">
-						{d.type === 'percent' || d.discountType === 'percent' ? (d.value ?? d.discountValue) + '% off' : (d.type === 'fixed' || d.discountType === 'fixed' ? formatMoney(d.value ?? d.discountValue, currency) : d.description ?? 'Special offer')}
+						{d.type === 'percent' || d.discountType === 'percent'
+							? `${d.value ?? d.discountValue ?? 0}% off`
+							: d.type === 'fixed' || d.discountType === 'fixed'
+								? formatMoney(d.value ?? d.discountValue ?? 0, currency)
+								: (d.description ?? 'Special offer')}
 					</p>
 				</div>
 				{#if selectedPromoId === promo.id}
@@ -1660,7 +1945,7 @@
 				<li class="flex items-center justify-between py-2.5">
 					<div class="min-w-0">
 						<div class="text-[13px] font-semibold capitalize">
-							{h.orderType.replace('_', '-')} · {h.items.length} items
+							{h.orderType.replace('_', '-')} · {formatInt(h.items.length)} items
 						</div>
 						<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
 							{h.customerName ?? 'Walk-in'} · {formatMoney(heldTotal, currency)}
@@ -1730,7 +2015,9 @@
 	{/if}
 	{#snippet footer()}
 		<div class="flex gap-2">
-			<Button color="neutral" variant="subtle" icon="lucide:printer" onclick={printReceipt}>Print</Button>
+			<Button color="neutral" variant="subtle" icon="lucide:printer" onclick={printReceipt}
+				>Print</Button
+			>
 			<Button color="primary" block onclick={() => (receiptOpen = false)}>New sale</Button>
 		</div>
 	{/snippet}
@@ -1740,17 +2027,42 @@
 <Dialog bind:open={customOpen} title="Custom item" size="sm">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Item name</span>
-			<Input bind:value={customName} icon="lucide:pencil-line" placeholder="e.g. Special coffee" class="w-full" />
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Item name</span
+			>
+			<Input
+				bind:value={customName}
+				icon="lucide:pencil-line"
+				placeholder="e.g. Special coffee"
+				class="w-full"
+			/>
 		</label>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Price</span>
-				<Input bind:value={customPrice} type="number" min="0" step="0.01" icon="lucide:banknote" placeholder="0" class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Price</span
+				>
+				<Input
+					bind:value={customPrice}
+					type="number"
+					min="0"
+					step="0.01"
+					icon="lucide:banknote"
+					placeholder="0"
+					class="w-full"
+				/>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Quantity</span>
-				<Input bind:value={customQty} type="number" min="1" step="1" icon="lucide:hash" class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Quantity</span
+				>
+				<Input
+					bind:value={customQty}
+					type="number"
+					min="1"
+					step="1"
+					icon="lucide:hash"
+					class="w-full"
+				/>
 			</label>
 		</div>
 	</div>
@@ -1767,27 +2079,55 @@
 			<div class="rounded-lg bg-[var(--ui-bg-muted)] px-3 py-2 text-[12.5px]">
 				<div class="font-semibold">{openShift.data.number}</div>
 				<div class="text-[var(--ui-text-muted)]">
-					Opened: {new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(new Date(openShift.data.openedAt))}
+					Opened: {new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(
+						new Date(openShift.data.openedAt)
+					)}
 				</div>
-				<div class="text-[var(--ui-text-muted)]">Opening cash: {formatMoney(openShift.data.openingCash ?? 0, currency)}</div>
+				<div class="text-[var(--ui-text-muted)]">
+					Opening cash: {formatMoney(openShift.data.openingCash ?? 0, currency)}
+				</div>
 			</div>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Counted closing cash</span>
-				<Input bind:value={shiftOpeningCash} type="number" min="0" step="0.01" icon="lucide:banknote" placeholder="0" class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Counted closing cash</span
+				>
+				<Input
+					bind:value={shiftOpeningCash}
+					type="number"
+					min="0"
+					step="0.01"
+					icon="lucide:banknote"
+					placeholder="0"
+					class="w-full"
+				/>
 			</label>
 		</div>
 	{:else}
 		<div class="space-y-3">
-			<div class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2.5 text-[12.5px] text-[var(--ui-text-muted)]">
+			<div
+				class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2.5 text-[12.5px] text-[var(--ui-text-muted)]"
+			>
 				<Icon name="lucide:info" class="mr-1 inline size-3.5" />
 				No active shift. Open one to start processing sales.
 			</div>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Opening cash (optional)</span>
-				<Input bind:value={shiftOpeningCash} type="number" min="0" step="0.01" icon="lucide:banknote" placeholder="0" class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Opening cash (optional)</span
+				>
+				<Input
+					bind:value={shiftOpeningCash}
+					type="number"
+					min="0"
+					step="0.01"
+					icon="lucide:banknote"
+					placeholder="0"
+					class="w-full"
+				/>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Cashier name (optional)</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Cashier name (optional)</span
+				>
 				<Input bind:value={shiftStaffName} icon="lucide:user" placeholder="Name" class="w-full" />
 			</label>
 		</div>
@@ -1813,10 +2153,18 @@
 	{:else}
 		<ul class="divide-y divide-[var(--ui-border-muted)]">
 			{#each recentOrders as o (o.id)}
-				{@const total = (o.data.totals as { total?: number } | undefined)?.total ?? (o.data as { amount?: number }).amount ?? 0}
-				{@const rawDate = typeof o.data.createdAt === 'string' ? o.data.createdAt : ''}
+				{@const orderData = recordValue(o.data)}
+				{@const total =
+					(orderData.totals as { total?: number } | undefined)?.total ??
+					(typeof orderData.amount === 'number' ? orderData.amount : 0)}
+				{@const rawDate = typeof orderData.createdAt === 'string' ? orderData.createdAt : ''}
 				{@const orderTime = rawDate
-					? new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', day: 'numeric', month: 'short' }).format(new Date(rawDate))
+					? new Intl.DateTimeFormat('en-US', {
+							hour: 'numeric',
+							minute: '2-digit',
+							day: 'numeric',
+							month: 'short'
+						}).format(new Date(rawDate))
 					: '—'}
 				<li>
 					<button
@@ -1825,12 +2173,20 @@
 						class="flex w-full items-center justify-between py-2.5 text-left transition-colors hover:bg-[var(--ui-bg-accented)]"
 					>
 						<div class="min-w-0">
-							<div class="text-[13px] font-semibold">{(o.data as { orderNumber?: string; number?: string }).orderNumber ?? (o.data as { number?: string }).number ?? o.id.slice(0, 8)}</div>
+							<div class="text-[13px] font-semibold">
+								{(o.data as { orderNumber?: string; number?: string }).orderNumber ??
+									(o.data as { number?: string }).number ??
+									o.id.slice(0, 8)}
+							</div>
 							<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">{orderTime}</div>
 						</div>
 						<div class="flex items-center gap-2">
-							<span class="text-[13px] font-bold tabular-nums">{formatMoney(total, (o.data as { currency?: string }).currency ?? currency)}</span>
-							<Badge color={statusColor((o.data as { status?: string }).status ?? 'pending')}>{(o.data as { status?: string }).status ?? 'pending'}</Badge>
+							<span class="text-[13px] font-bold tabular-nums"
+								>{formatMoney(total, (o.data as { currency?: string }).currency ?? currency)}</span
+							>
+							<Badge color={statusColor((o.data as { status?: string }).status ?? 'pending')}
+								>{(o.data as { status?: string }).status ?? 'pending'}</Badge
+							>
 							<Icon name="lucide:chevron-right" class="size-4 text-[var(--ui-text-dimmed)]" />
 						</div>
 					</button>

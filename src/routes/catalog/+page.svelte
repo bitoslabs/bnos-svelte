@@ -23,6 +23,7 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney } from '$lib/utils/format';
+	import { newRecordId } from '$lib/utils/record-id';
 	import {
 		TYPE,
 		statusColor,
@@ -45,7 +46,14 @@
 
 	// ── Bundles (localStorage) ──
 	const BUNDLES_KEY = 'bnos-os:bundles';
-	type BundleGroup = { id: string; name: string; min: number; max: number; productIds: string[]; includedQuantity: number };
+	type BundleGroup = {
+		id: string;
+		name: string;
+		min: number;
+		max: number;
+		productIds: string[];
+		includedQuantity: number;
+	};
 	type Bundle = {
 		id: string;
 		name: string;
@@ -65,7 +73,9 @@
 		try {
 			const raw = localStorage.getItem(BUNDLES_KEY);
 			bundles = raw ? JSON.parse(raw) : [];
-		} catch { bundles = []; }
+		} catch {
+			bundles = [];
+		}
 	}
 	function saveBundles() {
 		localStorage.setItem(BUNDLES_KEY, JSON.stringify(bundles));
@@ -111,17 +121,28 @@
 	async function saveQuickAdjust() {
 		const product = glo.get(TYPE.product, quickAdjustId);
 		if (!product) return;
-		await glo.upsert(TYPE.adjustment, {
-			productId: quickAdjustId,
-			productName: quickAdjustName,
-			type: quickAdjustDir,
-			quantity: Math.abs(quickAdjustQty),
-			reason: quickAdjustReason.trim() || 'Manual adjustment',
-			occurredAt: new Date().toISOString()
-		});
+		await glo.upsert(
+			TYPE.adjustment,
+			{
+				productId: quickAdjustId,
+				productName: quickAdjustName,
+				type: quickAdjustDir,
+				quantity: Math.abs(quickAdjustQty),
+				reason: quickAdjustReason.trim() || 'Manual adjustment',
+				occurredAt: new Date().toISOString()
+			},
+			{ id: newRecordId('stock-adjustment') }
+		);
 		const current = ((product.data as Record<string, unknown>).stockLevel ?? 0) as number;
-		const newStock = quickAdjustDir === 'increase' ? current + Math.abs(quickAdjustQty) : Math.max(0, current - Math.abs(quickAdjustQty));
-		await glo.upsert(TYPE.product, { ...(product.data as Record<string, unknown>), stockLevel: newStock }, { id: product.id });
+		const newStock =
+			quickAdjustDir === 'increase'
+				? current + Math.abs(quickAdjustQty)
+				: Math.max(0, current - Math.abs(quickAdjustQty));
+		await glo.upsert(
+			TYPE.product,
+			{ ...(product.data as Record<string, unknown>), stockLevel: newStock },
+			{ id: product.id }
+		);
 		toast.success('Stock adjusted');
 		quickAdjustOpen = false;
 	}
@@ -137,14 +158,21 @@
 
 	function openBundleCreate() {
 		bEditingId = null;
-		bName = ''; bDesc = ''; bImage = '';
-		bPriceMode = 'fixed'; bFixedPrice = ''; bDiscountPercent = '';
-		bSortOrder = bundles.length + 1; bGroups = [];
+		bName = '';
+		bDesc = '';
+		bImage = '';
+		bPriceMode = 'fixed';
+		bFixedPrice = '';
+		bDiscountPercent = '';
+		bSortOrder = bundles.length + 1;
+		bGroups = [];
 		bDlgOpen = true;
 	}
 	function openBundleEdit(b: Bundle) {
 		bEditingId = b.id;
-		bName = b.name; bDesc = b.description ?? ''; bImage = b.image ?? '';
+		bName = b.name;
+		bDesc = b.description ?? '';
+		bImage = b.image ?? '';
 		bPriceMode = b.priceMode;
 		bFixedPrice = b.fixedPrice ?? '';
 		bDiscountPercent = b.discountPercent ?? '';
@@ -153,7 +181,17 @@
 		bDlgOpen = true;
 	}
 	function addBundleGroup() {
-		bGroups = [...bGroups, { id: 'grp-' + Date.now().toString().slice(-6), name: '', min: 1, max: 1, productIds: [], includedQuantity: 1 }];
+		bGroups = [
+			...bGroups,
+			{
+				id: 'grp-' + Date.now().toString().slice(-6),
+				name: '',
+				min: 1,
+				max: 1,
+				productIds: [],
+				includedQuantity: 1
+			}
+		];
 	}
 	function removeBundleGroup(idx: number) {
 		bGroups = bGroups.filter((_, i) => i !== idx);
@@ -175,15 +213,27 @@
 			description: bDesc.trim() || undefined,
 			image: bImage.trim() || undefined,
 			priceMode: bPriceMode,
-			fixedPrice: bPriceMode === 'fixed' ? (typeof bFixedPrice === 'number' ? bFixedPrice : Number(bFixedPrice) || 0) : undefined,
-			discountPercent: bPriceMode === 'discounted' ? (typeof bDiscountPercent === 'number' ? bDiscountPercent : Number(bDiscountPercent) || 0) : undefined,
+			fixedPrice:
+				bPriceMode === 'fixed'
+					? typeof bFixedPrice === 'number'
+						? bFixedPrice
+						: Number(bFixedPrice) || 0
+					: undefined,
+			discountPercent:
+				bPriceMode === 'discounted'
+					? typeof bDiscountPercent === 'number'
+						? bDiscountPercent
+						: Number(bDiscountPercent) || 0
+					: undefined,
 			sortOrder: bSortOrder,
 			status: 'active',
 			groups
 		};
 		if (bEditingId) {
 			const idx = bundles.findIndex((b) => b.id === bEditingId);
-			if (idx >= 0) { bundles[idx] = { ...bundles[idx], ...payload }; }
+			if (idx >= 0) {
+				bundles[idx] = { ...bundles[idx], ...payload };
+			}
 			toast.success('Bundle updated');
 		} else {
 			bundles = [payload, ...bundles];
@@ -217,8 +267,17 @@
 		return total;
 	});
 	const bundleFinalPrice = $derived.by(() => {
-		if (bPriceMode === 'fixed') return typeof bFixedPrice === 'number' ? bFixedPrice : Number(bFixedPrice) || 0;
-		if (bPriceMode === 'discounted') return bundleRegularPrice * (1 - (typeof bDiscountPercent === 'number' ? bDiscountPercent : Number(bDiscountPercent) || 0) / 100);
+		if (bPriceMode === 'fixed')
+			return typeof bFixedPrice === 'number' ? bFixedPrice : Number(bFixedPrice) || 0;
+		if (bPriceMode === 'discounted')
+			return (
+				bundleRegularPrice *
+				(1 -
+					(typeof bDiscountPercent === 'number'
+						? bDiscountPercent
+						: Number(bDiscountPercent) || 0) /
+						100)
+			);
 		return bundleRegularPrice;
 	});
 
@@ -355,11 +414,15 @@
 	const isEditing = $derived(editingId !== null);
 	const dlgTitle = $derived(
 		(isEditing ? 'Edit ' : 'Add ') +
-		(dlgKind === 'products' ? 'product'
-			: dlgKind === 'categories' ? 'category'
-			: dlgKind === 'units' ? 'unit'
-			: dlgKind === 'modifiers' ? 'modifier group'
-			: 'item')
+			(dlgKind === 'products'
+				? 'product'
+				: dlgKind === 'categories'
+					? 'category'
+					: dlgKind === 'units'
+						? 'unit'
+						: dlgKind === 'modifiers'
+							? 'modifier group'
+							: 'item')
 	);
 
 	function openCreate(t: Tab) {
@@ -409,7 +472,10 @@
 		pDesc = d.description ?? '';
 		pImage = d.image ?? '';
 		pUnitId = d.unitId ?? '';
-		pVariants = (d.variants ?? []).map((v: any) => ({ name: v.name ?? v.shortName ?? '', price: v.priceModifier ?? 0 }));
+		pVariants = (d.variants ?? []).map((v: any) => ({
+			name: v.name ?? v.shortName ?? '',
+			price: v.priceModifier ?? 0
+		}));
 		pVariantName = '';
 		pVariantPrice = '';
 		pModGroupIds = d.modifierGroupIds ?? [];
@@ -490,8 +556,18 @@
 					description: pDesc.trim() || undefined,
 					image: pImage.trim() || undefined,
 					unitId: pUnitId.trim() || undefined,
-					costPrice: typeof pCostPrice === 'number' ? pCostPrice : (pCostPrice !== '' ? Number(pCostPrice) || undefined : undefined),
-					compareAtPrice: typeof pCompareAtPrice === 'number' ? pCompareAtPrice : (pCompareAtPrice !== '' ? Number(pCompareAtPrice) || undefined : undefined),
+					costPrice:
+						typeof pCostPrice === 'number'
+							? pCostPrice
+							: pCostPrice !== ''
+								? Number(pCostPrice) || undefined
+								: undefined,
+					compareAtPrice:
+						typeof pCompareAtPrice === 'number'
+							? pCompareAtPrice
+							: pCompareAtPrice !== ''
+								? Number(pCompareAtPrice) || undefined
+								: undefined,
 					status: 'active',
 					available: pAvailable,
 					isPublic: pIsPublic,
@@ -500,8 +576,18 @@
 					variants: variants.length ? variants : undefined,
 					modifierGroupIds: pModGroupIds.length ? pModGroupIds : undefined,
 					trackInventory: pTrackInv,
-					prepTime: typeof pPrepTime === 'number' ? pPrepTime : (pPrepTime !== '' ? Number(pPrepTime) || undefined : undefined),
-					sortOrder: typeof pSortOrder === 'number' ? pSortOrder : (pSortOrder !== '' ? Number(pSortOrder) || undefined : undefined),
+					prepTime:
+						typeof pPrepTime === 'number'
+							? pPrepTime
+							: pPrepTime !== ''
+								? Number(pPrepTime) || undefined
+								: undefined,
+					sortOrder:
+						typeof pSortOrder === 'number'
+							? pSortOrder
+							: pSortOrder !== ''
+								? Number(pSortOrder) || undefined
+								: undefined,
 					taxInclusive: pTaxInclusive,
 					inventory: pTrackInv
 						? {
@@ -512,28 +598,43 @@
 						: undefined,
 					stockLevel: pTrackInv ? 0 : undefined
 				};
-				await glo.upsert<Product>(TYPE.product, payload, editingId ? { id: editingId } : {});
+				await glo.upsert<Product>(TYPE.product, payload, {
+					id: editingId ?? newRecordId('product')
+				});
 			} else if (dlgKind === 'categories') {
 				if (!cName.trim()) return toast.warning('Name required');
-				await glo.upsert<CatalogCategory>(TYPE.category, {
-					name: cName.trim(),
-					description: cDesc.trim() || undefined,
-					icon: cIcon.trim() || undefined,
-					color: cColor.trim() || undefined,
-					sortOrder: cOrder,
-					active: cStatus === 'active',
-					status: cStatus
-				}, editingId ? { id: editingId } : {});
+				await glo.upsert<CatalogCategory>(
+					TYPE.category,
+					{
+						name: cName.trim(),
+						description: cDesc.trim() || undefined,
+						icon: cIcon.trim() || undefined,
+						color: cColor.trim() || undefined,
+						sortOrder: cOrder,
+						active: cStatus === 'active',
+						status: cStatus
+					},
+					{ id: editingId ?? newRecordId('category') }
+				);
 			} else if (dlgKind === 'units') {
 				if (!uName.trim() || !uSymbol.trim()) return toast.warning('Name and symbol required');
-				await glo.upsert<CatalogUnit>(TYPE.unit, {
-					name: uName.trim(),
-					symbol: uSymbol.trim(),
-					abbreviation: uSymbol.trim(),
-					type: uType,
-					baseUnitId: uBaseUnitId.trim() || undefined,
-					conversionFactor: typeof uConversionFactor === 'number' ? uConversionFactor : (uConversionFactor !== '' ? Number(uConversionFactor) || undefined : undefined)
-				}, editingId ? { id: editingId } : {});
+				await glo.upsert<CatalogUnit>(
+					TYPE.unit,
+					{
+						name: uName.trim(),
+						symbol: uSymbol.trim(),
+						abbreviation: uSymbol.trim(),
+						type: uType,
+						baseUnitId: uBaseUnitId.trim() || undefined,
+						conversionFactor:
+							typeof uConversionFactor === 'number'
+								? uConversionFactor
+								: uConversionFactor !== ''
+									? Number(uConversionFactor) || undefined
+									: undefined
+					},
+					{ id: editingId ?? newRecordId('unit') }
+				);
 			} else {
 				if (!mName.trim()) return toast.warning('Name required');
 				const opts = mOpt
@@ -541,12 +642,16 @@
 					.map((s) => s.trim())
 					.filter(Boolean)
 					.map((name) => ({ name }));
-				await glo.upsert<ModifierGroup>(TYPE.modifierGroup, {
-					name: mName.trim(),
-					options: opts,
-					singleChoice: true,
-					status: 'active'
-				}, editingId ? { id: editingId } : {});
+				await glo.upsert<ModifierGroup>(
+					TYPE.modifierGroup,
+					{
+						name: mName.trim(),
+						options: opts,
+						singleChoice: true,
+						status: 'active'
+					},
+					{ id: editingId ?? newRecordId('modifier-group') }
+				);
 			}
 			toast.success(isEditing ? 'Updated' : 'Saved');
 			dlgOpen = false;
@@ -613,13 +718,17 @@
 				if (data.products) {
 					for (const p of data.products) {
 						const { id, ...payload } = p;
-						await glo.upsert(TYPE.product, payload);
+						await glo.upsert(TYPE.product, payload, {
+							id: typeof id === 'string' ? id : newRecordId('product')
+						});
 					}
 				}
 				if (data.categories) {
 					for (const c of data.categories) {
 						const { id, ...payload } = c;
-						await glo.upsert(TYPE.category, payload);
+						await glo.upsert(TYPE.category, payload, {
+							id: typeof id === 'string' ? id : newRecordId('category')
+						});
 					}
 				}
 				toast.success('Catalog imported');
@@ -636,7 +745,11 @@
 	async function toggleProductActive(id: string, active: boolean) {
 		const obj = glo.get(TYPE.product, id);
 		if (!obj) return;
-		await glo.upsert(TYPE.product, { ...(obj.data as any), available: active, status: active ? 'active' : 'inactive' }, { id });
+		await glo.upsert(
+			TYPE.product,
+			{ ...(obj.data as any), available: active, status: active ? 'active' : 'inactive' },
+			{ id }
+		);
 		toast.success(active ? 'Product activated' : 'Product deactivated');
 	}
 	function prodActions(p: { id: string }): RowAction[][] {
@@ -669,15 +782,22 @@
 					onSelect: async () => {
 						const product = glo.get(TYPE.product, p.id);
 						if (!product) return;
-						const data = { ...(product.data as Record<string, unknown>), name: String((product.data as Record<string, unknown>).name ?? 'Product') + ' (copy)', stockLevel: 0 };
-						await glo.upsert(TYPE.product, data);
+						const data = {
+							...(product.data as Record<string, unknown>),
+							name: String((product.data as Record<string, unknown>).name ?? 'Product') + ' (copy)',
+							stockLevel: 0
+						};
+						await glo.upsert(TYPE.product, data, { id: newRecordId('product') });
 						toast.success('Product duplicated');
 					}
 				},
 				{
 					label: 'View raw',
 					icon: 'lucide:code',
-					onSelect: () => { rawItem = glo.get(TYPE.product, p.id); rawOpen = true; }
+					onSelect: () => {
+						rawItem = glo.get(TYPE.product, p.id);
+						rawOpen = true;
+					}
 				}
 			],
 			[
@@ -770,14 +890,20 @@
 				<MenuItem icon="lucide:download" onclick={exportCatalog}>Export catalog</MenuItem>
 				<MenuItem icon="lucide:upload" onclick={importCatalog}>Import catalog</MenuItem>
 				<MenuDivider />
-				<MenuItem icon="lucide:package-open" onclick={() => openBundleCreate()}>Quick add bundle</MenuItem>
+				<MenuItem icon="lucide:package-open" onclick={() => openBundleCreate()}
+					>Quick add bundle</MenuItem
+				>
 			</Menu>
-			<Button color="primary" icon="lucide:plus" title="Add new item" onclick={() => tab === 'bundles' ? openBundleCreate() : openCreate(tab)}
+			<Button
+				color="primary"
+				icon="lucide:plus"
+				title="Add new item"
+				onclick={() => (tab === 'bundles' ? openBundleCreate() : openCreate(tab))}
 				>Add {tab === 'products'
 					? 'product'
 					: tab === 'categories'
 						? 'category'
-					: tab === 'units'
+						: tab === 'units'
 							? 'unit'
 							: tab === 'modifiers'
 								? 'modifier'
@@ -857,19 +983,19 @@
 									align="right"
 									applySort={prodCtrl.applySort}>Price</SortableTh
 								>
-											<SortableTh
-												column="promotion"
-												active={prodCtrl.sortKey === 'promotion'}
-												direction={prodCtrl.sortDir}
-												applySort={prodCtrl.applySort}>Promotion</SortableTh
-											>
-										<SortableTh
-											column="status"
-											active={prodCtrl.sortKey === 'status'}
-											direction={prodCtrl.sortDir}
-											align="center"
-											applySort={prodCtrl.applySort}>Status</SortableTh
-										>
+								<SortableTh
+									column="promotion"
+									active={prodCtrl.sortKey === 'promotion'}
+									direction={prodCtrl.sortDir}
+									applySort={prodCtrl.applySort}>Promotion</SortableTh
+								>
+								<SortableTh
+									column="status"
+									active={prodCtrl.sortKey === 'status'}
+									direction={prodCtrl.sortDir}
+									align="center"
+									applySort={prodCtrl.applySort}>Status</SortableTh
+								>
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr></thead
 						>
@@ -878,38 +1004,89 @@
 								<tr>
 									<td class="px-5 py-3">
 										<div class="flex items-center gap-3">
-											<div class="size-10 shrink-0 overflow-hidden rounded-lg bg-[var(--ui-bg-accented)]">
+											<div
+												class="size-10 shrink-0 overflow-hidden rounded-lg bg-[var(--ui-bg-accented)]"
+											>
 												{#if (p.data as any).image}
-													<img src={(p.data as any).image} alt={String((p.data as any).name ?? '')} class="size-full object-cover" />
+													<img
+														src={(p.data as any).image}
+														alt={String((p.data as any).name ?? '')}
+														class="size-full object-cover"
+													/>
 												{:else}
-													<div class="flex size-full items-center justify-center"><Icon name="lucide:package" class="size-4 text-[var(--ui-text-dimmed)]" /></div>
+													<div class="flex size-full items-center justify-center">
+														<Icon
+															name="lucide:package"
+															class="size-4 text-[var(--ui-text-dimmed)]"
+														/>
+													</div>
 												{/if}
 											</div>
 											<div>
 												<div class="font-semibold">{p.data.name}</div>
-												{#if p.data.sku}<div class="font-mono text-[11px] text-[var(--ui-text-dimmed)]">{p.data.sku}</div>{/if}
+												{#if p.data.sku}<div
+														class="font-mono text-[11px] text-[var(--ui-text-dimmed)]"
+													>
+														{p.data.sku}
+													</div>{/if}
 												<div class="mt-0.5 flex flex-wrap gap-1">
-													<span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold {(p.data as any).isPublic !== false ? 'bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400' : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'}">
-														<Icon name={(p.data as any).isPublic !== false ? 'lucide:globe' : 'lucide:lock'} class="size-2.5" />
+													<span
+														class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold {(
+															p.data as any
+														).isPublic !== false
+															? 'bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400'
+															: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'}"
+													>
+														<Icon
+															name={(p.data as any).isPublic !== false
+																? 'lucide:globe'
+																: 'lucide:lock'}
+															class="size-2.5"
+														/>
 														{(p.data as any).isPublic !== false ? 'Public' : 'Private'}
 													</span>
-													{#if p.data.hasVariants}<Badge color="info">{p.data.variants?.length ?? 0} variants</Badge>{/if}
-													{#if p.data.modifierGroupIds?.length}<Badge color="info">{p.data.modifierGroupIds.length} mods</Badge>{/if}
-													{#if p.data.trackInventory}<StockBadge level={Number((p.data as any).stockLevel ?? 0)} threshold={Number((p.data as any).inventory?.lowStockThreshold ?? 5)} />{/if}
+													{#if p.data.hasVariants}<Badge color="info"
+															>{p.data.variants?.length ?? 0} variants</Badge
+														>{/if}
+													{#if p.data.modifierGroupIds?.length}<Badge color="info"
+															>{p.data.modifierGroupIds.length} mods</Badge
+														>{/if}
+													{#if p.data.trackInventory}<StockBadge
+															level={Number((p.data as any).stockLevel ?? 0)}
+															threshold={Number((p.data as any).inventory?.lowStockThreshold ?? 5)}
+														/>{/if}
 												</div>
 											</div>
 										</div>
 									</td>
-									<td class="px-5 py-3">{#if (p.data as any).categoryId}<Badge>{catName((p.data as any).categoryId)}</Badge>{:else}<span class="text-[var(--ui-text-dimmed)]">—</span>{/if}</td>
+									<td class="px-5 py-3"
+										>{#if (p.data as any).categoryId}<Badge
+												>{catName((p.data as any).categoryId)}</Badge
+											>{:else}<span class="text-[var(--ui-text-dimmed)]">—</span>{/if}</td
+									>
 									<td class="px-5 py-3 text-right">
-										<div class="font-semibold tabular-nums">{formatMoney((p.data as any).price ?? 0, (p.data as any).currency ?? currency)}</div>
+										<div class="font-semibold tabular-nums">
+											{formatMoney(
+												(p.data as any).price ?? 0,
+												(p.data as any).currency ?? currency
+											)}
+										</div>
 										{#if (p.data as any).compareAtPrice && (p.data as any).compareAtPrice > ((p.data as any).price ?? 0)}
-											<div class="text-[11px] text-[var(--ui-text-dimmed)] line-through tabular-nums">{formatMoney((p.data as any).compareAtPrice, (p.data as any).currency ?? currency)}</div>
+											<div
+												class="text-[11px] text-[var(--ui-text-dimmed)] tabular-nums line-through"
+											>
+												{formatMoney(
+													(p.data as any).compareAtPrice,
+													(p.data as any).currency ?? currency
+												)}
+											</div>
 										{/if}
 									</td>
 									<td class="px-5 py-3">
 										{#if (p.data as any).promotionIds?.length || (p.data as any).promotion?.promotionIds?.length}
-											<span class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+											<span
+												class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
+											>
 												On sale
 											</span>
 										{:else}
@@ -918,7 +1095,11 @@
 									</td>
 									<td class="px-5 py-3 text-center">
 										<button
-											class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold {(p.data as any).available !== false ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-800'}"
+											class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold {(
+												p.data as any
+											).available !== false
+												? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
+												: 'bg-gray-100 text-gray-400 dark:bg-gray-800'}"
 											onclick={() => toggleProductActive(p.id, (p.data as any).available === false)}
 										>
 											{(p.data as any).available !== false ? 'Active' : 'Inactive'}
@@ -997,8 +1178,7 @@
 								<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
 									>{c.data.sortOrder ?? 0}</td
 								>
-								<td class="px-5 py-3 text-right"><RowActions actions={catActions(c)} /></td
-								>
+								<td class="px-5 py-3 text-right"><RowActions actions={catActions(c)} /></td>
 							</tr>
 						{/each}
 					</tbody>
@@ -1061,8 +1241,7 @@
 								<td class="px-5 py-3 text-[var(--ui-text-muted)] capitalize"
 									>{u.data.type ?? 'count'}</td
 								>
-								<td class="px-5 py-3 text-right"><RowActions actions={unitActions(u)} /></td
-								>
+								<td class="px-5 py-3 text-right"><RowActions actions={unitActions(u)} /></td>
 							</tr>
 						{/each}
 					</tbody>
@@ -1122,8 +1301,7 @@
 								<td class="px-5 py-3 text-[var(--ui-text-muted)]"
 									>{m.data.options?.map((o) => o.name).join(', ') || '—'}</td
 								>
-								<td class="px-5 py-3 text-right"><RowActions actions={modActions(m)} /></td
-								>
+								<td class="px-5 py-3 text-right"><RowActions actions={modActions(m)} /></td>
 							</tr>
 						{/each}
 					</tbody>
@@ -1133,25 +1311,43 @@
 		{/if}
 	{:else if tab === 'bundles'}
 		<div class="flex items-center gap-2">
-			<div class="flex-1"><Input bind:value={bundleSearch} icon="lucide:search" placeholder="Search bundles…" class="w-full" /></div>
+			<div class="flex-1">
+				<Input
+					bind:value={bundleSearch}
+					icon="lucide:search"
+					placeholder="Search bundles…"
+					class="w-full"
+				/>
+			</div>
 		</div>
 		{#if filteredBundles.length === 0}
-			<EmptyState icon="lucide:package-open" title="No bundles" description="Create product bundles to sell items together at a special price.">
-				{#snippet actions()}<Button color="primary" size="sm" icon="lucide:plus" onclick={openBundleCreate}>Add bundle</Button>{/snippet}
+			<EmptyState
+				icon="lucide:package-open"
+				title="No bundles"
+				description="Create product bundles to sell items together at a special price."
+			>
+				{#snippet actions()}<Button
+						color="primary"
+						size="sm"
+						icon="lucide:plus"
+						onclick={openBundleCreate}>Add bundle</Button
+					>{/snippet}
 			</EmptyState>
 		{:else}
 			<div class="data-panel">
 				<div class="overflow-x-auto">
 					<table class="table-surface w-full text-left">
-						<thead><tr>
-							<th class="px-5 py-2.5">Bundle</th>
-							<th class="px-5 py-2.5">Price Mode</th>
-							<th class="px-5 py-2.5 text-right">Price</th>
-							<th class="px-5 py-2.5 text-center">Groups</th>
-							<th class="px-5 py-2.5 text-center">Sort</th>
-							<th class="px-5 py-2.5 text-center">Status</th>
-							<th class="w-10 px-5 py-2.5"></th>
-						</tr></thead>
+						<thead
+							><tr>
+								<th class="px-5 py-2.5">Bundle</th>
+								<th class="px-5 py-2.5">Price Mode</th>
+								<th class="px-5 py-2.5 text-right">Price</th>
+								<th class="px-5 py-2.5 text-center">Groups</th>
+								<th class="px-5 py-2.5 text-center">Sort</th>
+								<th class="px-5 py-2.5 text-center">Status</th>
+								<th class="w-10 px-5 py-2.5"></th>
+							</tr></thead
+						>
 						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
 							{#each filteredBundles as b (b.id)}
 								<tr>
@@ -1162,26 +1358,71 @@
 											{/if}
 											<div>
 												<div class="font-semibold">{b.name}</div>
-												{#if b.description}<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">{b.description}</div>{/if}
+												{#if b.description}<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
+														{b.description}
+													</div>{/if}
 											</div>
 										</div>
 									</td>
-									<td class="px-5 py-3"><Badge color={b.priceMode === 'fixed' ? 'success' : b.priceMode === 'discounted' ? 'error' : 'info'}>{b.priceMode === 'fixed' ? 'Fixed' : b.priceMode === 'discounted' ? 'Discounted' : 'Sum'}</Badge></td>
-									<td class="px-5 py-3 text-right tabular-nums font-semibold">
+									<td class="px-5 py-3"
+										><Badge
+											color={b.priceMode === 'fixed'
+												? 'success'
+												: b.priceMode === 'discounted'
+													? 'error'
+													: 'info'}
+											>{b.priceMode === 'fixed'
+												? 'Fixed'
+												: b.priceMode === 'discounted'
+													? 'Discounted'
+													: 'Sum'}</Badge
+										></td
+									>
+									<td class="px-5 py-3 text-right font-semibold tabular-nums">
 										{#if b.priceMode === 'fixed'}{formatMoney(b.fixedPrice ?? 0, currency)}
 										{:else if b.priceMode === 'discounted'}-{b.discountPercent ?? 0}%
-										{:else}<span class="text-[var(--ui-text-dimmed)] text-[11px]">auto</span>{/if}
+										{:else}<span class="text-[11px] text-[var(--ui-text-dimmed)]">auto</span>{/if}
 									</td>
 									<td class="px-5 py-3 text-center tabular-nums">{b.groups.length}</td>
-									<td class="px-5 py-3 text-center text-[var(--ui-text-muted)] tabular-nums">{b.sortOrder}</td>
+									<td class="px-5 py-3 text-center text-[var(--ui-text-muted)] tabular-nums"
+										>{b.sortOrder}</td
+									>
 									<td class="px-5 py-3 text-center">
-										<button type="button" onclick={() => toggleBundleStatus(b.id)} class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold transition {b.status === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-dimmed)]'}">
-											<Icon name={b.status === 'active' ? 'lucide:check-circle' : 'lucide:circle'} class="size-3" />
+										<button
+											type="button"
+											onclick={() => toggleBundleStatus(b.id)}
+											class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold transition {b.status ===
+											'active'
+												? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+												: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-dimmed)]'}"
+										>
+											<Icon
+												name={b.status === 'active' ? 'lucide:check-circle' : 'lucide:circle'}
+												class="size-3"
+											/>
 											{b.status === 'active' ? 'Active' : 'Inactive'}
 										</button>
 									</td>
 									<td class="px-5 py-3 text-right">
-										<RowActions actions={[[{ label: 'Edit', icon: 'lucide:pencil', onSelect: () => openBundleEdit(b) }], [{ label: 'Delete', icon: 'lucide:trash-2', danger: true, onSelect: () => deleteBundle(b.id) }]]} />
+										<RowActions
+											actions={[
+												[
+													{
+														label: 'Edit',
+														icon: 'lucide:pencil',
+														onSelect: () => openBundleEdit(b)
+													}
+												],
+												[
+													{
+														label: 'Delete',
+														icon: 'lucide:trash-2',
+														danger: true,
+														onSelect: () => deleteBundle(b.id)
+													}
+												]
+											]}
+										/>
 									</td>
 								</tr>
 							{/each}
@@ -1195,70 +1436,187 @@
 
 <Dialog bind:open={bDlgOpen} title={bEditingId ? 'Edit bundle' : 'Add bundle'}>
 	<div class="space-y-3">
-		<label class="block"><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</span><Input bind:value={bName} icon="lucide:package-open" class="w-full" /></label>
-		<label class="block"><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Description</span><Input bind:value={bDesc} class="w-full" /></label>
-		<label class="block"><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Image URL</span><Input bind:value={bImage} class="w-full" /></label>
+		<label class="block"
+			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</span
+			><Input bind:value={bName} icon="lucide:package-open" class="w-full" /></label
+		>
+		<label class="block"
+			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Description</span
+			><Input bind:value={bDesc} class="w-full" /></label
+		>
+		<label class="block"
+			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Image URL</span
+			><Input bind:value={bImage} class="w-full" /></label
+		>
 		<div class="grid grid-cols-2 gap-3">
 			<div>
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Price Mode</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Price Mode</span
+				>
 				<div class="segmented flex gap-1 p-1">
-					<button type="button" onclick={() => (bPriceMode = 'fixed')} class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {bPriceMode === 'fixed' ? 'bg-[var(--ui-bg-elevated)]' : 'text-[var(--ui-text-muted)]'}">Fixed</button>
-					<button type="button" onclick={() => (bPriceMode = 'sum_components')} class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {bPriceMode === 'sum_components' ? 'bg-[var(--ui-bg-elevated)]' : 'text-[var(--ui-text-muted)]'}">Sum</button>
-					<button type="button" onclick={() => (bPriceMode = 'discounted')} class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {bPriceMode === 'discounted' ? 'bg-[var(--ui-bg-elevated)]' : 'text-[var(--ui-text-muted)]'}">Discount</button>
+					<button
+						type="button"
+						onclick={() => (bPriceMode = 'fixed')}
+						class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {bPriceMode === 'fixed'
+							? 'bg-[var(--ui-bg-elevated)]'
+							: 'text-[var(--ui-text-muted)]'}">Fixed</button
+					>
+					<button
+						type="button"
+						onclick={() => (bPriceMode = 'sum_components')}
+						class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {bPriceMode ===
+						'sum_components'
+							? 'bg-[var(--ui-bg-elevated)]'
+							: 'text-[var(--ui-text-muted)]'}">Sum</button
+					>
+					<button
+						type="button"
+						onclick={() => (bPriceMode = 'discounted')}
+						class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {bPriceMode ===
+						'discounted'
+							? 'bg-[var(--ui-bg-elevated)]'
+							: 'text-[var(--ui-text-muted)]'}">Discount</button
+					>
 				</div>
 			</div>
-			<label class="block"><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Sort order</span><Input bind:value={bSortOrder} type="number" min="0" class="w-full" /></label>
+			<label class="block"
+				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Sort order</span
+				><Input bind:value={bSortOrder} type="number" min="0" class="w-full" /></label
+			>
 		</div>
 		{#if bPriceMode === 'fixed'}
-			<label class="block"><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Fixed price ({currency})</span><Input bind:value={bFixedPrice} type="number" min="0" step="0.01" class="w-full" /></label>
+			<label class="block"
+				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Fixed price ({currency})</span
+				><Input bind:value={bFixedPrice} type="number" min="0" step="0.01" class="w-full" /></label
+			>
 		{/if}
 		{#if bPriceMode === 'discounted'}
-			<label class="block"><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Discount %</span><Input bind:value={bDiscountPercent} type="number" min="0" max="100" step="1" class="w-full" /></label>
+			<label class="block"
+				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Discount %</span
+				><Input
+					bind:value={bDiscountPercent}
+					type="number"
+					min="0"
+					max="100"
+					step="1"
+					class="w-full"
+				/></label
+			>
 		{/if}
 		{#if bundleRegularPrice > 0}
 			<div class="flex items-center gap-4 rounded-lg bg-[var(--ui-bg-accented)] p-3">
-				<div><p class="text-[11px] text-[var(--ui-text-dimmed)]">Regular price</p><p class="font-bold">{formatMoney(bundleRegularPrice, currency)}</p></div>
+				<div>
+					<p class="text-[11px] text-[var(--ui-text-dimmed)]">Regular price</p>
+					<p class="font-bold">{formatMoney(bundleRegularPrice, currency)}</p>
+				</div>
 				{#if bundleFinalPrice < bundleRegularPrice}
-					<div><p class="text-[11px] text-[var(--ui-text-dimmed)]">Bundle price</p><p class="font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(bundleFinalPrice, currency)}</p></div>
-					<div><p class="text-[11px] text-[var(--ui-text-dimmed)]">Savings</p><p class="font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(bundleRegularPrice - bundleFinalPrice, currency)}</p></div>
+					<div>
+						<p class="text-[11px] text-[var(--ui-text-dimmed)]">Bundle price</p>
+						<p class="font-bold text-emerald-600 dark:text-emerald-400">
+							{formatMoney(bundleFinalPrice, currency)}
+						</p>
+					</div>
+					<div>
+						<p class="text-[11px] text-[var(--ui-text-dimmed)]">Savings</p>
+						<p class="font-bold text-emerald-600 dark:text-emerald-400">
+							{formatMoney(bundleRegularPrice - bundleFinalPrice, currency)}
+						</p>
+					</div>
 				{/if}
 			</div>
 		{/if}
 
 		<!-- Bundle groups -->
 		<div>
-			<div class="flex items-center justify-between mb-2">
+			<div class="mb-2 flex items-center justify-between">
 				<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Product groups</span>
-				<Button size="sm" variant="ghost" icon="lucide:plus" onclick={addBundleGroup}>Add group</Button>
+				<Button size="sm" variant="ghost" icon="lucide:plus" onclick={addBundleGroup}
+					>Add group</Button
+				>
 			</div>
 			<div class="space-y-3">
 				{#each bGroups as group, gIdx (group.id)}
-					<div class="space-y-2 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] p-3">
+					<div
+						class="space-y-2 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] p-3"
+					>
 						<div class="flex items-center gap-2">
-							<Input bind:value={group.name} placeholder="Group name (e.g. Choose drink)" class="flex-1" />
-							<button type="button" class="flex size-7 items-center justify-center rounded text-[var(--tone-error-text)] hover:bg-rose-500/10" onclick={() => removeBundleGroup(gIdx)} aria-label="Remove group"><Icon name="lucide:trash-2" class="size-3.5" /></button>
+							<Input
+								bind:value={group.name}
+								placeholder="Group name (e.g. Choose drink)"
+								class="flex-1"
+							/>
+							<button
+								type="button"
+								class="flex size-7 items-center justify-center rounded text-[var(--tone-error-text)] hover:bg-rose-500/10"
+								onclick={() => removeBundleGroup(gIdx)}
+								aria-label="Remove group"><Icon name="lucide:trash-2" class="size-3.5" /></button
+							>
 						</div>
 						<div class="grid grid-cols-3 gap-2">
-							<Input bind:value={group.min} type="number" min="0" placeholder="Min" class="w-full" />
-							<Input bind:value={group.max} type="number" min="1" placeholder="Max" class="w-full" />
-							<Input bind:value={group.includedQuantity} type="number" min="1" placeholder="Included" class="w-full" />
+							<Input
+								bind:value={group.min}
+								type="number"
+								min="0"
+								placeholder="Min"
+								class="w-full"
+							/>
+							<Input
+								bind:value={group.max}
+								type="number"
+								min="1"
+								placeholder="Max"
+								class="w-full"
+							/>
+							<Input
+								bind:value={group.includedQuantity}
+								type="number"
+								min="1"
+								placeholder="Included"
+								class="w-full"
+							/>
 						</div>
 						<div>
-							<span class="mb-1 block text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Products</span>
+							<span class="mb-1 block text-[11px] font-semibold text-[var(--ui-text-dimmed)]"
+								>Products</span
+							>
 							<div class="flex flex-wrap gap-1">
 								{#each products as prod (prod.id)}
-									<button type="button" onclick={() => toggleBundleProduct(group, prod.id)} class="rounded-md border px-2 py-1 text-[11px] font-semibold transition {group.productIds.includes(prod.id) ? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300' : 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}">{prod.data.name}</button>
+									<button
+										type="button"
+										onclick={() => toggleBundleProduct(group, prod.id)}
+										class="rounded-md border px-2 py-1 text-[11px] font-semibold transition {group.productIds.includes(
+											prod.id
+										)
+											? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300'
+											: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
+										>{prod.data.name}</button
+									>
 								{/each}
-								{#if products.length === 0}<span class="text-[11px] text-[var(--ui-text-dimmed)]">No products available</span>{/if}
+								{#if products.length === 0}<span class="text-[11px] text-[var(--ui-text-dimmed)]"
+										>No products available</span
+									>{/if}
 							</div>
 						</div>
 					</div>
 				{/each}
-				{#if bGroups.length === 0}<div class="py-3 text-center text-[11px] text-[var(--ui-text-dimmed)]">Add a group to select products</div>{/if}
+				{#if bGroups.length === 0}<div
+						class="py-3 text-center text-[11px] text-[var(--ui-text-dimmed)]"
+					>
+						Add a group to select products
+					</div>{/if}
 			</div>
 		</div>
 	</div>
-	{#snippet footer()}<Button color="neutral" variant="ghost" onclick={() => (bDlgOpen = false)}>Cancel</Button><Button color="primary" icon="lucide:check" onclick={saveBundle}>{bEditingId ? 'Update' : 'Create'}</Button>{/snippet}
+	{#snippet footer()}<Button color="neutral" variant="ghost" onclick={() => (bDlgOpen = false)}
+			>Cancel</Button
+		><Button color="primary" icon="lucide:check" onclick={saveBundle}
+			>{bEditingId ? 'Update' : 'Create'}</Button
+		>{/snippet}
 </Dialog>
 
 <!-- Original dialog for other tabs -->
@@ -1317,13 +1675,25 @@
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 						>Category</span
-					><Select bind:value={pCat} class="w-full" options={[{ value: '', label: '— None —' }, ...categories.map((c) => ({ value: c.id, label: c.data.name ?? c.id }))]} /></label
+					><Select
+						bind:value={pCat}
+						class="w-full"
+						options={[
+							{ value: '', label: '— None —' },
+							...categories.map((c) => ({ value: c.id, label: c.data.name ?? c.id }))
+						]}
+					/></label
 				>
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 						>Unit</span
-					><Select bind:value={pUnitId} class="w-full"
-						options={[{ value: '', label: 'None' }, ...units.map((u) => ({ value: u.id, label: u.data.symbol ?? u.data.name ?? '' }))]}
+					><Select
+						bind:value={pUnitId}
+						class="w-full"
+						options={[
+							{ value: '', label: 'None' },
+							...units.map((u) => ({ value: u.id, label: u.data.symbol ?? u.data.name ?? '' }))
+						]}
 					/></label
 				>
 			</div>
@@ -1334,13 +1704,19 @@
 			<!-- SKU + Barcode -->
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">SKU</span
+					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>SKU</span
 					><Input bind:value={pSku} icon="lucide:barcode" class="w-full" /></label
 				>
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 						>Barcode</span
-					><Input bind:value={pBarcode} icon="lucide:scan-line" placeholder="EAN/UPC" class="w-full" /></label
+					><Input
+						bind:value={pBarcode}
+						icon="lucide:scan-line"
+						placeholder="EAN/UPC"
+						class="w-full"
+					/></label
 				>
 			</div>
 
@@ -1348,31 +1724,55 @@
 			<label class="block"
 				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 					>Description</span
-				><Input bind:value={pDesc} textarea rows={2} placeholder="Product description…" class="w-full" /></label
+				><Input
+					bind:value={pDesc}
+					textarea
+					rows={2}
+					placeholder="Product description…"
+					class="w-full"
+				/></label
 			>
 
 			<!-- Image URL + preview -->
 			<label class="block"
 				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 					>Image URL</span
-				><Input bind:value={pImage} icon="lucide:image" placeholder="https://…" class="w-full" /></label
+				><Input
+					bind:value={pImage}
+					icon="lucide:image"
+					placeholder="https://…"
+					class="w-full"
+				/></label
 			>
 			{#if pImage}
-				<img src={pImage} alt="" class="h-20 rounded-lg border border-[var(--ui-border-muted)] object-cover" />
+				<img
+					src={pImage}
+					alt=""
+					class="h-20 rounded-lg border border-[var(--ui-border-muted)] object-cover"
+				/>
 			{/if}
 
 			<!-- Toggles: isPublic / available / taxInclusive -->
 			<div class="flex flex-wrap gap-3">
 				<label class="flex cursor-pointer items-center gap-2"
-					><input type="checkbox" bind:checked={pIsPublic} class="size-4 rounded border-[var(--ui-border)]"
+					><input
+						type="checkbox"
+						bind:checked={pIsPublic}
+						class="size-4 rounded border-[var(--ui-border)]"
 					/><span class="text-[12px] font-semibold">Public</span></label
 				>
 				<label class="flex cursor-pointer items-center gap-2"
-					><input type="checkbox" bind:checked={pAvailable} class="size-4 rounded border-[var(--ui-border)]"
+					><input
+						type="checkbox"
+						bind:checked={pAvailable}
+						class="size-4 rounded border-[var(--ui-border)]"
 					/><span class="text-[12px] font-semibold">Available</span></label
 				>
 				<label class="flex cursor-pointer items-center gap-2"
-					><input type="checkbox" bind:checked={pTaxInclusive} class="size-4 rounded border-[var(--ui-border)]"
+					><input
+						type="checkbox"
+						bind:checked={pTaxInclusive}
+						class="size-4 rounded border-[var(--ui-border)]"
 					/><span class="text-[12px] font-semibold">Tax inclusive</span></label
 				>
 			</div>
@@ -1382,12 +1782,26 @@
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 						>Prep time (min)</span
-					><Input bind:value={pPrepTime} type="number" min="0" icon="lucide:timer" placeholder="0" class="w-full" /></label
+					><Input
+						bind:value={pPrepTime}
+						type="number"
+						min="0"
+						icon="lucide:timer"
+						placeholder="0"
+						class="w-full"
+					/></label
 				>
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 						>Sort order</span
-					><Input bind:value={pSortOrder} type="number" min="0" icon="lucide:arrow-down-up" placeholder="0" class="w-full" /></label
+					><Input
+						bind:value={pSortOrder}
+						type="number"
+						min="0"
+						icon="lucide:arrow-down-up"
+						placeholder="0"
+						class="w-full"
+					/></label
 				>
 			</div>
 
@@ -1484,7 +1898,7 @@
 				{/if}
 			</div>
 		</div>
-		{:else if dlgKind === 'categories'}
+	{:else if dlgKind === 'categories'}
 		<div class="space-y-3">
 			<label class="block"
 				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</span
@@ -1509,12 +1923,7 @@
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 						>Color</span
-					><Input
-						bind:value={cColor}
-						type="color"
-						placeholder="#6366f1"
-						class="w-full"
-					/></label
+					><Input bind:value={cColor} type="color" placeholder="#6366f1" class="w-full" /></label
 				>
 			</div>
 			<div class="grid grid-cols-2 gap-3">
@@ -1526,7 +1935,9 @@
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 						>Status</span
-					><Select bind:value={cStatus} class="w-full"
+					><Select
+						bind:value={cStatus}
+						class="w-full"
 						options={[
 							{ value: 'active', label: 'Active' },
 							{ value: 'inactive', label: 'Inactive' }
@@ -1568,14 +1979,28 @@
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 						>Base unit</span
-					><Select bind:value={uBaseUnitId} class="w-full"
-						options={[{ value: '', label: 'None' }, ...units.filter((u2) => u2.id !== editingId).map((u2) => ({ value: u2.id, label: u2.data.name ?? u2.id }))]}
+					><Select
+						bind:value={uBaseUnitId}
+						class="w-full"
+						options={[
+							{ value: '', label: 'None' },
+							...units
+								.filter((u2) => u2.id !== editingId)
+								.map((u2) => ({ value: u2.id, label: u2.data.name ?? u2.id }))
+						]}
 					/></label
 				>
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 						>Conversion factor</span
-					><Input bind:value={uConversionFactor} type="number" min="0" step="0.0001" placeholder="1" class="w-full" /></label
+					><Input
+						bind:value={uConversionFactor}
+						type="number"
+						min="0"
+						step="0.0001"
+						placeholder="1"
+						class="w-full"
+					/></label
 				>
 			</div>
 		</div>
@@ -1595,7 +2020,9 @@
 	{/if}
 	{#snippet footer()}
 		<Button color="neutral" variant="ghost" onclick={() => (dlgOpen = false)}>Cancel</Button>
-		<Button color="primary" icon="lucide:check" onclick={save}>{isEditing ? 'Update' : 'Save'}</Button>
+		<Button color="primary" icon="lucide:check" onclick={save}
+			>{isEditing ? 'Update' : 'Save'}</Button
+		>
 	{/snippet}
 </Dialog>
 
@@ -1606,13 +2033,44 @@
 <!-- Quick stock adjust from catalog -->
 <Dialog bind:open={quickAdjustOpen} title="Adjust stock">
 	<div class="space-y-3">
-		<p class="text-[12.5px] text-[var(--ui-text-muted)]">Adjusting stock for <span class="font-semibold">{quickAdjustName}</span></p>
+		<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+			Adjusting stock for <span class="font-semibold">{quickAdjustName}</span>
+		</p>
 		<div class="segmented flex gap-1 p-1">
-			<button type="button" onclick={() => (quickAdjustDir = 'increase')} class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {quickAdjustDir === 'increase' ? 'bg-[var(--ui-bg-elevated)]' : 'text-[var(--ui-text-muted)]'}">↑ Stock in</button>
-			<button type="button" onclick={() => (quickAdjustDir = 'decrease')} class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {quickAdjustDir === 'decrease' ? 'bg-[var(--ui-bg-elevated)]' : 'text-[var(--ui-text-muted)]'}">↓ Stock out</button>
+			<button
+				type="button"
+				onclick={() => (quickAdjustDir = 'increase')}
+				class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {quickAdjustDir ===
+				'increase'
+					? 'bg-[var(--ui-bg-elevated)]'
+					: 'text-[var(--ui-text-muted)]'}">↑ Stock in</button
+			>
+			<button
+				type="button"
+				onclick={() => (quickAdjustDir = 'decrease')}
+				class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {quickAdjustDir ===
+				'decrease'
+					? 'bg-[var(--ui-bg-elevated)]'
+					: 'text-[var(--ui-text-muted)]'}">↓ Stock out</button
+			>
 		</div>
-		<label class="block"><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Quantity</span><Input bind:value={quickAdjustQty} type="number" min="1" class="w-full" /></label>
-		<label class="block"><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Reason</span><Input bind:value={quickAdjustReason} placeholder="Manual adjustment" class="w-full" /></label>
+		<label class="block"
+			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Quantity</span
+			><Input bind:value={quickAdjustQty} type="number" min="1" class="w-full" /></label
+		>
+		<label class="block"
+			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Reason</span
+			><Input
+				bind:value={quickAdjustReason}
+				placeholder="Manual adjustment"
+				class="w-full"
+			/></label
+		>
 	</div>
-	{#snippet footer()}<Button color="neutral" variant="ghost" onclick={() => (quickAdjustOpen = false)}>Cancel</Button><Button color="primary" icon="lucide:check" onclick={saveQuickAdjust}>Save</Button>{/snippet}
+	{#snippet footer()}<Button
+			color="neutral"
+			variant="ghost"
+			onclick={() => (quickAdjustOpen = false)}>Cancel</Button
+		><Button color="primary" icon="lucide:check" onclick={saveQuickAdjust}>Save</Button>{/snippet}
 </Dialog>

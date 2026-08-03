@@ -5,9 +5,10 @@
  * change. No runes here → trivially testable.
  */
 import type { GloOrder } from '@bitos/bnos-core/glo';
+import type { Order } from '$lib/domain/types';
 
 /** Local order view: GLO order data + a POS payment method (stored at checkout). */
-export type DashboardOrder = GloOrder & { method?: string };
+export type DashboardOrder = Order & { method?: string };
 
 export type OrderRow = {
 	id: string;
@@ -17,6 +18,7 @@ export type OrderRow = {
 	items: number;
 	method: string;
 	type: string;
+	customerName: string;
 	atMs: number;
 };
 
@@ -52,9 +54,7 @@ export function toOrderRows(
 	return objects.map((o) => {
 		const d = o.data;
 		const atMs = new Date(d.occurredAt || 0).getTime();
-		const method = d.method
-			?? paymentLookup?.[o.id]
-			?? 'cash';
+		const method = d.method ?? paymentLookup?.[o.id] ?? 'cash';
 		return {
 			id: o.id,
 			number: d.number ?? o.id.slice(0, 8),
@@ -63,6 +63,7 @@ export function toOrderRows(
 			items: d.lines?.length ?? 0,
 			method,
 			type: d.fulfillmentType ?? 'pos',
+			customerName: d.customerName ?? '',
 			atMs: Number.isFinite(atMs) ? atMs : 0
 		};
 	});
@@ -93,13 +94,34 @@ export function metricsSummary(rows: OrderRow[]): MetricSummary {
 	const weekStart = startOfWeek(now);
 	const monthStart = startOfMonth(now);
 
-	const today = rows.filter((o) => o.atMs >= todayStart);
-	const yesterday = rows.filter((o) => o.atMs >= yesterdayStart && o.atMs < todayStart);
-	const week = rows.filter((o) => o.atMs >= weekStart);
-	const month = rows.filter((o) => o.atMs >= monthStart);
+	let todaysTotal = 0;
+	let todaysCount = 0;
+	let yesterdayTotal = 0;
+	let weekTotal = 0;
+	let weekCount = 0;
+	let monthTotal = 0;
+	let monthCount = 0;
+	let allTimeTotal = 0;
 
-	const todaysTotal = sumTotal(today);
-	const yesterdayTotal = sumTotal(yesterday);
+	for (const order of rows) {
+		allTimeTotal += order.total;
+		if (order.atMs >= todayStart) {
+			todaysTotal += order.total;
+			todaysCount += 1;
+		}
+		if (order.atMs >= yesterdayStart && order.atMs < todayStart) {
+			yesterdayTotal += order.total;
+		}
+		if (order.atMs >= weekStart) {
+			weekTotal += order.total;
+			weekCount += 1;
+		}
+		if (order.atMs >= monthStart) {
+			monthTotal += order.total;
+			monthCount += 1;
+		}
+	}
+
 	const salesChange =
 		yesterdayTotal > 0
 			? ((todaysTotal - yesterdayTotal) / yesterdayTotal) * 100
@@ -109,15 +131,15 @@ export function metricsSummary(rows: OrderRow[]): MetricSummary {
 
 	return {
 		todaysTotal,
-		todaysCount: today.length,
-		avgOrder: today.length ? todaysTotal / today.length : 0,
+		todaysCount,
+		avgOrder: todaysCount ? todaysTotal / todaysCount : 0,
 		yesterdayTotal,
 		salesChange,
-		weekTotal: sumTotal(week),
-		weekCount: week.length,
-		monthTotal: sumTotal(month),
-		monthCount: month.length,
-		allTimeTotal: sumTotal(rows),
+		weekTotal,
+		weekCount,
+		monthTotal,
+		monthCount,
+		allTimeTotal,
 		allTimeCount: rows.length
 	};
 }
@@ -136,11 +158,18 @@ export function buildHourly(rows: OrderRow[]): HourEntry[] {
 	const startHour = 6;
 	const endHour = Math.min(currentHour, 23);
 	const hours: HourEntry[] = [];
+	const totals = Array.from({ length: Math.max(0, endHour - startHour + 1) }, () => 0);
 	let max = 0;
+
+	for (const order of rows) {
+		if (order.atMs < todayStart) continue;
+		const hour = new Date(order.atMs).getHours();
+		if (hour < startHour || hour > endHour) continue;
+		totals[hour - startHour] += order.total;
+	}
+
 	for (let h = startHour; h <= endHour; h++) {
-		const from = todayStart + h * 3_600_000;
-		const to = from + 3_600_000;
-		const value = sumTotal(rows.filter((o) => o.atMs >= from && o.atMs < to));
+		const value = totals[h - startHour] ?? 0;
 		if (value > max) max = value;
 		hours.push({
 			label: `${h % 12 || 12}${h < 12 ? 'a' : 'p'}`,
@@ -168,11 +197,18 @@ export interface DayBar {
 export function buildChartBars(rows: OrderRow[]): DayBar[] {
 	const days: DayBar[] = [];
 	const nowMs = Date.now();
+	const totals = Array.from({ length: 7 }, () => 0);
+	const firstDayStart = startOfDay(new Date(nowMs - 6 * MS_DAY));
+
+	for (const order of rows) {
+		if (order.atMs < firstDayStart) continue;
+		const index = Math.floor((startOfDay(new Date(order.atMs)) - firstDayStart) / MS_DAY);
+		if (index >= 0 && index < totals.length) totals[index] += order.total;
+	}
+
 	for (let i = 6; i >= 0; i--) {
 		const d = new Date(nowMs - i * MS_DAY);
-		const from = startOfDay(d);
-		const to = from + MS_DAY;
-		const value = sumTotal(rows.filter((o) => o.atMs >= from && o.atMs < to));
+		const value = totals[6 - i] ?? 0;
 		days.push({
 			label: d.toLocaleDateString('en-US', { weekday: 'short' }),
 			value,
@@ -210,7 +246,9 @@ const TYPE_META: Record<string, { label: string; icon: string }> = {
 };
 
 function metaLookup(meta: Record<string, { label: string; icon: string }>, key: string) {
-	return meta[key] ?? { label: key.charAt(0).toUpperCase() + key.slice(1), icon: 'lucide:circle-dot' };
+	return (
+		meta[key] ?? { label: key.charAt(0).toUpperCase() + key.slice(1), icon: 'lucide:circle-dot' }
+	);
 }
 
 export function paymentBreakdown(rows: OrderRow[]): BreakdownEntry[] {
@@ -260,10 +298,7 @@ export interface TopProduct {
 }
 
 /** Top products by quantity, across the given rows' line items. */
-export function topProducts(
-	objects: { data: GloOrder }[],
-	limit = 5
-): TopProduct[] {
+export function topProducts(objects: { data: GloOrder }[], limit = 5): TopProduct[] {
 	const map = new Map<string, TopProduct>();
 	for (const o of objects) {
 		for (const l of o.data.lines ?? []) {

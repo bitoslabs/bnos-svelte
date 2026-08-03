@@ -86,7 +86,12 @@ export const navSections: NavSection[] = [
 		label: 'Catalog & Inventory',
 		items: [
 			{ to: '/catalog', icon: 'lucide:package', label: 'Products', types: ['catalog.product'] },
-			{ to: '/inventory', icon: 'lucide:warehouse', label: 'Inventory', types: ['inventory.adjustment'] }
+			{
+				to: '/inventory',
+				icon: 'lucide:warehouse',
+				label: 'Inventory',
+				types: ['inventory.adjustment']
+			}
 		]
 	},
 	{
@@ -142,6 +147,13 @@ function normalizePath(path: string) {
 	return path.length > 1 ? path.replace(/\/+$/, '') : path;
 }
 
+const rankedNavItems = [...flatNav].sort(
+	(a, b) => normalizePath(b.to).length - normalizePath(a.to).length
+);
+const rankedRoutePermissions = Object.entries(routePermissions).sort(
+	([a], [b]) => normalizePath(b).length - normalizePath(a).length
+);
+
 export function matchesNavItem(path: string, item: NavItem): boolean {
 	const current = normalizePath(path);
 	const target = normalizePath(item.to);
@@ -150,16 +162,12 @@ export function matchesNavItem(path: string, item: NavItem): boolean {
 
 export function findNavItem(path: string): NavItem | undefined {
 	const norm = normalizePath(path);
-	return [...flatNav]
-		.filter((item) => matchesNavItem(norm, item))
-		.sort((a, b) => normalizePath(b.to).length - normalizePath(a.to).length)[0];
+	return rankedNavItems.find((item) => matchesNavItem(norm, item));
 }
 
 export function permissionForPath(path: string): RoutePermission | undefined {
 	const current = normalizePath(path);
-	return Object.entries(routePermissions)
-		.filter(([to]) => current === to || current.startsWith(to + '/'))
-		.sort(([a], [b]) => normalizePath(b).length - normalizePath(a).length)[0]?.[1];
+	return rankedRoutePermissions.find(([to]) => current === to || current.startsWith(to + '/'))?.[1];
 }
 
 export function permissionForNavItem(item: NavItem): RoutePermission | undefined {

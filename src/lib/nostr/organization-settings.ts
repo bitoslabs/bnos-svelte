@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import type { BusinessModel, BusinessType, TenantContext } from './tenant.svelte';
+import { glo } from './store.svelte';
 
 export const ORGANIZATION_SETTINGS_KEY = 'bnos-os:settings-organization';
 
@@ -45,6 +46,64 @@ export function readOrganizationSettings(): OrganizationSettingsSnapshot | null 
 export function writeOrganizationSettings(snapshot: OrganizationSettingsSnapshot) {
 	if (!browser) return;
 	localStorage.setItem(ORGANIZATION_SETTINGS_KEY, JSON.stringify(snapshot));
+}
+
+export async function syncOrganizationSettingsToWorkspace(snapshot?: OrganizationSettingsSnapshot) {
+	if (!browser) return 0;
+
+	const settings = snapshot ?? readOrganizationSettings();
+	if (!settings) return 0;
+
+	let synced = 0;
+
+	for (const company of settings.companies) {
+		await glo.upsert(
+			'organization',
+			{
+				name: company.name,
+				code: company.code,
+				currency: company.currency,
+				status: 'active'
+			},
+			{
+				id: company.id,
+				scope: { organizationId: company.id },
+				extensions: {
+					'org.bitos.bnos': {
+						businessModel: company.businessModel,
+						businessType: company.businessType,
+						taxRate: company.enableTax ? company.taxRate : 0
+					}
+				}
+			}
+		);
+		synced++;
+	}
+
+	for (const branch of settings.branches) {
+		await glo.upsert(
+			'location',
+			{
+				name: branch.name,
+				code: branch.code,
+				type: 'store',
+				status: branch.status,
+				address: branch.address,
+				phone: branch.phone,
+				email: branch.email
+			},
+			{
+				id: branch.id,
+				scope: {
+					organizationId: branch.storeId,
+					locationId: branch.id
+				}
+			}
+		);
+		synced++;
+	}
+
+	return synced;
 }
 
 export function upsertOrganizationSettingsFromTenant(tenant: TenantContext) {

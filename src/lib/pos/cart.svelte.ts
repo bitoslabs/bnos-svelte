@@ -14,12 +14,12 @@ import { tenant } from '$nostr/tenant.svelte';
 import { session } from '$nostr/session.svelte';
 import { toast } from '$lib/stores/toast.svelte';
 import { TYPE, type Order, type OrderType, type Payment, type PaymentMethod } from '$lib/domain';
+import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
 import { computeTotals, NO_DISCOUNT, type CartDiscount, type Totals } from './totals';
 import { buildOrder, buildPayment, type CartLineForReceipt } from './receipt';
 
 const CART_KEY = 'bnos-os:pos:cart';
 const HELD_KEY = 'bnos-os:pos:held';
-const COUNTER_KEY = 'bnos-os:pos:counter';
 
 export type { OrderType };
 
@@ -94,16 +94,6 @@ function writeJson(key: string, value: unknown) {
 	} catch {
 		/* quota / private mode — best effort */
 	}
-}
-
-function nextOrderNumber(): string {
-	let counter = 1000;
-	if (browser) {
-		counter = Number(localStorage.getItem(COUNTER_KEY) ?? '1000');
-		counter += 1;
-		localStorage.setItem(COUNTER_KEY, String(counter));
-	}
-	return `ORD-${counter}`;
 }
 
 class PosCart {
@@ -295,7 +285,8 @@ class PosCart {
 	// ── checkout ──
 	async checkout(method: PaymentMethod, tendered = 0): Promise<CompletedSale | null> {
 		if (this.isEmpty) return null;
-		const number = nextOrderNumber();
+		const orderId = newRecordId('order');
+		const number = nextReadableNumber({ prefix: 'ORD', scope: tenant.state.locationId });
 		const currency = tenant.state.currency;
 		const totals = this.totals;
 		const change = Math.max(0, tendered - totals.total);
@@ -328,7 +319,7 @@ class PosCart {
 				this.discount.value > 0
 					? { type: this.discount.type, value: this.discount.value }
 					: undefined,
-			method,
+			method
 		});
 		const payment = buildPayment({
 			amount: totals.total,
@@ -342,8 +333,12 @@ class PosCart {
 		});
 
 		try {
-			const orderObj = await glo.upsert<Order>(TYPE.order, order);
-			await glo.upsert<Payment>(TYPE.payment, { ...payment, orderId: orderObj.id });
+			await glo.upsert<Order>(TYPE.order, order, { id: orderId });
+			await glo.upsert<Payment>(
+				TYPE.payment,
+				{ ...payment, orderId },
+				{ id: newRecordId('payment') }
+			);
 		} catch (e) {
 			console.warn('[pos] checkout persist failed', e);
 			toast.error('Sale saved locally', 'Relay sync will retry.');
@@ -356,12 +351,18 @@ class PosCart {
 			if (line.productId) {
 				const product = glo.get(TYPE.product, line.productId);
 				if (product) {
-					const currentStock = (product.data as any).stockLevel ?? 0;
+					const productData = product.data as Record<string, unknown>;
+					const currentStock =
+						typeof productData.stockLevel === 'number' ? productData.stockLevel : 0;
 					try {
-						await glo.upsert(TYPE.product, {
-							...(product.data as Record<string, unknown>),
-							stockLevel: Math.max(0, currentStock - line.quantity)
-						}, { id: product.id });
+						await glo.upsert(
+							TYPE.product,
+							{
+								...productData,
+								stockLevel: Math.max(0, currentStock - line.quantity)
+							},
+							{ id: product.id }
+						);
 					} catch (e) {
 						console.warn('[pos] stock decrement failed for', line.productId, e);
 					}
@@ -372,23 +373,30 @@ class PosCart {
 		// B. Update customer spend tracking
 		if (this.customerId || this.customerName) {
 			try {
-				let cust: any = null;
+				let cust: { id: string; data: Record<string, unknown> } | undefined;
 				if (this.customerId) {
-					cust = glo.get(TYPE.customer, this.customerId);
+					const found = glo.get(TYPE.customer, this.customerId);
+					cust = found ? { id: found.id, data: found.data as Record<string, unknown> } : undefined;
 				} else {
-					const customers = glo.all<any, typeof TYPE.customer>(TYPE.customer);
+					const customers = glo.all<Record<string, unknown>, typeof TYPE.customer>(TYPE.customer);
 					cust = customers.find((c) => c.data.name === this.customerName);
 				}
 				if (cust) {
-					await glo.upsert(TYPE.customer, {
-						...(cust.data as Record<string, unknown>),
-						totalSpend: (cust.data.totalSpend ?? 0) + totals.total,
-						totalOrders: (cust.data.totalOrders ?? 0) + 1,
-						lastOrderAt: completedAt
-					}, { id: cust.id });
+					const totalSpend = typeof cust.data.totalSpend === 'number' ? cust.data.totalSpend : 0;
+					const totalOrders = typeof cust.data.totalOrders === 'number' ? cust.data.totalOrders : 0;
+					await glo.upsert(
+						TYPE.customer,
+						{
+							...cust.data,
+							totalSpend: totalSpend + totals.total,
+							totalOrders: totalOrders + 1,
+							lastOrderAt: completedAt
+						},
+						{ id: cust.id }
+					);
 				}
 			} catch (e) {
-					console.warn('[pos] customer update failed', e);
+				console.warn('[pos] customer update failed', e);
 			}
 		}
 
@@ -397,13 +405,20 @@ class PosCart {
 			try {
 				const promo = glo.get(TYPE.promotion, this.appliedPromotionId);
 				if (promo) {
-					await glo.upsert(TYPE.promotion, {
-						...(promo.data as Record<string, unknown>),
-						currentUsage: ((promo.data as any).currentUsage ?? 0) + 1
-					}, { id: promo.id });
+					const promoData = promo.data as Record<string, unknown>;
+					const currentUsage =
+						typeof promoData.currentUsage === 'number' ? promoData.currentUsage : 0;
+					await glo.upsert(
+						TYPE.promotion,
+						{
+							...promoData,
+							currentUsage: currentUsage + 1
+						},
+						{ id: promo.id }
+					);
 				}
 			} catch (e) {
-					console.warn('[pos] promotion usage increment failed', e);
+				console.warn('[pos] promotion usage increment failed', e);
 			}
 		}
 

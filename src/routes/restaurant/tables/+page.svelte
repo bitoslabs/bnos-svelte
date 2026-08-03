@@ -8,7 +8,9 @@
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
+	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { formatInt, formatMoney } from '$lib/utils/format';
 
 	// ── Types ──
 	type TableStatus = 'available' | 'occupied' | 'reserved' | 'cleaning';
@@ -87,6 +89,7 @@
 
 	// Status popover
 	let openPopoverId = $state<string | null>(null);
+	const currency = $derived(tenant.state.currency);
 
 	// ── Derived ──
 	const areas = $derived([...new Set(tables.map((t) => t.area || 'Main'))].sort());
@@ -233,7 +236,7 @@
 			<div class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5">
 				<span class="size-2 rounded-full {stat.dot}"></span>
 				<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">{stat.label}</span>
-				<span class="text-[14px] font-bold tabular-nums">{stat.value}</span>
+				<span class="text-[14px] font-bold tabular-nums">{formatInt(stat.value)}</span>
 			</div>
 		{/each}
 	</div>
@@ -325,7 +328,7 @@
 									{#if t.status === 'occupied' && t.orderInfo}
 										<div class="mt-2 rounded-md bg-[var(--ui-bg-elevated)]/80 px-2.5 py-1 text-center">
 											<div class="font-mono text-[11px] font-bold">{t.orderInfo.number}</div>
-											<div class="text-[11px] text-[var(--ui-text-muted)]">${t.orderInfo.total.toFixed(2)}</div>
+											<div class="text-[11px] text-[var(--ui-text-muted)]">{formatMoney(t.orderInfo.total, currency)}</div>
 										</div>
 									{:else if t.status === 'reserved'}
 										<div class="mt-2 text-center text-[11px] text-[var(--ui-text-muted)]">

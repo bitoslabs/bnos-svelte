@@ -17,7 +17,15 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, relativeTime } from '$lib/utils/format';
-	import { TYPE, statusColor, EXPENSE_CATEGORIES, type Expense, type ExpenseCategory, type ExpenseStatus } from '$lib/domain';
+	import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
+	import {
+		TYPE,
+		statusColor,
+		EXPENSE_CATEGORIES,
+		type Expense,
+		type ExpenseCategory,
+		type ExpenseStatus
+	} from '$lib/domain';
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 
 	onMount(() => {
@@ -68,9 +76,7 @@
 	});
 
 	const totalOut = $derived(
-		expenses
-			.filter((e) => e.data.status !== 'cancelled')
-			.reduce((s, e) => s + e.data.amount, 0)
+		expenses.filter((e) => e.data.status !== 'cancelled').reduce((s, e) => s + e.data.amount, 0)
 	);
 	const monthOut = $derived(
 		expenses
@@ -116,18 +122,22 @@
 
 	async function save() {
 		if (!desc.trim()) return toast.warning('Description required');
-		await glo.upsert<Expense>(TYPE.expense, {
-			number: 'EXP-' + Date.now().toString().slice(-6),
-			description: desc.trim(),
-			category: cat,
-			amount: typeof amount === 'number' ? amount : Number(amount) || 0,
-			currency,
-			payee: payee.trim() || undefined,
-			status: expStatus,
-			method,
-			reference: receiptUrl.trim() || undefined,
-			occurredAt: new Date(expDate).toISOString()
-		});
+		await glo.upsert<Expense>(
+			TYPE.expense,
+			{
+				number: nextReadableNumber({ prefix: 'EXP', scope: tenant.state.locationId }),
+				description: desc.trim(),
+				category: cat,
+				amount: typeof amount === 'number' ? amount : Number(amount) || 0,
+				currency,
+				payee: payee.trim() || undefined,
+				status: expStatus,
+				method,
+				reference: receiptUrl.trim() || undefined,
+				occurredAt: new Date(expDate).toISOString()
+			},
+			{ id: newRecordId('expense') }
+		);
 		toast.success('Expense recorded');
 		open = false;
 	}
@@ -159,24 +169,34 @@
 
 	async function saveEdit() {
 		if (!editDesc.trim()) return toast.warning('Description required');
-		await glo.upsert<Expense>(TYPE.expense, {
-			number: 'EXP-' + editId.slice(-6),
-			description: editDesc.trim(),
-			category: editCat,
-			amount: typeof editAmount === 'number' ? editAmount : Number(editAmount) || 0,
-			currency,
-			payee: editPayee.trim() || undefined,
-			status: editStatus,
-			method: editMethod,
-			reference: editReceiptUrl.trim() || undefined,
-			occurredAt: editDate ? new Date(editDate).toISOString() : new Date().toISOString()
-		}, { id: editId });
+		const existing = expenses.find((expense) => expense.id === editId);
+		await glo.upsert<Expense>(
+			TYPE.expense,
+			{
+				number:
+					existing?.data.number ??
+					nextReadableNumber({ prefix: 'EXP', scope: tenant.state.locationId }),
+				description: editDesc.trim(),
+				category: editCat,
+				amount: typeof editAmount === 'number' ? editAmount : Number(editAmount) || 0,
+				currency,
+				payee: editPayee.trim() || undefined,
+				status: editStatus,
+				method: editMethod,
+				reference: editReceiptUrl.trim() || undefined,
+				occurredAt: editDate ? new Date(editDate).toISOString() : new Date().toISOString()
+			},
+			{ id: editId }
+		);
 		toast.success('Expense updated');
 		editOpen = false;
 	}
 
 	function catMeta(c: ExpenseCategory) {
-		return EXPENSE_CATEGORIES.find((x) => x.value === c) ?? EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1];
+		return (
+			EXPENSE_CATEGORIES.find((x) => x.value === c) ??
+			EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1]
+		);
 	}
 
 	function clearFilters() {
@@ -205,11 +225,15 @@
 	<div class="grid grid-cols-3 gap-3">
 		<div class="surface-card p-4">
 			<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Total out</div>
-			<div class="mt-1 font-display text-lg font-bold tabular-nums">{formatMoney(totalOut, currency)}</div>
+			<div class="mt-1 font-display text-lg font-bold tabular-nums">
+				{formatMoney(totalOut, currency)}
+			</div>
 		</div>
 		<div class="surface-card p-4">
 			<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">This month</div>
-			<div class="mt-1 font-display text-lg font-bold tabular-nums">{formatMoney(monthOut, currency)}</div>
+			<div class="mt-1 font-display text-lg font-bold tabular-nums">
+				{formatMoney(monthOut, currency)}
+			</div>
 		</div>
 		<div class="surface-card p-4">
 			<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Entries</div>
@@ -230,34 +254,50 @@
 		>
 			{#snippet filters()}
 				<div class="flex flex-wrap items-center gap-2">
-					<div class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]">
-						<select bind:value={catFilter} class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium focus:outline-none">
+					<div
+						class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+					>
+						<select
+							bind:value={catFilter}
+							class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium focus:outline-none"
+						>
 							<option value="__all__">All categories</option>
 							{#each EXPENSE_CATEGORIES as c (c.value)}
 								<option value={c.value}>{c.label}</option>
 							{/each}
 						</select>
-						<Icon name="lucide:chevron-down" class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]" />
+						<Icon
+							name="lucide:chevron-down"
+							class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+						/>
 					</div>
-					<div class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]">
-						<select bind:value={statusFilter} class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium focus:outline-none">
+					<div
+						class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+					>
+						<select
+							bind:value={statusFilter}
+							class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium focus:outline-none"
+						>
 							{#each STATUS_OPTIONS as s (s.value)}
 								<option value={s.value}>{s.label}</option>
 							{/each}
 						</select>
-						<Icon name="lucide:chevron-down" class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]" />
+						<Icon
+							name="lucide:chevron-down"
+							class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+						/>
 					</div>
 					<input
 						type="date"
 						bind:value={dateFrom}
-						class="h-9 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 text-[13px] font-medium text-[var(--ui-text)] focus:outline-none focus:border-[var(--ui-color-primary-500)]"
+						class="h-9 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 text-[13px] font-medium text-[var(--ui-text)] focus:border-[var(--ui-color-primary-500)] focus:outline-none"
 						placeholder="From"
 					/>
 					<span class="text-[12px] text-[var(--ui-text-dimmed)]">→</span>
 					<input
 						type="date"
 						bind:value={dateTo}
-						class="h-9 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 text-[13px] font-medium text-[var(--ui-text)] focus:outline-none focus:border-[var(--ui-color-primary-500)]"
+						class="h-9 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 text-[13px] font-medium text-[var(--ui-text)] focus:border-[var(--ui-color-primary-500)] focus:outline-none"
 						placeholder="To"
 					/>
 					{#if hasActiveFilters}
@@ -276,9 +316,15 @@
 	{/if}
 
 	{#if controls.list.length === 0}
-		<EmptyState icon="lucide:wallet" title="No expenses" description="Record rent, supplies, salaries and more.">
+		<EmptyState
+			icon="lucide:wallet"
+			title="No expenses"
+			description="Record rent, supplies, salaries and more."
+		>
 			{#snippet actions()}
-				<Button color="primary" size="sm" icon="lucide:plus" onclick={openCreate}>Add expense</Button>
+				<Button color="primary" size="sm" icon="lucide:plus" onclick={openCreate}
+					>Add expense</Button
+				>
 			{/snippet}
 		</EmptyState>
 	{:else}
@@ -286,19 +332,37 @@
 			<table class="table-surface w-full text-left">
 				<thead>
 					<tr>
-						<SortableTh column="date" active={controls.sortKey === 'date'} direction={controls.sortDir} applySort={controls.applySort}>Date</SortableTh>
+						<SortableTh
+							column="date"
+							active={controls.sortKey === 'date'}
+							direction={controls.sortDir}
+							applySort={controls.applySort}>Date</SortableTh
+						>
 						<th class="px-5 py-2.5">Description</th>
-						<SortableTh column="category" active={controls.sortKey === 'category'} direction={controls.sortDir} applySort={controls.applySort}>Category</SortableTh>
+						<SortableTh
+							column="category"
+							active={controls.sortKey === 'category'}
+							direction={controls.sortDir}
+							applySort={controls.applySort}>Category</SortableTh
+						>
 						<th class="px-5 py-2.5">Status</th>
 						<th class="px-5 py-2.5">Receipt</th>
-						<SortableTh column="amount" active={controls.sortKey === 'amount'} direction={controls.sortDir} align="right" applySort={controls.applySort}>Amount</SortableTh>
+						<SortableTh
+							column="amount"
+							active={controls.sortKey === 'amount'}
+							direction={controls.sortDir}
+							align="right"
+							applySort={controls.applySort}>Amount</SortableTh
+						>
 						<th class="w-10 px-5 py-2.5"></th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
 					{#each controls.pagedList as e (e.id)}
 						<tr>
-							<td class="px-5 py-3 text-[12px] text-[var(--ui-text-dimmed)]">{relativeTime(e.data.occurredAt)}</td>
+							<td class="px-5 py-3 text-[12px] text-[var(--ui-text-dimmed)]"
+								>{relativeTime(e.data.occurredAt)}</td
+							>
 							<td class="px-5 py-3">
 								<div class="font-semibold">{e.data.description}</div>
 								{#if e.data.payee}
@@ -307,11 +371,16 @@
 							</td>
 							<td class="px-5 py-3">
 								<span class="inline-flex items-center gap-1">
-									<Icon name={catMeta(e.data.category).icon} class="size-3.5 text-[var(--ui-text-dimmed)]" />
+									<Icon
+										name={catMeta(e.data.category).icon}
+										class="size-3.5 text-[var(--ui-text-dimmed)]"
+									/>
 									{catMeta(e.data.category).label}
 								</span>
 							</td>
-							<td class="px-5 py-3"><Badge color={statusColor(e.data.status)}>{e.data.status}</Badge></td>
+							<td class="px-5 py-3"
+								><Badge color={statusColor(e.data.status)}>{e.data.status}</Badge></td
+							>
 							<td class="px-5 py-3">
 								{#if e.data.reference}
 									<a
@@ -327,11 +396,42 @@
 									<span class="text-[var(--ui-text-dimmed)]">—</span>
 								{/if}
 							</td>
-							<td class="px-5 py-3 text-right font-semibold tabular-nums text-[var(--tone-error-text)]">
+							<td
+								class="px-5 py-3 text-right font-semibold text-[var(--tone-error-text)] tabular-nums"
+							>
 								−{formatMoney(e.data.amount, e.data.currency || currency)}
 							</td>
 							<td class="px-5 py-3 text-right">
-								<RowActions actions={[[{ label: 'Edit', icon: 'lucide:pencil', onSelect: () => openEdit({ id: e.id, data: e.data }) }, { label: 'View raw', icon: 'lucide:code', onSelect: () => { rawItem = glo.get('expense', e.id); rawOpen = true; } }], [{ label: 'Delete', icon: 'lucide:trash-2', danger: true, onSelect: () => { glo.remove(TYPE.expense, e.id); toast.info('Removed'); } }]]} />
+								<RowActions
+									actions={[
+										[
+											{
+												label: 'Edit',
+												icon: 'lucide:pencil',
+												onSelect: () => openEdit({ id: e.id, data: e.data })
+											},
+											{
+												label: 'View raw',
+												icon: 'lucide:code',
+												onSelect: () => {
+													rawItem = glo.get('expense', e.id);
+													rawOpen = true;
+												}
+											}
+										],
+										[
+											{
+												label: 'Delete',
+												icon: 'lucide:trash-2',
+												danger: true,
+												onSelect: () => {
+													glo.remove(TYPE.expense, e.id);
+													toast.info('Removed');
+												}
+											}
+										]
+									]}
+								/>
 							</td>
 						</tr>
 					{/each}
@@ -343,30 +443,52 @@
 </div>
 
 <!-- Create Dialog -->
-<Dialog bind:open={open} title="Add expense" size="lg">
+<Dialog bind:open title="Add expense" size="lg">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Description</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Description</span
+			>
 			<Input bind:value={desc} class="w-full" />
 		</label>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Amount ({currency})</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Amount ({currency})</span
+				>
 				<Input bind:value={amount} type="number" min="0" step="0.01" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Category</span>
-				<Select bind:value={cat} options={EXPENSE_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))} class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Category</span
+				>
+				<Select
+					bind:value={cat}
+					options={EXPENSE_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
+					class="w-full"
+				/>
 			</label>
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Payee</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Payee</span
+				>
 				<Input bind:value={payee} class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Method</span>
-				<Select bind:value={method} options={[{ value: 'cash', label: 'Cash' }, { value: 'bank', label: 'Bank' }, { value: 'card', label: 'Card' }, { value: 'other', label: 'Other' }]} class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Method</span
+				>
+				<Select
+					bind:value={method}
+					options={[
+						{ value: 'cash', label: 'Cash' },
+						{ value: 'bank', label: 'Bank' },
+						{ value: 'card', label: 'Card' },
+						{ value: 'other', label: 'Other' }
+					]}
+					class="w-full"
+				/>
 			</label>
 		</div>
 		<div class="grid grid-cols-2 gap-3">
@@ -375,17 +497,36 @@
 				<input
 					type="date"
 					bind:value={expDate}
-					class="h-9.5 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 text-[13.5px] text-[var(--ui-text)] focus:outline-none focus:border-[var(--ui-color-primary-500)]"
+					class="h-9.5 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 text-[13.5px] text-[var(--ui-text)] focus:border-[var(--ui-color-primary-500)] focus:outline-none"
 				/>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Status</span>
-				<Select bind:value={expStatus} options={[{ value: 'draft', label: 'Draft' }, { value: 'submitted', label: 'Submitted' }, { value: 'approved', label: 'Approved' }, { value: 'paid', label: 'Paid' }, { value: 'cancelled', label: 'Cancelled' }]} class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Status</span
+				>
+				<Select
+					bind:value={expStatus}
+					options={[
+						{ value: 'draft', label: 'Draft' },
+						{ value: 'submitted', label: 'Submitted' },
+						{ value: 'approved', label: 'Approved' },
+						{ value: 'paid', label: 'Paid' },
+						{ value: 'cancelled', label: 'Cancelled' }
+					]}
+					class="w-full"
+				/>
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Receipt URL</span>
-			<Input bind:value={receiptUrl} icon="lucide:paperclip" placeholder="https://…" class="w-full" />
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Receipt URL</span
+			>
+			<Input
+				bind:value={receiptUrl}
+				icon="lucide:paperclip"
+				placeholder="https://…"
+				class="w-full"
+			/>
 		</label>
 	</div>
 	{#snippet footer()}
@@ -398,27 +539,49 @@
 <Dialog bind:open={editOpen} title="Edit expense" size="lg">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Description</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Description</span
+			>
 			<Input bind:value={editDesc} class="w-full" />
 		</label>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Amount ({currency})</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Amount ({currency})</span
+				>
 				<Input bind:value={editAmount} type="number" min="0" step="0.01" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Category</span>
-				<Select bind:value={editCat} options={EXPENSE_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))} class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Category</span
+				>
+				<Select
+					bind:value={editCat}
+					options={EXPENSE_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
+					class="w-full"
+				/>
 			</label>
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Payee</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Payee</span
+				>
 				<Input bind:value={editPayee} class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Method</span>
-				<Select bind:value={editMethod} options={[{ value: 'cash', label: 'Cash' }, { value: 'bank', label: 'Bank' }, { value: 'card', label: 'Card' }, { value: 'other', label: 'Other' }]} class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Method</span
+				>
+				<Select
+					bind:value={editMethod}
+					options={[
+						{ value: 'cash', label: 'Cash' },
+						{ value: 'bank', label: 'Bank' },
+						{ value: 'card', label: 'Card' },
+						{ value: 'other', label: 'Other' }
+					]}
+					class="w-full"
+				/>
 			</label>
 		</div>
 		<div class="grid grid-cols-2 gap-3">
@@ -427,17 +590,36 @@
 				<input
 					type="date"
 					bind:value={editDate}
-					class="h-9.5 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 text-[13.5px] text-[var(--ui-text)] focus:outline-none focus:border-[var(--ui-color-primary-500)]"
+					class="h-9.5 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 text-[13.5px] text-[var(--ui-text)] focus:border-[var(--ui-color-primary-500)] focus:outline-none"
 				/>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Status</span>
-				<Select bind:value={editStatus} options={[{ value: 'draft', label: 'Draft' }, { value: 'submitted', label: 'Submitted' }, { value: 'approved', label: 'Approved' }, { value: 'paid', label: 'Paid' }, { value: 'cancelled', label: 'Cancelled' }]} class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Status</span
+				>
+				<Select
+					bind:value={editStatus}
+					options={[
+						{ value: 'draft', label: 'Draft' },
+						{ value: 'submitted', label: 'Submitted' },
+						{ value: 'approved', label: 'Approved' },
+						{ value: 'paid', label: 'Paid' },
+						{ value: 'cancelled', label: 'Cancelled' }
+					]}
+					class="w-full"
+				/>
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Receipt URL</span>
-			<Input bind:value={editReceiptUrl} icon="lucide:paperclip" placeholder="https://…" class="w-full" />
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Receipt URL</span
+			>
+			<Input
+				bind:value={editReceiptUrl}
+				icon="lucide:paperclip"
+				placeholder="https://…"
+				class="w-full"
+			/>
 		</label>
 	</div>
 	{#snippet footer()}

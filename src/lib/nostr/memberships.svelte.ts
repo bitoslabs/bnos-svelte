@@ -101,7 +101,7 @@ class MembershipsStore {
 			const me = records[0];
 
 			// Best-effort: pull the org + locations authored by the org owner so the
-		// staff device gets currency, tax, and branch names.
+			// staff device gets currency, tax, and branch names.
 			if (this._ownerPubkeys.length) {
 				await this.fetchOrgAndLocations(this._ownerPubkeys);
 			}
@@ -245,7 +245,7 @@ class MembershipsStore {
 			companyCode: tenant.state.organizationCode,
 			branchIds: []
 		};
-		await glo.upsert<Staff>(TYPE.staff, owner);
+		await glo.upsert<Staff>(TYPE.staff, owner, { id: `owner-${me}` });
 		// Re-resolve so the just-created record is picked up.
 		const records = this.myStaffRecords;
 		if (records[0]) tenant.setActiveStaff(toActiveStaffInfo(records[0]));

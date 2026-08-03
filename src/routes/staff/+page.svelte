@@ -32,7 +32,12 @@
 		removeStaffKey,
 		exportStaffKeysTxt
 	} from '$lib/utils/nostr-keys';
-	import { permissions, getRoleDefaultPermissions, getRolePermissionStrings } from '$lib/permissions.svelte';
+	import { newRecordId } from '$lib/utils/record-id';
+	import {
+		permissions,
+		getRoleDefaultPermissions,
+		getRolePermissionStrings
+	} from '$lib/permissions.svelte';
 	import {
 		ROLE_LABELS,
 		roleBadgeColor,
@@ -54,7 +59,9 @@
 
 	// ── Permission gating ────────────────────────────────────────────
 	const canWrite = $derived(permissions.can('staff', 'write') || tenant.state.activeRole === null);
-	const canDelete = $derived(permissions.can('staff', 'delete') || tenant.state.activeRole === null);
+	const canDelete = $derived(
+		permissions.can('staff', 'delete') || tenant.state.activeRole === null
+	);
 	const canExport = $derived(permissions.can('settings', 'write'));
 
 	// Redirect away once we *know* the user is denied (not during first-run).
@@ -171,9 +178,7 @@
 	);
 
 	const canSave = $derived(
-		!!form.name.trim() &&
-			pubkeyState !== 'invalid' &&
-			(!!editingId || pubkeyState === 'valid')
+		!!form.name.trim() && pubkeyState !== 'invalid' && (!!editingId || pubkeyState === 'valid')
 	);
 
 	const permissionPreview = $derived(
@@ -280,7 +285,14 @@
 			{ label: 'Raw data', icon: 'lucide:code', onSelect: () => openRawData(s) }
 		];
 		const danger: RowAction[] = canDelete
-			? [{ label: 'Delete', icon: 'lucide:trash-2', danger: true, onSelect: () => remove(s.id, s.data.name) }]
+			? [
+					{
+						label: 'Delete',
+						icon: 'lucide:trash-2',
+						danger: true,
+						onSelect: () => remove(s.id, s.data.name)
+					}
+				]
 			: [];
 		return danger.length ? [primary, danger] : [primary];
 	}
@@ -288,14 +300,22 @@
 	async function setPin() {
 		if (!editingId || form.pin.length < 4) return;
 		const existing = staff.find((s) => s.id === editingId);
-		await glo.upsert<Staff>(TYPE.staff, { ...existing!.data, pinHash: await hashPin(form.pin), pin: undefined }, { id: editingId });
+		await glo.upsert<Staff>(
+			TYPE.staff,
+			{ ...existing!.data, pinHash: await hashPin(form.pin), pin: undefined },
+			{ id: editingId }
+		);
 		form.pin = '';
 		toast.success('PIN saved');
 	}
 	async function removePin() {
 		if (!editingId) return;
 		const existing = staff.find((s) => s.id === editingId);
-		await glo.upsert<Staff>(TYPE.staff, { ...existing!.data, pinHash: undefined, pin: undefined }, { id: editingId });
+		await glo.upsert<Staff>(
+			TYPE.staff,
+			{ ...existing!.data, pinHash: undefined, pin: undefined },
+			{ id: editingId }
+		);
 		toast.success('PIN removed');
 	}
 
@@ -333,7 +353,10 @@
 			department: form.department.trim() || undefined,
 			branchIds: form.branchIds,
 			customPermissions: form.useCustomPermissions ? form.customPermissions : undefined,
-			hourlyRate: typeof form.hourlyRate === 'number' ? form.hourlyRate : Number(form.hourlyRate) || undefined,
+			hourlyRate:
+				typeof form.hourlyRate === 'number'
+					? form.hourlyRate
+					: Number(form.hourlyRate) || undefined,
 			pin: undefined,
 			pinHash: form.pin.length >= 4 && !editingId ? await hashPin(form.pin) : undefined
 		};
@@ -343,13 +366,28 @@
 				const existing = staff.find((s) => s.id === editingId);
 				await glo.upsert<Staff>(TYPE.staff, { ...existing!.data, ...payload }, { id: editingId });
 				if (generatedNsec && hexPk) {
-					saveStaffKey({ staffId: editingId, staffName: form.name, pubkey: hexPk, npub: npubDisplay, nsec: generatedNsec, generatedAt: Date.now() });
+					saveStaffKey({
+						staffId: editingId,
+						staffName: form.name,
+						pubkey: hexPk,
+						npub: npubDisplay,
+						nsec: generatedNsec,
+						generatedAt: Date.now()
+					});
 				}
 				toast.success('Staff updated', form.name.trim());
 			} else {
-				const obj = await glo.upsert<Staff>(TYPE.staff, payload);
+				const staffId = newRecordId('staff');
+				await glo.upsert<Staff>(TYPE.staff, payload, { id: staffId });
 				if (generatedNsec && hexPk) {
-					saveStaffKey({ staffId: obj.id, staffName: form.name, pubkey: hexPk, npub: npubDisplay, nsec: generatedNsec, generatedAt: Date.now() });
+					saveStaffKey({
+						staffId,
+						staffName: form.name,
+						pubkey: hexPk,
+						npub: npubDisplay,
+						nsec: generatedNsec,
+						generatedAt: Date.now()
+					});
 				}
 				toast.success('Staff added', form.name.trim());
 			}
@@ -414,41 +452,59 @@
 	<!-- Stats Cards -->
 	<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
 		<div class="surface-card flex items-center gap-3 p-3">
-			<div class="grid size-9 place-items-center rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400">
+			<div
+				class="grid size-9 place-items-center rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400"
+			>
 				<Icon name="lucide:users" class="size-4.5" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">Total</div>
+				<div class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
+					Total
+				</div>
 				<div class="font-display text-xl font-bold tabular-nums">{stats.total}</div>
 			</div>
 		</div>
 		<div class="surface-card flex items-center gap-3 p-3">
-			<div class="grid size-9 place-items-center rounded-lg bg-[var(--tone-success-bg)] text-[var(--tone-success-text)]">
+			<div
+				class="grid size-9 place-items-center rounded-lg bg-[var(--tone-success-bg)] text-[var(--tone-success-text)]"
+			>
 				<Icon name="lucide:user-check" class="size-4.5" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">Active</div>
+				<div class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
+					Active
+				</div>
 				<div class="font-display text-xl font-bold tabular-nums">{stats.active}</div>
 			</div>
 		</div>
 		<div class="surface-card flex items-center gap-3 p-3">
-			<div class="grid size-9 place-items-center rounded-lg bg-[var(--tone-neutral-bg)] text-[var(--ui-text-muted)]">
+			<div
+				class="grid size-9 place-items-center rounded-lg bg-[var(--tone-neutral-bg)] text-[var(--ui-text-muted)]"
+			>
 				<Icon name="lucide:user-minus" class="size-4.5" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">Inactive</div>
+				<div class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
+					Inactive
+				</div>
 				<div class="font-display text-xl font-bold tabular-nums">{stats.inactive}</div>
 			</div>
 		</div>
 		<div class="surface-card flex items-center gap-3 p-3">
-			<div class="grid size-9 place-items-center rounded-lg bg-[var(--tone-info-bg)] text-[var(--tone-info-text)]">
+			<div
+				class="grid size-9 place-items-center rounded-lg bg-[var(--tone-info-bg)] text-[var(--tone-info-text)]"
+			>
 				<Icon name="lucide:briefcase" class="size-4.5" />
 			</div>
 			<div class="min-w-0">
-				<div class="text-[11px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">Roles</div>
+				<div class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
+					Roles
+				</div>
 				<div class="truncate text-[12.5px] font-semibold">
 					{#each Object.entries(stats.byRole).slice(0, 3) as [r, count], i (r)}
-						{#if i > 0}, {/if}{count} {r}
+						{#if i > 0},
+						{/if}{count}
+						{r}
 					{/each}
 				</div>
 			</div>
@@ -509,7 +565,10 @@
 							</div>
 						</div>
 						<span
-							class="absolute top-3 right-3 size-2.5 rounded-full {(s.data.status ?? 'active') === 'active' ? 'bg-[var(--tone-success-text)]' : 'bg-[var(--ui-text-dimmed)]'}"
+							class="absolute top-3 right-3 size-2.5 rounded-full {(s.data.status ?? 'active') ===
+							'active'
+								? 'bg-[var(--tone-success-text)]'
+								: 'bg-[var(--ui-text-dimmed)]'}"
 							title={s.data.status ?? 'active'}
 						></span>
 					</div>
@@ -519,9 +578,12 @@
 							<Icon name={roleIcon[s.data.role] ?? 'lucide:user'} class="size-3" />
 							{ROLE_LABELS[s.data.role] ?? s.data.role}
 						</Badge>
-						<Badge color={statusColor(s.data.status ?? 'active')}>{(s.data.status ?? 'active').replace('_', ' ')}</Badge>
+						<Badge color={statusColor(s.data.status ?? 'active')}
+							>{(s.data.status ?? 'active').replace('_', ' ')}</Badge
+						>
 						{#if s.data.pubkey && hasStoredKey(s.data.pubkey)}
-							<Badge color="neutral"><Icon name="lucide:key-round" class="size-3" />backed up</Badge>
+							<Badge color="neutral"><Icon name="lucide:key-round" class="size-3" />backed up</Badge
+							>
 						{/if}
 					</div>
 
@@ -546,9 +608,17 @@
 						</div>
 					{/if}
 
-					<div class="flex items-center justify-end gap-1 border-t border-[var(--ui-border-muted)] pt-2">
+					<div
+						class="flex items-center justify-end gap-1 border-t border-[var(--ui-border-muted)] pt-2"
+					>
 						{#if canWrite}
-							<Button size="sm" color="neutral" variant="ghost" icon="lucide:pencil-line" onclick={() => openEdit(s)}>
+							<Button
+								size="sm"
+								color="neutral"
+								variant="ghost"
+								icon="lucide:pencil-line"
+								onclick={() => openEdit(s)}
+							>
 								Edit
 							</Button>
 						{/if}
@@ -563,11 +633,26 @@
 			<table class="table-surface w-full text-left">
 				<thead>
 					<tr>
-						<SortableTh column="name" active={controls.sortKey === 'name'} direction={controls.sortDir} applySort={controls.applySort}>Name</SortableTh>
-						<SortableTh column="role" active={controls.sortKey === 'role'} direction={controls.sortDir} applySort={controls.applySort}>Role</SortableTh>
+						<SortableTh
+							column="name"
+							active={controls.sortKey === 'name'}
+							direction={controls.sortDir}
+							applySort={controls.applySort}>Name</SortableTh
+						>
+						<SortableTh
+							column="role"
+							active={controls.sortKey === 'role'}
+							direction={controls.sortDir}
+							applySort={controls.applySort}>Role</SortableTh
+						>
 						<th class="px-5 py-2.5">Contact</th>
 						<th class="px-5 py-2.5">npub</th>
-						<SortableTh column="status" active={controls.sortKey === 'status'} direction={controls.sortDir} applySort={controls.applySort}>Status</SortableTh>
+						<SortableTh
+							column="status"
+							active={controls.sortKey === 'status'}
+							direction={controls.sortDir}
+							applySort={controls.applySort}>Status</SortableTh
+						>
 						<th class="w-10 px-5 py-2.5"></th>
 					</tr>
 				</thead>
@@ -581,13 +666,19 @@
 									{ROLE_LABELS[s.data.role] ?? s.data.role}
 								</div>
 							</td>
-							<td class="px-5 py-3 text-[var(--ui-text-muted)]">{s.data.email ?? s.data.phone ?? '—'}</td>
+							<td class="px-5 py-3 text-[var(--ui-text-muted)]"
+								>{s.data.email ?? s.data.phone ?? '—'}</td
+							>
 							<td class="px-5 py-3 text-[var(--ui-text-dimmed)]">
 								{#if s.data.npub}
 									<span class="font-mono text-[11px]">{truncateNpub(s.data.npub, 10, 4)}</span>
 								{:else}—{/if}
 							</td>
-							<td class="px-5 py-3"><Badge color={statusColor(s.data.status ?? 'active')}>{(s.data.status ?? 'active').replace('_', ' ')}</Badge></td>
+							<td class="px-5 py-3"
+								><Badge color={statusColor(s.data.status ?? 'active')}
+									>{(s.data.status ?? 'active').replace('_', ' ')}</Badge
+								></td
+							>
 							<td class="px-5 py-3 text-right">
 								<div class="flex items-center justify-end gap-1">
 									{#if canWrite}
@@ -613,12 +704,13 @@
 </div>
 
 <!-- Add / Edit Dialog -->
-<Dialog bind:open={open} title={editingId ? 'Edit staff member' : 'Add staff member'}>
+<Dialog bind:open title={editingId ? 'Edit staff member' : 'Add staff member'}>
 	<div class="space-y-3">
 		<!-- Identity / pubkey -->
 		<label class="block">
 			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
-				Nostr pubkey (npub){#if !editingId} <span class="text-[var(--tone-error-text)]">*</span>{/if}
+				Nostr pubkey (npub){#if !editingId}
+					<span class="text-[var(--tone-error-text)]">*</span>{/if}
 			</span>
 			<div class="flex items-center gap-2">
 				<Input
@@ -628,9 +720,23 @@
 					class="w-full"
 				/>
 				{#if generatedNsec}
-					<Button color="neutral" variant="subtle" size="icon" icon={showNsec ? 'lucide:eye-off' : 'lucide:eye'} aria-label="Toggle nsec" onclick={() => (showNsec = !showNsec)} />
+					<Button
+						color="neutral"
+						variant="subtle"
+						size="icon"
+						icon={showNsec ? 'lucide:eye-off' : 'lucide:eye'}
+						aria-label="Toggle nsec"
+						onclick={() => (showNsec = !showNsec)}
+					/>
 				{/if}
-				<Button color="neutral" variant="subtle" size="icon" icon="lucide:wand-sparkles" aria-label="Generate key" onclick={onGenerateKey} />
+				<Button
+					color="neutral"
+					variant="subtle"
+					size="icon"
+					icon="lucide:wand-sparkles"
+					aria-label="Generate key"
+					onclick={onGenerateKey}
+				/>
 			</div>
 			{#if pubkeyState === 'invalid'}
 				<span class="mt-1 block text-[11px] text-[var(--tone-error-text)]">Invalid pubkey</span>
@@ -642,7 +748,9 @@
 				</span>
 			{/if}
 			{#if generatedNsec && showNsec}
-				<span class="mt-2 block break-all rounded-lg border border-[var(--tone-warning-text)]/40 bg-[var(--tone-warning-bg)] p-2 font-mono text-[10.5px]">
+				<span
+					class="mt-2 block rounded-lg border border-[var(--tone-warning-text)]/40 bg-[var(--tone-warning-bg)] p-2 font-mono text-[10.5px] break-all"
+				>
 					⚠ Back up this nsec — it won't be shown again:<br />{generatedNsec}
 				</span>
 			{/if}
@@ -650,11 +758,15 @@
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name <span class="text-[var(--tone-error-text)]">*</span></span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Name <span class="text-[var(--tone-error-text)]">*</span></span
+				>
 				<Input bind:value={form.name} icon="lucide:user" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Display name</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Display name</span
+				>
 				<Input bind:value={form.displayName} class="w-full" />
 			</label>
 		</div>
@@ -669,36 +781,45 @@
 				/>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Company</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Company</span
+				>
 				<Input value={tenant.state.organizationName || '—'} disabled class="w-full" />
 			</label>
 		</div>
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Email</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Email</span
+				>
 				<Input bind:value={form.email} icon="lucide:at-sign" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</span
+				>
 				<Input bind:value={form.phone} icon="lucide:phone" class="w-full" />
 			</label>
 		</div>
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Employee code</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Employee code</span
+				>
 				<Input bind:value={form.employeeCode} placeholder="EMP-001" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Department</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Department</span
+				>
 				<Input bind:value={form.department} placeholder="Front of house" class="w-full" />
 			</label>
 		</div>
 
 		<!-- PIN -->
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">POS PIN</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">POS PIN</span
+			>
 			<div class="flex items-center gap-2">
 				<Input
 					bind:value={form.pin}
@@ -712,7 +833,9 @@
 					<Button color="neutral" variant="subtle" size="sm" onclick={setPin}>Set PIN</Button>
 				{/if}
 				{#if editingId && staff.find((s) => s.id === editingId)?.data.pinHash}
-					<Button color="neutral" variant="subtle" size="sm" icon="lucide:x" onclick={removePin}>Remove</Button>
+					<Button color="neutral" variant="subtle" size="sm" icon="lucide:x" onclick={removePin}
+						>Remove</Button
+					>
 				{/if}
 			</div>
 			<span class="mt-1 block text-[11px] text-[var(--ui-text-dimmed)]">
@@ -724,7 +847,9 @@
 
 		<!-- Hourly rate -->
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Hourly rate</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Hourly rate</span
+			>
 			<Input bind:value={form.hourlyRate} type="number" min="0" step="0.5" class="w-full" />
 		</label>
 
@@ -736,7 +861,8 @@
 					<button
 						type="button"
 						onclick={() => (form.status = status)}
-						class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium capitalize transition-all {form.status === status
+						class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium capitalize transition-all {form.status ===
+						status
 							? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300'
 							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
 					>
@@ -748,13 +874,17 @@
 
 		<!-- Branch assignment -->
 		<div>
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Branches</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Branches</span
+			>
 			<span class="mb-2 block text-[11px] text-[var(--ui-text-dimmed)]">
 				Empty selection grants company-wide access.
 			</span>
 			<div class="space-y-1.5">
 				{#each locations as branch (branch.id)}
-					<label class="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--ui-border)] px-3 py-2 text-[12.5px] hover:bg-[var(--ui-bg-accented)]">
+					<label
+						class="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--ui-border)] px-3 py-2 text-[12.5px] hover:bg-[var(--ui-bg-accented)]"
+					>
 						<input
 							type="checkbox"
 							checked={form.branchIds.includes(branch.id)}
@@ -779,7 +909,9 @@
 				<div class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
 					{#each PERMISSION_RESOURCES as res (res.id)}
 						<div>
-							<p class="mb-1 text-[10.5px] font-bold text-[var(--ui-text-dimmed)] uppercase">{res.name}</p>
+							<p class="mb-1 text-[10.5px] font-bold text-[var(--ui-text-dimmed)] uppercase">
+								{res.name}
+							</p>
 							<div class="flex flex-wrap gap-x-2 gap-y-0.5">
 								{#each res.actions as action (action)}
 									<label class="flex cursor-pointer items-center gap-1 text-[11px] capitalize">

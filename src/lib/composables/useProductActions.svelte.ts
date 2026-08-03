@@ -1,6 +1,7 @@
 import { glo } from '$nostr/store.svelte';
 import { TYPE } from '$lib/domain';
 import { toast } from '$lib/stores/toast.svelte';
+import { newRecordId, nowIso } from '$lib/utils/record-id';
 
 export function createProductActions() {
 	async function adjustStock(
@@ -11,14 +12,18 @@ export function createProductActions() {
 	) {
 		const product = glo.get(TYPE.product, productId);
 		if (!product) return;
-		await glo.upsert(TYPE.adjustment, {
-			productId,
-			productName: String((product.data as Record<string, unknown>).name ?? 'Unknown'),
-			type: direction,
-			quantity: Math.abs(qty),
-			reason: reason || 'Manual adjustment',
-			occurredAt: new Date().toISOString()
-		});
+		await glo.upsert(
+			TYPE.adjustment,
+			{
+				productId,
+				productName: String((product.data as Record<string, unknown>).name ?? 'Unknown'),
+				type: direction,
+				quantity: Math.abs(qty),
+				reason: reason || 'Manual adjustment',
+				occurredAt: nowIso()
+			},
+			{ id: newRecordId('stock-adjustment') }
+		);
 		const current = ((product.data as Record<string, unknown>).stockLevel ?? 0) as number;
 		const newStock =
 			direction === 'increase' ? current + Math.abs(qty) : Math.max(0, current - Math.abs(qty));
@@ -49,7 +54,7 @@ export function createProductActions() {
 		const data = { ...(product.data as Record<string, unknown>) };
 		data.name = String(data.name ?? 'Product') + ' (copy)';
 		data.stockLevel = 0;
-		await glo.upsert(TYPE.product, data);
+		await glo.upsert(TYPE.product, data, { id: newRecordId('product') });
 		toast.success('Product duplicated');
 	}
 

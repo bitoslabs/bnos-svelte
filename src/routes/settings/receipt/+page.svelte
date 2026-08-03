@@ -8,8 +8,7 @@
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-
-	const KEY = 'bnos-os:receipt';
+	import { loadReceiptSettings, saveReceiptSettings } from '$lib/settings/local';
 
 	// Core fields
 	let storeName = $state('');
@@ -43,70 +42,52 @@
 	let address = $state('');
 
 	onMount(() => {
-		if (browser) {
-			try {
-				const r = localStorage.getItem(KEY);
-				if (r) {
-					const p = JSON.parse(r);
-					storeName = p.storeName ?? '';
-					header = p.header ?? '';
-					footer = p.footer ?? 'Thank you!';
-					paperSize = p.paperSize ?? '80mm';
-					logoUrl = p.logoUrl ?? '';
-					showLogo = p.showLogo ?? false;
-					taxId = p.taxId ?? '';
-					showTaxId = p.showTaxId ?? false;
-					showQr = p.showQr ?? false;
-					qrData = p.qrData ?? '';
-					showStoreName = p.showStoreName ?? true;
-					showPhone = p.showPhone ?? false;
-					showAddress = p.showAddress ?? false;
-					showDate = p.showDate ?? true;
-					showOrderNumber = p.showOrderNumber ?? true;
-					showBarcode = p.showBarcode ?? false;
-					showCashierName = p.showCashierName ?? false;
-					phone = p.phone ?? '';
-					address = p.address ?? '';
-				} else {
-					storeName = tenant.state.organizationName;
-				}
-			} catch {
-				/* */
-			}
-		}
+		if (!browser) return;
+		const p = loadReceiptSettings(tenant.state.organizationName);
+		storeName = p.storeName;
+		header = p.header;
+		footer = p.footer;
+		paperSize = p.paperSize;
+		logoUrl = p.logoUrl;
+		showLogo = p.showLogo;
+		taxId = p.taxId;
+		showTaxId = p.showTaxId;
+		showQr = p.showQr;
+		qrData = p.qrData;
+		showStoreName = p.showStoreName;
+		showPhone = p.showPhone;
+		showAddress = p.showAddress;
+		showDate = p.showDate;
+		showOrderNumber = p.showOrderNumber;
+		showBarcode = p.showBarcode;
+		showCashierName = p.showCashierName;
+		phone = p.phone;
+		address = p.address;
 	});
 
 	function save() {
-		if (browser)
-			localStorage.setItem(
-				KEY,
-				JSON.stringify({
-					storeName,
-					header,
-					footer,
-					paperSize,
-					logoUrl,
-					showLogo,
-					taxId,
-					showTaxId,
-					showQr,
-					qrData,
-					showStoreName,
-					showPhone,
-					showAddress,
-					showDate,
-					showOrderNumber,
-					showBarcode,
-					showCashierName,
-					phone,
-					address
-				})
-			);
+		saveReceiptSettings({
+			storeName,
+			header,
+			footer,
+			paperSize,
+			logoUrl,
+			showLogo,
+			taxId,
+			showTaxId,
+			showQr,
+			qrData,
+			showStoreName,
+			showPhone,
+			showAddress,
+			showDate,
+			showOrderNumber,
+			showBarcode,
+			showCashierName,
+			phone,
+			address
+		});
 		toast.success('Receipt saved');
-	}
-
-	function toggleSection(title: string, desc: string, bindChecked: boolean, key: string) {
-		return { title, desc, bindChecked, key };
 	}
 </script>
 

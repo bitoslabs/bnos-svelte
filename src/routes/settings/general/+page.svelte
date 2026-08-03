@@ -8,10 +8,10 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { browser } from '$app/environment';
+	import { loadGeneralSettings, saveGeneralSettings } from '$lib/settings/local';
+	import { normalizeCurrencyCode } from '$lib/utils/format';
 
-	const KEY = 'bnos-os:settings-general';
-
-	let currency = $state('$');
+	let currency = $state('USD');
 	let taxRate = $state(0);
 	let enableTax = $state(false);
 	let taxIncluded = $state(false);
@@ -25,38 +25,33 @@
 
 	onMount(() => {
 		if (!browser) return;
-		try {
-			const s = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-			if (s.currency) currency = s.currency;
-			if (s.taxRate !== undefined) taxRate = s.taxRate;
-			if (s.enableTax !== undefined) enableTax = s.enableTax;
-			if (s.taxIncluded !== undefined) taxIncluded = s.taxIncluded;
-			if (s.defaultPayment) defaultPayment = s.defaultPayment;
-			if (s.playSound !== undefined) playSound = s.playSound;
-			if (s.paymentSound !== undefined) paymentSound = s.paymentSound;
-			if (s.autoPrint !== undefined) autoPrint = s.autoPrint;
-			if (s.confirmClear !== undefined) confirmClear = s.confirmClear;
-			if (s.compactMode !== undefined) compactMode = s.compactMode;
-			if (s.language) language = s.language;
-			currency = tenant.state.currency || currency;
-			taxRate = tenant.state.defaultTaxRate || taxRate;
-			enableTax = taxRate > 0;
-			taxIncluded = tenant.state.taxIncludedInPrice;
-		} catch { /* */ }
+		const s = loadGeneralSettings();
+		currency = normalizeCurrencyCode(tenant.state.currency || s.currency);
+		taxRate = tenant.state.defaultTaxRate || s.taxRate;
+		enableTax = taxRate > 0 || s.enableTax;
+		taxIncluded = tenant.state.taxIncludedInPrice;
+		defaultPayment = s.defaultPayment;
+		playSound = s.playSound;
+		paymentSound = s.paymentSound;
+		autoPrint = s.autoPrint;
+		confirmClear = s.confirmClear;
+		compactMode = s.compactMode;
+		language = s.language;
 	});
 
 	function save() {
 		if (!browser) return;
-		localStorage.setItem(KEY, JSON.stringify({ currency, taxRate, enableTax, taxIncluded, defaultPayment, playSound, paymentSound, autoPrint, confirmClear, compactMode, language }));
-		tenant.configure({ currency, defaultTaxRate: enableTax ? taxRate : 0, taxIncludedInPrice: taxIncluded });
+		const normalizedCurrency = normalizeCurrencyCode(currency);
+		saveGeneralSettings({ currency: normalizedCurrency, taxRate, enableTax, taxIncluded, defaultPayment, playSound, paymentSound, autoPrint, confirmClear, compactMode, language });
+		tenant.configure({ currency: normalizedCurrency, defaultTaxRate: enableTax ? taxRate : 0, taxIncludedInPrice: taxIncluded });
 		toast.success('Settings saved');
 	}
 
 	function resetAll() {
 		if (!browser) return;
 		if (!confirm('Reset all POS settings to defaults?')) return;
-		localStorage.removeItem(KEY);
-		currency = '$'; taxRate = 0; enableTax = false; taxIncluded = false;
+		localStorage.removeItem('bnos-os:settings-general');
+		currency = 'USD'; taxRate = 0; enableTax = false; taxIncluded = false;
 		defaultPayment = 'cash'; playSound = true; paymentSound = true;
 		autoPrint = false; confirmClear = true; compactMode = false; language = 'en';
 		toast.info('Settings reset');
@@ -94,9 +89,9 @@
 		<div class="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-start">
 			<div class="shrink-0 sm:w-44">
 				<label class="text-[13px] font-semibold">Currency</label>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">Symbol used across the app</p>
+				<p class="text-[11px] text-[var(--ui-text-dimmed)]">ISO currency used across the app</p>
 			</div>
-			<Select bind:value={currency} options={[{ value: '$', label: '$ USD (Dollar)' }, { value: '₭', label: '₭ LAK (Kip)' }, { value: '฿', label: '฿ THB (Baht)' }, { value: '¥', label: '¥ JPY/CNY (Yen)' }, { value: '€', label: '€ EUR (Euro)' }, { value: '£', label: '£ GBP (Pound)' }]} class="sm:w-56" />
+			<Select bind:value={currency} options={[{ value: 'USD', label: 'USD ($ Dollar)' }, { value: 'LAK', label: 'LAK (₭ Kip)' }, { value: 'THB', label: 'THB (฿ Baht)' }, { value: 'JPY', label: 'JPY (¥ Yen)' }, { value: 'CNY', label: 'CNY (¥ Yuan)' }, { value: 'EUR', label: 'EUR (€ Euro)' }, { value: 'GBP', label: 'GBP (£ Pound)' }, { value: 'BTC', label: 'BTC (Bitcoin)' }, { value: 'SATS', label: 'SATS (Satoshis)' }]} class="sm:w-56" />
 		</div>
 		<div class="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-start">
 			<div class="shrink-0 sm:w-44">

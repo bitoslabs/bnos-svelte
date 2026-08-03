@@ -13,6 +13,7 @@
 		readOrganizationSettings,
 		writeOrganizationSettings,
 		upsertOrganizationSettingsFromTenant,
+		syncOrganizationSettingsToWorkspace,
 		type CompanySettings as Company,
 		type BranchSettings as Branch,
 		type OrganizationSettingsSnapshot as OrgSettings
@@ -141,10 +142,11 @@
 		} catch { /* */ }
 	}
 
-	function persist() {
+	async function persist() {
 		if (!browser) return;
 		const s: OrgSettings = { companies, branches, activeCompanyId, activeBranchId };
 		writeOrganizationSettings(s);
+		await syncOrganizationSettingsToWorkspace(s);
 	}
 
 	// ── Lifecycle ──
@@ -168,20 +170,20 @@
 	}
 
 	// ── Quick Switch ──
-	function handleSwitchCompany() {
+	async function handleSwitchCompany() {
 		if (!switchCompanyId) return;
 		activeCompanyId = switchCompanyId;
 		activeBranchId = '';
 		switchBranchId = '';
-		persist();
+		await persist();
 		syncTenant();
 		toast.success('Company switched');
 	}
 
-	function handleSwitchBranch() {
+	async function handleSwitchBranch() {
 		if (!switchBranchId) return;
 		activeBranchId = switchBranchId;
-		persist();
+		await persist();
 		syncTenant();
 		toast.success('Branch switched');
 	}
@@ -242,7 +244,7 @@
 		companyModalOpen = true;
 	}
 
-	function handleSaveCompany() {
+	async function handleSaveCompany() {
 		if (!companyForm.name.trim()) return;
 		companyForm.code = normalizeSlug(companyForm.code || companyForm.name, 'company');
 
@@ -269,11 +271,11 @@
 		}
 
 		companyModalOpen = false;
-		persist();
+		await persist();
 		syncTenant();
 	}
 
-	function handleDeleteCompany(id: string) {
+	async function handleDeleteCompany(id: string) {
 		if (!browser) return;
 		if (!confirm(`Delete company? This will also remove all associated branches.`))
 			return;
@@ -283,7 +285,7 @@
 			activeCompanyId = '';
 			activeBranchId = '';
 		}
-		persist();
+		await persist();
 		syncTenant();
 		toast.success('Company deleted');
 	}
@@ -322,7 +324,7 @@
 		branchModalOpen = true;
 	}
 
-	function handleSaveBranch() {
+	async function handleSaveBranch() {
 		if (!branchForm.name.trim()) return;
 
 		if (editingBranchId) {
@@ -358,7 +360,7 @@
 		}
 
 		branchModalOpen = false;
-		persist();
+		await persist();
 	}
 
 	// Auto-generate branch code from name for new branches
@@ -368,7 +370,7 @@
 		}
 	});
 
-	function handleDeleteBranch(id: string, label = id) {
+	async function handleDeleteBranch(id: string, label = id) {
 		if (!browser) return;
 		if (!confirm(`Delete branch "${label}"?`)) return;
 		branches = branches.filter((b) => b.id !== id);
@@ -376,7 +378,7 @@
 		if (removed && activeBranchId === removed.id) {
 			activeBranchId = '';
 		}
-		persist();
+		await persist();
 		syncTenant();
 		toast.success('Branch deleted');
 	}

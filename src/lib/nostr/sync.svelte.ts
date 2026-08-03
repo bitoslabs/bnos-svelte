@@ -5,6 +5,9 @@ import { session } from './session.svelte';
 import { tenant } from './tenant.svelte';
 import { warmRelays } from './client';
 import { TYPE } from '$lib/domain';
+import { syncOrganizationSettingsToWorkspace } from './organization-settings';
+import { memberships } from './memberships.svelte';
+import { restoreTenantFromWorkspace } from './workspace.svelte';
 
 export const CORE_DATA_TYPES = [
 	TYPE.organization,
@@ -74,6 +77,10 @@ function typeScope(type: string) {
 	return `type:${type}`;
 }
 
+function includesWorkspaceTypes(types: readonly string[]) {
+	return types.includes(TYPE.organization) || types.includes(TYPE.location);
+}
+
 function staleTypes(types: readonly string[], cooldownMs: number) {
 	if (!browser) return [...types];
 	return types.filter((type) => shouldSync(typeScope(type), cooldownMs));
@@ -124,6 +131,12 @@ class SyncStore {
 			for (const type of types) {
 				await glo.sync(type);
 				setLastSyncAt(typeScope(type));
+			}
+			if (includesWorkspaceTypes(types)) {
+				// Staff devices do not author the workspace records themselves, so
+				// also resolve via membership to fetch owner-authored org/location data.
+				await memberships.resolveStaffWorkspace();
+				restoreTenantFromWorkspace();
 			}
 			setLastSyncAt(scope);
 			this.lastSyncedAt = Date.now();
@@ -187,6 +200,7 @@ class SyncStore {
 	}
 
 	async manualSync() {
+		await syncOrganizationSettingsToWorkspace();
 		await this.syncTypes(CORE_DATA_TYPES, { force: true, scope: 'core', silent: false });
 		await this.syncTypes(SECONDARY_DATA_TYPES, { force: true, scope: 'secondary', silent: false });
 	}
