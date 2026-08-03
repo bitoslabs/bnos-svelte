@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
@@ -74,7 +75,9 @@
 		try {
 			const raw = localStorage.getItem(KEY);
 			if (raw) printers = JSON.parse(raw);
-		} catch { /* */ }
+		} catch {
+			/* */
+		}
 	});
 
 	function persist() {
@@ -83,7 +86,10 @@
 	}
 
 	function slugify(s: string) {
-		return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+		return s
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, '-')
+			.replace(/^-|-$/g, '');
 	}
 
 	// ── Color / icon helpers ──
@@ -247,17 +253,23 @@
 
 <div class="space-y-5">
 	<!-- Page header -->
-	<div class="flex items-center justify-between">
-		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Printers</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Receipt printer profiles and print options</p>
-		</div>
-		<Button color="primary" icon="lucide:plus" onclick={openAdd}>Add printer</Button>
-	</div>
+	<PageHeader
+		icon="lucide:printer"
+		title="Printers"
+		description="Receipt printer profiles and print options"
+	>
+		{#snippet actions()}
+			<Button color="primary" icon="lucide:plus" onclick={openAdd}>Add printer</Button>
+		{/snippet}
+	</PageHeader>
 
 	<!-- Empty state -->
 	{#if printers.length === 0}
-		<EmptyState icon="lucide:printer" title="No printers configured" description="Add a printer profile to start printing receipts, kitchen tickets, and reports.">
+		<EmptyState
+			icon="lucide:printer"
+			title="No printers configured"
+			description="Add a printer profile to start printing receipts, kitchen tickets, and reports."
+		>
 			{#snippet actions()}
 				<Button color="primary" icon="lucide:plus" onclick={openAdd}>Add printer</Button>
 			{/snippet}
@@ -268,13 +280,19 @@
 			<div class="flex items-center gap-2 px-5 py-3">
 				<Icon name="lucide:printer" class="size-4 text-primary-500" />
 				<h2 class="font-display text-[14px] font-semibold">Printer profiles</h2>
-				<span class="ml-auto text-[11px] text-[var(--ui-text-dimmed)]">{printers.length} {printers.length === 1 ? 'printer' : 'printers'}</span>
+				<span class="ml-auto text-[11px] text-[var(--ui-text-dimmed)]"
+					>{printers.length} {printers.length === 1 ? 'printer' : 'printers'}</span
+				>
 			</div>
 
 			{#each printers as printer, i (printer.id)}
 				<div class="flex items-center gap-3 px-5 py-3.5">
 					<!-- Icon -->
-					<div class="grid size-9 shrink-0 place-items-center rounded-lg text-[16px] {printerColors[hashIdx(printer.id, printerColors.length)]}">
+					<div
+						class="grid size-9 shrink-0 place-items-center rounded-lg text-[16px] {printerColors[
+							hashIdx(printer.id, printerColors.length)
+						]}"
+					>
 						<Icon name={printerIcons[hashIdx(printer.id, printerIcons.length)]} class="size-4" />
 					</div>
 
@@ -286,12 +304,18 @@
 								<Badge color="primary">Default</Badge>
 							{/if}
 							{#if printer.enabled}
-								<Badge color="success"><span class="size-1.5 rounded-full bg-emerald-500" />Active</Badge>
+								<Badge color="success"
+									><span class="size-1.5 rounded-full bg-emerald-500" />Active</Badge
+								>
 							{:else}
-								<Badge color="neutral"><span class="size-1.5 rounded-full bg-[var(--ui-text-dimmed)]" />Inactive</Badge>
+								<Badge color="neutral"
+									><span class="size-1.5 rounded-full bg-[var(--ui-text-dimmed)]" />Inactive</Badge
+								>
 							{/if}
 						</div>
-						<div class="mt-0.5 flex items-center gap-1.5 text-[10.5px] text-[var(--ui-text-dimmed)]">
+						<div
+							class="mt-0.5 flex items-center gap-1.5 text-[10.5px] text-[var(--ui-text-dimmed)]"
+						>
 							<Icon name={connIcon(printer.connectionType)} class="size-3" />
 							{connLabel(printer.connectionType)}
 							<span>·</span>
@@ -312,13 +336,49 @@
 					<!-- Actions -->
 					<div class="flex shrink-0 items-center gap-1">
 						{#if !printer.isDefault}
-							<Button size="icon-sm" variant="ghost" color="neutral" icon="lucide:star" onclick={() => setDefault(i)} title="Set as default" />
+							<Button
+								size="icon-sm"
+								variant="ghost"
+								color="neutral"
+								icon="lucide:star"
+								onclick={() => setDefault(i)}
+								title="Set as default"
+							/>
 						{:else}
-							<Button size="icon-sm" variant="ghost" color="neutral" icon="lucide:star" class="text-amber-400" onclick={() => toggleDefault(i)} title="Unset default" />
+							<Button
+								size="icon-sm"
+								variant="ghost"
+								color="neutral"
+								icon="lucide:star"
+								class="text-amber-400"
+								onclick={() => toggleDefault(i)}
+								title="Unset default"
+							/>
 						{/if}
-						<Button size="icon-sm" variant="ghost" color="neutral" icon="lucide:printer" onclick={() => testPrint(printer)} title="Test print" />
-						<Button size="icon-sm" variant="ghost" color="neutral" icon="lucide:pencil" onclick={() => openEdit(printer)} title="Edit" />
-						<Button size="icon-sm" variant="ghost" color="error" icon="lucide:trash-2" onclick={() => confirmDelete(i)} title="Delete" />
+						<Button
+							size="icon-sm"
+							variant="ghost"
+							color="neutral"
+							icon="lucide:printer"
+							onclick={() => testPrint(printer)}
+							title="Test print"
+						/>
+						<Button
+							size="icon-sm"
+							variant="ghost"
+							color="neutral"
+							icon="lucide:pencil"
+							onclick={() => openEdit(printer)}
+							title="Edit"
+						/>
+						<Button
+							size="icon-sm"
+							variant="ghost"
+							color="error"
+							icon="lucide:trash-2"
+							onclick={() => confirmDelete(i)}
+							title="Delete"
+						/>
 						<div class="ml-1">
 							<Switch checked={printer.enabled} onCheckedChange={() => toggleEnabled(i)} />
 						</div>
@@ -329,9 +389,16 @@
 			<!-- Footer -->
 			<div class="flex items-center justify-between px-5 py-3">
 				<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
-					{printers.filter((p) => p.enabled).length} active · {printers.filter((p) => p.isDefault).length} default
+					{printers.filter((p) => p.enabled).length} active · {printers.filter((p) => p.isDefault)
+						.length} default
 				</p>
-				<Button size="sm" variant="ghost" color="neutral" icon="lucide:printer" onclick={() => testPrint()}>Test all</Button>
+				<Button
+					size="sm"
+					variant="ghost"
+					color="neutral"
+					icon="lucide:printer"
+					onclick={() => testPrint()}>Test all</Button
+				>
 			</div>
 		</section>
 	{/if}
@@ -341,15 +408,33 @@
 		<div class="space-y-5">
 			<!-- Identity -->
 			<div class="space-y-3">
-				<p class="text-[11px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">Identity</p>
+				<p class="text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+					Identity
+				</p>
 				<label class="block">
-					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name *</span>
-					<Input bind:value={form.name} placeholder="Kitchen printer" class="w-full" oninput={onNameInput} />
+					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Name *</span
+					>
+					<Input
+						bind:value={form.name}
+						placeholder="Kitchen printer"
+						class="w-full"
+						oninput={onNameInput}
+					/>
 				</label>
 				<label class="block">
-					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">ID {#if !isEditing}*{/if}</span>
-					<Input bind:value={form.id} placeholder="kitchen-printer" disabled={isEditing} class="w-full" />
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Unique slug used internally to reference this printer</p>
+					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>ID {#if !isEditing}*{/if}</span
+					>
+					<Input
+						bind:value={form.id}
+						placeholder="kitchen-printer"
+						disabled={isEditing}
+						class="w-full"
+					/>
+					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+						Unique slug used internally to reference this printer
+					</p>
 				</label>
 			</div>
 
@@ -357,16 +442,32 @@
 
 			<!-- Connection -->
 			<div class="space-y-3">
-				<p class="text-[11px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">Connection</p>
+				<p class="text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+					Connection
+				</p>
 				<div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
 					{#each connectionOptions as ct (ct.id)}
 						<button
 							type="button"
 							onclick={() => (form.connectionType = ct.id)}
-							class="rounded-xl border-2 p-3 text-center transition-all {form.connectionType === ct.id ? 'border-primary-500 bg-primary-500/10' : 'border-[var(--ui-border)] hover:border-[var(--ui-text-dimmed)]'}"
+							class="rounded-xl border-2 p-3 text-center transition-all {form.connectionType ===
+							ct.id
+								? 'border-primary-500 bg-primary-500/10'
+								: 'border-[var(--ui-border)] hover:border-[var(--ui-text-dimmed)]'}"
 						>
-							<Icon name={ct.icon} class="mx-auto mb-1 size-4 {form.connectionType === ct.id ? 'text-primary-500' : 'text-[var(--ui-text-dimmed)]'}" />
-							<p class="text-[10.5px] font-bold {form.connectionType === ct.id ? 'text-primary-600 dark:text-primary-400' : 'text-[var(--ui-text-muted)]'}">{ct.label}</p>
+							<Icon
+								name={ct.icon}
+								class="mx-auto mb-1 size-4 {form.connectionType === ct.id
+									? 'text-primary-500'
+									: 'text-[var(--ui-text-dimmed)]'}"
+							/>
+							<p
+								class="text-[10.5px] font-bold {form.connectionType === ct.id
+									? 'text-primary-600 dark:text-primary-400'
+									: 'text-[var(--ui-text-muted)]'}"
+							>
+								{ct.label}
+							</p>
 						</button>
 					{/each}
 				</div>
@@ -374,11 +475,15 @@
 				{#if form.connectionType === 'network'}
 					<div class="grid grid-cols-2 gap-3">
 						<label class="block">
-							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">IP address</span>
+							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								>IP address</span
+							>
 							<Input bind:value={form.ip} placeholder="192.168.1.100" class="w-full" />
 						</label>
 						<label class="block">
-							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Port</span>
+							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								>Port</span
+							>
 							<Input bind:value={form.port} placeholder="9100" class="w-full" />
 						</label>
 					</div>
@@ -387,23 +492,45 @@
 				{#if form.connectionType === 'websocket' || form.connectionType === 'webhook'}
 					<div class="space-y-3">
 						<label class="block">
-							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">URL ({form.connectionType === 'websocket' ? 'ws:// or wss://' : 'http:// or https://'})</span>
-							<Input bind:value={form.url} placeholder={form.connectionType === 'websocket' ? 'wss://localhost:8080' : 'https://my-api.com/print'} class="w-full" />
+							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								>URL ({form.connectionType === 'websocket'
+									? 'ws:// or wss://'
+									: 'http:// or https://'})</span
+							>
+							<Input
+								bind:value={form.url}
+								placeholder={form.connectionType === 'websocket'
+									? 'wss://localhost:8080'
+									: 'https://my-api.com/print'}
+								class="w-full"
+							/>
 						</label>
 						{#if form.connectionType === 'webhook'}
 							<label class="block">
-								<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Authorization token (optional)</span>
-								<Input bind:value={form.authToken} type="password" placeholder="Bearer token or secret" class="w-full" />
+								<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+									>Authorization token (optional)</span
+								>
+								<Input
+									bind:value={form.authToken}
+									type="password"
+									placeholder="Bearer token or secret"
+									class="w-full"
+								/>
 							</label>
 						{/if}
 						<div>
-							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Payload format</span>
+							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								>Payload format</span
+							>
 							<div class="flex gap-2">
 								{#each ['raw', 'json'] as fmt (fmt)}
 									<button
 										type="button"
 										onclick={() => (form.payloadFormat = fmt as 'raw' | 'json')}
-										class="flex-1 rounded-lg border px-3 py-2 text-[11px] font-bold transition-all {form.payloadFormat === fmt ? 'border-primary-500 bg-primary-500 text-white' : 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+										class="flex-1 rounded-lg border px-3 py-2 text-[11px] font-bold transition-all {form.payloadFormat ===
+										fmt
+											? 'border-primary-500 bg-primary-500 text-white'
+											: 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
 									>
 										{fmt === 'raw' ? 'Raw ESC/POS' : 'JSON Object'}
 									</button>
@@ -415,22 +542,33 @@
 
 				{#if form.connectionType === 'bluetooth'}
 					<label class="block">
-						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">MAC address</span>
+						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>MAC address</span
+						>
 						<Input bind:value={form.macAddress} placeholder="00:1A:7D:DA:71:13" class="w-full" />
 					</label>
 				{/if}
 
 				{#if form.connectionType === 'usb'}
-					<div class="flex items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-500/10 p-3">
+					<div
+						class="flex items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-500/10 p-3"
+					>
 						<Icon name="lucide:info" class="size-4 shrink-0 text-blue-500" />
-						<p class="text-[11px] text-blue-600 dark:text-blue-400">USB printers require WebUSB support and will prompt for device permission when printing.</p>
+						<p class="text-[11px] text-blue-600 dark:text-blue-400">
+							USB printers require WebUSB support and will prompt for device permission when
+							printing.
+						</p>
 					</div>
 				{/if}
 
 				{#if form.connectionType === 'browser'}
-					<div class="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3">
+					<div
+						class="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3"
+					>
 						<Icon name="lucide:info" class="size-4 shrink-0 text-emerald-500" />
-						<p class="text-[11px] text-emerald-600 dark:text-emerald-400">Browser printing uses the system print dialog. No additional drivers required.</p>
+						<p class="text-[11px] text-emerald-600 dark:text-emerald-400">
+							Browser printing uses the system print dialog. No additional drivers required.
+						</p>
 					</div>
 				{/if}
 			</div>
@@ -439,18 +577,25 @@
 
 			<!-- Print options -->
 			<div class="space-y-3">
-				<p class="text-[11px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">Print options</p>
+				<p class="text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+					Print options
+				</p>
 
 				<div class="grid grid-cols-2 gap-3">
 					<!-- Paper size -->
 					<div>
-						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Paper size</span>
+						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Paper size</span
+						>
 						<div class="flex gap-2">
 							{#each paperSizes as ps (ps.id)}
 								<button
 									type="button"
 									onclick={() => (form.paperSize = ps.id)}
-									class="flex-1 rounded-lg border px-3 py-2 text-[11px] font-bold transition-all {form.paperSize === ps.id ? 'border-primary-500 bg-primary-500 text-white' : 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+									class="flex-1 rounded-lg border px-3 py-2 text-[11px] font-bold transition-all {form.paperSize ===
+									ps.id
+										? 'border-primary-500 bg-primary-500 text-white'
+										: 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
 								>
 									{ps.label}
 								</button>
@@ -460,20 +605,33 @@
 
 					<!-- Copies -->
 					<label class="block">
-						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Copies</span>
-						<Input bind:value={form.copies} type="number" min="1" max="5" placeholder="1" class="w-full" />
+						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Copies</span
+						>
+						<Input
+							bind:value={form.copies}
+							type="number"
+							min="1"
+							max="5"
+							placeholder="1"
+							class="w-full"
+						/>
 					</label>
 				</div>
 
 				<!-- Chars per line -->
 				<label class="block">
-					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Characters per line</span>
+					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Characters per line</span
+					>
 					<Input bind:value={form.charsPerLine} type="number" placeholder="48" class="w-full" />
 				</label>
 
 				<!-- Print density -->
 				<div>
-					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Print density</span>
+					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Print density</span
+					>
 					<div class="flex items-center gap-3">
 						<input
 							bind:value={form.printDensity}
@@ -483,28 +641,39 @@
 							step="1"
 							class="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-[var(--ui-bg-accented)] accent-[var(--ui-color-primary-500)]"
 						/>
-						<span class="min-w-[24px] text-center text-[11px] font-bold">{form.printDensity || 8}</span>
+						<span class="min-w-[24px] text-center text-[11px] font-bold"
+							>{form.printDensity || 8}</span
+						>
 					</div>
 				</div>
 
 				<!-- Auto cut -->
 				<div class="flex items-center justify-between py-1">
 					<div>
-						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]">Auto cut</label>
-						<p class="text-[10px] text-[var(--ui-text-dimmed)]">Automatically cut paper after printing</p>
+						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Auto cut</label
+						>
+						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
+							Automatically cut paper after printing
+						</p>
 					</div>
 					<Switch bind:checked={form.autoCut} />
 				</div>
 
 				{#if form.autoCut}
 					<div>
-						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Cut mode</span>
+						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Cut mode</span
+						>
 						<div class="flex gap-2">
 							{#each cutModes as cm (cm.id)}
 								<button
 									type="button"
 									onclick={() => (form.cutMode = cm.id)}
-									class="flex-1 rounded-lg border px-3 py-2 text-[11px] font-bold transition-all {form.cutMode === cm.id ? 'border-primary-500 bg-primary-500 text-white' : 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+									class="flex-1 rounded-lg border px-3 py-2 text-[11px] font-bold transition-all {form.cutMode ===
+									cm.id
+										? 'border-primary-500 bg-primary-500 text-white'
+										: 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
 								>
 									{cm.label}
 								</button>
@@ -516,8 +685,12 @@
 				<!-- Auto print -->
 				<div class="flex items-center justify-between py-1">
 					<div>
-						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]">Auto print</label>
-						<p class="text-[10px] text-[var(--ui-text-dimmed)]">Print automatically when a transaction completes</p>
+						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Auto print</label
+						>
+						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
+							Print automatically when a transaction completes
+						</p>
 					</div>
 					<Switch bind:checked={form.autoPrint} />
 				</div>
@@ -525,8 +698,12 @@
 				<!-- Cash drawer -->
 				<div class="flex items-center justify-between py-1">
 					<div>
-						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]">Cash drawer</label>
-						<p class="text-[10px] text-[var(--ui-text-dimmed)]">Send kick signal to open cash drawer</p>
+						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Cash drawer</label
+						>
+						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
+							Send kick signal to open cash drawer
+						</p>
 					</div>
 					<Switch bind:checked={form.cashDrawerEnabled} />
 				</div>
@@ -534,8 +711,12 @@
 				<!-- Enabled -->
 				<div class="flex items-center justify-between py-1">
 					<div>
-						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]">Enabled</label>
-						<p class="text-[10px] text-[var(--ui-text-dimmed)]">Disable to temporarily take this printer offline</p>
+						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Enabled</label
+						>
+						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
+							Disable to temporarily take this printer offline
+						</p>
 					</div>
 					<Switch bind:checked={form.enabled} />
 				</div>
@@ -543,8 +724,16 @@
 		</div>
 
 		{#snippet footer()}
-			<Button color="neutral" variant="subtle" size="lg" block onclick={() => (showForm = false)}>Cancel</Button>
-			<Button color="primary" size="lg" block disabled={!form.name.trim() || (!isEditing && !form.id.trim())} onclick={savePrinter}>
+			<Button color="neutral" variant="subtle" size="lg" block onclick={() => (showForm = false)}
+				>Cancel</Button
+			>
+			<Button
+				color="primary"
+				size="lg"
+				block
+				disabled={!form.name.trim() || (!isEditing && !form.id.trim())}
+				onclick={savePrinter}
+			>
 				{isEditing ? 'Update' : 'Add printer'}
 			</Button>
 		{/snippet}
@@ -553,10 +742,13 @@
 	<!-- Delete Confirmation -->
 	<Dialog bind:open={showDelete} title="Delete printer" size="sm">
 		<p class="text-[13px] text-[var(--ui-text-muted)]">
-			Delete <span class="font-bold text-[var(--ui-text)]">"{deletingName}"</span>? This cannot be undone.
+			Delete <span class="font-bold text-[var(--ui-text)]">"{deletingName}"</span>? This cannot be
+			undone.
 		</p>
 		{#snippet footer()}
-			<Button color="neutral" variant="subtle" block onclick={() => (showDelete = false)}>Cancel</Button>
+			<Button color="neutral" variant="subtle" block onclick={() => (showDelete = false)}
+				>Cancel</Button
+			>
 			<Button color="error" block onclick={deletePrinter}>Delete</Button>
 		{/snippet}
 	</Dialog>

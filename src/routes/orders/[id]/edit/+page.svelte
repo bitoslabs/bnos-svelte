@@ -10,7 +10,8 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, titleCase } from '$lib/utils/format';
-	import { TYPE, type Order, type OrderLine, type Product, type Customer, type OrderType, type OrderSource, type ShippingInfo, type PickupInfo, type GloObject } from '$lib/domain';
+	import { TYPE, type Order, type OrderLine, type Product, type Customer, type OrderType, type OrderSource, type ShippingInfo, type ShippingStatus, type PickupInfo, type GloObject } from '$lib/domain';
+	import { ORDER_SOURCES, SHIPPING_STATUSES } from '$lib/domain/order-sources';
 
 	const id = $derived(page.params.id);
 
@@ -30,6 +31,7 @@
 	let barcodeInput = $state('');
 	let orderType = $state<OrderType>('takeaway');
 	let source = $state<OrderSource>('orders_page');
+	let sourceDetail = $state('');
 	let status = $state<string>('pending');
 	let paymentMethod = $state('cash');
 	let customerId = $state('');
@@ -46,7 +48,7 @@
 
 	// Shipping
 	let shipping = $state<ShippingInfo>({
-		recipientName: '', phone: '', address: '', city: '', state: '', zipCode: '', country: 'LA', notes: '', deliveryFee: 0, deliveryProvider: ''
+		recipientName: '', phone: '', address: '', city: '', state: '', zipCode: '', country: 'LA', notes: '', deliveryFee: 0, deliveryProvider: '', shippingStatus: 'pending', trackingNumber: '', estimatedDeliveryAt: '', driverName: '', driverPhone: ''
 	});
 
 	// Pickup
@@ -67,6 +69,7 @@
 			const d = order.data as any;
 			orderType = d.type ?? 'takeaway';
 			source = d.source ?? 'orders_page';
+			sourceDetail = d.sourceDetail ?? '';
 			status = d.status ?? 'pending';
 			paymentMethod = d.paymentMethod ?? 'cash';
 			customerId = d.customerId ?? '';
@@ -181,6 +184,7 @@
 			...order.data,
 			type: orderType,
 			source,
+			sourceDetail: source === 'other' ? sourceDetail.trim() || undefined : undefined,
 			status,
 			customerId: customerId || undefined,
 			customerName: customerName || undefined,
@@ -212,14 +216,6 @@
 		{ value: 'takeaway', label: 'Takeaway', icon: 'lucide:shopping-bag' },
 		{ value: 'delivery', label: 'Delivery', icon: 'lucide:truck' },
 		{ value: 'pickup', label: 'Pickup', icon: 'lucide:package' }
-	];
-
-	const SOURCES: { value: OrderSource; label: string; icon: string }[] = [
-		{ value: 'orders_page', label: 'Orders Page', icon: 'lucide:clipboard-list' },
-		{ value: 'pos', label: 'POS', icon: 'lucide:scan-line' },
-		{ value: 'online', label: 'Online', icon: 'lucide:globe' },
-		{ value: 'phone', label: 'Phone', icon: 'lucide:phone' },
-		{ value: 'whatsapp', label: 'WhatsApp', icon: 'lucide:message-circle' }
 	];
 
 	const PAYMENT_METHODS = [
@@ -292,7 +288,7 @@
 						<div>
 							<span class="mb-2 block text-[11px] font-bold uppercase tracking-wider text-[var(--ui-text-muted)]">Source</span>
 							<div class="flex flex-wrap gap-1.5">
-								{#each SOURCES as os (os.value)}
+								{#each ORDER_SOURCES as os (os.value)}
 									<button
 										type="button"
 										class="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition-all {source === os.value ? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300' : 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
@@ -303,6 +299,12 @@
 									</button>
 								{/each}
 							</div>
+							{#if source === 'other'}
+								<label class="mt-2 block">
+									<span class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase">Custom source / reference</span>
+									<Input bind:value={sourceDetail} placeholder="e.g. influencer name, post URL, event…" class="w-full" />
+								</label>
+							{/if}
 						</div>
 						<div class="flex items-center gap-3">
 							<span class="text-[11px] font-bold uppercase tracking-wider text-[var(--ui-text-muted)]">Priority:</span>
@@ -428,6 +430,39 @@
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Delivery Provider</span>
 									<Input bind:value={shipping.deliveryProvider} placeholder="Provider" class="w-full" />
 								</label>
+							</div>
+
+							<div class="space-y-3 rounded-xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)]/40 p-3">
+								<div class="flex items-center gap-2">
+									<Icon name="lucide:package-check" class="size-3.5 text-primary-500" />
+									<span class="text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase">Tracking & fulfilment</span>
+								</div>
+								<label class="block">
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Shipping status</span>
+									<select bind:value={shipping.shippingStatus} class="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[13px] capitalize focus:outline-none">
+										{#each SHIPPING_STATUSES as ss (ss.value)}
+											<option value={ss.value}>{ss.label}</option>
+										{/each}
+									</select>
+								</label>
+								<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+									<label class="block">
+										<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Tracking number</span>
+										<Input bind:value={shipping.trackingNumber} placeholder="e.g. DHL123456" icon="lucide:hash" class="w-full" />
+									</label>
+									<label class="block">
+										<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Est. delivery</span>
+										<Input bind:value={shipping.estimatedDeliveryAt} type="datetime-local" class="w-full" />
+									</label>
+									<label class="block">
+										<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Driver name</span>
+										<Input bind:value={shipping.driverName} placeholder="Driver / courier" class="w-full" />
+									</label>
+									<label class="block">
+										<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Driver phone</span>
+										<Input bind:value={shipping.driverPhone} type="tel" placeholder="020 xx xxx xxx" class="w-full" />
+									</label>
+								</div>
 							</div>
 						</div>
 					</div>

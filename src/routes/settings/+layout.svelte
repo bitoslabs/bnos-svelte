@@ -11,9 +11,7 @@
 	const groups: { label: string; items: { to: string; icon: string; label: string }[] }[] = [
 		{
 			label: 'Account',
-			items: [
-				{ to: '/settings/profile', icon: 'lucide:user', label: 'Profile' },
-			]
+			items: [{ to: '/settings/profile', icon: 'lucide:user', label: 'Profile' }]
 		},
 		{
 			label: 'Store',
@@ -36,9 +34,7 @@
 		},
 		{
 			label: 'Billing',
-			items: [
-				{ to: '/settings/billing', icon: 'lucide:credit-card', label: 'Plan & billing' }
-			]
+			items: [{ to: '/settings/billing', icon: 'lucide:credit-card', label: 'Plan & billing' }]
 		},
 		{
 			label: 'System',
@@ -66,14 +62,19 @@
 
 	const visibleGroups = $derived(
 		groups
-			.map((group) => ({ ...group, items: group.items.filter((item) => canSeeSettingsItem(item.to)) }))
+			.map((group) => ({
+				...group,
+				items: group.items.filter((item) => canSeeSettingsItem(item.to))
+			}))
 			.filter((group) => group.items.length > 0)
 	);
 </script>
 
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-[15rem_1fr]">
 	<!-- sub-nav -->
-	<aside class="lg:sticky lg:top-20 lg:h-fit lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1 lg:pb-4">
+	<aside
+		class="lg:sticky lg:top-20 lg:h-fit lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1 lg:pb-4"
+	>
 		<h1 class="mb-3 font-display text-xl font-bold tracking-tight">Settings</h1>
 		<nav class="space-y-4">
 			{#each visibleGroups as g (g.label)}
@@ -105,6 +106,8 @@
 
 	<!-- content -->
 	<div class="min-w-0">
-		{@render children?.()}
+		<div class="mx-auto w-full max-w-5xl">
+			{@render children?.()}
+		</div>
 	</div>
 </div>

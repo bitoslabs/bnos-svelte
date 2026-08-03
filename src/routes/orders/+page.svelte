@@ -20,6 +20,8 @@
 	import { toOrderRows, type DashboardOrder, type OrderRow } from '$lib/dashboard/metrics';
 	import { TYPE, statusColor } from '$lib/domain';
 	import type { OrderLine, PickupInfo, ShippingInfo } from '$lib/domain/types';
+	import { ORDER_SOURCES, sourceLabel, sourceIcon } from '$lib/domain/order-sources';
+	import { printPackingSlip } from '$lib/pos/print';
 
 	type OrderDetailData = DashboardOrder & {
 		shipping?: ShippingInfo;
@@ -60,9 +62,11 @@
 	] as const;
 	const TYPES = ['__all__', 'dine_in', 'takeaway', 'delivery', 'pickup'] as const;
 	const DATE_RANGES = ['__all__', 'today', '7d', '30d'] as const;
+	const SOURCES = ['__all__', ...ORDER_SOURCES.map((s) => s.value)] as const;
 
 	let statusFilter = $state<string>('__all__');
 	let typeFilter = $state<string>('__all__');
+	let sourceFilter = $state<string>('__all__');
 	let dateRangeFilter = $state<string>('__all__');
 
 	function matchDateRange(atMs: number): boolean {
@@ -85,7 +89,8 @@
 				(statusFilter === 'completed' && (s.includes('paid') || s.includes('complete'))) ||
 				(statusFilter === 'pending' && s.includes('pending'));
 			const matchesType = typeFilter === '__all__' || o.type === typeFilter;
-			return matchesStatus && matchesType && matchDateRange(o.atMs);
+			const matchesSource = sourceFilter === '__all__' || o.source === sourceFilter;
+			return matchesStatus && matchesType && matchesSource && matchDateRange(o.atMs);
 		})
 	);
 
@@ -95,6 +100,7 @@
 			o.number.toLowerCase().includes(q) ||
 			o.status.toLowerCase().includes(q) ||
 			o.type.toLowerCase().includes(q) ||
+			sourceLabel(o.source).toLowerCase().includes(q) ||
 			o.method.toLowerCase().includes(q),
 		sortOptions: () => [
 			{ key: 'number', label: 'Order no.', value: (o) => o.number },
@@ -198,11 +204,12 @@
 	// ── CSV Export ───────────────────────────────────────────
 	function exportCSV() {
 		const rows = filteredByCriteria;
-		const header = ['Order', 'Status', 'Type', 'Customer', 'Items', 'Total', 'Method', 'Date'];
+		const header = ['Order', 'Status', 'Type', 'Source', 'Customer', 'Items', 'Total', 'Method', 'Date'];
 		const lines = rows.map((o) => [
 			o.number,
 			o.status,
 			o.type,
+			sourceLabel(o.source),
 			o.customerName,
 			String(o.items),
 			String(o.total),
@@ -272,6 +279,14 @@
 						rawItem = glo.get('commerce.order', o.id);
 						rawOpen = true;
 					}
+				},
+				{
+					label: 'Print packing slip',
+					icon: 'lucide:package',
+					onSelect: () => {
+						const obj = glo.get('commerce.order', o.id);
+						if (obj) printPackingSlip(obj as any);
+					}
 				}
 			],
 			[
@@ -291,6 +306,7 @@
 	function resetFilters() {
 		statusFilter = '__all__';
 		typeFilter = '__all__';
+		sourceFilter = '__all__';
 		dateRangeFilter = '__all__';
 		controls.search = '';
 	}
@@ -480,6 +496,23 @@
 						class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
 					/>
 				</div>
+				<!-- Source filter -->
+				<div
+					class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+				>
+					<select
+						bind:value={sourceFilter}
+						class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium focus:outline-none"
+					>
+						{#each SOURCES as s (s)}
+							<option value={s}>{s === '__all__' ? 'All sources' : sourceLabel(s)}</option>
+						{/each}
+					</select>
+					<Icon
+						name="lucide:chevron-down"
+						class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+					/>
+				</div>
 				<!-- Date range filter -->
 				<div
 					class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
@@ -607,6 +640,10 @@
 							>
 							<th
 								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+								>Source</th
+							>
+							<th
+								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
 								>Customer</th
 							>
 							<SortableTh
@@ -683,6 +720,14 @@
 											<Icon name={typeIcon(o.type)} class="size-3" />
 											{titleCase(o.type)}
 										</span>
+									{/if}
+								</td>
+								<td class="px-5 py-3">
+									{#if o.source}
+									<span class="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--ui-text-muted)]" title={sourceLabel(o.source) + (o.sourceDetail ? ' · ' + o.sourceDetail : '')}>
+										<Icon name={sourceIcon(o.source)} class="size-3" />
+										{sourceLabel(o.source)}
+									</span>
 									{/if}
 								</td>
 								<td class="px-5 py-3 text-[var(--ui-text-muted)]">

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
@@ -66,8 +67,14 @@
 
 	// ── Rate fetching ───────────────────────────
 	const RATE_APIS = [
-		{ url: 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd', extract: (d: any) => d?.bitcoin?.usd },
-		{ url: 'https://api.coinbase.com/v2/prices/BTC-USD/spot', extract: (d: any) => parseFloat(d?.data?.amount) }
+		{
+			url: 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd',
+			extract: (d: any) => d?.bitcoin?.usd
+		},
+		{
+			url: 'https://api.coinbase.com/v2/prices/BTC-USD/spot',
+			extract: (d: any) => parseFloat(d?.data?.amount)
+		}
 	];
 
 	async function fetchRate(): Promise<number> {
@@ -78,7 +85,9 @@
 				const data = await res.json();
 				const price = api.extract(data);
 				if (price && price > 0) return price;
-			} catch { /* try next */ }
+			} catch {
+				/* try next */
+			}
 		}
 		throw new Error('All rate sources failed');
 	}
@@ -108,8 +117,11 @@
 			if (!raw) return;
 			const { ts } = JSON.parse(raw);
 			const mins = Math.floor((Date.now() - ts) / 60000);
-			cacheAgeLabel = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : `${Math.floor(mins / 60)}h ago`;
-		} catch { /* */ }
+			cacheAgeLabel =
+				mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : `${Math.floor(mins / 60)}h ago`;
+		} catch {
+			/* */
+		}
 	}
 
 	let effectiveDisplay = $derived(rateSource === 'manual' ? manualRate : effectiveRate);
@@ -130,7 +142,8 @@
 			// Simulate async test depending on provider
 			await new Promise((r) => setTimeout(r, 800));
 
-			if (lightningProvider === 'lnaddress' && !lightningAddress) throw new Error('Enter a Lightning Address');
+			if (lightningProvider === 'lnaddress' && !lightningAddress)
+				throw new Error('Enter a Lightning Address');
 			if (lightningProvider === 'lnd' && !lndUrl) throw new Error('Enter LND REST URL');
 			if (lightningProvider === 'phoenixd' && !phoenixdUrl) throw new Error('Enter PhoenixD URL');
 			if (lightningProvider === 'alby' && !albyApiKey) throw new Error('Enter Alby API key');
@@ -182,7 +195,9 @@
 			if (s.maxAmount !== undefined) maxAmount = s.maxAmount;
 			if (s.receiptShowSats !== undefined) receiptShowSats = s.receiptShowSats;
 			if (s.currency) currency = s.currency;
-		} catch { /* */ }
+		} catch {
+			/* */
+		}
 
 		// Load cached rate
 		try {
@@ -191,7 +206,9 @@
 				const { rate } = JSON.parse(raw);
 				if (rate && rate > 0) effectiveRate = rate;
 			}
-		} catch { /* */ }
+		} catch {
+			/* */
+		}
 		updateCacheAge();
 
 		// Auto-refresh stale rate
@@ -233,14 +250,29 @@
 		if (!browser) return;
 		if (!confirm('Reset all Bitcoin settings to defaults?')) return;
 		localStorage.removeItem(KEY);
-		rateSource = 'auto'; manualRate = 0; lightningProvider = '';
-		lightningAddress = ''; lndUrl = ''; lndMacaroon = '';
-		phoenixdUrl = ''; phoenixdPass = ''; albyApiKey = '';
-		nwcUrl = ''; blinkApiKey = ''; blinkWalletId = '';
-		strikeApiKey = ''; defaultMemo = 'Payment'; defaultExpiry = 3600;
-		minAmount = 0; maxAmount = 0; receiptShowSats = false;
-		nodeStatus = 'idle'; nodePubkey = ''; nodeAlias = '';
-		testStatus = 'idle'; testResult = '';
+		rateSource = 'auto';
+		manualRate = 0;
+		lightningProvider = '';
+		lightningAddress = '';
+		lndUrl = '';
+		lndMacaroon = '';
+		phoenixdUrl = '';
+		phoenixdPass = '';
+		albyApiKey = '';
+		nwcUrl = '';
+		blinkApiKey = '';
+		blinkWalletId = '';
+		strikeApiKey = '';
+		defaultMemo = 'Payment';
+		defaultExpiry = 3600;
+		minAmount = 0;
+		maxAmount = 0;
+		receiptShowSats = false;
+		nodeStatus = 'idle';
+		nodePubkey = '';
+		nodeAlias = '';
+		testStatus = 'idle';
+		testResult = '';
 		toast.info('Settings reset');
 	}
 </script>
@@ -248,12 +280,12 @@
 <svelte:head><title>Bitcoin · Settings</title></svelte:head>
 
 <div class="space-y-5">
-	<div>
-		<h1 class="font-display text-xl font-bold tracking-tight">
-			<span class="text-amber-500">₿</span> Bitcoin
-		</h1>
-		<p class="text-[12.5px] text-[var(--ui-text-muted)]">Lightning, exchange rate, and payment settings</p>
-	</div>
+	<PageHeader
+		icon="lucide:bitcoin"
+		accent="amber"
+		title="Bitcoin"
+		description="Lightning, exchange rate, and payment settings"
+	/>
 
 	<!-- ═══ Exchange Rate ═══ -->
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
@@ -287,14 +319,20 @@
 				</div>
 				<div class="text-right">
 					<p class="text-[10px] font-bold text-[var(--ui-text-dimmed)] uppercase">Source</p>
-					<p class="text-[13px] font-bold {rateSource === 'auto' ? 'text-emerald-500' : 'text-amber-500'}">
+					<p
+						class="text-[13px] font-bold {rateSource === 'auto'
+							? 'text-emerald-500'
+							: 'text-amber-500'}"
+					>
 						{rateSource === 'auto' ? 'Auto' : 'Manual'}
 					</p>
 				</div>
 			</div>
 
 			{#if rateError}
-				<div class="mt-3 rounded-xl bg-[var(--tone-error-bg)] p-3 text-[12px] text-[var(--tone-error-text)]">
+				<div
+					class="mt-3 rounded-xl bg-[var(--tone-error-bg)] p-3 text-[12px] text-[var(--tone-error-text)]"
+				>
 					{rateError}
 				</div>
 			{/if}
@@ -302,11 +340,15 @@
 
 		<!-- Rate source selector -->
 		<div class="px-5 py-4">
-			<label class="mb-2 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">Rate source</label>
+			<label
+				class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+				>Rate source</label
+			>
 			<div class="grid grid-cols-2 gap-2">
 				<button
 					type="button"
-					class="inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-[13px] font-semibold transition-all {rateSource === 'auto'
+					class="inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-[13px] font-semibold transition-all {rateSource ===
+					'auto'
 						? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
 						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
 					onclick={() => (rateSource = 'auto')}
@@ -316,7 +358,8 @@
 				</button>
 				<button
 					type="button"
-					class="inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-[13px] font-semibold transition-all {rateSource === 'manual'
+					class="inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-[13px] font-semibold transition-all {rateSource ===
+					'manual'
 						? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400'
 						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
 					onclick={() => (rateSource = 'manual')}
@@ -328,9 +371,14 @@
 
 			{#if rateSource === 'manual'}
 				<div class="mt-3">
-					<label class="mb-1.5 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">Manual BTC/USD rate</label>
+					<label
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						>Manual BTC/USD rate</label
+					>
 					<Input bind:value={manualRate} type="number" placeholder="100000" class="w-full" />
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Set your own BTC/fiat exchange rate</p>
+					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+						Set your own BTC/fiat exchange rate
+					</p>
 				</div>
 			{/if}
 		</div>
@@ -344,17 +392,23 @@
 				<h2 class="font-display text-[14px] font-semibold">Lightning backend</h2>
 			</div>
 			{#if nodeStatus === 'connected'}
-				<span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+				<span
+					class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400"
+				>
 					<span class="size-1.5 rounded-full bg-emerald-500"></span>
 					Connected
 				</span>
 			{:else if nodeStatus === 'connecting'}
-				<span class="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+				<span
+					class="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400"
+				>
 					<span class="size-1.5 animate-pulse rounded-full bg-amber-500"></span>
 					Connecting…
 				</span>
 			{:else if nodeStatus === 'error'}
-				<span class="inline-flex items-center gap-1 rounded-full bg-[var(--tone-error-bg)] px-2 py-0.5 text-[10px] font-bold text-[var(--tone-error-text)]">
+				<span
+					class="inline-flex items-center gap-1 rounded-full bg-[var(--tone-error-bg)] px-2 py-0.5 text-[10px] font-bold text-[var(--tone-error-text)]"
+				>
 					<span class="size-1.5 rounded-full bg-[var(--tone-error-text)]"></span>
 					Error
 				</span>
@@ -363,18 +417,27 @@
 
 		<!-- Provider selector -->
 		<div class="px-5 py-4">
-			<label class="mb-2 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">Select provider</label>
+			<label
+				class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+				>Select provider</label
+			>
 			<div class="space-y-2">
 				{#each providerOptions as opt (opt.id)}
 					<button
 						type="button"
-						class="w-full rounded-xl border px-4 py-3 text-left transition-all {lightningProvider === opt.id
+						class="w-full rounded-xl border px-4 py-3 text-left transition-all {lightningProvider ===
+						opt.id
 							? 'border-amber-500 bg-amber-500/10'
 							: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
 						onclick={() => (lightningProvider = opt.id)}
 					>
 						<div class="flex items-center justify-between">
-							<span class="flex items-center gap-2 text-[13px] font-semibold {lightningProvider === opt.id ? 'text-amber-600 dark:text-amber-400' : ''}">
+							<span
+								class="flex items-center gap-2 text-[13px] font-semibold {lightningProvider ===
+								opt.id
+									? 'text-amber-600 dark:text-amber-400'
+									: ''}"
+							>
 								<Icon name={opt.icon} class="size-4" />
 								{opt.label}
 							</span>
@@ -399,53 +462,92 @@
 		{#if lightningProvider === 'lnd'}
 			<div class="space-y-3 px-5 py-4">
 				<div>
-					<label class="mb-1.5 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">LND REST URL</label>
+					<label
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						>LND REST URL</label
+					>
 					<Input bind:value={lndUrl} placeholder="https://127.0.0.1:8080" class="w-full" />
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">REST endpoint of your LND node</p>
+					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+						REST endpoint of your LND node
+					</p>
 				</div>
 				<div>
-					<label class="mb-1.5 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">Macaroon (hex)</label>
+					<label
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						>Macaroon (hex)</label
+					>
 					<Input bind:value={lndMacaroon} type="password" placeholder="020105…" class="w-full" />
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Invoice macaroon in hex format</p>
+					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+						Invoice macaroon in hex format
+					</p>
 				</div>
 			</div>
 		{:else if lightningProvider === 'phoenixd'}
 			<div class="space-y-3 px-5 py-4">
 				<div>
-					<label class="mb-1.5 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">PhoenixD URL</label>
+					<label
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						>PhoenixD URL</label
+					>
 					<Input bind:value={phoenixdUrl} placeholder="http://127.0.0.1:9740" class="w-full" />
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Phoenix daemon API endpoint</p>
 				</div>
 				<div>
-					<label class="mb-1.5 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">Password</label>
+					<label
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						>Password</label
+					>
 					<Input bind:value={phoenixdPass} type="password" placeholder="••••••••" class="w-full" />
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Phoenix daemon HTTP password</p>
 				</div>
 			</div>
 		{:else if lightningProvider === 'alby'}
 			<div class="px-5 py-4">
-				<label class="mb-1.5 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">Alby API key</label>
+				<label
+					class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					>Alby API key</label
+				>
 				<Input bind:value={albyApiKey} type="password" placeholder="alby-api-key" class="w-full" />
-				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Get your API key from getalby.com</p>
+				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+					Get your API key from getalby.com
+				</p>
 			</div>
 		{:else if lightningProvider === 'nwc'}
 			<div class="px-5 py-4">
-				<label class="mb-1.5 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">NWC relay URL</label>
+				<label
+					class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					>NWC relay URL</label
+				>
 				<Input bind:value={nwcUrl} placeholder="nostr+walletconnect://…" class="w-full" />
-				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Nostr Wallet Connect string from your wallet</p>
+				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+					Nostr Wallet Connect string from your wallet
+				</p>
 			</div>
 		{:else if lightningProvider === 'lnaddress'}
 			<div class="px-5 py-4">
-				<label class="mb-1.5 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">Lightning address</label>
+				<label
+					class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					>Lightning address</label
+				>
 				<Input bind:value={lightningAddress} placeholder="user@domain.com" class="w-full" />
-				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Your LNURL-compatible Lightning address</p>
+				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+					Your LNURL-compatible Lightning address
+				</p>
 			</div>
 		{:else if lightningProvider === 'blink'}
 			<div class="space-y-3 px-5 py-4">
 				<div>
-					<label class="mb-1.5 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">Blink API key</label>
+					<label
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						>Blink API key</label
+					>
 					<div class="flex gap-2">
-						<Input bind:value={blinkApiKey} type="password" placeholder="blink-api-key" class="flex-1" />
+						<Input
+							bind:value={blinkApiKey}
+							type="password"
+							placeholder="blink-api-key"
+							class="flex-1"
+						/>
 						<Button
 							variant="subtle"
 							size="md"
@@ -454,18 +556,37 @@
 							disabled={!blinkApiKey || testStatus === 'loading'}
 						/>
 					</div>
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Blink (Galoy) API access token</p>
+					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+						Blink (Galoy) API access token
+					</p>
 				</div>
 				<div>
-					<label class="mb-1.5 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">Wallet ID</label>
-					<Input bind:value={blinkWalletId} placeholder="Auto-discovered on test, or enter manually" class="w-full" />
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">BTC wallet ID for invoice generation</p>
+					<label
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						>Wallet ID</label
+					>
+					<Input
+						bind:value={blinkWalletId}
+						placeholder="Auto-discovered on test, or enter manually"
+						class="w-full"
+					/>
+					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+						BTC wallet ID for invoice generation
+					</p>
 				</div>
 			</div>
 		{:else if lightningProvider === 'strike'}
 			<div class="px-5 py-4">
-				<label class="mb-1.5 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">Strike API key</label>
-				<Input bind:value={strikeApiKey} type="password" placeholder="strike-api-key" class="w-full" />
+				<label
+					class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					>Strike API key</label
+				>
+				<Input
+					bind:value={strikeApiKey}
+					type="password"
+					placeholder="strike-api-key"
+					class="w-full"
+				/>
 				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Strike API key for BTC payments</p>
 			</div>
 		{/if}
@@ -502,14 +623,17 @@
 		<!-- Node info -->
 		{#if nodeStatus === 'connected' && nodePubkey}
 			<div class="px-5 py-4">
-				<div class="rounded-xl bg-[var(--ui-bg-muted)] p-3 space-y-1.5">
+				<div class="space-y-1.5 rounded-xl bg-[var(--ui-bg-muted)] p-3">
 					<div class="flex items-center justify-between gap-2">
 						<span class="text-[10px] font-bold text-[var(--ui-text-dimmed)] uppercase">Pubkey</span>
-						<span class="font-mono text-[11px] text-[var(--ui-text-muted)] truncate max-w-[16rem]">{nodePubkey}</span>
+						<span class="max-w-[16rem] truncate font-mono text-[11px] text-[var(--ui-text-muted)]"
+							>{nodePubkey}</span
+						>
 					</div>
 					{#if nodeAlias}
 						<div class="flex items-center justify-between gap-2">
-							<span class="text-[10px] font-bold text-[var(--ui-text-dimmed)] uppercase">Alias</span>
+							<span class="text-[10px] font-bold text-[var(--ui-text-dimmed)] uppercase">Alias</span
+							>
 							<span class="text-[12px] font-semibold text-[var(--ui-text)]">{nodeAlias}</span>
 						</div>
 					{/if}
@@ -526,19 +650,27 @@
 		</div>
 		<div class="grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Default memo</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Default memo</span
+				>
 				<Input bind:value={defaultMemo} placeholder="Payment" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Default expiry (seconds)</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Default expiry (seconds)</span
+				>
 				<Input bind:value={defaultExpiry} type="number" placeholder="3600" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Min amount ({currency})</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Min amount ({currency})</span
+				>
 				<Input bind:value={minAmount} type="number" placeholder="0 = no limit" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Max amount ({currency})</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Max amount ({currency})</span
+				>
 				<Input bind:value={maxAmount} type="number" placeholder="0 = no limit" class="w-full" />
 			</label>
 		</div>
@@ -553,7 +685,9 @@
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
 				<label class="text-[13px] font-semibold">Show sats on receipt</label>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">Display satoshi amounts alongside fiat</p>
+				<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+					Display satoshi amounts alongside fiat
+				</p>
 			</div>
 			<Switch bind:checked={receiptShowSats} />
 		</div>
@@ -568,7 +702,9 @@
 		<div class="px-5 py-4">
 			<div class="flex items-end gap-3">
 				<div class="flex-1">
-					<label class="mb-1.5 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">
+					<label
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					>
 						Amount ({currency})
 					</label>
 					<Input bind:value={previewAmount} type="number" class="w-full" />
@@ -577,10 +713,14 @@
 					<Icon name="lucide:arrow-right" class="size-4 text-[var(--ui-text-dimmed)]" />
 				</div>
 				<div class="flex-1">
-					<label class="mb-1.5 block text-[11px] font-bold text-[var(--ui-text-muted)] tracking-wider uppercase">
+					<label
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					>
 						Satoshis
 					</label>
-					<div class="flex h-9.5 items-center rounded-lg border border-amber-500/20 bg-amber-500/10 px-3">
+					<div
+						class="flex h-9.5 items-center rounded-lg border border-amber-500/20 bg-amber-500/10 px-3"
+					>
 						<span class="text-[13px] font-black text-amber-600 dark:text-amber-400">
 							{formatSat(previewSats)}
 						</span>
@@ -594,14 +734,18 @@
 	<section class="surface-card danger-surface divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:triangle-alert" class="size-4 text-[var(--tone-error-text)]" />
-			<h2 class="font-display text-[14px] font-semibold text-[var(--tone-error-text)]">Danger zone</h2>
+			<h2 class="font-display text-[14px] font-semibold text-[var(--tone-error-text)]">
+				Danger zone
+			</h2>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
 				<label class="text-[13px] font-semibold">Reset bitcoin settings</label>
 				<p class="text-[11px] text-[var(--ui-text-dimmed)]">Restore Bitcoin settings to defaults</p>
 			</div>
-			<Button color="error" variant="subtle" size="sm" icon="lucide:rotate-ccw" onclick={resetAll}>Reset</Button>
+			<Button color="error" variant="subtle" size="sm" icon="lucide:rotate-ccw" onclick={resetAll}
+				>Reset</Button
+			>
 		</div>
 	</section>
 

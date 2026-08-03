@@ -7,6 +7,7 @@
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -14,6 +15,8 @@
 	import { formatMoney, relativeTime, titleCase } from '$lib/utils/format';
 	import { newRecordId } from '$lib/utils/record-id';
 	import { TYPE, statusColor, type Order, type Payment, type GloObject } from '$lib/domain';
+	import { sourceLabel, SHIPPING_STATUSES, shippingStatusLabel } from '$lib/domain/order-sources';
+	import { printReceiptForOrder, printPackingSlip, buildWhatsAppLink } from '$lib/pos/print';
 
 	const id = $derived(page.params.id);
 
@@ -42,6 +45,49 @@
 		order ? statusFlow.findIndex((s) => s.status === order.data.status) : -1
 	);
 	let showAllStatuses = $state(false);
+
+	// ── Shipping tracking (editable) ──
+	let trackNumber = $state('');
+	let trackStatus = $state<string>('pending');
+	let trackProvider = $state('');
+	let trackEta = $state('');
+	let trackDriver = $state('');
+	let trackDriverPhone = $state('');
+
+	$effect(() => {
+		if (order) {
+			const s = (order.data as any).shipping ?? {};
+			trackNumber = s.trackingNumber ?? '';
+			trackStatus = s.shippingStatus ?? 'pending';
+			trackProvider = s.deliveryProvider ?? '';
+			trackEta = s.estimatedDeliveryAt ?? '';
+			trackDriver = s.driverName ?? '';
+			trackDriverPhone = s.driverPhone ?? '';
+		}
+	});
+
+	async function updateTracking() {
+		if (!order) return;
+		const current = (order.data as any).shipping ?? {};
+		await glo.upsert<Order>(
+			TYPE.order,
+			{
+				...(order.data as any),
+				shipping: {
+					...current,
+					shippingStatus: trackStatus,
+					trackingNumber: trackNumber.trim() || undefined,
+					deliveryProvider: trackProvider.trim() || undefined,
+					estimatedDeliveryAt: trackEta || undefined,
+					driverName: trackDriver.trim() || undefined,
+					driverPhone: trackDriverPhone.trim() || undefined,
+					deliveredAt: trackStatus === 'delivered' ? new Date().toISOString() : current.deliveredAt
+				}
+			},
+			{ id: order.id }
+		);
+		toast.success('Tracking updated');
+	}
 
 	// Quick status actions (context-aware next steps)
 	const quickStatusActions = $derived(() => {
@@ -96,20 +142,6 @@
 		if (p === 'rush') return 'error';
 		if (p === 'vip') return 'warning';
 		return 'neutral';
-	}
-
-	function sourceLabel(src: string): string {
-		const map: Record<string, string> = {
-			orders_page: 'Orders Page',
-			pos: 'POS',
-			online: 'Online',
-			phone: 'Phone',
-			whatsapp: 'WhatsApp',
-			tiktok: 'TikTok',
-			facebook: 'Facebook',
-			website: 'Website'
-		};
-		return map[src] ?? titleCase(src) ?? '—';
 	}
 
 	// ── Payment summary ──────────────────────────────────────
@@ -171,27 +203,7 @@
 	}
 
 	function printReceipt() {
-		if (!order) return;
-		const d = order.data as any;
-		const w = window.open('', '_blank', 'width=400,height=600');
-		if (!w) return;
-		const itemsHtml = (d.lines || [])
-			.map(
-				(l: any) =>
-					`<tr><td>${l.quantity}× ${l.name || l.productName || ''}</td><td style="text-align:right">${formatMoney((l.total ?? l.unitPrice * l.quantity) || 0, currency)}</td></tr>`
-			)
-			.join('');
-		const paymentsHtml = payments
-			.map((p) => {
-				const pd = p.data as any;
-				return `<tr><td>${pd.method}</td><td style="text-align:right">${formatMoney(pd.amount ?? 0, currency)}</td></tr>`;
-			})
-			.join('');
-		w.document.write(
-			`<html><head><title>Receipt ${d.number ?? ''}</title><style>body{font-family:monospace;padding:16px;font-size:12px}h2{text-align:center}table{width:100%}td{padding:2px 0}.total{font-weight:bold;font-size:14px;border-top:1px dashed #000;padding-top:8px}</style></head><body><h2>${tenant.state.organizationName || 'BNOS'}</h2><p style="text-align:center">${d.number ?? ''}</p><p style="text-align:center;font-size:10px;color:#666">${new Date(d.occurredAt ?? Date.now()).toLocaleString()}</p><hr><table>${itemsHtml}</table><hr><table><tr class="total"><td>TOTAL</td><td style="text-align:right">${formatMoney(totalAmount, currency)}</td></tr></table>${paymentsHtml ? `<hr><table>${paymentsHtml}</table>` : ''}<p style="text-align:center;margin-top:16px">Thank you!</p></body></html>`
-		);
-		w.document.close();
-		w.print();
+		if (order) printReceiptForOrder(order as any, { currency, payments });
 	}
 
 	// ── Add payment ──────────────────────────────────────────
@@ -311,6 +323,24 @@
 					icon="lucide:printer"
 					onclick={printReceipt}>Print</Button
 				>
+				<Button
+					color="neutral"
+					variant="subtle"
+					size="sm"
+					icon="lucide:package"
+					onclick={() => printPackingSlip(order as any)}>Slip</Button
+				>
+				{#if buildWhatsAppLink(order as any)}
+					<a
+						href={buildWhatsAppLink(order as any)}
+						target="_blank"
+						rel="noopener"
+						class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--ui-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:border-[var(--ui-text-dimmed)]"
+					>
+						<Icon name="lucide:share-2" class="size-3.5" />
+						Share
+					</a>
+				{/if}
 				<Button
 					color="neutral"
 					variant="ghost"
@@ -558,6 +588,57 @@
 									</div>
 								</div>
 							{/if}
+						</div>
+					</div>
+				{/if}
+
+				<!-- Order tracking -->
+				{#if shipping || orderType === 'delivery'}
+					<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
+						<div class="flex items-center gap-2 px-5 py-3">
+							<Icon name="lucide:route" class="size-4 text-primary-500" />
+							<h2 class="font-display text-[14px] font-semibold">Order tracking</h2>
+							{#if shipping?.shippingStatus}
+								<Badge color="info">{shippingStatusLabel(shipping.shippingStatus)}</Badge>
+							{/if}
+						</div>
+						<div class="space-y-3 px-5 py-4">
+							<div>
+								<span class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase">Shipping status</span>
+								<div class="flex flex-wrap gap-1.5">
+									{#each SHIPPING_STATUSES as ss (ss.value)}
+										<button type="button" class="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium capitalize transition-all {trackStatus === ss.value ? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300' : 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}" onclick={() => (trackStatus = ss.value)}>
+											<Icon name={ss.icon} class="size-3.5" />
+											{ss.label}
+										</button>
+									{/each}
+								</div>
+							</div>
+							<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+								<label class="block">
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Tracking number</span>
+									<Input bind:value={trackNumber} placeholder="e.g. DHL123456" icon="lucide:hash" class="w-full" />
+								</label>
+								<label class="block">
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Provider</span>
+									<Input bind:value={trackProvider} placeholder="Courier / provider" class="w-full" />
+								</label>
+								<label class="block">
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Est. delivery</span>
+									<Input bind:value={trackEta} type="datetime-local" class="w-full" />
+								</label>
+								<label class="block">
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Driver name</span>
+									<Input bind:value={trackDriver} placeholder="Driver / courier" class="w-full" />
+								</label>
+								<label class="block sm:col-span-2">
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Driver phone</span>
+									<Input bind:value={trackDriverPhone} type="tel" placeholder="020 xx xxx xxx" class="w-full" />
+								</label>
+							</div>
+							<div class="flex justify-end">
+								<Button size="sm" color="primary" icon="lucide:save" onclick={updateTracking}>Update tracking</Button>
+							</div>
 						</div>
 					</div>
 				{/if}

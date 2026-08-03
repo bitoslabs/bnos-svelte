@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
@@ -20,7 +21,11 @@
 	} from '$nostr/organization-settings';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { browser } from '$app/environment';
-	import { currencies as currencyOptions, businessModels as bizModels, businessTypes as bizTypes } from '$lib/business';
+	import {
+		currencies as currencyOptions,
+		businessModels as bizModels,
+		businessTypes as bizTypes
+	} from '$lib/business';
 
 	// ── State ──
 	let companies = $state<Company[]>([]);
@@ -66,12 +71,8 @@
 	const businessTypes = bizTypes.map((t) => ({ value: t.value, label: t.label }));
 
 	// ── Derived ──
-	const activeCompanyName = $derived(
-		companies.find((c) => c.id === activeCompanyId)?.name ?? ''
-	);
-	const activeBranchName = $derived(
-		branches.find((b) => b.id === activeBranchId)?.name ?? ''
-	);
+	const activeCompanyName = $derived(companies.find((c) => c.id === activeCompanyId)?.name ?? '');
+	const activeBranchName = $derived(branches.find((b) => b.id === activeBranchId)?.name ?? '');
 	const companyCount = $derived(companies.length);
 	const filteredSwitchBranches = $derived(
 		switchCompanyId ? branches.filter((b) => b.storeId === switchCompanyId) : []
@@ -97,34 +98,40 @@
 				activeCompanyId = tenant.state.organizationId || '';
 				activeBranchId = tenant.state.locationId || '';
 				if (tenant.state.organizationId && tenant.state.organizationName) {
-					companies = [{
-						id: tenant.state.organizationId,
-						code: tenant.state.organizationCode || tenant.state.organizationId,
-						name: tenant.state.organizationName,
-						businessModel: tenant.state.businessModel,
-						businessType: tenant.state.businessType,
-						currency: tenant.state.currency,
-						enableTax: tenant.state.defaultTaxRate > 0,
-						taxRate: tenant.state.defaultTaxRate,
-						taxIncluded: tenant.state.taxIncludedInPrice
-					}];
+					companies = [
+						{
+							id: tenant.state.organizationId,
+							code: tenant.state.organizationCode || tenant.state.organizationId,
+							name: tenant.state.organizationName,
+							businessModel: tenant.state.businessModel,
+							businessType: tenant.state.businessType,
+							currency: tenant.state.currency,
+							enableTax: tenant.state.defaultTaxRate > 0,
+							taxRate: tenant.state.defaultTaxRate,
+							taxIncluded: tenant.state.taxIncludedInPrice
+						}
+					];
 				}
 				if (tenant.state.locationId && tenant.state.organizationId) {
-					branches = [{
-						id: tenant.state.locationId,
-						code: tenant.state.locationId,
-						storeId: tenant.state.organizationId,
-						name: tenant.state.locationName || 'Main Branch',
-						address: '',
-						phone: '',
-						email: '',
-						status: 'active'
-					}];
+					branches = [
+						{
+							id: tenant.state.locationId,
+							code: tenant.state.locationId,
+							storeId: tenant.state.organizationId,
+							name: tenant.state.locationName || 'Main Branch',
+							address: '',
+							phone: '',
+							email: '',
+							status: 'active'
+						}
+					];
 				}
 			}
 			switchCompanyId = activeCompanyId;
 			switchBranchId = activeBranchId;
-		} catch { /* */ }
+		} catch {
+			/* */
+		}
 	}
 
 	async function persist() {
@@ -266,8 +273,7 @@
 
 	async function handleDeleteCompany(id: string) {
 		if (!browser) return;
-		if (!confirm(`Delete company? This will also remove all associated branches.`))
-			return;
+		if (!confirm(`Delete company? This will also remove all associated branches.`)) return;
 		companies = companies.filter((c) => c.id !== id);
 		branches = branches.filter((b) => b.storeId !== id);
 		if (activeCompanyId === id) {
@@ -335,16 +341,19 @@
 				toast.error('Branch code already used in this company');
 				return;
 			}
-			branches = [...branches, {
-				id: `${branchFormCompanyId}-${code}-${Date.now()}`,
-				code,
-				storeId: branchFormCompanyId,
-				name: branchForm.name,
-				address: branchForm.address,
-				phone: branchForm.phone,
-				email: branchForm.email,
-				status: branchForm.status
-			}];
+			branches = [
+				...branches,
+				{
+					id: `${branchFormCompanyId}-${code}-${Date.now()}`,
+					code,
+					storeId: branchFormCompanyId,
+					name: branchForm.name,
+					address: branchForm.address,
+					phone: branchForm.phone,
+					email: branchForm.email,
+					status: branchForm.status
+				}
+			];
 			toast.success('Branch created');
 		}
 
@@ -375,7 +384,12 @@
 	function resetAll() {
 		if (!browser) return;
 		if (!confirm('Reset organization settings? This removes all companies and branches.')) return;
-		writeOrganizationSettings({ companies: [], branches: [], activeCompanyId: '', activeBranchId: '' });
+		writeOrganizationSettings({
+			companies: [],
+			branches: [],
+			activeCompanyId: '',
+			activeBranchId: ''
+		});
 		companies = [];
 		branches = [];
 		activeCompanyId = '';
@@ -389,12 +403,11 @@
 <svelte:head><title>Workspace · Settings</title></svelte:head>
 
 <div class="space-y-5">
-	<div>
-		<h1 class="font-display text-xl font-bold tracking-tight">Workspace</h1>
-		<p class="text-[12.5px] text-[var(--ui-text-muted)]">
-			Manage workspace structure, active branch, and business configuration in one place
-		</p>
-	</div>
+	<PageHeader
+		icon="lucide:building-2"
+		title="Workspace"
+		description="Manage workspace structure, active branch, and business configuration in one place"
+	/>
 
 	<!-- Active Context Card -->
 	<section id="workspace-context" class="surface-card divide-y divide-[var(--ui-border-muted)]">
@@ -454,7 +467,10 @@
 				</p>
 				<Select
 					bind:value={switchCompanyId}
-					options={[{ value: '', label: 'Select company…' }, ...companies.map((c) => ({ value: c.id, label: c.name }))]}
+					options={[
+						{ value: '', label: 'Select company…' },
+						...companies.map((c) => ({ value: c.id, label: c.name }))
+					]}
 					size="sm"
 					class="w-full"
 					onchange={handleSwitchCompany}
@@ -462,7 +478,13 @@
 				{#if switchCompanyId}
 					<Select
 						bind:value={switchBranchId}
-						options={[{ value: '', label: 'Select branch…' }, ...filteredSwitchBranches.map((b) => ({ value: b.id, label: `${b.name} (${b.code})` }))]}
+						options={[
+							{ value: '', label: 'Select branch…' },
+							...filteredSwitchBranches.map((b) => ({
+								value: b.id,
+								label: `${b.name} (${b.code})`
+							}))
+						]}
 						size="sm"
 						class="w-full"
 						onchange={handleSwitchBranch}
@@ -478,7 +500,9 @@
 			<div class="flex items-center gap-2">
 				<Icon name="lucide:building-2" class="size-4 text-primary-500" />
 				<h2 class="font-display text-[14px] font-semibold">
-					Companies <span class="text-[10px] font-normal text-[var(--ui-text-dimmed)]">({companyCount})</span>
+					Companies <span class="text-[10px] font-normal text-[var(--ui-text-dimmed)]"
+						>({companyCount})</span
+					>
 				</h2>
 			</div>
 			<Button variant="subtle" size="sm" icon="lucide:plus" onclick={() => openCompanyModal()}>
@@ -490,7 +514,12 @@
 			<div class="p-6">
 				<EmptyState icon="lucide:building-2" title="No companies yet">
 					{#snippet actions()}
-						<Button variant="subtle" size="sm" icon="lucide:plus" onclick={() => openCompanyModal()}>
+						<Button
+							variant="subtle"
+							size="sm"
+							icon="lucide:plus"
+							onclick={() => openCompanyModal()}
+						>
 							Add first company
 						</Button>
 					{/snippet}
@@ -500,18 +529,25 @@
 			{#each companies as company (company.id)}
 				<div class="px-5 py-4">
 					<div class="flex items-start justify-between gap-3">
-						<div class="flex items-start gap-3 min-w-0">
+						<div class="flex min-w-0 items-start gap-3">
 							<div
-								class="grid size-9 shrink-0 place-items-center rounded-xl text-[12px] font-bold text-white {activeCompanyId === company.id ? 'bg-primary-500' : 'bg-[var(--ui-text-dimmed)]'}"
+								class="grid size-9 shrink-0 place-items-center rounded-xl text-[12px] font-bold text-white {activeCompanyId ===
+								company.id
+									? 'bg-primary-500'
+									: 'bg-[var(--ui-text-dimmed)]'}"
 							>
 								{company.name?.charAt(0)?.toUpperCase() || '?'}
 							</div>
 							<div class="min-w-0">
 								<p class="truncate text-[13px] font-bold">{company.name}</p>
 								<div class="mt-0.5 flex flex-wrap items-center gap-2">
-									<span class="font-mono text-[10px] text-[var(--ui-text-dimmed)]">{company.code}</span>
+									<span class="font-mono text-[10px] text-[var(--ui-text-dimmed)]"
+										>{company.code}</span
+									>
 									<span class="text-[10px] text-[var(--ui-text-dimmed)]">•</span>
-									<span class="text-[10px] text-[var(--ui-text-muted)]">{company.businessModel}</span>
+									<span class="text-[10px] text-[var(--ui-text-muted)]"
+										>{company.businessModel}</span
+									>
 									<span class="text-[10px] text-[var(--ui-text-dimmed)]">•</span>
 									<span class="text-[10px] text-[var(--ui-text-muted)]">{company.currency}</span>
 									{#if activeCompanyId === company.id}
@@ -540,8 +576,12 @@
 					<!-- Branches for this company -->
 					<div class="mt-3 ml-12">
 						<div class="mb-1.5 flex items-center justify-between">
-							<p class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-								Branches <span class="font-normal">({getBranchesForCompany(company.id).length})</span>
+							<p
+								class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+							>
+								Branches <span class="font-normal"
+									>({getBranchesForCompany(company.id).length})</span
+								>
 							</p>
 							<button
 								type="button"
@@ -556,16 +596,26 @@
 							<div
 								class="group flex items-center justify-between rounded-lg px-2.5 py-1.5 transition-colors hover:bg-[var(--ui-bg-accented)]"
 							>
-								<div class="flex items-center gap-2 min-w-0">
-									<Icon name="lucide:map-pin" class="size-[11px] shrink-0 text-[var(--ui-text-dimmed)]" />
-									<span class="truncate text-[12px] text-[var(--ui-text-muted)]">{branch.name}</span>
-									<span class="font-mono text-[10px] text-[var(--ui-text-dimmed)]">{branch.code}</span>
-									<Badge color={branch.status === 'active' ? 'success' : 'neutral'}>{branch.status}</Badge>
+								<div class="flex min-w-0 items-center gap-2">
+									<Icon
+										name="lucide:map-pin"
+										class="size-[11px] shrink-0 text-[var(--ui-text-dimmed)]"
+									/>
+									<span class="truncate text-[12px] text-[var(--ui-text-muted)]">{branch.name}</span
+									>
+									<span class="font-mono text-[10px] text-[var(--ui-text-dimmed)]"
+										>{branch.code}</span
+									>
+									<Badge color={branch.status === 'active' ? 'success' : 'neutral'}
+										>{branch.status}</Badge
+									>
 									{#if activeBranchId === branch.id}
 										<Badge color="info">Active</Badge>
 									{/if}
 								</div>
-								<div class="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+								<div
+									class="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+								>
 									<button
 										type="button"
 										class="grid size-5 place-items-center rounded text-[var(--ui-text-dimmed)] transition-colors hover:text-sky-500"
@@ -584,7 +634,9 @@
 							</div>
 						{/each}
 						{#if getBranchesForCompany(company.id).length === 0}
-							<p class="px-2.5 py-1.5 text-[11px] text-[var(--ui-text-dimmed)] italic">No branches</p>
+							<p class="px-2.5 py-1.5 text-[11px] text-[var(--ui-text-dimmed)] italic">
+								No branches
+							</p>
 						{/if}
 					</div>
 				</div>
@@ -596,7 +648,9 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:triangle-alert" class="size-4 text-[var(--tone-error-text)]" />
-			<h2 class="font-display text-[14px] font-semibold text-[var(--tone-error-text)]">Danger zone</h2>
+			<h2 class="font-display text-[14px] font-semibold text-[var(--tone-error-text)]">
+				Danger zone
+			</h2>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
@@ -611,7 +665,11 @@
 </div>
 
 <!-- Company Add/Edit Dialog -->
-<Dialog bind:open={companyModalOpen} title={editingCompanyCode ? 'Edit company' : 'Add company'} size="md">
+<Dialog
+	bind:open={companyModalOpen}
+	title={editingCompanyCode ? 'Edit company' : 'Add company'}
+	size="md"
+>
 	<div class="space-y-4">
 		<div>
 			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
@@ -631,17 +689,22 @@
 				disabled={!!editingCompanyCode}
 			/>
 			<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
-				{editingCompanyCode ? 'Read-only' : 'Auto-generated from name · lowercase letters, numbers, hyphens'}
+				{editingCompanyCode
+					? 'Read-only'
+					: 'Auto-generated from name · lowercase letters, numbers, hyphens'}
 			</p>
 		</div>
 
 		<div>
-			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Business model</label>
+			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Business model</label
+			>
 			<div class="flex flex-wrap gap-2">
 				{#each businessModels as model (model.value)}
 					<button
 						type="button"
-						class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium transition-all {companyForm.businessModel === model.value
+						class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium transition-all {companyForm.businessModel ===
+						model.value
 							? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
 							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
 						onclick={() => (companyForm.businessModel = model.value)}
@@ -653,12 +716,15 @@
 		</div>
 
 		<div>
-			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Business type</label>
+			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Business type</label
+			>
 			<div class="flex flex-wrap gap-2">
 				{#each businessTypes as type (type.value)}
 					<button
 						type="button"
-						class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium transition-all {companyForm.businessType === type.value
+						class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium transition-all {companyForm.businessType ===
+						type.value
 							? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
 							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
 						onclick={() => (companyForm.businessType = type.value)}
@@ -671,11 +737,15 @@
 
 		<div class="grid grid-cols-2 gap-4">
 			<div>
-				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Currency</label>
+				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Currency</label
+				>
 				<Select bind:value={companyForm.currency} options={currencyOptions} class="w-full" />
 			</div>
 			<div>
-				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Tax rate</label>
+				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Tax rate</label
+				>
 				<div class="flex flex-col gap-2">
 					<label class="flex items-center gap-2">
 						<Switch bind:checked={companyForm.enableTax} />
@@ -710,7 +780,9 @@
 		</div>
 	</div>
 	{#snippet footer()}
-		<Button variant="ghost" color="neutral" onclick={() => (companyModalOpen = false)}>Cancel</Button>
+		<Button variant="ghost" color="neutral" onclick={() => (companyModalOpen = false)}
+			>Cancel</Button
+		>
 		<Button
 			color="primary"
 			icon="lucide:check"
@@ -723,7 +795,11 @@
 </Dialog>
 
 <!-- Branch Add/Edit Dialog -->
-<Dialog bind:open={branchModalOpen} title={editingBranchId ? 'Edit branch' : 'Add branch'} size="md">
+<Dialog
+	bind:open={branchModalOpen}
+	title={editingBranchId ? 'Edit branch' : 'Add branch'}
+	size="md"
+>
 	<div class="space-y-4">
 		<div>
 			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
@@ -733,7 +809,9 @@
 		</div>
 
 		<div>
-			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Branch code</label>
+			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Branch code</label
+			>
 			<Input
 				bind:value={branchForm.code}
 				placeholder="e.g. DOWNTOWN"
@@ -746,27 +824,36 @@
 		</div>
 
 		<div>
-			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Address</label>
+			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Address</label
+			>
 			<Input bind:value={branchForm.address} placeholder="123 Main St…" class="w-full" />
 		</div>
 
 		<div class="grid grid-cols-2 gap-4">
 			<div>
-				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</label>
+				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Phone</label
+				>
 				<Input bind:value={branchForm.phone} placeholder="(555) 123-4567" class="w-full" />
 			</div>
 			<div>
-				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Email</label>
+				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Email</label
+				>
 				<Input bind:value={branchForm.email} placeholder="branch@store.com" class="w-full" />
 			</div>
 		</div>
 
 		<div>
-			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Status</label>
+			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Status</label
+			>
 			<div class="flex gap-2">
 				<button
 					type="button"
-					class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium transition-all {branchForm.status === 'active'
+					class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium transition-all {branchForm.status ===
+					'active'
 						? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
 						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)]'}"
 					onclick={() => (branchForm.status = 'active')}
@@ -775,7 +862,8 @@
 				</button>
 				<button
 					type="button"
-					class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium transition-all {branchForm.status === 'inactive'
+					class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium transition-all {branchForm.status ===
+					'inactive'
 						? 'border-[var(--ui-text-dimmed)] bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]'
 						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)]'}"
 					onclick={() => (branchForm.status = 'inactive')}
@@ -786,7 +874,8 @@
 		</div>
 	</div>
 	{#snippet footer()}
-		<Button variant="ghost" color="neutral" onclick={() => (branchModalOpen = false)}>Cancel</Button>
+		<Button variant="ghost" color="neutral" onclick={() => (branchModalOpen = false)}>Cancel</Button
+		>
 		<Button
 			color="primary"
 			icon="lucide:check"

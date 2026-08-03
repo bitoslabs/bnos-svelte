@@ -5,7 +5,7 @@
  * change. No runes here → trivially testable.
  */
 import type { GloOrder } from '@bitos/bnos-core/glo';
-import type { Order } from '$lib/domain/types';
+import type { Order, ShippingInfo } from '$lib/domain/types';
 
 /** Local order view: GLO order data + a POS payment method (stored at checkout). */
 export type DashboardOrder = Order & { method?: string };
@@ -18,6 +18,9 @@ export type OrderRow = {
 	items: number;
 	method: string;
 	type: string;
+	source?: string;
+	sourceDetail?: string;
+	shipping?: ShippingInfo;
 	customerName: string;
 	atMs: number;
 };
@@ -57,12 +60,15 @@ export function toOrderRows(
 		const method = d.method ?? paymentLookup?.[o.id] ?? 'cash';
 		return {
 			id: o.id,
-			number: d.number ?? o.id.slice(0, 8),
+			number: String((d.orderNumber as string | number | undefined) ?? d.number ?? o.id.slice(0, 8)),
 			status: d.status ?? 'completed',
 			total: d.total ?? 0,
 			items: d.lines?.length ?? 0,
 			method,
-			type: d.fulfillmentType ?? 'pos',
+			type: (d.type as string | undefined) ?? d.fulfillmentType ?? 'pos',
+			source: d.source as string | undefined,
+			sourceDetail: d.sourceDetail as string | undefined,
+			shipping: d.shipping as ShippingInfo | undefined,
 			customerName: d.customerName ?? '',
 			atMs: Number.isFinite(atMs) ? atMs : 0
 		};

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
@@ -62,12 +63,11 @@
 <svelte:head><title>Hardware · Settings</title></svelte:head>
 
 <div class="space-y-5">
-	<div>
-		<h1 class="font-display text-xl font-bold tracking-tight">Hardware</h1>
-		<p class="text-[12.5px] text-[var(--ui-text-muted)]">
-			Printers, cash drawer, scanners, and peripherals
-		</p>
-	</div>
+	<PageHeader
+		icon="lucide:cpu"
+		title="Hardware"
+		description="Printers, cash drawer, scanners, and peripherals"
+	/>
 
 	<!-- Printer -->
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">

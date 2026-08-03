@@ -230,7 +230,18 @@ export interface OrderLineBnosExt {
 /** Standardized order line = canonical GLO line widened with bdgo-os fields. */
 export type OrderLine = GloOrderLine & OrderLineBnosExt;
 
+/** Delivery lifecycle for shipping tracking (independent of kitchen status). */
+export type ShippingStatus =
+	| 'pending'
+	| 'packed'
+	| 'shipped'
+	| 'in_transit'
+	| 'delivered'
+	| 'failed'
+	| 'returned';
+
 export interface ShippingInfo {
+	shippingStatus?: ShippingStatus;
 	recipientName?: string;
 	phone?: string;
 	address?: string;
@@ -269,6 +280,8 @@ export interface OrderBnosExt {
 	orderNumber?: number | string;
 	type?: OrderType;
 	source?: OrderSource;
+	/** Free-text detail for a custom/"other" source (e.g. a Facebook post URL, influencer name). */
+	sourceDetail?: string;
 	channel?: OrderChannel;
 	status?: OrderStatus;
 	customerPubkey?: string;
