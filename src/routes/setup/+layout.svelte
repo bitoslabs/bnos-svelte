@@ -4,17 +4,30 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import Popover from '$lib/components/ui/Popover.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { setupSteps, stepIndex } from './steps';
 	import { relays } from '$nostr/relay.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+	import { glo } from '$nostr/store.svelte';
+	import { resolveWorkspace } from '$nostr/workspace.svelte';
+	import { memberships } from '$nostr/memberships.svelte';
+	import { preferences } from '$lib/theme/preferences.svelte';
+	import { setMode, mode } from 'mode-watcher';
+	import AppearanceControls from '$lib/components/AppearanceControls.svelte';
 
 	let { children } = $props();
+
+	let quickOpen = $state(false);
+	let resolvingWorkspace = $state(false);
 
 	onMount(() => {
 		session.load();
 		tenant.load();
+		preferences.load();
+		preferences.apply();
+		relays.load();
 	});
 
 	// Guard: setup requires a session.
@@ -23,6 +36,35 @@
 			void goto(resolve('/login'), { replaceState: true });
 		}
 	});
+
+	async function signOut() {
+		await session.logout();
+		tenant.reset();
+		glo.clearAll();
+		await goto(resolve('/login'), { replaceState: true });
+	}
+
+	async function manualResolve() {
+		if (resolvingWorkspace) return;
+		resolvingWorkspace = true;
+		try {
+			const workspace = await resolveWorkspace({ allowRelaySync: true });
+			const staffWorkspace = workspace.found ? false : await memberships.resolveStaffWorkspace();
+			await memberships.resolve();
+			memberships.autoResolve();
+
+			if (workspace.found || staffWorkspace || tenant.state.setupComplete) {
+				toast.success('Workspace restored');
+				await goto(resolve('/'), { replaceState: true });
+				return;
+			}
+			toast.warning('No synced workspace found', 'Continue setup or try again after relay sync completes.');
+		} catch (e) {
+			toast.error('Could not resolve workspace', e instanceof Error ? e.message : undefined);
+		} finally {
+			resolvingWorkspace = false;
+		}
+	}
 
 	const currentSlug = $derived(
 		(page.url.pathname.split('/setup/')[1] ?? 'identity') as (typeof setupSteps)[number]['slug']
@@ -34,12 +76,12 @@
 	const isOptionalStep = $derived(currentSlug === 'catalog');
 	const blockedReason = $derived.by(() => {
 		if (currentSlug === 'identity' && !session.isAuthenticated) return 'Sign in before continuing.';
+		if (currentSlug === 'relays' && relays.activeRelays.length === 0)
+			return 'Keep at least one relay switched on.';
 		if (currentSlug === 'company' && !tenant.state.organizationName.trim())
 			return 'Add your company name first.';
 		if (currentSlug === 'branch' && !tenant.state.locationName.trim())
 			return 'Name your primary branch first.';
-		if (currentSlug === 'relays' && relays.activeRelays.length === 0)
-			return 'Keep at least one relay switched on.';
 		return '';
 	});
 	const canProceed = $derived(!blockedReason && idx >= 0 && idx < setupSteps.length - 1);
@@ -64,11 +106,59 @@
 			>
 				<Icon name="lucide:zap" class="size-5 text-white" />
 			</div>
-			<span class="font-display text-lg font-bold tracking-tight">bdGo OS</span>
+			<span class="font-display text-lg font-bold tracking-tight">BNOS</span>
 		</a>
-		<span class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-			Setup · step {idx + 1} of {setupSteps.length}
-		</span>
+
+		<div class="flex items-center gap-1.5">
+			<span class="mr-2 hidden text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase sm:inline">
+				Setup · step {idx + 1} of {setupSteps.length}
+			</span>
+
+			<button
+				type="button"
+				onclick={manualResolve}
+				disabled={resolvingWorkspace}
+				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:opacity-50"
+				aria-label="Resolve workspace"
+				title="Resolve workspace"
+			>
+				<Icon name={resolvingWorkspace ? 'lucide:loader' : 'lucide:refresh-cw'} class="size-[18px] {resolvingWorkspace ? 'animate-spin' : ''}" />
+			</button>
+
+			<!-- Theme toggle -->
+			<button
+				type="button"
+				onclick={() => setMode(mode.current === 'dark' ? 'light' : 'dark')}
+				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+				aria-label="Toggle theme"
+				title="Toggle theme"
+			>
+				<Icon name={mode.current === 'dark' ? 'lucide:sun' : 'lucide:moon'} class="size-[18px]" />
+			</button>
+
+			<!-- Quick settings -->
+		<Popover bind:open={quickOpen} align="end" side="bottom">
+				{#snippet trigger()}
+					<Icon name="lucide:sliders-horizontal" class="size-[18px]" />
+				{/snippet}
+				{#snippet content()}
+					<div class="w-72 p-1">
+					<AppearanceControls />
+				</div>
+			{/snippet}
+			</Popover>
+
+			<!-- Sign out -->
+			<button
+				type="button"
+				onclick={signOut}
+				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
+				aria-label="Sign out"
+				title="Sign out"
+			>
+				<Icon name="lucide:log-out" class="size-[18px]" />
+			</button>
+		</div>
 	</header>
 
 	<!-- Progress bar -->

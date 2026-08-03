@@ -216,23 +216,25 @@
 		--action-info-border: #bae6fd;
 		--action-error-border: #fecaca;
 
-		--ui-border: color-mix(
-			in oklab,
-			var(--ui-color-primary-500) var(--surface-tint-border),
-			color-mix(in oklab, var(--color-neutral-300) 75%, white)
-		);
+		/* Clean, near-neutral borders with a whisper of brand — matches the
+		   flat premium look (crisp hairlines, no heavy tint). */
+		--ui-border: color-mix(in oklab, var(--ui-color-primary-500) 5%, var(--color-neutral-200));
 		--ui-border-muted: color-mix(
 			in oklab,
-			var(--ui-color-primary-500) var(--surface-tint-border-muted),
-			color-mix(in oklab, var(--color-neutral-200) 70%, white)
+			var(--ui-color-primary-500) 3%,
+			color-mix(in oklab, var(--color-neutral-200) 78%, white)
 		);
 		--ui-border-accented: color-mix(
 			in oklab,
-			var(--ui-color-primary-500) var(--surface-tint-border),
-			color-mix(in oklab, var(--color-neutral-400) 55%, white)
+			var(--ui-color-primary-500) 9%,
+			var(--color-neutral-300)
 		);
 		--ui-border-inverted: #0c0c0e;
 		--surface-shadow: none;
+		/* Floating layers only (menus, popovers, dropdowns). Cards stay flat. */
+		--shadow-pop:
+			0 4px 12px color-mix(in oklab, var(--color-neutral-900) 10%, transparent),
+			0 12px 36px color-mix(in oklab, var(--color-neutral-900) 12%, transparent);
 
 		--glass-bg: color-mix(in oklab, var(--surface-bg) 82%, transparent);
 		--glass-border: color-mix(in oklab, var(--color-neutral-900) 8%, transparent);
@@ -439,11 +441,12 @@
 		--interactive-hover-bg: color-mix(in oklab, var(--color-neutral-800) 74%, black);
 		--danger-border: #6b3035;
 
-		--ui-border: color-mix(in oklab, var(--color-neutral-700) 46%, black);
-		--ui-border-muted: color-mix(in oklab, var(--color-neutral-800) 70%, black);
-		--ui-border-accented: color-mix(in oklab, var(--color-neutral-600) 52%, black);
+		--ui-border: color-mix(in oklab, var(--color-neutral-700) 52%, black);
+		--ui-border-muted: color-mix(in oklab, var(--color-neutral-800) 68%, transparent);
+		--ui-border-accented: color-mix(in oklab, var(--color-neutral-600) 60%, black);
 		--ui-border-inverted: #ffffff;
 		--surface-shadow: none;
+		--shadow-pop: 0 8px 28px rgba(0, 0, 0, 0.42), 0 18px 48px rgba(0, 0, 0, 0.38);
 
 		--glass-bg: color-mix(in oklab, var(--surface-bg) 72%, transparent);
 		--glass-border: color-mix(in oklab, white 6%, transparent);
@@ -525,6 +528,17 @@
 		border-radius: 0;
 	}
 	.data-panel > .sticky {
+		margin-top: 0;
+	}
+	/* Bordered panel — used for table/grid views with pagination */
+	.bordered-panel {
+		background-color: var(--surface-bg);
+		border: 1px solid var(--ui-border);
+		border-radius: calc(var(--ui-radius) + 0.25rem);
+		box-shadow: var(--surface-shadow);
+		overflow: hidden;
+	}
+	.bordered-panel > .sticky {
 		margin-top: 0;
 	}
 	.table-surface thead th {
@@ -677,6 +691,9 @@
 	.animate-fade {
 		animation: os-fade 0.3s ease both;
 	}
+	.animate-slide-in-left {
+		animation: os-slide-in-left 0.3s cubic-bezier(0.22, 0.7, 0.3, 1) both;
+	}
 	@keyframes os-rise {
 		from {
 			opacity: 0;
@@ -692,6 +709,16 @@
 			opacity: 0;
 		}
 		to {
+			opacity: 1;
+		}
+	}
+	@keyframes os-slide-in-left {
+		from {
+			transform: translateX(-100%);
+			opacity: 0.6;
+		}
+		to {
+			transform: translateX(0);
 			opacity: 1;
 		}
 	}

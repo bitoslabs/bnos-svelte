@@ -17,7 +17,7 @@
 	const toneText: Record<string, string> = { info: 'tone-text-info', success: 'tone-text-success', warning: 'tone-text-warning', error: 'tone-text-error' };
 </script>
 
-<svelte:head><title>bdGo OS · Notifications</title></svelte:head>
+<svelte:head><title>BNOS · Notifications</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">

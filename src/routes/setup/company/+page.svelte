@@ -57,7 +57,7 @@
 	<div>
 		<h2 class="font-display text-xl font-bold tracking-tight">Tell us about your business</h2>
 		<p class="mt-1 text-[13.5px] text-[var(--ui-text-muted)]">
-			These choices tailor bdGo OS — business type unlocks the right modules (e.g. Restaurant enables
+			These choices tailor BNOS — business type unlocks the right modules (e.g. Restaurant enables
 			tables, kitchen & waiter flows).
 		</p>
 	</div>

@@ -11,7 +11,7 @@
 	onMount(() => { session.load(); tenant.load(); });
 </script>
 
-<svelte:head><title>bdGo OS · Workspace</title></svelte:head>
+<svelte:head><title>BNOS · Workspace</title></svelte:head>
 
 <div class="mx-auto max-w-2xl space-y-5">
 	<div><h1 class="font-display text-xl font-bold tracking-tight">Workspace</h1><p class="text-[12.5px] text-[var(--ui-text-muted)]">The organization this device is operating under</p></div>

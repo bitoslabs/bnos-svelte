@@ -6,6 +6,7 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+import { glo } from '$nostr/store.svelte';
 	import { relays } from '$nostr/relay.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { truncateNpub } from '$lib/utils/format';
@@ -13,19 +14,20 @@
 	onMount(() => { session.load(); tenant.load(); relays.load(); });
 
 	async function signOut() {
-		session.logout();
+		await session.logout();
 		tenant.reset();
+		glo.clearAll();
 		toast.info('Signed out');
 		await goto('/login', { replaceState: true });
 	}
 </script>
 
-<svelte:head><title>bdGo OS · Profile</title></svelte:head>
+<svelte:head><title>BNOS · Profile</title></svelte:head>
 
 <div class="mx-auto max-w-2xl space-y-5">
 	<div class="surface-card flex flex-col items-center gap-3 p-8 text-center">
 		<div class="grid size-20 place-items-center rounded-3xl bg-gradient-to-br from-primary-400 to-primary-600 text-2xl font-bold text-white shadow-lg shadow-primary-500/25">BD</div>
-		<div><h1 class="font-display text-xl font-bold tracking-tight">{tenant.state.organizationName || 'bdGo OS'}</h1><p class="font-mono text-[12px] text-[var(--ui-text-muted)]">{truncateNpub(session.npub ?? '', 16, 8)}</p></div>
+		<div><h1 class="font-display text-xl font-bold tracking-tight">{tenant.state.organizationName || 'BNOS'}</h1><p class="font-mono text-[12px] text-[var(--ui-text-muted)]">{truncateNpub(session.npub ?? '', 16, 8)}</p></div>
 		<div class="flex items-center gap-2"><Badge color="success"><span class="live-dot"></span> {session.loginMethod === 'extension' ? 'NIP-07' : 'nsec'}</Badge><Badge color="primary">{tenant.state.currency}</Badge></div>
 	</div>
 

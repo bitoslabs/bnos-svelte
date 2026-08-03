@@ -11,7 +11,7 @@
 	<div>
 		<h2 class="font-display text-xl font-bold tracking-tight">Your Nostr identity</h2>
 		<p class="mt-1 text-[13.5px] text-[var(--ui-text-muted)]">
-			bdGo OS signs every record (orders, products, payments) with your Nostr key. This identity is your
+			BNOS signs every record (orders, products, payments) with your Nostr key. This identity is your
 			company's root of trust on relays.
 		</p>
 	</div>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -7,6 +8,7 @@
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { session } from '$nostr/session.svelte';
+	import { CORE_DATA_TYPES, dataSync } from '$nostr/sync.svelte';
 	import { formatMoney, formatInt, relativeTime } from '$lib/utils/format';
 	import {
 		toOrderRows,
@@ -17,15 +19,53 @@
 		orderTypeSegments,
 		topProducts,
 		greeting,
+		startOfToday,
 		type DashboardOrder
 	} from '$lib/dashboard/metrics';
-	import type { GloOrder, GloProduct, GloCustomer } from '@bitos/bnos-core/glo';
+	import type { GloProduct, GloCustomer } from '@bitos/bnos-core/glo';
+
+	let clock = $state('');
+
+	function hasDashboardCache() {
+		return (
+			glo.all('commerce.order').length > 0 ||
+			glo.all('commerce.payment').length > 0 ||
+			glo.all('catalog.product').length > 0 ||
+			glo.all('crm.customer').length > 0
+		);
+	}
+
+	async function waitForHydration() {
+		let attempts = 0;
+		while (attempts < 20) {
+			const hydrated = ['commerce.order', 'commerce.payment', 'catalog.product', 'crm.customer']
+				.every((type) => glo.isHydrated(type));
+			if (hydrated) return;
+			await new Promise((resolve) => setTimeout(resolve, 80));
+			attempts++;
+		}
+	}
 
 	onMount(() => {
-		glo.hydrate('commerce.order');
-		glo.hydrate('catalog.product');
-		glo.hydrate('crm.customer');
-		void glo.syncAll(['commerce.order', 'catalog.product', 'crm.customer']);
+		dataSync.hydrate(CORE_DATA_TYPES);
+
+		void (async () => {
+			await waitForHydration();
+
+			const hasCache = hasDashboardCache();
+			const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+			if (hasCache) {
+				if (!isOffline) {
+					dataSync.backgroundOperationalSync();
+				}
+				return;
+			}
+
+			if (!isOffline) {
+				dataSync.backgroundOperationalSync();
+			}
+		})();
 
 		// live clock
 		const tick = () =>
@@ -41,8 +81,20 @@
 	});
 
 	const orderObjects = $derived(glo.all<DashboardOrder, 'commerce.order'>('commerce.order'));
-	const rows = $derived(toOrderRows(orderObjects as never));
-	const todayRows = $derived(rows.filter((o) => o.atMs >= startToday()));
+
+	// Build payment method lookup: orderId → method
+	const paymentMethodMap = $derived.by(() => {
+		const payments = glo.all<Record<string, unknown>, 'commerce.payment'>('commerce.payment');
+		const methods: Record<string, string> = {};
+		for (const p of payments) {
+			const oid = typeof p.data.orderId === 'string' ? p.data.orderId : '';
+			if (oid) methods[oid] = typeof p.data.method === 'string' ? p.data.method : 'cash';
+		}
+		return methods;
+	});
+
+	const rows = $derived(toOrderRows(orderObjects as never, paymentMethodMap));
+	const todayRows = $derived(rows.filter((o) => o.atMs >= startOfToday()));
 	const currency = $derived(tenant.state.currency);
 
 	const m = $derived(metricsSummary(rows));
@@ -55,14 +107,6 @@
 	const productCount = $derived(glo.all<GloProduct, 'catalog.product'>('catalog.product').length);
 	const customerCount = $derived(glo.all<GloCustomer, 'crm.customer'>('crm.customer').length);
 
-	let clock = $state('');
-
-	function startToday() {
-		const x = new Date();
-		x.setHours(0, 0, 0, 0);
-		return x.getTime();
-	}
-
 	function statusColor(status: string): 'success' | 'info' | 'warning' | 'neutral' {
 		const s = status.toLowerCase();
 		if (s.includes('paid') || s.includes('complete') || s.includes('done')) return 'success';
@@ -73,7 +117,7 @@
 
 	const quickActions = $derived([
 		{
-			to: '/pos',
+			to: resolve('/pos'),
 			icon: 'lucide:scan-line',
 			label: 'New sale',
 			desc: 'Open the POS',
@@ -81,7 +125,7 @@
 			bg: 'bg-primary-500/10'
 		},
 		{
-			to: '/orders',
+			to: resolve('/orders'),
 			icon: 'lucide:receipt-text',
 			label: 'Orders',
 			desc: `${m.allTimeCount} total`,
@@ -89,7 +133,7 @@
 			bg: 'bg-blue-500/10'
 		},
 		{
-			to: '/catalog',
+			to: resolve('/catalog'),
 			icon: 'lucide:package',
 			label: 'Catalog',
 			desc: `${productCount} products`,
@@ -97,7 +141,7 @@
 			bg: 'bg-orange-500/10'
 		},
 		{
-			to: '/customers',
+			to: resolve('/customers'),
 			icon: 'lucide:users',
 			label: 'Customers',
 			desc: `${customerCount} people`,
@@ -107,7 +151,7 @@
 	]);
 </script>
 
-<svelte:head><title>bdGo OS · Dashboard</title></svelte:head>
+<svelte:head><title>BNOS · Dashboard</title></svelte:head>
 
 <div class="space-y-6 pt-1 pb-12">
 	<!-- Welcome header -->
@@ -133,11 +177,11 @@
 
 	<!-- Quick actions -->
 	<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-		{#each quickActions as action (action.label)}
-			<a
-				href={action.to}
-				class="surface-card group flex items-center gap-3 p-4 transition-colors hover:border-[var(--ui-border-accented)]"
-			>
+			{#each quickActions as action (action.label)}
+				<a
+					href={action.to}
+					class="surface-card group flex items-center gap-3 p-4 transition-colors hover:border-[var(--ui-border-accented)]"
+				>
 				<div class="grid size-10 shrink-0 place-items-center rounded-xl {action.bg} {action.color}">
 					<Icon name={action.icon} class="size-5" />
 				</div>
@@ -365,13 +409,13 @@
 			</div>
 
 			<!-- Recent orders -->
-			<div class="data-panel">
+			<div class="surface-card overflow-hidden">
 				<div
 					class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-5 py-3.5"
 				>
 					<h3 class="font-display text-[15px] font-semibold tracking-tight">Recent orders</h3>
 					<a
-						href="/orders"
+						href={resolve('/orders')}
 						class="text-[12.5px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
 						>View all</a
 					>
@@ -384,37 +428,44 @@
 							description="Start a sale from the POS to see orders appear here, signed and synced over Nostr."
 						>
 							{#snippet actions()}
-								<Button color="primary" size="sm" icon="lucide:scan-line" href="/pos"
+								<Button color="primary" size="sm" icon="lucide:scan-line" href={resolve('/pos')}
 									>Open POS</Button
 								>
 							{/snippet}
 						</EmptyState>
 					</div>
 				{:else}
-					<table class="table-surface w-full text-left">
-						<thead class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-							<tr>
-								<th class="px-5 py-2.5 font-semibold">Order</th>
-								<th class="px-5 py-2.5 font-semibold">Status</th>
-								<th class="px-5 py-2.5 text-right font-semibold">Total</th>
-								<th class="px-5 py-2.5 text-right font-semibold">When</th>
-							</tr>
-						</thead>
-						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
-							{#each recent as o (o.id)}
-								<tr>
-									<td class="px-5 py-3 font-mono text-[12.5px]">{o.number}</td>
-									<td class="px-5 py-3"><Badge color={statusColor(o.status)}>{o.status}</Badge></td>
-									<td class="px-5 py-3 text-right font-semibold tabular-nums"
-										>{formatMoney(o.total, currency)}</td
-									>
-									<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
-										>{relativeTime(o.atMs)}</td
-									>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
+					<div class="divide-y divide-[var(--ui-border-muted)]">
+						{#each recent as o (o.id)}
+							<a
+								href={resolve(`/orders/${o.id}`)}
+								class="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-[var(--ui-bg-accented)]"
+							>
+								<div
+									class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400"
+								>
+									<Icon name="lucide:receipt-text" class="size-4" />
+								</div>
+								<div class="min-w-0 flex-1">
+									<div class="flex items-center gap-2">
+											<span class="text-[13px] font-semibold">{o.number}</span>
+											<Badge color={statusColor(o.status)}>{o.status}</Badge>
+									</div>
+										<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
+											{o.items} item{o.items !== 1 ? 's' : ''} · {relativeTime(o.atMs)}
+										</p>
+									</div>
+									<div class="text-right">
+										<div class="text-[13px] font-bold tabular-nums">{formatMoney(o.total, currency)}</div>
+											<div class="mt-0.5 flex items-center justify-end gap-1 text-[10.5px] font-semibold text-[var(--ui-text-dimmed)]">
+												<Icon name={o.method === 'cash' ? 'lucide:banknote' : o.method === 'card' ? 'lucide:credit-card' : o.method === 'qr' ? 'lucide:qr-code' : o.method === 'lightning' ? 'lucide:zap' : 'lucide:circle-dot'} class="size-3" />
+												<span class="capitalize">{o.method}</span>
+											</div>
+									</div>
+								</a
+							>
+						{/each}
+					</div>
 				{/if}
 			</div>
 		</div>

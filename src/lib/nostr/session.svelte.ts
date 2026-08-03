@@ -18,6 +18,7 @@ import {
 	type NostrEvent,
 	type NostrExtensionSigner
 } from '@bitos/bnos-core';
+import { clear as idbClear } from 'idb-keyval';
 import { truncateNpub } from '$lib/utils/format';
 
 /** Minimal NIP-07 signer shape we rely on (aligned with bnos-core). */
@@ -35,6 +36,29 @@ function getNip07(): Nip07 | null {
 export function hasNip07Extension(): boolean {
 	return !!getNip07();
 }
+
+/**
+ * localStorage key prefixes that belong to the BNOS app. On logout we wipe
+ * everything matching these prefixes so the next login starts clean.
+ */
+const APP_STORAGE_PREFIXES = [
+	'bnos-os:',
+	'bnos:',
+	'nostr_npub',
+	'nostr_pubkey',
+	'nostr_privkey',
+	'nostr_login',
+	'nostr_auto_sync',
+	'nostr_profile',
+	'nostr_profile_kind0',
+	'pos-global',
+	'active-workspace',
+	'active-company',
+	'active-branch',
+	'active-staff',
+	'active-role',
+	'setup-'
+];
 
 class SessionStore {
 	/** Current auth snapshot, or null when signed out. */
@@ -92,7 +116,7 @@ class SessionStore {
 	};
 
 	/**
-	 * Generate a brand-new Nostr keypair (the bdgo-os “Create account” flow).
+	 * Generate a brand-new Nostr keypair (the bdgo-os "Create account" flow).
 	 * Returns the nsec/npub so the UI can present a backup step before signing
 	 * the user in. Does NOT log in until `loginWithNsec(nsec)` is called.
 	 */
@@ -127,12 +151,67 @@ class SessionStore {
 		return snap;
 	};
 
-	logout = () => {
+	/**
+	 * Full logout — clears all app data from every storage layer:
+	 *
+	 *  1. In-memory auth snapshot
+	 *  2. localStorage — all BNOS/auth keys (prefix-wiped)
+	 *  3. sessionStorage — cleared entirely
+	 *  4. IndexedDB (idb-keyval) — all GLO collections, publish queue, etc.
+	 *  5. Cache API (window.caches) — any cached responses
+	 *
+	 * This mirrors the bdgo-os-nuxt `clearPersistedClientData` flow and ensures
+	 * a fresh login starts with zero stale state. The caller is still
+	 * responsible for resetting any in-memory stores they hold references to
+	 * (e.g. `tenant.reset()`, `relays.reset()`, `glo` collections) before or
+	 * after calling this — though the IndexedDB wipe means the GLO store will
+	 * re-hydrate empty on next load.
+	 */
+	logout = async () => {
 		this.snapshot = null;
-		if (browser) {
-			localStorage.removeItem(BNOS_AUTH_STORAGE_KEYS.PUBKEY);
-			localStorage.removeItem(BNOS_AUTH_STORAGE_KEYS.PRIVKEY);
-			localStorage.removeItem(BNOS_AUTH_STORAGE_KEYS.LOGIN_METHOD);
+		this.hydrated = false;
+
+		if (!browser) return;
+
+		// 1. localStorage — wipe all known app keys by prefix
+		try {
+			const keysToRemove: string[] = [];
+			for (let i = localStorage.length - 1; i >= 0; i--) {
+				const key = localStorage.key(i);
+				if (!key) continue;
+				if (APP_STORAGE_PREFIXES.some((prefix) => key.startsWith(prefix))) {
+					keysToRemove.push(key);
+				}
+			}
+			for (const key of keysToRemove) {
+				localStorage.removeItem(key);
+			}
+		} catch (e) {
+			console.error('[session] Failed to clear localStorage on logout', e);
+		}
+
+		// 2. sessionStorage — clear entirely
+		try {
+			sessionStorage.clear();
+		} catch (e) {
+			console.error('[session] Failed to clear sessionStorage on logout', e);
+		}
+
+		// 3. IndexedDB (idb-keyval) — wipe all GLO collections + publish queue
+		try {
+			await idbClear();
+		} catch (e) {
+			console.error('[session] Failed to clear IndexedDB on logout', e);
+		}
+
+		// 4. Cache API — delete any cached responses
+		if ('caches' in window) {
+			try {
+				const cacheNames = await window.caches.keys();
+				await Promise.all(cacheNames.map((name) => window.caches.delete(name)));
+			} catch (e) {
+				console.error('[session] Failed to clear caches on logout', e);
+			}
 		}
 	};
 
