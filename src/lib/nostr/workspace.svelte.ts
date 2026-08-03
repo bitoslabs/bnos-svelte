@@ -3,6 +3,7 @@ import { relays } from './relay.svelte';
 import { session } from './session.svelte';
 import { glo } from './store.svelte';
 import { tenant } from './tenant.svelte';
+import { hydrateOrganizationSettingsFromWorkspace } from './organization-settings';
 
 const WORKSPACE_TYPES = ['organization', 'location'] as const;
 
@@ -42,6 +43,10 @@ export function restoreTenantFromWorkspace() {
 	}
 
 	tenant.completeSetup();
+	hydrateOrganizationSettingsFromWorkspace({
+		activeCompanyId: org.id,
+		activeBranchId: locations[0]?.id ?? tenant.state.locationId
+	});
 	return true;
 }
 
@@ -66,10 +71,10 @@ export async function resolveWorkspace(options: { allowRelaySync?: boolean } = {
 	try {
 		await warmRelays();
 		await sleep(400);
-		// Bootstrap only needs the active workspace + one usable branch.
-		// A later background sync can fetch the full collections.
-		await glo.sync('organization', 1);
-		await glo.sync('location', 1);
+		// Bootstrap needs the full workspace collections so a fresh device can
+		// rebuild the complete company + branch list from relay data.
+		await glo.sync('organization');
+		await glo.sync('location');
 	} catch {
 		// Local-first fallback: treat sync failure as "not found yet".
 	}

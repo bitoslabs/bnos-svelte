@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import SettingsNav from '$lib/components/SettingsNav.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -56,6 +57,9 @@
 		title="Settings"
 		description="Organization overview & Nostr identity"
 	/>
+
+	<!-- Mobile: in-page navigation list (desktop uses the sticky sidebar) -->
+	<SettingsNav class="lg:hidden" />
 
 	<!-- Organization (read-only — owned by Workspace) -->
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">

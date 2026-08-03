@@ -11,6 +11,7 @@
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { tenant, type BusinessModel, type BusinessType } from '$nostr/tenant.svelte';
 	import {
+		hydrateOrganizationSettingsFromWorkspace,
 		readOrganizationSettings,
 		writeOrganizationSettings,
 		upsertOrganizationSettingsFromTenant,
@@ -86,7 +87,12 @@
 	function loadSettings() {
 		if (!browser) return;
 		try {
-			const s = readOrganizationSettings();
+			const s =
+				readOrganizationSettings() ??
+				hydrateOrganizationSettingsFromWorkspace({
+					activeCompanyId: tenant.state.organizationId,
+					activeBranchId: tenant.state.locationId
+				});
 			if (s) {
 				companies = s.companies ?? [];
 				branches = s.branches ?? [];
@@ -321,6 +327,7 @@
 
 	async function handleSaveBranch() {
 		if (!branchForm.name.trim()) return;
+		let savedBranchId: string | null = null;
 
 		if (editingBranchId) {
 			const idx = branches.findIndex((b) => b.id === editingBranchId);
@@ -333,6 +340,7 @@
 					email: branchForm.email,
 					status: branchForm.status
 				};
+				savedBranchId = branches[idx].id;
 			}
 			toast.success('Branch updated');
 		} else {
@@ -341,10 +349,11 @@
 				toast.error('Branch code already used in this company');
 				return;
 			}
+			savedBranchId = `${branchFormCompanyId}-${code}-${Date.now()}`;
 			branches = [
 				...branches,
 				{
-					id: `${branchFormCompanyId}-${code}-${Date.now()}`,
+					id: savedBranchId,
 					code,
 					storeId: branchFormCompanyId,
 					name: branchForm.name,
@@ -357,8 +366,17 @@
 			toast.success('Branch created');
 		}
 
+		if (savedBranchId && branchFormCompanyId === activeCompanyId) {
+			if (!activeBranchId || activeBranchId === savedBranchId || editingBranchId === activeBranchId) {
+				activeBranchId = savedBranchId;
+			}
+			switchCompanyId = activeCompanyId;
+			switchBranchId = activeBranchId;
+		}
+
 		branchModalOpen = false;
 		await persist();
+		syncTenant();
 	}
 
 	// Auto-generate branch code from name for new branches

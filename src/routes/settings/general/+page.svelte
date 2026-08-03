@@ -1,14 +1,21 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import SettingsSection from '$lib/components/ui/SettingsSection.svelte';
+	import SettingRow from '$lib/components/ui/SettingRow.svelte';
+	import SaveBar from '$lib/components/ui/SaveBar.svelte';
+	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { browser } from '$app/environment';
-	import { loadGeneralSettings, saveGeneralSettings } from '$lib/settings/local';
+	import {
+		loadGeneralSettings,
+		saveGeneralSettings,
+		type GeneralSettings
+	} from '$lib/settings/local';
 
 	// Business configuration (currency / tax) is owned by the Workspace page —
 	// it is org-level, not a device preference. It is shown read-only here and
@@ -26,6 +33,9 @@
 	let confirmClear = $state(true);
 	let compactMode = $state(false);
 
+	// Snapshot of the last persisted state — used to detect unsaved changes.
+	let saved = $state<GeneralSettings | null>(null);
+
 	onMount(() => {
 		if (!browser) return;
 		const s = loadGeneralSettings();
@@ -36,11 +46,11 @@
 		autoPrint = s.autoPrint;
 		confirmClear = s.confirmClear;
 		compactMode = s.compactMode;
+		saved = { ...s };
 	});
 
-	function save() {
-		if (!browser) return;
-		saveGeneralSettings({
+	function snapshot(): GeneralSettings {
+		return {
 			language,
 			defaultPayment,
 			playSound,
@@ -48,8 +58,28 @@
 			autoPrint,
 			confirmClear,
 			compactMode
-		});
+		};
+	}
+
+	const dirty = $derived(saved !== null && JSON.stringify(snapshot()) !== JSON.stringify(saved));
+
+	function save() {
+		if (!browser) return;
+		const s = snapshot();
+		saveGeneralSettings(s);
+		saved = s;
 		toast.success('Preferences saved');
+	}
+
+	function discard() {
+		if (!saved) return;
+		language = saved.language;
+		defaultPayment = saved.defaultPayment;
+		playSound = saved.playSound;
+		paymentSound = saved.paymentSound;
+		autoPrint = saved.autoPrint;
+		confirmClear = saved.confirmClear;
+		compactMode = saved.compactMode;
 	}
 
 	function resetAll() {
@@ -63,7 +93,16 @@
 		autoPrint = false;
 		confirmClear = true;
 		compactMode = false;
+		saved = snapshot();
 		toast.info('Preferences reset');
+	}
+
+	// Warn before closing/refreshing the tab while there are unsaved edits.
+	function guardUnload(e: BeforeUnloadEvent) {
+		if (dirty) {
+			e.preventDefault();
+			e.returnValue = '';
+		}
 	}
 
 	const paymentOptions = [
@@ -82,6 +121,8 @@
 
 <svelte:head><title>General · Settings</title></svelte:head>
 
+<svelte:window onbeforeunload={guardUnload} />
+
 <div class="space-y-5">
 	<PageHeader
 		icon="lucide:sliders-horizontal"
@@ -90,14 +131,11 @@
 	/>
 
 	<!-- Business configuration (read-only — owned by Workspace) -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
-		<div class="flex items-center gap-2 px-5 py-3">
-			<Icon name="lucide:building-2" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Business configuration</h2>
-			<span class="ml-auto text-[10px] font-medium text-[var(--ui-text-dimmed)]"
-				>Managed in Workspace</span
-			>
-		</div>
+	<SettingsSection
+		icon="lucide:building-2"
+		title="Business configuration"
+		meta="Managed in Workspace"
+	>
 		<div class="px-5 py-4">
 			<p class="mb-3 text-[11px] text-[var(--ui-text-dimmed)]">
 				Currency and tax apply to the whole organization and are configured per company in the
@@ -146,14 +184,10 @@
 				</Button>
 			</div>
 		</div>
-	</section>
+	</SettingsSection>
 
 	<!-- Language -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
-		<div class="flex items-center gap-2 px-5 py-3">
-			<Icon name="lucide:globe" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Language</h2>
-		</div>
+	<SettingsSection icon="lucide:globe" title="Language">
 		<div class="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-start">
 			<div class="shrink-0 sm:w-44">
 				<label class="text-[13px] font-semibold">Language</label>
@@ -170,14 +204,10 @@
 				class="sm:w-56"
 			/>
 		</div>
-	</section>
+	</SettingsSection>
 
 	<!-- Payment & Checkout -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
-		<div class="flex items-center gap-2 px-5 py-3">
-			<Icon name="lucide:credit-card" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Payment & checkout</h2>
-		</div>
+	<SettingsSection icon="lucide:credit-card" title="Payment & checkout">
 		<div class="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-start">
 			<div class="shrink-0 sm:w-44">
 				<label class="text-[13px] font-semibold">Default payment</label>
@@ -198,63 +228,32 @@
 				{/each}
 			</div>
 		</div>
-		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div>
-				<div class="text-[13px] font-semibold">Sound effects</div>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">UI click sounds</p>
-			</div>
+
+		<SettingRow title="Sound effects" description="UI click sounds">
 			<Switch bind:checked={playSound} />
-		</div>
-		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div>
-				<div class="text-[13px] font-semibold">Payment sound</div>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">Chime on successful payment</p>
-			</div>
+		</SettingRow>
+		<SettingRow title="Payment sound" description="Chime on successful payment">
 			<Switch bind:checked={paymentSound} />
-		</div>
-		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div>
-				<div class="text-[13px] font-semibold">Auto-print receipt</div>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">Print automatically after payment</p>
-			</div>
+		</SettingRow>
+		<SettingRow title="Auto-print receipt" description="Print automatically after payment">
 			<Switch bind:checked={autoPrint} />
-		</div>
-		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div>
-				<div class="text-[13px] font-semibold">Confirm before clearing cart</div>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">Show dialog to prevent accidents</p>
-			</div>
+		</SettingRow>
+		<SettingRow title="Confirm before clearing cart" description="Show dialog to prevent accidents">
 			<Switch bind:checked={confirmClear} />
-		</div>
-		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div>
-				<div class="text-[13px] font-semibold">Compact mode</div>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">Denser layout, more items visible</p>
-			</div>
+		</SettingRow>
+		<SettingRow title="Compact mode" description="Denser layout, more items visible">
 			<Switch bind:checked={compactMode} />
-		</div>
-	</section>
+		</SettingRow>
+	</SettingsSection>
 
 	<!-- Danger Zone -->
-	<section class="surface-card danger-surface divide-y divide-[var(--ui-border-muted)]">
-		<div class="flex items-center gap-2 px-5 py-3">
-			<Icon name="lucide:triangle-alert" class="size-4 text-[var(--tone-error-text)]" />
-			<h2 class="font-display text-[14px] font-semibold text-[var(--tone-error-text)]">
-				Danger zone
-			</h2>
-		</div>
-		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div>
-				<div class="text-[13px] font-semibold">Reset preferences</div>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">Restore POS preferences to defaults</p>
-			</div>
-			<Button color="error" variant="subtle" size="sm" icon="lucide:rotate-ccw" onclick={resetAll}
-				>Reset</Button
-			>
-		</div>
-	</section>
+	<SettingsSection icon="lucide:triangle-alert" title="Danger zone" danger>
+		<SettingRow title="Reset preferences" description="Restore POS preferences to defaults">
+			<Button color="error" variant="subtle" size="sm" icon="lucide:rotate-ccw" onclick={resetAll}>
+				Reset
+			</Button>
+		</SettingRow>
+	</SettingsSection>
 
-	<div class="flex justify-end">
-		<Button color="primary" icon="lucide:check" onclick={save}>Save changes</Button>
-	</div>
+	<SaveBar visible={dirty} onsave={save} ondiscard={discard} />
 </div>
