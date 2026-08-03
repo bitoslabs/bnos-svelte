@@ -13,6 +13,7 @@ export interface CompanySettings {
 	currency: string;
 	enableTax: boolean;
 	taxRate: number;
+	taxIncluded: boolean;
 }
 
 export interface BranchSettings {
@@ -72,7 +73,8 @@ export async function syncOrganizationSettingsToWorkspace(snapshot?: Organizatio
 					'org.bitos.bnos': {
 						businessModel: company.businessModel,
 						businessType: company.businessType,
-						taxRate: company.enableTax ? company.taxRate : 0
+						taxRate: company.enableTax ? company.taxRate : 0,
+						taxIncluded: company.taxIncluded
 					}
 				}
 			}
@@ -124,7 +126,8 @@ export function upsertOrganizationSettingsFromTenant(tenant: TenantContext) {
 		businessType: tenant.businessType,
 		currency: tenant.currency,
 		enableTax: tenant.defaultTaxRate > 0,
-		taxRate: tenant.defaultTaxRate
+		taxRate: tenant.defaultTaxRate,
+		taxIncluded: tenant.taxIncludedInPrice
 	};
 
 	const companies = [company, ...current.companies.filter((item) => item.id !== company.id)];

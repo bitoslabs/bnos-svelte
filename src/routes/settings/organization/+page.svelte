@@ -20,6 +20,7 @@
 	} from '$nostr/organization-settings';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { browser } from '$app/environment';
+	import { currencies as currencyOptions, businessModels as bizModels, businessTypes as bizTypes } from '$lib/business';
 
 	// ── State ──
 	let companies = $state<Company[]>([]);
@@ -42,7 +43,8 @@
 		businessType: 'retail' as BusinessType,
 		currency: 'USD',
 		enableTax: true,
-		taxRate: 8
+		taxRate: 8,
+		taxIncluded: false
 	});
 
 	// ── Branch Modal State ──
@@ -59,27 +61,9 @@
 		status: 'active' as 'active' | 'inactive'
 	});
 
-	// ── Constants ──
-	const businessModels: { value: BusinessModel; label: string }[] = [
-		{ value: 'single', label: 'Single Store' },
-		{ value: 'multi_branch', label: 'Multi-Branch' },
-		{ value: 'chain', label: 'Chain' },
-		{ value: 'franchise_hq', label: 'Franchise HQ' },
-		{ value: 'franchise_branch', label: 'Franchise Branch' }
-	];
-
-	const businessTypes: { value: BusinessType; label: string }[] = [
-		{ value: 'retail', label: 'Retail' },
-		{ value: 'restaurant', label: 'Restaurant' },
-		{ value: 'cafe', label: 'Café' },
-		{ value: 'service', label: 'Service' },
-		{ value: 'wholesale', label: 'Wholesale' },
-		{ value: 'other', label: 'Other' }
-	];
-
-	const currencyOptions = [
-		'USD', 'EUR', 'GBP', 'JPY', 'THB', 'LAK', 'VND', 'CNY', 'BTC', 'SATS'
-	].map((c) => ({ value: c, label: c }));
+	// ── Constants ── (business options sourced from $lib/business — single source of truth)
+	const businessModels = bizModels.map((m) => ({ value: m.value, label: m.label }));
+	const businessTypes = bizTypes.map((t) => ({ value: t.value, label: t.label }));
 
 	// ── Derived ──
 	const activeCompanyName = $derived(
@@ -121,7 +105,8 @@
 						businessType: tenant.state.businessType,
 						currency: tenant.state.currency,
 						enableTax: tenant.state.defaultTaxRate > 0,
-						taxRate: tenant.state.defaultTaxRate
+						taxRate: tenant.state.defaultTaxRate,
+						taxIncluded: tenant.state.taxIncludedInPrice
 					}];
 				}
 				if (tenant.state.locationId && tenant.state.organizationId) {
@@ -199,6 +184,7 @@
 			businessType: company?.businessType ?? 'retail',
 			currency: company?.currency ?? 'USD',
 			defaultTaxRate: company?.enableTax ? company.taxRate : 0,
+			taxIncludedInPrice: company?.taxIncluded ?? false,
 			locationId: branch?.id ?? null,
 			locationName: branch?.name ?? ''
 		});
@@ -211,6 +197,7 @@
 			businessType: company?.businessType ?? 'retail',
 			currency: company?.currency ?? 'USD',
 			defaultTaxRate: company?.enableTax ? company.taxRate : 0,
+			taxIncludedInPrice: company?.taxIncluded ?? false,
 			locationId: branch?.id ?? null,
 			locationName: branch?.name ?? ''
 		});
@@ -227,7 +214,8 @@
 				businessType: company.businessType,
 				currency: company.currency,
 				enableTax: company.enableTax,
-				taxRate: company.taxRate
+				taxRate: company.taxRate,
+				taxIncluded: company.taxIncluded
 			};
 		} else {
 			editingCompanyCode = null;
@@ -238,7 +226,8 @@
 				businessType: 'retail',
 				currency: 'USD',
 				enableTax: true,
-				taxRate: 8
+				taxRate: 8,
+				taxIncluded: false
 			};
 		}
 		companyModalOpen = true;
@@ -708,6 +697,14 @@
 						/>
 						<span class="text-[13px] font-bold text-[var(--ui-text-dimmed)]">%</span>
 					</div>
+					<label
+						class="flex items-center gap-2"
+						class:!opacity-50={!companyForm.enableTax}
+						class:!pointer-events-none={!companyForm.enableTax}
+					>
+						<Switch bind:checked={companyForm.taxIncluded} />
+						<span class="text-[12px] text-[var(--ui-text-muted)]">Tax included in shelf price</span>
+					</label>
 				</div>
 			</div>
 		</div>

@@ -4,8 +4,6 @@
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import Input from '$lib/components/ui/Input.svelte';
-	import Select from '$lib/components/ui/Select.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { session } from '$nostr/session.svelte';
@@ -13,24 +11,24 @@
 	import { preferences } from '$lib/theme/preferences.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { truncateNpub, titleCase } from '$lib/utils/format';
-	import { businessModels, businessTypes, currencies } from '$lib/business';
-	import { permissions } from '$lib/permissions.svelte';
 	import Menu from '$lib/components/ui/Menu.svelte';
 	import MenuItem from '$lib/components/ui/MenuItem.svelte';
 	import MenuDivider from '$lib/components/ui/MenuDivider.svelte';
 
 	onMount(() => preferences.load());
 
-	const canWriteSettings = $derived(permissions.can('settings', 'write') || tenant.state.activeRole === null);
+	// Organization fields (name / code / currency / business model / type) are
+	// owned by the Workspace page to avoid duplicate editors fighting over the
+	// same `tenant` fields. They are shown read-only here.
+	const orgRows = $derived([
+		{ label: 'Name', value: tenant.state.organizationName || '—', icon: 'lucide:building-2' },
+		{ label: 'Code', value: tenant.state.organizationCode || '—', icon: 'lucide:hash' },
+		{ label: 'Branch', value: tenant.state.locationName || '—', icon: 'lucide:map-pin' },
+		{ label: 'Currency', value: tenant.state.currency || '—', icon: 'lucide:coins' },
+		{ label: 'Business model', value: titleCase(tenant.state.businessModel.replace(/_/g, ' ')) || '—', icon: 'lucide:layers' },
+		{ label: 'Business type', value: titleCase(tenant.state.businessType) || '—', icon: 'lucide:tag' }
+	]);
 
-	function saveOrg() {
-		if (!canWriteSettings) {
-			toast.error('Permission denied: write settings');
-			return;
-		}
-		tenant.persist();
-		toast.success('Organization saved');
-	}
 	async function copyNpub() {
 		try {
 			await navigator.clipboard.writeText(session.npub ?? '');
@@ -41,83 +39,44 @@
 	}
 </script>
 
-<svelte:head><title>BNOS · Settings · Organization</title></svelte:head>
+<svelte:head><title>BNOS · Settings</title></svelte:head>
 
 <div class="space-y-5">
-	<!-- Organization -->
-	<section class="surface-card p-5">
-		<div class="mb-4 flex items-center gap-3">
-			<Icon name="lucide:building-2" class="size-5 text-primary-500" />
-			<div>
-				<h2 class="font-display text-[15px] font-semibold tracking-tight">Organization</h2>
-				<p class="text-[12px] text-[var(--ui-text-muted)]">
-					GLO <code>organization</code> · kind 30078
-				</p>
+	<div>
+		<h1 class="font-display text-xl font-bold tracking-tight">Settings</h1>
+		<p class="text-[12.5px] text-[var(--ui-text-muted)]">Organization overview & Nostr identity</p>
+	</div>
+
+	<!-- Organization (read-only — owned by Workspace) -->
+	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+		<div class="flex items-center gap-2 px-5 py-3">
+			<Icon name="lucide:building-2" class="size-4 text-primary-500" />
+			<h2 class="font-display text-[14px] font-semibold">Organization</h2>
+			<span class="ml-auto text-[10px] font-medium text-[var(--ui-text-dimmed)]">GLO · kind 30078</span>
+		</div>
+		<div class="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-2">
+			{#each orgRows as row (row.label)}
+				<div class="flex items-center gap-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3.5 py-2.5">
+					<Icon name={row.icon} class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
+					<div class="min-w-0">
+						<p class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">{row.label}</p>
+						<p class="truncate text-[13px] font-bold capitalize">{row.value}</p>
+					</div>
+				</div>
+			{/each}
+		</div>
+		<div class="flex flex-wrap items-center gap-2 px-5 py-3">
+			{#if tenant.restaurantEnabled}
+				<Badge color="info"><Icon name="lucide:utensils" class="mr-1 size-3" />Restaurant module on</Badge>
+			{/if}
+			{#if tenant.isMultiLocation}
+				<Badge color="neutral"><Icon name="lucide:git-branch" class="mr-1 size-3" />Multi-location</Badge>
+			{/if}
+			<div class="ml-auto">
+				<Button href={resolve('/settings/organization')} variant="subtle" size="sm" icon="lucide:arrow-up-right">
+					Manage in Workspace
+				</Button>
 			</div>
-		</div>
-		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</span
-				><Input
-					bind:value={tenant.state.organizationName}
-					icon="lucide:building-2"
-					class="w-full"
-				/></label
-			>
-			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Code</span
-				><Input
-					bind:value={tenant.state.organizationCode}
-					icon="lucide:hash"
-					class="w-full"
-				/></label
-			>
-			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Branch</span
-				><Input
-					bind:value={tenant.state.locationName}
-					icon="lucide:map-pin"
-					class="w-full"
-				/></label
-			>
-			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Currency</span
-				><Select bind:value={tenant.state.currency} options={currencies} class="w-full" /></label
-			>
-			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Business model</span
-				><Select
-					bind:value={tenant.state.businessModel}
-					options={businessModels.map((m) => ({ value: m.value, label: m.label }))}
-					class="w-full capitalize"
-				/></label
-			>
-			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Business type</span
-				><Select
-					bind:value={tenant.state.businessType}
-					options={businessTypes.map((t) => ({ value: t.value, label: t.label }))}
-					class="w-full capitalize"
-				/></label
-			>
-		</div>
-		<div
-			class="mt-3 flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-4 py-2.5 text-[12.5px]"
-		>
-			<Icon name="lucide:info" class="size-4 text-[var(--ui-text-dimmed)]" />
-			{titleCase(tenant.state.businessModel.replace(/_/g, ' '))} · {titleCase(
-				tenant.state.businessType
-			)}
-			{#if tenant.restaurantEnabled}<span class="text-primary-600 dark:text-primary-400"
-					>· Restaurant module on</span
-				>{/if}
-		</div>
-		<div class="mt-4 flex justify-end">
-			<Button color="primary" icon="lucide:save" disabled={!canWriteSettings} onclick={saveOrg}>Save</Button>
 		</div>
 	</section>
 
@@ -142,8 +101,7 @@
 				>
 				<MenuDivider />
 				<MenuItem tone="danger" icon="lucide:log-out" onclick={async () => { await session.logout(); tenant.reset(); glo.clearAll(); await goto(resolve('/login'), { replaceState: true }); }}
-					>Sign out</MenuItem
-				>
+					>Sign out</MenuItem>
 			</Menu>
 		</div>
 		<div

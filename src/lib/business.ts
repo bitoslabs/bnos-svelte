@@ -46,7 +46,8 @@ export const currencies = [
 	{ value: 'JPY', label: 'JPY · Japanese Yen' },
 	{ value: 'CNY', label: 'CNY · Chinese Yuan' },
 	{ value: 'VND', label: 'VND · Vietnamese Dong' },
-	{ value: 'BTC', label: 'BTC · Bitcoin (sats)' }
+	{ value: 'BTC', label: 'BTC · Bitcoin' },
+	{ value: 'SATS', label: 'SATS · Satoshis' }
 ];
 
 /** Sample catalog seed per business type (used by the catalog setup step). */
