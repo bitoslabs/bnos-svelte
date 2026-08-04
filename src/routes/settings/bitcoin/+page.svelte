@@ -7,6 +7,7 @@
 	import Select from '$lib/components/ui/Select.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 	import { browser } from '$app/environment';
 
 	const KEY = 'bnos-os:settings-bitcoin';
@@ -246,9 +247,18 @@
 		toast.success('Bitcoin settings saved');
 	}
 
-	function resetAll() {
+	async function resetAll() {
 		if (!browser) return;
-		if (!confirm('Reset all Bitcoin settings to defaults?')) return;
+		if (
+			!(await confirm({
+				title: 'Reset Bitcoin settings?',
+				message: 'All Bitcoin settings (node, rates, network) will return to defaults.',
+				tone: 'danger',
+				icon: 'lucide:rotate-ccw',
+				confirmText: 'Reset all'
+			}))
+		)
+			return;
 		localStorage.removeItem(KEY);
 		rateSource = 'auto';
 		manualRate = 0;

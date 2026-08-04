@@ -10,6 +10,7 @@
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 	import { browser } from '$app/environment';
 	import {
 		loadGeneralSettings,
@@ -84,9 +85,18 @@
 		compactMode = saved.compactMode;
 	}
 
-	function resetAll() {
+	async function resetAll() {
 		if (!browser) return;
-		if (!confirm('Reset all POS preferences to defaults?')) return;
+		if (
+			!(await confirm({
+				title: 'Reset POS preferences?',
+				message: 'All general POS preferences will return to their defaults.',
+				tone: 'danger',
+				icon: 'lucide:rotate-ccw',
+				confirmText: 'Reset all'
+			}))
+		)
+			return;
 		localStorage.removeItem('bnos-os:settings-general');
 		language = 'en';
 		defaultPayment = 'cash';

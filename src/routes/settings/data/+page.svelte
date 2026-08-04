@@ -9,6 +9,7 @@
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 
 	const GLO_PREFIX = 'bnos-os:glo:';
 
@@ -108,7 +109,17 @@
 
 	async function wipeData() {
 		if (!browser) return;
-		if (!confirm('Wipe all local data and sign out? This cannot be undone.')) return;
+		if (
+			!(await confirm({
+				title: 'Wipe all local data?',
+				message:
+					'Every record on this device will be erased and you will be signed out. This cannot be undone.',
+				tone: 'danger',
+				icon: 'lucide:database-zap',
+				confirmText: 'Wipe & sign out'
+			}))
+		)
+			return;
 		for (let i = localStorage.length - 1; i >= 0; i--) {
 			const k = localStorage.key(i);
 			if (k && k.startsWith('bnos-os:')) localStorage.removeItem(k);

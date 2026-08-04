@@ -6,6 +6,8 @@
 		open = $bindable(false),
 		align = 'center',
 		side = 'top',
+		triggerClass = 'inline-grid size-9.5 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] focus-visible:outline-none',
+		triggerActiveClass = '',
 		trigger,
 		content,
 		class: cls
@@ -13,6 +15,12 @@
 		open?: boolean;
 		align?: 'start' | 'center' | 'end';
 		side?: 'top' | 'right' | 'bottom' | 'left';
+		/** Style the trigger button. Defaults to a square icon button; pass a pill
+		 *  class to render e.g. a status chip instead. */
+		triggerClass?: string;
+		/** Extra classes applied only while open (e.g. a focus ring). Falls back to
+		 *  the standard accent highlight when omitted. */
+		triggerActiveClass?: string;
 		trigger: Snippet;
 		content: Snippet;
 		class?: string;
@@ -53,9 +61,10 @@
 	<button
 		type="button"
 		aria-expanded={open}
-		class="inline-grid size-9.5 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] focus-visible:outline-none {open
-			? 'bg-[var(--ui-bg-accented)] text-[var(--ui-text)]'
-			: ''}"
+		class={cn(
+			triggerClass,
+			open && (triggerActiveClass || 'bg-[var(--ui-bg-accented)] text-[var(--ui-text)]')
+		)}
 		onclick={() => (open = !open)}
 	>
 		{@render trigger()}

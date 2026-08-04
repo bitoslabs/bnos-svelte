@@ -12,6 +12,7 @@ import type { Order } from '$lib/domain';
 import { loadReceiptSettings } from '$lib/settings/local';
 import { formatMoney } from '$lib/utils/format';
 import { sourceLabel } from '$lib/domain/order-sources';
+import { toast } from '$lib/stores/toast.svelte';
 
 export interface PrintOrderOptions {
 	currency?: string;
@@ -47,7 +48,7 @@ function orderNumber(o: Order): string {
 function openWindow(width = 420) {
 	const w = window.open('', '_blank', `width=${width},height=720`);
 	if (!w) {
-		alert('Please allow pop-ups to print.');
+		toast.warning('Pop-ups blocked', 'Allow pop-ups for this site to print receipts.');
 		return null;
 	}
 	return w;
@@ -80,7 +81,11 @@ export function printReceiptForOrder(order: { data: Order }, opts: PrintOrderOpt
 		.map(
 			(l) =>
 				`<tr><td>${lineQty(l)}× ${esc(lineName(l))}</td><td class="right">${formatMoney(
-					(lineUnit(l) + ((l.modifiers ?? []).reduce((a: number, m: any) => a + (m.priceAdjustment ?? 0), 0)) as number) * lineQty(l),
+					((lineUnit(l) +
+						(l.modifiers ?? []).reduce(
+							(a: number, m: any) => a + (m.priceAdjustment ?? 0),
+							0
+						)) as number) * lineQty(l),
 					currency
 				)}</td></tr>`
 		)
@@ -98,7 +103,9 @@ export function printReceiptForOrder(order: { data: Order }, opts: PrintOrderOpt
 
 	const rows: string[] = [];
 	if (s.showLogo && s.logoUrl)
-		rows.push(`<div class="center"><img src="${esc(s.logoUrl)}" style="max-height:48px;object-fit:contain"/></div>`);
+		rows.push(
+			`<div class="center"><img src="${esc(s.logoUrl)}" style="max-height:48px;object-fit:contain"/></div>`
+		);
 	if (s.header) rows.push(`<div class="center muted">${esc(s.header)}</div>`);
 	if (s.showStoreName) rows.push(`<h2>${esc(s.storeName || 'Store')}</h2>`);
 	if (s.showPhone && s.phone) rows.push(`<div class="center muted">Tel: ${esc(s.phone)}</div>`);
@@ -110,21 +117,39 @@ export function printReceiptForOrder(order: { data: Order }, opts: PrintOrderOpt
 			`<table><tr><td>Date</td><td class="right">${new Date(d.occurredAt ?? Date.now()).toLocaleString()}</td></tr></table>`
 		);
 	if (s.showOrderNumber)
-		rows.push(`<table><tr><td>Order</td><td class="right">#${esc(orderNumber(d))}</td></tr></table>`);
+		rows.push(
+			`<table><tr><td>Order</td><td class="right">#${esc(orderNumber(d))}</td></tr></table>`
+		);
 	if (d.customerName)
-		rows.push(`<table><tr><td>Customer</td><td class="right">${esc(d.customerName)}</td></tr></table>`);
+		rows.push(
+			`<table><tr><td>Customer</td><td class="right">${esc(d.customerName)}</td></tr></table>`
+		);
 	if (s.showCashierName && d.cashierPubkey)
-		rows.push(`<table><tr><td>Cashier</td><td class="right">${esc(d.cashierPubkey)}</td></tr></table>`);
+		rows.push(
+			`<table><tr><td>Cashier</td><td class="right">${esc(d.cashierPubkey)}</td></tr></table>`
+		);
 	rows.push('<div class="dashed"></div>');
 	rows.push(`<table>${itemsHtml}</table>`);
 	rows.push('<div class="dashed"></div>');
 
 	const totals: string[] = [];
-	if (d.subtotal != null) totals.push(`<tr><td>Subtotal</td><td class="right">${formatMoney(d.subtotal, currency)}</td></tr>`);
-	if (d.discount) totals.push(`<tr><td>Discount</td><td class="right">-${formatMoney(d.discount, currency)}</td></tr>`);
-	if (d.taxAmount ?? d.tax) totals.push(`<tr><td>Tax</td><td class="right">${formatMoney(d.taxAmount ?? d.tax, currency)}</td></tr>`);
-	if (d.tip) totals.push(`<tr><td>Tip</td><td class="right">${formatMoney(d.tip, currency)}</td></tr>`);
-	totals.push(`<tr class="total"><td>TOTAL</td><td class="right">${formatMoney(d.total ?? 0, currency)}</td></tr>`);
+	if (d.subtotal != null)
+		totals.push(
+			`<tr><td>Subtotal</td><td class="right">${formatMoney(d.subtotal, currency)}</td></tr>`
+		);
+	if (d.discount)
+		totals.push(
+			`<tr><td>Discount</td><td class="right">-${formatMoney(d.discount, currency)}</td></tr>`
+		);
+	if (d.taxAmount ?? d.tax)
+		totals.push(
+			`<tr><td>Tax</td><td class="right">${formatMoney(d.taxAmount ?? d.tax, currency)}</td></tr>`
+		);
+	if (d.tip)
+		totals.push(`<tr><td>Tip</td><td class="right">${formatMoney(d.tip, currency)}</td></tr>`);
+	totals.push(
+		`<tr class="total"><td>TOTAL</td><td class="right">${formatMoney(d.total ?? 0, currency)}</td></tr>`
+	);
 	rows.push(`<table>${totals.join('')}</table>`);
 
 	if (paymentsHtml) {
@@ -132,7 +157,9 @@ export function printReceiptForOrder(order: { data: Order }, opts: PrintOrderOpt
 		rows.push(`<table>${paymentsHtml}</table>`);
 	}
 	if (s.showBarcode)
-		rows.push(`<div class="center" style="font-family:monospace;font-size:22px;letter-spacing:3px">||||||||</div>`);
+		rows.push(
+			`<div class="center" style="font-family:monospace;font-size:22px;letter-spacing:3px">||||||||</div>`
+		);
 	if (s.showQr && s.qrData)
 		rows.push(
 			`<div class="center" style="margin-top:6px"><img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
@@ -179,14 +206,18 @@ export function printPackingSlip(order: { data: Order }) {
 		if (ship.phone) addressLines.push(`Tel: ${esc(ship.phone)}`);
 		if (ship.address) addressLines.push(esc(ship.address));
 		if (ship.city || ship.state || ship.zipCode)
-			addressLines.push(`${[ship.city, ship.state].filter(Boolean).join(', ')} ${esc(ship.zipCode ?? '')}`);
+			addressLines.push(
+				`${[ship.city, ship.state].filter(Boolean).join(', ')} ${esc(ship.zipCode ?? '')}`
+			);
 		if (ship.country) addressLines.push(esc(ship.country));
-		if (ship.trackingNumber) addressLines.push(`<span class="pill">Tracking: ${esc(ship.trackingNumber)}</span>`);
+		if (ship.trackingNumber)
+			addressLines.push(`<span class="pill">Tracking: ${esc(ship.trackingNumber)}</span>`);
 	} else if (pickup) {
 		if (pickup.pickupName) addressLines.push(esc(pickup.pickupName));
 		if (pickup.phone) addressLines.push(`Tel: ${esc(pickup.phone)}`);
 		if (pickup.pickupLocation) addressLines.push(`Pickup at: ${esc(pickup.pickupLocation)}`);
-		if (pickup.pickupTime) addressLines.push(`Ready: ${esc(new Date(pickup.pickupTime).toLocaleString())}`);
+		if (pickup.pickupTime)
+			addressLines.push(`Ready: ${esc(new Date(pickup.pickupTime).toLocaleString())}`);
 	} else if (d.customerName) {
 		addressLines.push(esc(d.customerName));
 	}

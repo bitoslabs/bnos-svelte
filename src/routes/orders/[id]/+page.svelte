@@ -12,6 +12,7 @@
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 	import { formatMoney, relativeTime, titleCase } from '$lib/utils/format';
 	import { newRecordId } from '$lib/utils/record-id';
 	import { TYPE, statusColor, type Order, type Payment, type GloObject } from '$lib/domain';
@@ -149,6 +150,40 @@
 	const totalAmount = $derived((order?.data as any)?.total ?? 0);
 	const remainingBalance = $derived(totalAmount - paidAmount);
 
+	// Resolve structured discount / coupon / promotion for display.
+	const discountInfo = $derived.by(() => {
+		const d = order?.data as any;
+		const od = d?.orderDiscount;
+		const amount = Number(od?.amount ?? d?.discount ?? 0) || 0;
+		const type = od?.type as 'percent' | 'fixed' | 'coupon' | undefined;
+		const value = od?.value as number | undefined;
+		const couponCode = od?.couponCode as string | undefined;
+		const promotionId = od?.promotionId as string | undefined;
+		const reason = od?.reason as string | undefined;
+		let promoName = '';
+		let couponDesc = '';
+		if (promotionId) {
+			const p = glo.get(TYPE.promotion, promotionId);
+			promoName = (p?.data as any)?.name ?? '';
+		}
+		if (couponCode) {
+			const found = glo.all(TYPE.coupon).find((c) => (c.data as any).code === couponCode);
+			couponDesc = (found?.data as any)?.description ?? '';
+		}
+		const hasDiscount = amount > 0 || !!type || !!couponCode || !!promotionId;
+		return {
+			amount,
+			type,
+			value,
+			couponCode,
+			promotionId,
+			reason,
+			promoName,
+			couponDesc,
+			hasDiscount
+		};
+	});
+
 	// ── Activity log (simplified from order fields) ─────────
 	const activityLog = $derived(() => {
 		if (!order) return [];
@@ -189,14 +224,31 @@
 
 	async function cancelOrder() {
 		if (!order) return;
-		if (!confirm('Cancel this order?')) return;
+		if (
+			!(await confirm({
+				title: 'Cancel this order?',
+				message: 'The order will be marked as cancelled.',
+				tone: 'warning',
+				icon: 'lucide:ban',
+				confirmText: 'Cancel order'
+			}))
+		)
+			return;
 		await updateStatus('cancelled');
 		toast.info('Order cancelled');
 	}
 
 	async function deleteOrder() {
 		if (!order) return;
-		if (!confirm('Delete this order? This cannot be undone.')) return;
+		if (
+			!(await confirm({
+				title: 'Delete this order?',
+				message: 'This permanently removes the order record. This cannot be undone.',
+				tone: 'danger',
+				confirmText: 'Delete'
+			}))
+		)
+			return;
 		glo.remove(TYPE.order, id ?? '');
 		toast.info('Order deleted');
 		goto('/orders');
@@ -604,10 +656,20 @@
 						</div>
 						<div class="space-y-3 px-5 py-4">
 							<div>
-								<span class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase">Shipping status</span>
+								<span
+									class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+									>Shipping status</span
+								>
 								<div class="flex flex-wrap gap-1.5">
 									{#each SHIPPING_STATUSES as ss (ss.value)}
-										<button type="button" class="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium capitalize transition-all {trackStatus === ss.value ? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300' : 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}" onclick={() => (trackStatus = ss.value)}>
+										<button
+											type="button"
+											class="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium capitalize transition-all {trackStatus ===
+											ss.value
+												? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
+												: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
+											onclick={() => (trackStatus = ss.value)}
+										>
 											<Icon name={ss.icon} class="size-3.5" />
 											{ss.label}
 										</button>
@@ -616,28 +678,54 @@
 							</div>
 							<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 								<label class="block">
-									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Tracking number</span>
-									<Input bind:value={trackNumber} placeholder="e.g. DHL123456" icon="lucide:hash" class="w-full" />
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+										>Tracking number</span
+									>
+									<Input
+										bind:value={trackNumber}
+										placeholder="e.g. DHL123456"
+										icon="lucide:hash"
+										class="w-full"
+									/>
 								</label>
 								<label class="block">
-									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Provider</span>
-									<Input bind:value={trackProvider} placeholder="Courier / provider" class="w-full" />
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+										>Provider</span
+									>
+									<Input
+										bind:value={trackProvider}
+										placeholder="Courier / provider"
+										class="w-full"
+									/>
 								</label>
 								<label class="block">
-									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Est. delivery</span>
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+										>Est. delivery</span
+									>
 									<Input bind:value={trackEta} type="datetime-local" class="w-full" />
 								</label>
 								<label class="block">
-									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Driver name</span>
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+										>Driver name</span
+									>
 									<Input bind:value={trackDriver} placeholder="Driver / courier" class="w-full" />
 								</label>
 								<label class="block sm:col-span-2">
-									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Driver phone</span>
-									<Input bind:value={trackDriverPhone} type="tel" placeholder="020 xx xxx xxx" class="w-full" />
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+										>Driver phone</span
+									>
+									<Input
+										bind:value={trackDriverPhone}
+										type="tel"
+										placeholder="020 xx xxx xxx"
+										class="w-full"
+									/>
 								</label>
 							</div>
 							<div class="flex justify-end">
-								<Button size="sm" color="primary" icon="lucide:save" onclick={updateTracking}>Update tracking</Button>
+								<Button size="sm" color="primary" icon="lucide:save" onclick={updateTracking}
+									>Update tracking</Button
+								>
 							</div>
 						</div>
 					</div>
@@ -759,13 +847,60 @@
 								>{formatMoney((order.data as any).subtotal ?? 0, currency)}</span
 							>
 						</div>
-						{#if (order.data as any).discount}
+						{#if discountInfo.hasDiscount}
 							<div class="flex justify-between">
-								<span class="text-[var(--ui-text-muted)]">Discount</span><span
-									class="text-red-600 tabular-nums"
-									>−{formatMoney((order.data as any).discount ?? 0, currency)}</span
+								<span class="text-[var(--ui-text-muted)]"
+									>{discountInfo.couponCode
+										? 'Coupon'
+										: discountInfo.promoName
+											? 'Promotion'
+											: 'Discount'}</span
+								><span class="text-red-600 tabular-nums"
+									>−{formatMoney(discountInfo.amount, currency)}</span
 								>
 							</div>
+							{#if discountInfo.type || discountInfo.couponCode || discountInfo.promoName || discountInfo.reason}
+								<div class="-mt-1 flex flex-wrap items-center gap-1.5">
+									{#if discountInfo.type === 'percent' && discountInfo.value}
+										<span
+											class="inline-flex items-center gap-0.5 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400"
+										>
+											<Icon name="lucide:percent" class="size-3" />{discountInfo.value}% off
+										</span>
+									{:else if discountInfo.type === 'fixed'}
+										<span
+											class="inline-flex items-center gap-0.5 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400"
+										>
+											<Icon name="lucide:badge-percent" class="size-3" />Fixed amount
+										</span>
+									{/if}
+									{#if discountInfo.couponCode}
+										<span
+											class="inline-flex items-center gap-0.5 rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-sky-600 dark:text-sky-400"
+											title={discountInfo.couponDesc}
+										>
+											<Icon name="lucide:ticket" class="size-3" />{discountInfo.couponCode}
+										</span>
+									{/if}
+									{#if discountInfo.promoName}
+										<span
+											class="inline-flex items-center gap-0.5 rounded-md bg-primary-500/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-primary-600 dark:text-primary-400"
+										>
+											<Icon name="lucide:sparkles" class="size-3" />{discountInfo.promoName}
+										</span>
+									{/if}
+									{#if discountInfo.reason}
+										<span class="text-[10.5px] text-[var(--ui-text-dimmed)]"
+											>{discountInfo.reason}</span
+										>
+									{/if}
+								</div>
+								{#if discountInfo.couponDesc}
+									<p class="-mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">
+										{discountInfo.couponDesc}
+									</p>
+								{/if}
+							{/if}
 						{/if}
 						{#if order.data.taxAmount}
 							<div class="flex justify-between">

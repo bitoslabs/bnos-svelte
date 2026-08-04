@@ -10,6 +10,7 @@
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 
 	// ── Types ──────────────────────────────────────────────
 	type PaymentType =
@@ -238,12 +239,21 @@
 		editing = null;
 	}
 
-	function handleDelete(m: PaymentMethod) {
+	async function handleDelete(m: PaymentMethod) {
 		if (m.builtin) {
 			toast.error('Built-in methods cannot be deleted');
 			return;
 		}
-		if (!confirm(`Delete "${m.label}"? This cannot be undone.`)) return;
+		if (
+			!(await confirm({
+				title: 'Delete payment method?',
+				message: 'This cannot be undone.',
+				detail: m.label,
+				tone: 'danger',
+				confirmText: 'Delete'
+			}))
+		)
+			return;
 		methods = methods.filter((x) => x.id !== m.id);
 		persist();
 		toast.success('Payment method deleted');
@@ -257,8 +267,17 @@
 		toast.success(`${m.label} ${m.enabled ? 'enabled' : 'disabled'}`);
 	}
 
-	function handleReset() {
-		if (!confirm('Reset all payment methods to defaults? Custom methods will be lost.')) return;
+	async function handleReset() {
+		if (
+			!(await confirm({
+				title: 'Reset payment methods?',
+				message: 'All custom payment methods will be lost and defaults restored.',
+				tone: 'danger',
+				icon: 'lucide:rotate-ccw',
+				confirmText: 'Reset all'
+			}))
+		)
+			return;
 		methods = BUILTINS.map((b) => ({ ...b }));
 		persist();
 		toast.success('Payment methods reset to defaults');

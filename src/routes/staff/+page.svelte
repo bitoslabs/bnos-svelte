@@ -20,6 +20,7 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 	import { initialsFrom, truncateNpub } from '$lib/utils/format';
 	import { hashPin } from '$lib/utils/pin';
 	import {
@@ -397,8 +398,17 @@
 		}
 	}
 
-	function remove(id: string, name: string) {
-		if (!confirm(`Delete staff member "${name}"?`)) return;
+	async function remove(id: string, name: string) {
+		if (
+			!(await confirm({
+				title: 'Delete staff member?',
+				message: 'This will remove the staff record from this device.',
+				detail: name,
+				tone: 'danger',
+				confirmText: 'Delete'
+			}))
+		)
+			return;
 		glo.remove(TYPE.staff, id);
 		removeStaffKey(id);
 		toast.info('Staff removed');

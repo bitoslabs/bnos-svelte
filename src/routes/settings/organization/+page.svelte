@@ -21,6 +21,7 @@
 		type OrganizationSettingsSnapshot as OrgSettings
 	} from '$nostr/organization-settings';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 	import { browser } from '$app/environment';
 	import {
 		currencies as currencyOptions,
@@ -279,7 +280,16 @@
 
 	async function handleDeleteCompany(id: string) {
 		if (!browser) return;
-		if (!confirm(`Delete company? This will also remove all associated branches.`)) return;
+		if (
+			!(await confirm({
+				title: 'Delete company?',
+				message: 'This will also remove all associated branches.',
+				detail: id,
+				tone: 'danger',
+				confirmText: 'Delete'
+			}))
+		)
+			return;
 		companies = companies.filter((c) => c.id !== id);
 		branches = branches.filter((b) => b.storeId !== id);
 		if (activeCompanyId === id) {
@@ -367,7 +377,11 @@
 		}
 
 		if (savedBranchId && branchFormCompanyId === activeCompanyId) {
-			if (!activeBranchId || activeBranchId === savedBranchId || editingBranchId === activeBranchId) {
+			if (
+				!activeBranchId ||
+				activeBranchId === savedBranchId ||
+				editingBranchId === activeBranchId
+			) {
 				activeBranchId = savedBranchId;
 			}
 			switchCompanyId = activeCompanyId;
@@ -388,7 +402,16 @@
 
 	async function handleDeleteBranch(id: string, label = id) {
 		if (!browser) return;
-		if (!confirm(`Delete branch "${label}"?`)) return;
+		if (
+			!(await confirm({
+				title: 'Delete branch?',
+				message: 'This branch and its settings will be removed.',
+				detail: label,
+				tone: 'danger',
+				confirmText: 'Delete'
+			}))
+		)
+			return;
 		branches = branches.filter((b) => b.id !== id);
 		const removed = branches.find((b) => b.id === id);
 		if (removed && activeBranchId === removed.id) {
@@ -399,9 +422,18 @@
 		toast.success('Branch deleted');
 	}
 
-	function resetAll() {
+	async function resetAll() {
 		if (!browser) return;
-		if (!confirm('Reset organization settings? This removes all companies and branches.')) return;
+		if (
+			!(await confirm({
+				title: 'Reset organization settings?',
+				message: 'This removes all companies and branches and restores defaults.',
+				tone: 'danger',
+				icon: 'lucide:rotate-ccw',
+				confirmText: 'Reset all'
+			}))
+		)
+			return;
 		writeOrganizationSettings({
 			companies: [],
 			branches: [],

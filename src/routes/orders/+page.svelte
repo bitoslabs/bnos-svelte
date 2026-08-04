@@ -941,6 +941,16 @@
 													>
 														Payment
 													</h4>
+													{#if (data as any)?.discount || (data as any)?.orderDiscount}
+														{@const od = (data as any).orderDiscount}
+														<div class="mb-1.5 flex items-center justify-between rounded-md bg-emerald-500/5 px-2 py-1 text-[11px]">
+															<span class="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+																<Icon name="lucide:ticket" class="size-3" />
+																{od?.couponCode ? `Coupon ${od.couponCode}` : od?.promotionId ? 'Promotion' : 'Discount'}
+															</span>
+															<span class="font-semibold text-red-600 tabular-nums">−{formatMoney(od?.amount ?? (data as any).discount ?? 0, currency)}</span>
+														</div>
+													{/if}
 													<div
 														class="flex items-center justify-between rounded-lg border border-[var(--ui-border-muted)] p-2.5 text-[12px]"
 													>

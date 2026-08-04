@@ -63,6 +63,13 @@ export interface CompletedSale {
 	method: PaymentMethod;
 	change: number;
 	completedAt: string;
+	/** Customer name captured at checkout, if any. */
+	customerName?: string;
+	/** Cart-level discount applied (percent/fixed), if any. */
+	discount?: { type: 'percent' | 'fixed'; value: number };
+	/** Promotion/coupon snapshot captured at checkout, if any. Lets the receipt
+	 *  show the coupon/promo name even after the cart is cleared. */
+	promotion?: { name: string; type: string; value: number };
 }
 
 function lineKey(
@@ -426,6 +433,29 @@ class PosCart {
 			}
 		}
 
+		// Snapshot the applied promotion/coupon so the receipt can show its name
+		// even after the cart is cleared below.
+		let promotion: CompletedSale['promotion'];
+		if (this.appliedPromotionId) {
+			const promoObj = glo.get(TYPE.promotion, this.appliedPromotionId);
+			const pd = promoObj?.data as
+				| {
+						name?: string;
+						type?: string;
+						discountType?: string;
+						value?: number;
+						discountValue?: number;
+				  }
+				| undefined;
+			if (pd) {
+				promotion = {
+					name: pd.name ?? 'Promotion',
+					type: pd.type ?? pd.discountType ?? 'percent',
+					value: pd.value ?? pd.discountValue ?? 0
+				};
+			}
+		}
+
 		const sale: CompletedSale = {
 			number,
 			orderType: this.orderType,
@@ -433,7 +463,13 @@ class PosCart {
 			totals,
 			method,
 			change,
-			completedAt
+			completedAt,
+			customerName: this.customerName || undefined,
+			discount:
+				this.discount.value > 0
+					? { type: this.discount.type, value: this.discount.value }
+					: undefined,
+			promotion
 		};
 		this.lastCompleted = sale;
 		this.clear();
