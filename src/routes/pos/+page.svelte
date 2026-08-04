@@ -15,7 +15,6 @@
 	import { WORKSPACE_SETTINGS_SYNC_EVENT } from '$nostr/workspace-settings';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatInt, formatMoney } from '$lib/utils/format';
-	import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
 	import {
 		TYPE,
 		statusColor,
@@ -23,11 +22,11 @@
 		type ProductVariant,
 		type ModifierGroup,
 		type GloObject,
-		type Shift,
 		type Order,
 		type PaymentMethod
 	} from '$lib/domain';
 	import { cart, type OrderType, type CartModifier } from '$lib/pos/cart.svelte';
+	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
 	import { computeStock, availableFor, canSell } from '$lib/pos/stock';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -698,18 +697,17 @@
 		customOpen = false;
 	}
 
-	// ── B) Shift Gate ──
-	const shifts = $derived(glo.all<Shift, typeof TYPE.shift>(TYPE.shift));
-	const openShift = $derived(
-		shifts.find((s) => !s.data.closedAt && s.data.status !== 'closed') ?? null
-	);
+	// ── B) Shift Gate (branch-scoped) ──
+	// A shift is only "open" for POS purposes if it is active on THIS device's
+	// branch. Other branches' open shifts no longer gate this terminal.
+	const openShift = $derived(shiftStore.activeShift ?? null);
 	let shiftModalOpen = $state(false);
 	// Track whether shifts have been hydrated from IndexedDB.
 	// glo.version is $state — it bumps when hydration completes.
 	let shiftsLoaded = $state(false);
 	$effect(() => {
 		const trackedVersion = glo.version;
-		const trackedShiftCount = shifts.length;
+		const trackedShiftCount = shiftStore.all.length;
 		void trackedVersion;
 		void trackedShiftCount;
 		// Mark loaded once the type has been hydrated (data arrived from IDB).
@@ -731,23 +729,12 @@
 		return true;
 	}
 	async function openShiftAction() {
-		const number = nextReadableNumber({ prefix: 'SFT', scope: tenant.state.locationId });
 		const openingCash =
 			typeof shiftOpeningCash === 'number' ? shiftOpeningCash : Number(shiftOpeningCash) || 0;
-		await glo.upsert<Shift>(
-			TYPE.shift,
-			{
-				number,
-				status: 'active',
-				openedAt: new Date().toISOString(),
-				openingCash,
-				staffName: shiftStaffName.trim() || undefined,
-				branchId: tenant.state.locationId ?? undefined,
-				currency
-			},
-			{ id: newRecordId('shift') }
-		);
-		toast.success('Shift opened', number);
+		await shiftStore.openShift({
+			openingCash,
+			staffName: shiftStaffName.trim() || undefined
+		});
 		shiftModalOpen = false;
 		shiftOpeningCash = '';
 		shiftStaffName = '';
@@ -756,18 +743,11 @@
 		if (!openShift) return;
 		const closingCash =
 			typeof shiftOpeningCash === 'number' ? shiftOpeningCash : Number(shiftOpeningCash) || 0;
-		await glo.upsert<Shift>(
-			TYPE.shift,
-			{
-				...openShift.data,
-				status: 'closed',
-				closedAt: new Date().toISOString(),
-				closingCash
-			},
-			{ id: openShift.id }
-		);
-		toast.success('Shift closed', openShift.data.number);
-		shiftModalOpen = false;
+		const ok = await shiftStore.closeShift({ closingCash });
+		if (ok) {
+			shiftModalOpen = false;
+			shiftOpeningCash = '';
+		}
 	}
 	const shiftLabel = $derived.by(() => {
 		if (!openShift) return null;

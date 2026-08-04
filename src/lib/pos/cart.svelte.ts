@@ -17,6 +17,7 @@ import { TYPE, type Order, type OrderType, type Payment, type PaymentMethod } fr
 import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
 import { computeTotals, NO_DISCOUNT, type CartDiscount, type Totals } from './totals';
 import { buildOrder, buildPayment, type CartLineForReceipt } from './receipt';
+import { shifts as shiftStore } from './shifts.svelte';
 
 const CART_KEY = 'bnos-os:pos:cart';
 const HELD_KEY = 'bnos-os:pos:held';
@@ -309,12 +310,14 @@ class PosCart {
 			lines,
 			totals,
 			orderType: this.orderType,
+			source: 'pos',
 			customerName: this.customerName || undefined,
 			customerId: this.customerId ?? undefined,
 			tableId: this.orderType === 'dine_in' ? this.tableId || undefined : undefined,
 			covers: this.orderType === 'dine_in' ? this.covers : undefined,
 			branchId: tenant.state.locationId ?? undefined,
 			cashierPubkey: session.pubkey ?? undefined,
+			shiftId: shiftStore.activeShift?.id,
 			discount:
 				this.discount.value > 0
 					? { type: this.discount.type, value: this.discount.value }
@@ -329,6 +332,7 @@ class PosCart {
 			changeGiven: method === 'cash' ? change : undefined,
 			cashierPubkey: session.pubkey ?? undefined,
 			branchId: tenant.state.locationId ?? undefined,
+			shiftId: shiftStore.activeShift?.id,
 			paidAt: completedAt
 		});
 

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -15,10 +14,11 @@
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+	import { permissions } from '$lib/permissions.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, formatInt, relativeTime, titleCase } from '$lib/utils/format';
 	import { toOrderRows, type DashboardOrder, type OrderRow } from '$lib/dashboard/metrics';
-	import { TYPE, statusColor } from '$lib/domain';
+	import { TYPE, statusColor, type Location } from '$lib/domain';
 	import type { OrderLine, PickupInfo, ShippingInfo } from '$lib/domain/types';
 	import { ORDER_SOURCES, sourceLabel, sourceIcon } from '$lib/domain/order-sources';
 	import { printPackingSlip } from '$lib/pos/print';
@@ -29,8 +29,30 @@
 		tableId?: string;
 	};
 
-	onMount(() => {
-		dataSync.pageSync([TYPE.order, TYPE.payment], { scope: 'orders' });
+	// ── Branch scope ──────────────────────────────────────────
+	// '__all__' = every branch in the org; otherwise restrict the list (and the
+	// relay sync) to a single branch via the `glo:scope:org:loc` topic.
+	const locations = $derived(glo.all<Location, typeof TYPE.location>(TYPE.location));
+	const branchOptions = $derived.by(() => {
+		const opts: { id: string; label: string }[] = [];
+		for (const loc of locations) {
+			if (!permissions.canAccessBranch(loc.id)) continue;
+			opts.push({ id: loc.id, label: loc.data.name ?? loc.id });
+		}
+		return opts;
+	});
+	let branchFilter = $state<string>('__all__');
+	const activeBranchId = $derived(branchFilter === '__all__' ? null : branchFilter);
+
+	// Sync orders + payments scoped to the current branch filter. On mount this
+	// runs org-wide (branch = null); switching the branch filter re-syncs with
+	// the `glo:scope:org:loc` topic for just that branch.
+	$effect(() => {
+		const branch = activeBranchId;
+		void branch;
+		dataSync.pageSyncBranch([TYPE.order, TYPE.payment], branch, {
+			scope: `orders:branch:${branch ?? 'all'}`
+		});
 	});
 
 	const currency = $derived(tenant.state.currency);
@@ -90,7 +112,15 @@
 				(statusFilter === 'pending' && s.includes('pending'));
 			const matchesType = typeFilter === '__all__' || o.type === typeFilter;
 			const matchesSource = sourceFilter === '__all__' || o.source === sourceFilter;
-			return matchesStatus && matchesType && matchesSource && matchDateRange(o.atMs);
+			const matchesBranch =
+				activeBranchId === null ||
+				(o.branchId ?? null) === activeBranchId ||
+				// Orders created before branchId was stamped fall back to the tenant's
+				// active location only when that matches the filter.
+				(o.branchId == null && tenant.state.locationId === activeBranchId);
+			return (
+				matchesStatus && matchesType && matchesSource && matchesBranch && matchDateRange(o.atMs)
+			);
 		})
 	);
 
@@ -204,7 +234,17 @@
 	// ── CSV Export ───────────────────────────────────────────
 	function exportCSV() {
 		const rows = filteredByCriteria;
-		const header = ['Order', 'Status', 'Type', 'Source', 'Customer', 'Items', 'Total', 'Method', 'Date'];
+		const header = [
+			'Order',
+			'Status',
+			'Type',
+			'Source',
+			'Customer',
+			'Items',
+			'Total',
+			'Method',
+			'Date'
+		];
 		const lines = rows.map((o) => [
 			o.number,
 			o.status,
@@ -308,6 +348,7 @@
 		typeFilter = '__all__';
 		sourceFilter = '__all__';
 		dateRangeFilter = '__all__';
+		branchFilter = '__all__';
 		controls.search = '';
 	}
 
@@ -321,6 +362,7 @@
 		statusFilter !== '__all__' ||
 			typeFilter !== '__all__' ||
 			dateRangeFilter !== '__all__' ||
+			branchFilter !== '__all__' ||
 			controls.search
 	);
 </script>
@@ -513,6 +555,30 @@
 						class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
 					/>
 				</div>
+				<!-- Branch filter (multi-branch tenants only) -->
+				{#if branchOptions.length > 1}
+					<div
+						class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+					>
+						<Icon
+							name="lucide:map-pin"
+							class="pointer-events-none absolute left-2.5 size-3.5 text-[var(--ui-text-dimmed)]"
+						/>
+						<select
+							bind:value={branchFilter}
+							class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-8 text-[13px] font-medium focus:outline-none"
+						>
+							<option value="__all__">All branches</option>
+							{#each branchOptions as b (b.id)}
+								<option value={b.id}>{b.label}</option>
+							{/each}
+						</select>
+						<Icon
+							name="lucide:chevron-down"
+							class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+						/>
+					</div>
+				{/if}
 				<!-- Date range filter -->
 				<div
 					class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
@@ -724,10 +790,13 @@
 								</td>
 								<td class="px-5 py-3">
 									{#if o.source}
-									<span class="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--ui-text-muted)]" title={sourceLabel(o.source) + (o.sourceDetail ? ' · ' + o.sourceDetail : '')}>
-										<Icon name={sourceIcon(o.source)} class="size-3" />
-										{sourceLabel(o.source)}
-									</span>
+										<span
+											class="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--ui-text-muted)]"
+											title={sourceLabel(o.source) + (o.sourceDetail ? ' · ' + o.sourceDetail : '')}
+										>
+											<Icon name={sourceIcon(o.source)} class="size-3" />
+											{sourceLabel(o.source)}
+										</span>
 									{/if}
 								</td>
 								<td class="px-5 py-3 text-[var(--ui-text-muted)]">

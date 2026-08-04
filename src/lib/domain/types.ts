@@ -232,13 +232,7 @@ export type OrderLine = GloOrderLine & OrderLineBnosExt;
 
 /** Delivery lifecycle for shipping tracking (independent of kitchen status). */
 export type ShippingStatus =
-	| 'pending'
-	| 'packed'
-	| 'shipped'
-	| 'in_transit'
-	| 'delivered'
-	| 'failed'
-	| 'returned';
+	'pending' | 'packed' | 'shipped' | 'in_transit' | 'delivered' | 'failed' | 'returned';
 
 export interface ShippingInfo {
 	shippingStatus?: ShippingStatus;
@@ -334,6 +328,9 @@ export interface PaymentBnosExt {
 	qrData?: string;
 	cashierPubkey?: string;
 	branchId?: string;
+	/** Active shift this payment was tendered under (kind 30520). Enables
+	 *  per-shift cash reconciliation without an order→payment join. */
+	shiftId?: string;
 }
 export type Payment = GloPayment & PaymentBnosExt;
 
@@ -796,7 +793,12 @@ export interface Shift {
 	openingCash: number;
 	staffId?: string;
 	staffName?: string;
+	/** Canonical GLO branch id (kind 30520 `branchId`). `undefined` for
+	 *  single-location tenants so legacy global shifts keep matching. */
 	branchId?: string;
+	/** Denormalized branch name for offline display on staff devices that
+	 *  haven't yet synced the `location` record from the owner device. */
+	branchName?: string;
 	terminalId?: string;
 	closingCash?: number;
 	expectedCash?: number;
@@ -853,11 +855,7 @@ export type MarketplaceChannelType =
 	| 'shopify'
 	| 'custom';
 
-export type MarketplaceConnectionStatus =
-	| 'connected'
-	| 'disconnected'
-	| 'error'
-	| 'pending';
+export type MarketplaceConnectionStatus = 'connected' | 'disconnected' | 'error' | 'pending';
 
 /** A connected external sales channel / store partnership.
  *  Wire kind: STORE_CONNECTION (30953). */
@@ -878,12 +876,7 @@ export interface MarketplaceConnection {
 	config?: Record<string, string>;
 }
 
-export type MarketplaceProductStatus =
-	| 'draft'
-	| 'active'
-	| 'paused'
-	| 'out_of_stock'
-	| 'archived';
+export type MarketplaceProductStatus = 'draft' | 'active' | 'paused' | 'out_of_stock' | 'archived';
 
 /** A product published to one or more sales channels.
  *  Wire kind: MARKETPLACE_PRODUCT (30951). */
@@ -911,12 +904,7 @@ export interface MarketplaceProduct {
 	conversions?: number;
 }
 
-export type MarketplaceReviewStatus =
-	| 'published'
-	| 'pending'
-	| 'flagged'
-	| 'hidden'
-	| 'replied';
+export type MarketplaceReviewStatus = 'published' | 'pending' | 'flagged' | 'hidden' | 'replied';
 
 /** A product/store review (synced from a channel or captured manually).
  *  Wire kind: MARKETPLACE_REVIEW (30955). */

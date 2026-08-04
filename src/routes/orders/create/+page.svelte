@@ -10,6 +10,7 @@
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+	import { session } from '$nostr/session.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, titleCase } from '$lib/utils/format';
 	import {
@@ -26,6 +27,7 @@
 	} from '$lib/domain';
 	import { ORDER_SOURCES, SHIPPING_STATUSES } from '$lib/domain/order-sources';
 	import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
+	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
 
 	onMount(() => {
 		dataSync.pageSync([TYPE.product, TYPE.customer, TYPE.order], { scope: 'order-create' });
@@ -107,7 +109,7 @@
 	const showProductResults = $derived(productFocused && filteredProducts.length > 0);
 
 	function productImage(p: any): string {
-		return Array.isArray(p.images) ? p.images[0] ?? '' : (p.image ?? '');
+		return Array.isArray(p.images) ? (p.images[0] ?? '') : (p.image ?? '');
 	}
 
 	function addLine(product: Product) {
@@ -181,9 +183,7 @@
 		lines = lines.map((l) => (l.id === id ? { ...l, quantity: l.quantity + 1 } : l));
 	}
 	function decQty(id: string) {
-		lines = lines.map((l) =>
-			l.id === id ? { ...l, quantity: Math.max(1, l.quantity - 1) } : l
-		);
+		lines = lines.map((l) => (l.id === id ? { ...l, quantity: Math.max(1, l.quantity - 1) } : l));
 	}
 	function setQty(id: string, q: number) {
 		lines = lines.map((l) => (l.id === id ? { ...l, quantity: Math.max(1, q || 1) } : l));
@@ -207,7 +207,9 @@
 			})
 			.slice(0, 8);
 	});
-	const showCustomerResults = $derived(customerFocused && !customerId && filteredCustomers.length > 0);
+	const showCustomerResults = $derived(
+		customerFocused && !customerId && filteredCustomers.length > 0
+	);
 
 	// Quick-create dialog
 	let qcOpen = $state(false);
@@ -276,9 +278,7 @@
 	const taxAmount = $derived(
 		tenant.state.taxIncludedInPrice ? 0 : subtotal * (defaultTaxRate / 100)
 	);
-	const deliveryFee = $derived(
-		orderType === 'delivery' ? Number(shipping.deliveryFee) || 0 : 0
-	);
+	const deliveryFee = $derived(orderType === 'delivery' ? Number(shipping.deliveryFee) || 0 : 0);
 	const total = $derived(
 		Math.max(0, subtotal - discountAmount + taxAmount + tipAmount + deliveryFee)
 	);
@@ -309,6 +309,11 @@
 			total,
 			currency,
 			paymentMethod,
+			// Branch + staff + shift context (mirrors POS checkout so manual orders
+			// flow through the same per-branch / per-shift reconciliation).
+			branchId: tenant.state.locationId ?? undefined,
+			cashierPubkey: session.pubkey ?? undefined,
+			shiftId: shiftStore.activeShift?.id,
 			notes: notes.trim() || undefined,
 			tags: tagsInput.trim()
 				? tagsInput
@@ -471,11 +476,7 @@
 										: 'hover:bg-[var(--ui-bg-accented)]'}"
 								>
 									{#if img}
-										<img
-											src={img}
-											alt=""
-											class="size-9 shrink-0 rounded-lg object-cover"
-										/>
+										<img src={img} alt="" class="size-9 shrink-0 rounded-lg object-cover" />
 									{:else}
 										<div
 											class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-500/10 text-[12px] font-bold text-primary-600 dark:text-primary-400"
@@ -486,8 +487,7 @@
 									<div class="min-w-0 flex-1">
 										<div class="truncate text-[13px] font-semibold">{(p.data as any).name}</div>
 										<div class="flex items-center gap-1.5 text-[11px] text-[var(--ui-text-dimmed)]">
-											{#if (p.data as any).sku}<span class="font-mono"
-													>{(p.data as any).sku}</span
+											{#if (p.data as any).sku}<span class="font-mono">{(p.data as any).sku}</span
 												>{/if}
 											{#if (p.data as any).barcode}
 												<span>·</span>
@@ -520,12 +520,7 @@
 								Scan a barcode or search above to add products
 							</p>
 							{#if products.length === 0}
-								<Button
-									href="/catalog"
-					variant="subtle"
-									size="sm"
-									class="mt-3"
-									icon="lucide:plus"
+								<Button href="/catalog" variant="subtle" size="sm" class="mt-3" icon="lucide:plus"
 									>Go to catalog</Button
 								>
 							{/if}
@@ -560,7 +555,8 @@
 										</button>
 										<input
 											value={line.quantity}
-											onchange={(e) => setQty(line.id ?? '', +(e.currentTarget as HTMLInputElement).value)}
+											onchange={(e) =>
+												setQty(line.id ?? '', +(e.currentTarget as HTMLInputElement).value)}
 											type="number"
 											min="1"
 											class="h-7 w-10 rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-center text-[13px] font-semibold tabular-nums focus:outline-none"
@@ -613,11 +609,8 @@
 							<span class="text-[12px] font-normal text-[var(--ui-text-dimmed)]">(optional)</span>
 						</h2>
 					</div>
-					<Button
-						size="sm"
-						variant="soft"
-						icon="lucide:user-plus"
-						onclick={() => (qcOpen = true)}>New</Button
+					<Button size="sm" variant="soft" icon="lucide:user-plus" onclick={() => (qcOpen = true)}
+						>New</Button
 					>
 				</div>
 
@@ -633,7 +626,9 @@
 								{(customerName || '?').charAt(0).toUpperCase()}
 							</div>
 							<div class="min-w-0 flex-1">
-								<div class="truncate text-[13px] font-semibold text-primary-700 dark:text-primary-300">
+								<div
+									class="truncate text-[13px] font-semibold text-primary-700 dark:text-primary-300"
+								>
 									{customerName}
 								</div>
 								{#if orderType === 'delivery' && shipping.phone}
@@ -693,7 +688,9 @@
 												{(c.data.name ?? '?').charAt(0).toUpperCase()}
 											</div>
 											<div class="min-w-0 flex-1">
-												<div class="truncate text-[13px] font-semibold">{c.data.name ?? 'Unknown'}</div>
+												<div class="truncate text-[13px] font-semibold">
+													{c.data.name ?? 'Unknown'}
+												</div>
 												<div class="truncate text-[11px] text-[var(--ui-text-dimmed)]">
 													{[c.data.phone, c.data.email].filter(Boolean).join(' · ') || 'No contact'}
 												</div>
@@ -778,8 +775,7 @@
 						{/if}
 					</div>
 					<div class="flex items-center gap-3">
-						<span
-							class="text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						<span class="text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
 							>Priority</span
 						>
 						<div class="flex gap-2">
@@ -1234,14 +1230,12 @@
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Phone</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</span
 				>
 				<Input bind:value={qcPhone} type="tel" placeholder="020 xx xxx xxx" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Email</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Email</span
 				>
 				<Input bind:value={qcEmail} type="email" placeholder="name@email.com" class="w-full" />
 			</label>
@@ -1252,7 +1246,12 @@
 	</div>
 	{#snippet footer()}
 		<Button variant="ghost" color="neutral" onclick={() => (qcOpen = false)}>Cancel</Button>
-		<Button color="primary" icon="lucide:user-plus" disabled={qcSaving} onclick={quickCreateCustomer}>
+		<Button
+			color="primary"
+			icon="lucide:user-plus"
+			disabled={qcSaving}
+			onclick={quickCreateCustomer}
+		>
 			{qcSaving ? 'Creating…' : 'Create & select'}
 		</Button>
 	{/snippet}

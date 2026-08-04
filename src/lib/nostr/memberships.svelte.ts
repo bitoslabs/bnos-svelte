@@ -16,6 +16,7 @@ import { restoreTenantFromWorkspace } from './workspace.svelte';
 import { TYPE, type Staff, type UserRole } from '$lib/domain';
 import { COMPANY_WIDE_ROLES } from '$lib/domain/permissions';
 import { parseGloEvent } from '$lib/domain/helpers';
+import { syncKeyGrantsForCurrentUser } from '$lib/crypto/organization-key-grants';
 
 /** A status prevents login / app access. */
 const BLOCKING_STATUSES = new Set(['suspended', 'inactive', 'terminated']);
@@ -83,6 +84,9 @@ class MembershipsStore {
 			await glo.sync(TYPE.staff);
 			// 2. Records authored by other owners where this user is the staff member.
 			await this.fetchMembershipsByPTag();
+			// 3. Pull NIP-44 company key grants addressed to this user (kind 30512) so
+			//    the staff device can decrypt owner-authored records. Best-effort.
+			await syncKeyGrantsForCurrentUser().catch(() => ({ imported: 0, failed: 0 }));
 			return this.myActiveRecords;
 		} finally {
 			this.resolving = false;

@@ -41,7 +41,7 @@ export const FEATURE_META: Record<
 		description: 'Kitchen display, tables, waiter station, queue'
 	},
 	retail: {
-		icon: 'lucide:shop',
+		icon: 'solar:shop-minimalistic-bold-duotone',
 		label: 'Retail',
 		description: 'Barcode, inventory, stock adjustments'
 	},

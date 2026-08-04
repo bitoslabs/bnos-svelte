@@ -19,6 +19,7 @@
 		resolveWorkspace,
 	} from '$nostr/workspace.svelte';
 	import { memberships } from '$nostr/memberships.svelte';
+	import { organizationKey } from '$lib/crypto/organization-key.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import { sidebarState, loadCollapsed as loadSidebarCollapsed } from '$lib/sidebar-state.svelte';
@@ -124,6 +125,9 @@
 		if (path !== '/login' && !path.startsWith('/setup')) {
 			void (async () => {
 				await memberships.resolve();
+				// Ensure the active org has a local AES key (owner/admin mints it;
+				// staff already imported theirs via the grant sync in memberships.resolve).
+				await organizationKey.autoEnsureActiveKey();
 				if (memberships.autoResolve()) return;
 				await memberships.bootstrapOwnerIfMissing();
 				if (tenant.state.activeStaffId) return;

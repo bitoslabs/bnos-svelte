@@ -22,6 +22,8 @@ export type OrderRow = {
 	sourceDetail?: string;
 	shipping?: ShippingInfo;
 	customerName: string;
+	/** Branch/location this order belongs to (kind 30200 `branchId`). */
+	branchId?: string;
 	atMs: number;
 };
 
@@ -60,7 +62,9 @@ export function toOrderRows(
 		const method = d.method ?? paymentLookup?.[o.id] ?? 'cash';
 		return {
 			id: o.id,
-			number: String((d.orderNumber as string | number | undefined) ?? d.number ?? o.id.slice(0, 8)),
+			number: String(
+				(d.orderNumber as string | number | undefined) ?? d.number ?? o.id.slice(0, 8)
+			),
 			status: d.status ?? 'completed',
 			total: d.total ?? 0,
 			items: d.lines?.length ?? 0,
@@ -70,6 +74,7 @@ export function toOrderRows(
 			sourceDetail: d.sourceDetail as string | undefined,
 			shipping: d.shipping as ShippingInfo | undefined,
 			customerName: d.customerName ?? '',
+			branchId: (d as { branchId?: string }).branchId,
 			atMs: Number.isFinite(atMs) ? atMs : 0
 		};
 	});
