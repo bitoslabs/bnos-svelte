@@ -5,12 +5,14 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
+	import RowActions, { type RowAction } from '$lib/components/list/RowActions.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { permissions } from '$lib/permissions.svelte';
 	import { formatMoney, relativeTime } from '$lib/utils/format';
-	import { TYPE, statusColor, type Location } from '$lib/domain';
+	import { TYPE, statusColor, type Location, type Shift, type CashEvent } from '$lib/domain';
 	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
 
 	onMount(() => {
@@ -124,6 +126,70 @@
 		const counted = typeof countedCash === 'number' ? countedCash : Number(countedCash) || 0;
 		return counted - (summary.expectedCash ?? 0);
 	});
+
+	// ── Raw data viewer ───────────────────────────────────────────────────
+	let rawOpen = $state(false);
+	let rawItem = $state<any>(null);
+
+	// ── Cancel (void) an active shift opened by mistake ──────────────────
+	let cancelling = $state<{ shift: { id: string; data: Shift } } | null>(null);
+	let cancelReason = $state('');
+
+	async function cancelShiftAction() {
+		if (!cancelling) return;
+		const ok = await shiftStore.cancelShift({
+			branchId: cancelling.shift.data.branchId ?? null,
+			reason: cancelReason
+		});
+		if (ok) {
+			cancelling = null;
+			cancelReason = '';
+		}
+	}
+
+	function rowActionsShift(s: { id: string; data: Shift }): RowAction[][] {
+		const groups: RowAction[][] = [
+			[
+				{
+					label: 'View raw',
+					icon: 'lucide:code',
+					onSelect: () => {
+						rawItem = glo.get(TYPE.shift, s.id);
+						rawOpen = true;
+					}
+				}
+			]
+		];
+		if (s.data.status === 'active') {
+			groups.push([
+				{
+					label: 'Cancel shift',
+					icon: 'lucide:ban',
+					danger: true,
+					onSelect: () => {
+						cancelReason = '';
+						cancelling = { shift: s };
+					}
+				}
+			]);
+		}
+		return groups;
+	}
+
+	function rowActionsCashEvent(e: { id: string; data: CashEvent }): RowAction[][] {
+		return [
+			[
+				{
+					label: 'View raw',
+					icon: 'lucide:code',
+					onSelect: () => {
+						rawItem = glo.get(TYPE.cashEvent, e.id);
+						rawOpen = true;
+					}
+				}
+			]
+		];
+	}
 </script>
 
 <svelte:head><title>BNOS · Shifts</title></svelte:head>
@@ -309,6 +375,7 @@
 						<th class="px-5 py-2.5">Reason</th>
 						<th class="px-5 py-2.5 text-right">Amount</th>
 						<th class="px-5 py-2.5 text-right">When</th>
+						<th class="px-3 py-2.5 text-right">Actions</th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
@@ -333,6 +400,9 @@
 							<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]">
 								{relativeTime(e.data.occurredAt)}
 							</td>
+							<td class="px-3 py-3 text-right">
+								<RowActions actions={rowActionsCashEvent(e)} />
+							</td>
 						</tr>
 					{/each}
 				</tbody>
@@ -355,6 +425,7 @@
 						<th class="px-5 py-2.5 text-right">Sales</th>
 						<th class="px-5 py-2.5 text-right">Variance</th>
 						<th class="px-5 py-2.5 text-right">Closed</th>
+						<th class="px-3 py-2.5 text-right">Actions</th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
@@ -388,6 +459,9 @@
 							</td>
 							<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]">
 								{s.data.closedAt ? relativeTime(s.data.closedAt) : '—'}
+							</td>
+							<td class="px-3 py-3 text-right">
+								<RowActions actions={rowActionsShift(s)} />
 							</td>
 						</tr>
 					{/each}
@@ -466,6 +540,43 @@
 		</div>
 	</div>
 {/if}
+
+<!-- Cancel-shift confirmation dialog -->
+{#if cancelling}
+	<div class="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
+		<div
+			class="w-full max-w-md rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-5 shadow-2xl"
+		>
+			<div class="flex items-center gap-2">
+				<Icon name="lucide:ban" class="size-4 text-[var(--tone-error-text)]" />
+				<h2 class="font-display text-[15px] font-semibold">Cancel shift?</h2>
+			</div>
+			<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
+				This <span class="font-mono font-semibold">{cancelling.shift.data.number}</span> shift will be
+				voided without reconciliation. Use this only for shifts opened by mistake
+				(wrong float, branch or staff). It stays in history for audit.
+			</p>
+			<label class="mt-3 block">
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Reason (optional)</span
+				>
+				<Input
+					bind:value={cancelReason}
+					placeholder="e.g. opened on wrong branch"
+					class="w-full"
+				/>
+			</label>
+			<div class="mt-4 flex items-center justify-end gap-2">
+				<Button variant="ghost" color="neutral" onclick={() => (cancelling = null)}>Keep shift</Button>
+				<Button color="error" icon="lucide:ban" onclick={cancelShiftAction}>
+					Cancel shift
+				</Button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<RawDataDialog bind:open={rawOpen} data={rawItem} title="Shift Raw Data" />
 
 {#snippet statBox(label: string, value: string, icon: string)}
 	<div

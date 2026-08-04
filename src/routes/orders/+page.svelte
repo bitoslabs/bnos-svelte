@@ -5,6 +5,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import ListToolbar from '$lib/components/list/ListToolbar.svelte';
 	import SortableTh from '$lib/components/list/SortableTh.svelte';
 	import Pagination from '$lib/components/list/Pagination.svelte';
@@ -207,6 +208,10 @@
 	// ── Bulk selection ───────────────────────────────────────
 	const selectedIds = new SvelteSet<string>();
 	let selectAll = $state(false);
+	const selectIndeterminate = $derived(
+		selectedIds.size > 0 &&
+			!(selectedIds.size === controls.pagedList.length && controls.pagedList.length > 0)
+	);
 
 	function toggleSelectAll() {
 		if (selectAll) {
@@ -709,11 +714,11 @@
 					<thead>
 						<tr>
 							<th class="w-8 px-3 py-2.5">
-								<input
-									type="checkbox"
+								<Checkbox
+									size="sm"
 									checked={selectAll}
-									onchange={toggleSelectAll}
-									class="size-4 rounded border-[var(--ui-border)] accent-primary-500"
+									indeterminate={selectIndeterminate}
+									onCheckedChange={() => toggleSelectAll()}
 								/>
 							</th>
 							<th class="w-8 px-2 py-2.5"></th>
@@ -778,11 +783,10 @@
 								onclick={() => (expandedId = expandedId === o.id ? null : o.id)}
 							>
 								<td class="px-3 py-3" onclick={(e) => e.stopPropagation()}>
-									<input
-										type="checkbox"
+									<Checkbox
+										size="sm"
 										checked={selectedIds.has(o.id)}
-										onchange={() => toggleSelect(o.id)}
-										class="size-4 rounded border-[var(--ui-border)] accent-primary-500"
+										onCheckedChange={() => toggleSelect(o.id)}
 									/>
 								</td>
 								<td class="px-2 py-3 text-center" onclick={(e) => e.stopPropagation()}>

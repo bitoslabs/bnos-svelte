@@ -18,6 +18,7 @@
 	import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
 	import { toOrderRows, type DashboardOrder, type OrderRow } from '$lib/dashboard/metrics';
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
+	import RowActions, { type RowAction } from '$lib/components/list/RowActions.svelte';
 	import { TYPE, type Shift } from '$lib/domain';
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
 
@@ -57,6 +58,21 @@
 		defaultViewMode: 'table',
 		storageKey: 'transactions'
 	});
+
+	function rowActions(row: OrderRow & { ref: string; description: string }): RowAction[][] {
+		return [
+			[
+				{
+					label: 'View raw',
+					icon: 'lucide:code',
+					onSelect: () => {
+						rawItem = glo.get('commerce.order', row.id);
+						rawOpen = true;
+					}
+				}
+			]
+		];
+	}
 
 	const inflow = $derived(ledger.reduce((s, o) => s + o.total, 0));
 	const count = $derived(ledger.length);
@@ -362,6 +378,7 @@
 								align="right"
 								applySort={controls.applySort}>Date</SortableTh
 							>
+							<th class="px-3 py-2.5 text-right">Actions</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
@@ -394,6 +411,9 @@
 								<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
 									>{relativeTime(row.atMs)}</td
 								>
+								<td class="px-3 py-3 text-right">
+									<RowActions actions={rowActions(row)} />
+								</td>
 							</tr>
 						{/each}
 					</tbody>

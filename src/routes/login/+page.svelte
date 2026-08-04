@@ -5,6 +5,7 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
 	import RelayManager from '$lib/components/relay/RelayManager.svelte';
 	import { session, hasNip07Extension } from '$nostr/session.svelte';
@@ -286,16 +287,10 @@
 						</Input>
 					</label>
 
-					<label class="flex cursor-pointer items-start gap-2.5">
-						<input
-							type="checkbox"
-							bind:checked={backedUp}
-							class="mt-0.5 size-4 rounded border-[var(--ui-border-accented)] accent-[var(--ui-color-primary-500)]"
-						/>
-						<span class="text-[12px] text-[var(--ui-text-muted)]">
-							I've saved my key somewhere safe. I understand it can't be reset.
-						</span>
-					</label>
+					<Checkbox
+						bind:checked={backedUp}
+						label="I've saved my key somewhere safe. I understand it can't be reset."
+					/>
 
 					<Button color="primary" block size="lg" disabled={!backedUp} onclick={confirmCreate}>
 						<Icon name="lucide:rocket" class="size-4" />

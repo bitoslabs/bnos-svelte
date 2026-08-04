@@ -8,6 +8,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import { session, hasNip07Extension } from '$nostr/session.svelte';
 	import { profile } from '$nostr/profile.svelte';
@@ -583,14 +584,12 @@
 					}}>Download</Button
 				>
 			</div>
-			<label class="flex cursor-pointer items-center gap-2 text-[12.5px] font-semibold">
-				<input
-					type="checkbox"
-					bind:checked={backedUp}
-					class="size-4 rounded border-[var(--ui-border)]"
-				/>
-				I've saved my key in a safe place
-			</label>
+			<Checkbox
+				bind:checked={backedUp}
+				size="sm"
+				label="I've saved my key in a safe place"
+				class="font-semibold"
+			/>
 		</div>
 	{/if}
 	{#snippet footer()}

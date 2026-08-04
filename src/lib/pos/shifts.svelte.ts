@@ -360,6 +360,39 @@ class ShiftsStore {
 	};
 
 	/**
+	 * Cancel (void) the active shift on a branch. Unlike `closeShift` this does
+	 * NOT reconcile — it's the escape hatch for a shift opened by mistake (wrong
+	 * float, wrong branch, wrong staff). The shift is stamped `cancelled` and
+	 * excluded from `activeShiftFor`; it stays in history for auditability.
+	 *
+	 * Only active shifts can be cancelled — a closed/force-closed shift was
+	 * already reconciled and must not be voided.
+	 */
+	cancelShift = async (input: {
+		branchId?: string | null;
+		reason?: string;
+	}): Promise<boolean> => {
+		const branchId = input.branchId ?? this.currentBranchId;
+		const active = this.activeShiftFor(branchId);
+		if (!active) {
+			toast.warning('No open shift to cancel', branchId ? this.branchLabel(branchId) : undefined);
+			return false;
+		}
+		await glo.upsert<Shift>(
+			TYPE.shift,
+			{
+				...active.data,
+				status: 'cancelled',
+				closedAt: new Date().toISOString(),
+				varianceNote: input.reason?.trim() || 'Shift cancelled'
+			},
+			{ id: active.id, scope: { locationId: branchId ?? undefined } }
+		);
+		toast.success('Shift cancelled', active.data.number);
+		return true;
+	};
+
+	/**
 	 * Record a cash movement (cash in/out, paid in/out, bank deposit) against
 	 * the active shift on a branch. Refuses if no shift is open.
 	 */

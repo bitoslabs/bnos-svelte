@@ -3,6 +3,7 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import MediaImageGallery from '$lib/components/media/MediaImageGallery.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -1759,27 +1760,9 @@
 
 			<!-- Toggles: isPublic / available / taxInclusive -->
 			<div class="flex flex-wrap gap-3">
-				<label class="flex cursor-pointer items-center gap-2"
-					><input
-						type="checkbox"
-						bind:checked={pIsPublic}
-						class="size-4 rounded border-[var(--ui-border)]"
-					/><span class="text-[12px] font-semibold">Public</span></label
-				>
-				<label class="flex cursor-pointer items-center gap-2"
-					><input
-						type="checkbox"
-						bind:checked={pAvailable}
-						class="size-4 rounded border-[var(--ui-border)]"
-					/><span class="text-[12px] font-semibold">Available</span></label
-				>
-				<label class="flex cursor-pointer items-center gap-2"
-					><input
-						type="checkbox"
-						bind:checked={pTaxInclusive}
-						class="size-4 rounded border-[var(--ui-border)]"
-					/><span class="text-[12px] font-semibold">Tax inclusive</span></label
-				>
+				<Checkbox bind:checked={pIsPublic} size="sm" label="Public" />
+				<Checkbox bind:checked={pAvailable} size="sm" label="Available" />
+				<Checkbox bind:checked={pTaxInclusive} size="sm" label="Tax inclusive" />
 			</div>
 
 			<!-- prepTime + sortOrder -->
@@ -1873,14 +1856,11 @@
 
 			<!-- Inventory policy -->
 			<div>
-				<label class="flex cursor-pointer items-center gap-2"
-					><input
-						type="checkbox"
-						bind:checked={pTrackInv}
-						class="size-4 rounded border-[var(--ui-border)]"
-					/><span class="text-[12.5px] font-semibold">Track inventory & show stock in POS</span
-					></label
-				>
+				<Checkbox
+					bind:checked={pTrackInv}
+					size="sm"
+					label="Track inventory & show stock in POS"
+				/>
 				{#if pTrackInv}
 					<div class="mt-2 grid grid-cols-2 gap-2">
 						<Input
@@ -1891,14 +1871,12 @@
 							placeholder="Low-stock alert at"
 							class="w-full"
 						/>
-						<label
-							class="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--ui-border-muted)] px-2.5 py-2"
-							><input
-								type="checkbox"
-								bind:checked={pDenyOos}
-								class="size-4 rounded border-[var(--ui-border)]"
-							/><span class="text-[11.5px] font-semibold">Block sale when out of stock</span></label
-						>
+						<Checkbox
+							bind:checked={pDenyOos}
+							size="sm"
+							label="Block sale when out of stock"
+							class="items-center rounded-lg border border-[var(--ui-border-muted)] px-2.5 py-2"
+						/>
 					</div>
 				{/if}
 			</div>

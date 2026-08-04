@@ -790,7 +790,7 @@ export interface Expense {
 // STAFF OPS: SHIFT / CASH EVENT (extension types → 30078)
 // ════════════════════════════════════════════════════════════════════
 
-export type ShiftStatus = 'active' | 'closed' | 'force_closed';
+export type ShiftStatus = 'active' | 'closed' | 'force_closed' | 'cancelled';
 export interface Shift {
 	number: string;
 	status: ShiftStatus;
