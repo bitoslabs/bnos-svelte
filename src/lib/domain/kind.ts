@@ -87,6 +87,14 @@ export const KIND = Object.fromEntries(
 	(Object.keys(TYPE) as DomainType[]).map((k) => [k, APP_KIND_OVERRIDES[k] ?? getGloKindForType(TYPE[k])])
 ) as { [K in DomainType]: number };
 
+/** Type-string → resolved kind (e.g. `kindForType('commerce.order') === 30200`). */
+export const KIND_BY_TYPE: Record<string, number> = Object.fromEntries(
+	(Object.keys(TYPE) as DomainType[]).map((k) => [TYPE[k], KIND[k]])
+);
+export function kindForType(type: string): number {
+	return KIND_BY_TYPE[type] ?? getGloKindForType(type);
+}
+
 /** Reverse lookup: kind number → list of client type keys using it. */
 export const TYPES_FOR_KIND: Record<number, DomainType[]> = (() => {
 	const out: Record<number, DomainType[]> = {};

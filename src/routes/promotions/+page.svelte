@@ -8,6 +8,7 @@
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 	import Pagination from '$lib/components/list/Pagination.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
@@ -29,6 +30,8 @@
 	// ── Tabs ──────────────────────────────────────────────────────────
 	type Tab = 'coupons' | 'promotions';
 	let tab = $state<Tab>('promotions');
+	let rawOpen = $state(false);
+	let rawItem = $state<any>(null);
 
 	onMount(() => {
 		dataSync.pageSync([TYPE.coupon, TYPE.promotion, TYPE.product, TYPE.category], {
@@ -728,6 +731,17 @@
 									</button>
 									<button
 										type="button"
+										onclick={() => {
+											rawItem = glo.get(TYPE.promotion, p.id);
+											rawOpen = true;
+										}}
+										class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+										title="View raw"
+									>
+										<Icon name="lucide:code" class="size-4" />
+									</button>
+									<button
+										type="button"
 										onclick={() => openEditPromo(p.id, p.data)}
 										class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
 										title="Edit"
@@ -792,6 +806,17 @@
 							</div>
 						{/if}
 						<div class="mt-3 flex items-center justify-end gap-1">
+							<button
+								type="button"
+								onclick={() => {
+									rawItem = glo.get(TYPE.coupon, c.id);
+									rawOpen = true;
+								}}
+								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+								title="View raw"
+							>
+								<Icon name="lucide:code" class="size-4" />
+							</button>
 							<button
 								type="button"
 								onclick={() => openEditCoupon(c.id, c.data)}
@@ -1230,3 +1255,5 @@
 		</div>
 	</div>
 {/if}
+
+<RawDataDialog bind:open={rawOpen} data={rawItem} title="Promotion / Coupon Raw Data" />

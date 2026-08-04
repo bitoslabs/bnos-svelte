@@ -69,7 +69,13 @@ function uid(): string {
 	return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-type AnyGloObject = GloObject<unknown> & { __eventCreatedAt?: number };
+type AnyGloObject = GloObject<unknown> & {
+	__eventCreatedAt?: number;
+	/** Persisted (cheap) — enables the fast `ids:[]` relay lookup in fetchEvent. */
+	__eventId?: string;
+	/** Ephemeral full event — stripped from IDB (see writeLocal) to avoid bloat. */
+	__event?: NostrEvent;
+};
 type QueuedPublish = {
 	type: string;
 	object: AnyGloObject;
@@ -222,7 +228,7 @@ async function writeLocal(type: string, items: AnyGloObject[]) {
 	if (!browser) return;
 	try {
 		// Strip Svelte $state proxies — IndexedDB structured clone can't handle them.
-		const plain = JSON.parse(JSON.stringify(items));
+		const plain = JSON.parse(JSON.stringify(items, (k, v) => (k === '__event' ? undefined : v)));
 		await idbSet(STORAGE_PREFIX + type, plain);
 	} catch (e) {
 		console.warn('[glo] IndexedDB write failed', type, e);
@@ -580,6 +586,11 @@ class GloStore {
 				nsec: session.snapshot.nsec,
 				extensionSigner: session.extensionSigner ?? undefined
 			});
+			// Retain the signed event in-memory so the Raw Data viewer can show the
+			// live Nostr event (id / sig / tags). Not persisted (writeLocal strips it).
+			(object as AnyGloObject).__event = event as NostrEvent;
+			(object as AnyGloObject).__eventId = (event as NostrEvent).id;
+			(object as AnyGloObject).__eventCreatedAt = (event as NostrEvent).created_at;
 			const published = await sendEvent(event as NostrEvent);
 			if (!published && queueOnFailure) await this.queuePublish(type, object);
 			return published;
@@ -671,7 +682,7 @@ class GloStore {
 			for (const ev of events) {
 				try {
 					const parsed = await parseAppGloEvent(ev as NostrEvent);
-					incoming.push({ ...parsed, __eventCreatedAt: ev.created_at });
+					incoming.push({ ...parsed, __eventCreatedAt: ev.created_at, __eventId: ev.id, __event: ev as NostrEvent });
 				} catch {
 					/* skip non-GLO / malformed / undecryptable */
 				}
@@ -683,6 +694,52 @@ class GloStore {
 	};
 
 	/** Sync everything the app cares about. */
+	/** Lazily fetch the live Nostr event for one record (Raw Data viewer shows
+	 *  the real id/sig). Cached on the object in-memory; returns null offline /
+	 *  when not found. Single-record relay query (kind + author + #d). */
+	fetchEvent = async (type: string, id: string): Promise<NostrEvent | null> => {
+		if (!browser) return null;
+		const existing = this.collections.find(type, id) as AnyGloObject | undefined;
+		if (existing?.__event) return existing.__event; // in-memory cache
+		if (!session.pubkey || !relays.online || !relays.readableNormalized.length) return null;
+		try {
+			let ev: NostrEvent | null = null;
+			// 1) Preferred: O(1) lookup by event id — universally indexed (NIP-01),
+			//    no author needed, returns the exact signed event.
+			if (existing?.__eventId) {
+				ev =
+					(
+						await fetchEvents({
+							ids: [existing.__eventId],
+							limit: 1
+						} as Parameters<typeof fetchEvents>[0])
+					)[0] ?? null;
+			}
+			// 2) Fallback: parameterized-replaceable lookup by d-tag + author + kind
+			//    (covers records whose id isn't cached yet, or id misses).
+			if (!ev) {
+				const author = existing?.scope?.ownerPubkey ?? session.pubkey;
+				ev =
+					(
+						await fetchEvents({
+							kinds: [appKindForType(type)],
+							authors: [author],
+							'#d': [createGloIdentifier(type, id)],
+							limit: 1
+						} as Parameters<typeof fetchEvents>[0])
+					)[0] ?? null;
+			}
+			if (ev && existing) {
+				existing.__event = ev;
+				existing.__eventId = ev.id;
+				existing.__eventCreatedAt = ev.created_at;
+			}
+			return ev;
+		} catch {
+			return null;
+		}
+	};
+
 	syncAll = async (types: string[]) => {
 		if (!session.pubkey) return;
 		await Promise.all(types.map((t) => this.sync(t)));

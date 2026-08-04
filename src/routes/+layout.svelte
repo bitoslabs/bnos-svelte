@@ -24,6 +24,7 @@
 	import BottomTabBar from '$lib/components/mobile/BottomTabBar.svelte';
 	import Toaster from '$lib/components/ui/Toaster.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
+	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import PwaPrompt from '$lib/components/PwaPrompt.svelte';
 	import OfflineBadge from '$lib/components/OfflineBadge.svelte';
 	import { popovers } from '$lib/stores/popovers.svelte';
@@ -233,3 +234,4 @@
 <PwaPrompt />
 <OfflineBadge />
 <ConfirmDialog />
+<CommandPalette />
