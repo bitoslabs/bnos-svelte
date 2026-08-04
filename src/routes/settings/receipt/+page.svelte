@@ -5,9 +5,11 @@
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+	import { syncWorkspaceSettingsToOrganization } from '$nostr/workspace-settings';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { loadReceiptSettings, saveReceiptSettings } from '$lib/settings/local';
 
@@ -66,7 +68,7 @@
 		address = p.address;
 	});
 
-	function save() {
+	async function save() {
 		saveReceiptSettings({
 			storeName,
 			header,
@@ -88,6 +90,7 @@
 			phone,
 			address
 		});
+		await syncWorkspaceSettingsToOrganization();
 		toast.success('Receipt saved');
 	}
 </script>
@@ -153,7 +156,7 @@
 						>
 						<Switch checked={showLogo} onCheckedChange={(v) => (showLogo = v)} />
 					</div>
-					<Input bind:value={logoUrl} icon="lucide:image" placeholder="https://…" class="w-full" />
+					<MediaImageInput bind:value={logoUrl} purpose="receipt" preview="none" placeholder="https://…" label="" />
 				</div>
 				<div>
 					<div class="mb-1.5 flex items-center justify-between">

@@ -8,6 +8,8 @@
 	import { registerIcons } from '$lib/icons';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { preferences } from '$lib/theme/preferences.svelte';
+	import { features } from '$lib/features.svelte';
+	import { media } from '$lib/media/media.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { relays } from '$nostr/relay.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -48,6 +50,8 @@
 	onMount(() => {
 		preferences.load();
 		preferences.apply();
+		features.load();
+		media.load();
 		relays.load();
 		session.load();
 		tenant.load();

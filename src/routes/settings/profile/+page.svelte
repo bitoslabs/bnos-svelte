@@ -9,6 +9,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
+	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import { session, hasNip07Extension } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { glo } from '$nostr/store.svelte';
@@ -104,23 +105,7 @@
 		}
 	}
 
-	// ── avatar upload (data URI) ──
-	let fileInput: HTMLInputElement;
-
-	function handleAvatarUpload(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (!file) return;
-		if (file.size > 512 * 1024) {
-			toast.warning('Image too large (max 512 KB)');
-			return;
-		}
-		const reader = new FileReader();
-		reader.onload = () => {
-			picture = reader.result as string;
-		};
-		reader.readAsDataURL(file);
-	}
+	// Avatar uploads are handled by <MediaImageInput> below (no more data URIs).
 
 	// ── identity actions ──
 	let importOpen = $state(false);
@@ -215,22 +200,6 @@
 							{initialsFrom(displayName || username, null) || '?'}
 						{/if}
 					</div>
-					<!-- Upload button overlay -->
-					<button
-						type="button"
-						onclick={() => fileInput.click()}
-						class="absolute -right-1 -bottom-1 grid size-6 place-items-center rounded-full border-2 border-[var(--ui-bg)] bg-[var(--ui-bg-elevated)] text-[var(--ui-text-dimmed)] shadow-sm transition-colors hover:text-primary-500"
-						title="Upload avatar"
-					>
-						<Icon name="lucide:camera" class="size-3.5" />
-					</button>
-					<input
-						bind:this={fileInput}
-						type="file"
-						accept="image/png,image/jpeg,image/webp,image/gif"
-						class="hidden"
-						onchange={handleAvatarUpload}
-					/>
 				</div>
 
 				<div class="min-w-0 flex-1">
@@ -380,26 +349,19 @@
 			</div>
 		</div>
 
-		<!-- Avatar URL -->
+		<!-- Avatar -->
 		<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-start">
 			<div class="w-36 shrink-0">
-				<label class="text-[13px] font-semibold">Avatar URL</label>
+				<label class="text-[13px] font-semibold">Avatar</label>
 			</div>
-			<div class="flex-1 space-y-2">
-				<Input bind:value={picture} placeholder="https://example.com/avatar.jpg" class="w-full" />
-				{#if picture}
-					<div class="flex items-center gap-2 rounded-lg bg-[var(--ui-bg-muted)] p-2">
-						<img
-							src={picture}
-							alt={displayName}
-							class="size-9 rounded-lg border border-[var(--ui-border)] object-cover"
-							onerror={(e: Event) => ((e.target as HTMLImageElement).style.display = 'none')}
-						/>
-						<p class="min-w-0 flex-1 truncate text-[11px] text-[var(--ui-text-dimmed)]">
-							{picture}
-						</p>
-					</div>
-				{/if}
+			<div class="flex-1">
+				<MediaImageInput
+					bind:value={picture}
+					purpose="avatar"
+					preview="round"
+					size={64}
+					placeholder="https://example.com/avatar.jpg"
+				/>
 			</div>
 		</div>
 

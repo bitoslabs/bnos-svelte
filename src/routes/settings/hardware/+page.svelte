@@ -10,6 +10,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { loadHardwareSettings, saveHardwareSettings } from '$lib/settings/local';
 	import { getDeviceCode } from '$lib/utils/record-id';
+	import { syncWorkspaceSettingsToOrganization } from '$nostr/workspace-settings';
 
 	let printerType = $state<'browser' | 'usb' | 'network' | 'none'>('browser');
 	let paperSize = $state<'58mm' | '80mm'>('80mm');
@@ -38,7 +39,7 @@
 			.slice(0, 4);
 	}
 
-	function save() {
+	async function save() {
 		if (!browser) return;
 		deviceCode = normalizeDeviceCode(deviceCode);
 		saveHardwareSettings({
@@ -50,6 +51,7 @@
 			customerDisplay,
 			scaleConnected
 		});
+		await syncWorkspaceSettingsToOrganization();
 		toast.success('Hardware settings saved');
 	}
 

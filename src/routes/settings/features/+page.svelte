@@ -3,92 +3,20 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
-	import { tenant } from '$nostr/tenant.svelte';
+	import { features, FEATURE_META, FEATURE_KEYS, type FeatureKey } from '$lib/features.svelte';
+	import { syncWorkspaceSettingsToOrganization } from '$nostr/workspace-settings';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { browser } from '$app/environment';
 
-	const KEY = 'bnos-os:features';
-
-	type FeatureKey =
-		'restaurant' | 'retail' | 'loyalty' | 'crm' | 'multiBranch' | 'marketplace' | 'ai';
-
-	let features = $state<Record<FeatureKey, boolean>>({
-		restaurant: false,
-		retail: true,
-		loyalty: false,
-		crm: false,
-		multiBranch: false,
-		marketplace: false,
-		ai: false
-	});
-
 	onMount(() => {
-		if (!browser) return;
-		try {
-			const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-			features = { ...features, ...saved };
-			if (tenant.state.businessType === 'restaurant') features.restaurant = true;
-		} catch {
-			/* */
-		}
+		if (browser && !features.hydrated) features.load();
 	});
 
-	function toggle(k: FeatureKey) {
-		features[k] = !features[k];
-		if (browser) localStorage.setItem(KEY, JSON.stringify(features));
-		toast.success(`${features[k] ? 'Enabled' : 'Disabled'} ${k}`);
+	async function toggle(k: FeatureKey) {
+		const next = features.toggle(k);
+		await syncWorkspaceSettingsToOrganization();
+		toast.success(`${next ? 'Enabled' : 'Disabled'} ${FEATURE_META[k].label}`);
 	}
-
-	const featureList: {
-		key: FeatureKey;
-		icon: string;
-		label: string;
-		description: string;
-		hint?: string;
-	}[] = [
-		{
-			key: 'restaurant',
-			icon: 'lucide:chef-hat',
-			label: 'Restaurant',
-			description: 'Kitchen display, tables, waiter station, queue'
-		},
-		{
-			key: 'retail',
-			icon: 'lucide:shop',
-			label: 'Retail',
-			description: 'Barcode, inventory, stock adjustments'
-		},
-		{
-			key: 'loyalty',
-			icon: 'lucide:star',
-			label: 'Loyalty points',
-			description: 'Earn and redeem points at checkout'
-		},
-		{
-			key: 'crm',
-			icon: 'lucide:users',
-			label: 'CRM',
-			description: 'Customer segments, history, outreach'
-		},
-		{
-			key: 'multiBranch',
-			icon: 'lucide:map-pin',
-			label: 'Multi-branch',
-			description: 'Manage multiple locations and transfers'
-		},
-		{
-			key: 'marketplace',
-			icon: 'lucide:globe',
-			label: 'Marketplace',
-			description: 'Sell on external marketplaces'
-		},
-		{
-			key: 'ai',
-			icon: 'lucide:sparkles',
-			label: 'AI assistant',
-			description: 'Forecasting, restock suggestions, insights'
-		}
-	];
 </script>
 
 <svelte:head><title>Features · Settings</title></svelte:head>
@@ -105,13 +33,14 @@
 			<Icon name="lucide:layout-grid" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">Modules</h2>
 		</div>
-		{#each featureList as f (f.key)}
+		{#each FEATURE_KEYS as key (key)}
+			{@const f = FEATURE_META[key]}
 			<div class="flex items-center justify-between gap-4 px-5 py-4">
 				<div class="flex min-w-0 items-start gap-3.5">
 					<div
-						class="grid size-9 shrink-0 place-items-center rounded-xl transition-colors {features[
-							f.key
-						]
+						class="grid size-9 shrink-0 place-items-center rounded-xl transition-colors {features.isEnabled(
+							key
+						)
 							? 'bg-primary-500/10 text-primary-600 dark:text-primary-400'
 							: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-dimmed)]'}"
 					>
@@ -122,7 +51,7 @@
 						<p class="mt-0.5 text-[11px] text-[var(--ui-text-dimmed)]">{f.description}</p>
 					</div>
 				</div>
-				<Switch checked={features[f.key]} onCheckedChange={() => toggle(f.key)} />
+				<Switch checked={features.isEnabled(key)} onCheckedChange={() => toggle(key)} />
 			</div>
 		{/each}
 	</section>

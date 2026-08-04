@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import type { BusinessModel, BusinessType, TenantContext } from './tenant.svelte';
 import { glo } from './store.svelte';
 import { bnosExt } from '$lib/domain/helpers';
+import { currentWorkspaceSettingsPayload } from './workspace-settings';
 
 export const ORGANIZATION_SETTINGS_KEY = 'bnos-os:settings-organization';
 
@@ -203,6 +204,13 @@ export async function syncOrganizationSettingsToWorkspace(snapshot?: Organizatio
 	let synced = 0;
 
 	for (const company of settings.companies) {
+		const nextExt = {
+			...currentWorkspaceSettingsPayload(),
+			businessModel: company.businessModel,
+			businessType: company.businessType,
+			taxRate: company.enableTax ? company.taxRate : 0,
+			taxIncluded: company.taxIncluded
+		};
 		await glo.upsert(
 			'organization',
 			{
@@ -215,12 +223,7 @@ export async function syncOrganizationSettingsToWorkspace(snapshot?: Organizatio
 				id: company.id,
 				scope: { organizationId: company.id },
 				extensions: {
-					'org.bitos.bnos': {
-						businessModel: company.businessModel,
-						businessType: company.businessType,
-						taxRate: company.enableTax ? company.taxRate : 0,
-						taxIncluded: company.taxIncluded
-					}
+					'org.bitos.bnos': nextExt
 				}
 			}
 		);

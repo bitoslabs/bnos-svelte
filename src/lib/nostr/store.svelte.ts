@@ -55,7 +55,12 @@ const PUBLISH_QUEUE_KEY = 'bnos-os:glo:publish-queue';
 const KIND_UPGRADE_PREFIX = 'bnos-os:glo:kind-upgraded:';
 const APP_KIND_BY_TYPE: Record<string, number> = {
 	shift: NOSTR_KINDS.SHIFT,
-	'cash-event': NOSTR_KINDS.CASH_EVENT
+	'cash-event': NOSTR_KINDS.CASH_EVENT,
+	// Dedicated BNOS marketplace kinds (registered app-side until bnos-core
+	// adds them to GLO_KIND_BY_TYPE). Keeps wire format standards-compliant.
+	'marketplace.connection': NOSTR_KINDS.STORE_CONNECTION,
+	'marketplace.product': NOSTR_KINDS.MARKETPLACE_PRODUCT,
+	'marketplace.review': NOSTR_KINDS.MARKETPLACE_REVIEW
 };
 
 function uid(): string {
@@ -549,10 +554,11 @@ class GloStore {
 		try {
 			await this.flushPublishQueue();
 			await this.publishLocalKindUpgrade(type);
+			const isWorkspaceType = type === 'organization' || type === 'location';
 			const filter = createGloFilter({
 				types: [type],
 				authors: [session.pubkey],
-				organizationId: tenant.state.organizationId || undefined,
+				organizationId: isWorkspaceType ? undefined : tenant.state.organizationId || undefined,
 				limit
 			});
 			filter.kinds = [...new Set([...filter.kinds, appKindForType(type)])];

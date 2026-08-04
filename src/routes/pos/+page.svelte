@@ -12,6 +12,7 @@
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+	import { WORKSPACE_SETTINGS_SYNC_EVENT } from '$nostr/workspace-settings';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatInt, formatMoney } from '$lib/utils/format';
 	import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
@@ -89,7 +90,19 @@
 			now = new Date();
 		}, 60_000);
 
-		return () => window.clearInterval(timer);
+		const onWorkspaceSettingsSync = () => {
+			refreshLocalSettings();
+			if (payMethods.includes(generalSettings.defaultPayment)) {
+				method = generalSettings.defaultPayment;
+				if (splitPayments.length === 0) splitMethod = generalSettings.defaultPayment;
+			}
+		};
+		window.addEventListener(WORKSPACE_SETTINGS_SYNC_EVENT, onWorkspaceSettingsSync);
+
+		return () => {
+			window.clearInterval(timer);
+			window.removeEventListener(WORKSPACE_SETTINGS_SYNC_EVENT, onWorkspaceSettingsSync);
+		};
 	});
 
 	// Active promotions

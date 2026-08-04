@@ -30,6 +30,7 @@
 				{ to: '/settings/features', icon: 'lucide:layout-grid', label: 'Features' },
 				{ to: '/settings/payment-methods', icon: 'lucide:credit-card', label: 'Payment methods' },
 				{ to: '/settings/receipt', icon: 'lucide:receipt-text', label: 'Receipt' },
+				{ to: '/settings/media', icon: 'lucide:image-up', label: 'Media & uploads' },
 				{ to: '/settings/bitcoin', icon: 'lucide:bitcoin', label: 'Bitcoin' }
 			]
 		},
@@ -92,7 +93,7 @@
 						<a
 							href={resolve(it.to)}
 							aria-current={isActive ? 'page' : undefined}
-							class="group flex items-center gap-3 px-3.5 py-3 text-[14px] font-medium transition-colors lg:gap-2.5 lg:px-3 lg:py-2 lg:text-[13px] {isActive
+							class="group flex items-center gap-3 px-3.5 py-3 text-[14px] font-medium transition-colors lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-2 lg:text-[13px] {isActive
 								? 'is-active-surface'
 								: 'text-[var(--ui-text)] hover:bg-[var(--ui-bg-accented)] lg:text-[var(--ui-text-muted)] lg:hover:text-[var(--ui-text)]'}"
 						>

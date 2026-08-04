@@ -22,12 +22,15 @@ export interface NavItem {
 	exact?: boolean;
 	/** GLO object types this route is backed by (for sync seeding). */
 	types?: KnownGloObjectType[];
+	/** Nested children render as a collapsible sub-group (module with many
+	 *  sub-pages, e.g. Marketplace). The parent navigates to `to`. */
+	children?: NavItem[];
 }
 
 export interface NavSection {
 	label: string;
 	items: NavItem[];
-	feature?: 'restaurant';
+	feature?: 'restaurant' | 'marketplace';
 }
 
 export interface RoutePermission {
@@ -49,12 +52,22 @@ export const routePermissions: Record<string, RoutePermission> = {
 	'/reports': { resource: 'reports', action: 'read' },
 	'/expenses': { resource: 'accounting', action: 'read' },
 	'/staff': { resource: 'staff', action: 'read' },
+	'/marketplace': { resource: 'marketplace', action: 'read' },
+	'/marketplace/listings': { resource: 'marketplace', action: 'read' },
+	'/marketplace/channels': { resource: 'marketplace', action: 'read' },
+	'/marketplace/orders': { resource: 'marketplace', action: 'read' },
+	'/marketplace/shipping': { resource: 'marketplace', action: 'read' },
+	'/marketplace/promotions': { resource: 'marketplace', action: 'read' },
+	'/marketplace/reviews': { resource: 'marketplace', action: 'read' },
+	'/marketplace/settings': { resource: 'settings', action: 'write' },
+	'/marketplace/analytics': { resource: 'reports', action: 'read' },
 	'/settings/organization': { resource: 'settings', action: 'write' },
 	'/settings/store': { resource: 'settings', action: 'write' },
 	'/settings/general': { resource: 'settings', action: 'write' },
 	'/settings/features': { resource: 'settings', action: 'write' },
 	'/settings/payment-methods': { resource: 'settings', action: 'write' },
 	'/settings/receipt': { resource: 'settings', action: 'write' },
+	'/settings/media': { resource: 'settings', action: 'write' },
 	'/settings/bitcoin': { resource: 'settings', action: 'write' },
 	'/settings/hardware': { resource: 'settings', action: 'write' },
 	'/settings/printers': { resource: 'settings', action: 'write' },
@@ -95,6 +108,27 @@ export const navSections: NavSection[] = [
 		]
 	},
 	{
+		label: 'Marketplace',
+		feature: 'marketplace',
+		items: [
+			{
+				to: '/marketplace',
+				icon: 'lucide:globe',
+				label: 'Marketplace',
+				children: [
+					{ to: '/marketplace/listings', icon: 'lucide:tags', label: 'Listings' },
+					{ to: '/marketplace/channels', icon: 'lucide:radio', label: 'Sales Channels' },
+					{ to: '/marketplace/orders', icon: 'lucide:shopping-bag', label: 'Orders' },
+					{ to: '/marketplace/shipping', icon: 'lucide:truck', label: 'Shipping' },
+					{ to: '/marketplace/promotions', icon: 'lucide:megaphone', label: 'Promotions' },
+					{ to: '/marketplace/reviews', icon: 'lucide:star', label: 'Reviews' },
+					{ to: '/marketplace/analytics', icon: 'lucide:chart-column', label: 'Analytics' },
+					{ to: '/marketplace/settings', icon: 'lucide:settings', label: 'Store Settings' }
+				]
+			}
+		]
+	},
+	{
 		label: 'Marketing',
 		items: [
 			{ to: '/promotions', icon: 'lucide:tags', label: 'Promotions' },
@@ -127,8 +161,10 @@ export const navSections: NavSection[] = [
 	}
 ];
 
-/** Flattened items for search / breadcrumbs. */
-export const flatNav: NavItem[] = navSections.flatMap((s) => s.items);
+/** Flattened items for search / breadcrumbs (includes nested children). */
+export const flatNav: NavItem[] = navSections.flatMap((s) =>
+	s.items.flatMap((item) => (item.children ? [item, ...item.children] : [item]))
+);
 
 /**
  * Mobile bottom-bar — 5 most-used destinations.

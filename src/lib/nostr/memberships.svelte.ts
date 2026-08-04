@@ -20,6 +20,18 @@ import { parseGloEvent } from '$lib/domain/helpers';
 /** A status prevents login / app access. */
 const BLOCKING_STATUSES = new Set(['suspended', 'inactive', 'terminated']);
 
+function syncTenantBranchForStaff(member: { id: string; data: Staff }, reason: string) {
+	const branchIds = member.data.branchIds ?? [];
+	if (branchIds.length === 0) return;
+
+	const currentLocationId = tenant.state.locationId;
+	const nextLocationId = branchIds[0];
+	const shouldReplace = !currentLocationId || !branchIds.includes(currentLocationId);
+	if (!shouldReplace) return;
+
+	tenant.configure({ locationId: nextLocationId });
+}
+
 export type ResolveDestination = '/' | '/workspace' | '/setup' | '/blocked' | '/staff';
 
 class MembershipsStore {
@@ -115,10 +127,7 @@ class MembershipsStore {
 					setupComplete: true
 				});
 			}
-			// Prefer the staff member's assigned branch as the active location.
-			if (me.data.branchIds?.length && !tenant.state.locationId) {
-				tenant.configure({ locationId: me.data.branchIds[0] });
-			}
+			syncTenantBranchForStaff(me, 'resolveStaffWorkspace');
 			tenant.completeSetup();
 			tenant.setActiveStaff(toActiveStaffInfo(me));
 			return true;
@@ -221,6 +230,7 @@ class MembershipsStore {
 		const me = active[0];
 		const status = me.data.status ?? 'active';
 		if (BLOCKING_STATUSES.has(status)) return false;
+		syncTenantBranchForStaff(me, 'autoResolve');
 		tenant.setActiveStaff(toActiveStaffInfo(me));
 		return true;
 	};
@@ -248,7 +258,10 @@ class MembershipsStore {
 		await glo.upsert<Staff>(TYPE.staff, owner, { id: `owner-${me}` });
 		// Re-resolve so the just-created record is picked up.
 		const records = this.myStaffRecords;
-		if (records[0]) tenant.setActiveStaff(toActiveStaffInfo(records[0]));
+		if (records[0]) {
+			syncTenantBranchForStaff(records[0], 'bootstrapOwnerIfMissing');
+			tenant.setActiveStaff(toActiveStaffInfo(records[0]));
+		}
 	};
 
 	/** Clear cached membership state (on logout). */

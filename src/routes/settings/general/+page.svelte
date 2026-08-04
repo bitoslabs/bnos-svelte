@@ -16,6 +16,7 @@
 		saveGeneralSettings,
 		type GeneralSettings
 	} from '$lib/settings/local';
+	import { syncWorkspaceSettingsToOrganization } from '$nostr/workspace-settings';
 
 	// Business configuration (currency / tax) is owned by the Workspace page —
 	// it is org-level, not a device preference. It is shown read-only here and
@@ -63,11 +64,12 @@
 
 	const dirty = $derived(saved !== null && JSON.stringify(snapshot()) !== JSON.stringify(saved));
 
-	function save() {
+	async function save() {
 		if (!browser) return;
 		const s = snapshot();
 		saveGeneralSettings(s);
 		saved = s;
+		await syncWorkspaceSettingsToOrganization();
 		toast.success('Preferences saved');
 	}
 

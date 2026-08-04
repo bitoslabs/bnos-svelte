@@ -80,7 +80,8 @@ export const ROLE_DEFAULTS: Record<UserRole, Permission[]> = {
 		{ resource: 'refunds', actions: ['read', 'write'], scope: 'branch' },
 		{ resource: 'discounts', actions: ['read', 'write'], scope: 'branch' },
 		{ resource: 'suppliers', actions: ['read', 'write'], scope: 'branch' },
-		{ resource: 'purchase_orders', actions: ['read', 'write', 'delete', 'approve'], scope: 'branch' }
+		{ resource: 'purchase_orders', actions: ['read', 'write', 'delete', 'approve'], scope: 'branch' },
+		{ resource: 'marketplace', actions: ['read', 'write', 'delete'], scope: 'branch' }
 	],
 	cashier: [
 		{ resource: 'pos', actions: ['read', 'write'], scope: 'branch' },

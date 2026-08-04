@@ -830,3 +830,107 @@ export interface CashEvent {
 	approvedBy?: string;
 	occurredAt: string;
 }
+
+// ════════════════════════════════════════════════════════════════════
+// MARKETPLACE (dedicated BNOS marketplace kinds 30950–30955)
+//   marketplace.connection → STORE_CONNECTION        (30953)
+//   marketplace.product    → MARKETPLACE_PRODUCT     (30951)
+//   marketplace.review     → MARKETPLACE_REVIEW      (30955)
+//   orders from channels reuse commerce.order (30200) with source/channel.
+// ════════════════════════════════════════════════════════════════════
+
+/** The platform a channel connects to (TikTok, Facebook, own website…). */
+export type MarketplaceChannelType =
+	| 'tiktok'
+	| 'facebook'
+	| 'instagram'
+	| 'website'
+	| 'shopee'
+	| 'lazada'
+	| 'tokopedia'
+	| 'amazon'
+	| 'whatsapp'
+	| 'shopify'
+	| 'custom';
+
+export type MarketplaceConnectionStatus =
+	| 'connected'
+	| 'disconnected'
+	| 'error'
+	| 'pending';
+
+/** A connected external sales channel / store partnership.
+ *  Wire kind: STORE_CONNECTION (30953). */
+export interface MarketplaceConnection {
+	name: string;
+	type: MarketplaceChannelType;
+	status: MarketplaceConnectionStatus;
+	/** Storefront / shop URL on the channel. */
+	storeUrl?: string;
+	/** Whether orders/listings auto-sync. */
+	syncEnabled: boolean;
+	/** Mark orders fulfilled automatically once shipped. */
+	autoFulfill?: boolean;
+	lastSyncAt?: string;
+	/** Brand logo / emoji shown on chips. */
+	logo?: string;
+	/** Free-form channel config (apiKey masked in UI, region, currency…). */
+	config?: Record<string, string>;
+}
+
+export type MarketplaceProductStatus =
+	| 'draft'
+	| 'active'
+	| 'paused'
+	| 'out_of_stock'
+	| 'archived';
+
+/** A product published to one or more sales channels.
+ *  Wire kind: MARKETPLACE_PRODUCT (30951). */
+export interface MarketplaceProduct {
+	productId: string;
+	productName: string;
+	sku?: string;
+	/** Channel ids this listing is published to. */
+	channelIds: string[];
+	status: MarketplaceProductStatus;
+	price: number;
+	compareAtPrice?: number;
+	/** Per-channel price overrides (channelId → price). */
+	channelPrices?: Record<string, number>;
+	inventoryTracked: boolean;
+	stock?: number;
+	images?: string[];
+	description?: string;
+	publishedAt?: string;
+	/** Per-channel publish health. */
+	channelStatus?: Record<string, 'published' | 'syncing' | 'rejected'>;
+	// cached performance metrics
+	views?: number;
+	clicks?: number;
+	conversions?: number;
+}
+
+export type MarketplaceReviewStatus =
+	| 'published'
+	| 'pending'
+	| 'flagged'
+	| 'hidden'
+	| 'replied';
+
+/** A product/store review (synced from a channel or captured manually).
+ *  Wire kind: MARKETPLACE_REVIEW (30955). */
+export interface MarketplaceReview {
+	productId?: string;
+	productName?: string;
+	channelId?: string;
+	channelName?: string;
+	customerName: string;
+	rating: number; // 1–5
+	title?: string;
+	body?: string;
+	status: MarketplaceReviewStatus;
+	reply?: string;
+	verified: boolean;
+	helpful?: number;
+}

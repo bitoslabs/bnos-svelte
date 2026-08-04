@@ -5,13 +5,14 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import {
 		readOrganizationSettings,
 		writeOrganizationSettings,
-		syncOrganizationSettingsToWorkspace,
-		type OrganizationSettingsSnapshot as OrgSettings
+		syncOrganizationSettingsToWorkspace
 	} from '$nostr/organization-settings';
+	import { syncWorkspaceSettingsToOrganization } from '$nostr/workspace-settings';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { browser } from '$app/environment';
 
@@ -114,25 +115,17 @@
 		} catch {
 			/* non-fatal */
 		}
+		try {
+			await syncWorkspaceSettingsToOrganization();
+		} catch {
+			/* non-fatal */
+		}
 
 		activeCompanyName = storeName;
 		toast.success('Store profile saved');
 	}
 
-	function handleLogoUpload(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (!file) return;
-		if (file.size > 2 * 1024 * 1024) {
-			toast.warning('Logo must be under 2MB');
-			return;
-		}
-		const reader = new FileReader();
-		reader.onload = (ev) => {
-			storeLogo = ev.target?.result as string;
-		};
-		reader.readAsDataURL(file);
-	}
+	// Store logo uploads are handled by <MediaImageInput>.
 
 	const initials = $derived(
 		(storeName || 'BNOS')
@@ -210,45 +203,14 @@
 			<Icon name="lucide:image" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">Store logo</h2>
 		</div>
-		<div class="flex items-start gap-5 px-5 py-5">
-			<div
-				class="grid size-24 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-dashed border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
-			>
-				{#if storeLogo}<img
-						src={storeLogo}
-						alt="Logo"
-						class="h-full w-full object-contain p-1.5"
-					/>{:else}<div class="text-center">
-						<Icon name="lucide:shop" class="size-7 text-[var(--ui-text-dimmed)]" />
-						<p class="mt-1 text-[8px] text-[var(--ui-text-dimmed)]">No logo</p>
-					</div>{/if}
-			</div>
-			<div class="flex-1 space-y-3">
-				<Input
-					bind:value={storeLogo}
-					placeholder="Logo URL or data URI"
-					icon="lucide:link"
-					class="w-full"
-				/>
-				<div class="flex gap-2">
-					<label
-						class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-primary-500/30 px-3.5 py-2 text-[12px] font-semibold text-primary-600 transition-colors hover:bg-primary-500/10 dark:text-primary-400"
-					>
-						<Icon name="lucide:upload" class="size-3.5" />Upload
-						<input type="file" accept="image/*" class="hidden" onchange={handleLogoUpload} />
-					</label>
-					{#if storeLogo}<Button
-							color="error"
-							variant="ghost"
-							size="sm"
-							icon="lucide:trash-2"
-							onclick={() => (storeLogo = '')}>Remove</Button
-						>{/if}
-				</div>
-				<p class="text-[10px] text-[var(--ui-text-dimmed)]">
-					PNG, JPG or SVG · max 2MB · recommended 256×256
-				</p>
-			</div>
+		<div class="px-5 py-5">
+			<MediaImageInput
+				bind:value={storeLogo}
+				purpose="logo"
+				label=""
+				hint="PNG, JPG or SVG · recommended 256×256"
+				size={96}
+			/>
 		</div>
 	</section>
 
