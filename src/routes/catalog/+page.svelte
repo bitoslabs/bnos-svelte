@@ -3,6 +3,9 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
+	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
+	import MediaImageGallery from '$lib/components/media/MediaImageGallery.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
@@ -381,6 +384,7 @@
 	let pBarcode = $state('');
 	let pDesc = $state('');
 	let pImage = $state('');
+	let pImages = $state<string[]>([]);
 	let pUnitId = $state('');
 	let pVariants = $state<{ name: string; price: number }[]>([]);
 	let pVariantName = $state('');
@@ -425,11 +429,18 @@
 							: 'item')
 	);
 
+	/** Dynamic dialog width: product editor is wide (gallery + details),
+	 *  the lighter forms stay compact. */
+	const dlgSize = $derived(
+		dlgKind === 'products' ? 'xl' : dlgKind === 'modifiers' ? 'md' : 'sm'
+	);
+
 	function openCreate(t: Tab) {
 		dlgKind = t;
 		editingId = null;
 		// product form
 		pName = pCat = pSku = pBarcode = pDesc = pImage = pUnitId = '';
+		pImages = [];
 		pPrice = pCostPrice = pCompareAtPrice = '';
 		pVariants = [];
 		pVariantName = '';
@@ -471,6 +482,7 @@
 		pBarcode = d.barcode ?? '';
 		pDesc = d.description ?? '';
 		pImage = d.image ?? '';
+		pImages = Array.isArray(d.images) ? d.images : (d.image ? [d.image] : []);
 		pUnitId = d.unitId ?? '';
 		pVariants = (d.variants ?? []).map((v: any) => ({
 			name: v.name ?? v.shortName ?? '',
@@ -554,7 +566,8 @@
 					sku: pSku.trim() || undefined,
 					barcode: pBarcode.trim() || undefined,
 					description: pDesc.trim() || undefined,
-					image: pImage.trim() || undefined,
+					image: (pImages[0] ?? pImage.trim()) || undefined,
+				images: pImages.length ? pImages : undefined,
 					unitId: pUnitId.trim() || undefined,
 					costPrice:
 						typeof pCostPrice === 'number'
@@ -1445,11 +1458,12 @@
 				>Description</span
 			><Input bind:value={bDesc} class="w-full" /></label
 		>
-		<label class="block"
-			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Image URL</span
-			><Input bind:value={bImage} class="w-full" /></label
-		>
+		<MediaImageInput
+			bind:value={bImage}
+			purpose="brand"
+			preview="wide"
+			placeholder="Brand / banner image URL"
+		/>
 		<div class="grid grid-cols-2 gap-3">
 			<div>
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
@@ -1620,9 +1634,20 @@
 </Dialog>
 
 <!-- Original dialog for other tabs -->
-<Dialog bind:open={dlgOpen} title={dlgTitle}>
+<Dialog bind:open={dlgOpen} title={dlgTitle} size={dlgSize}>
 	{#if dlgKind === 'products'}
-		<div class="space-y-3">
+		<div class="grid gap-5 lg:grid-cols-[19rem_1fr]">
+			<div class="space-y-3 lg:sticky lg:top-0 lg:self-start">
+				<!-- Images (gallery) -->
+				<MediaImageGallery
+					bind:value={pImages}
+					purpose="product"
+					label="Product images"
+					hint="The first image is the cover shown on listings & the marketplace."
+				/>
+			</div>
+			<!-- Details -->
+			<div class="space-y-3">
 			<label class="block"
 				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</span
 				><Input bind:value={pName} icon="lucide:package" class="w-full" /></label
@@ -1733,48 +1758,11 @@
 				/></label
 			>
 
-			<!-- Image URL + preview -->
-			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Image URL</span
-				><Input
-					bind:value={pImage}
-					icon="lucide:image"
-					placeholder="https://…"
-					class="w-full"
-				/></label
-			>
-			{#if pImage}
-				<img
-					src={pImage}
-					alt=""
-					class="h-20 rounded-lg border border-[var(--ui-border-muted)] object-cover"
-				/>
-			{/if}
-
 			<!-- Toggles: isPublic / available / taxInclusive -->
 			<div class="flex flex-wrap gap-3">
-				<label class="flex cursor-pointer items-center gap-2"
-					><input
-						type="checkbox"
-						bind:checked={pIsPublic}
-						class="size-4 rounded border-[var(--ui-border)]"
-					/><span class="text-[12px] font-semibold">Public</span></label
-				>
-				<label class="flex cursor-pointer items-center gap-2"
-					><input
-						type="checkbox"
-						bind:checked={pAvailable}
-						class="size-4 rounded border-[var(--ui-border)]"
-					/><span class="text-[12px] font-semibold">Available</span></label
-				>
-				<label class="flex cursor-pointer items-center gap-2"
-					><input
-						type="checkbox"
-						bind:checked={pTaxInclusive}
-						class="size-4 rounded border-[var(--ui-border)]"
-					/><span class="text-[12px] font-semibold">Tax inclusive</span></label
-				>
+				<Checkbox bind:checked={pIsPublic} size="sm" label="Public" />
+				<Checkbox bind:checked={pAvailable} size="sm" label="Available" />
+				<Checkbox bind:checked={pTaxInclusive} size="sm" label="Tax inclusive" />
 			</div>
 
 			<!-- prepTime + sortOrder -->
@@ -1868,14 +1856,11 @@
 
 			<!-- Inventory policy -->
 			<div>
-				<label class="flex cursor-pointer items-center gap-2"
-					><input
-						type="checkbox"
-						bind:checked={pTrackInv}
-						class="size-4 rounded border-[var(--ui-border)]"
-					/><span class="text-[12.5px] font-semibold">Track inventory & show stock in POS</span
-					></label
-				>
+				<Checkbox
+					bind:checked={pTrackInv}
+					size="sm"
+					label="Track inventory & show stock in POS"
+				/>
 				{#if pTrackInv}
 					<div class="mt-2 grid grid-cols-2 gap-2">
 						<Input
@@ -1886,16 +1871,15 @@
 							placeholder="Low-stock alert at"
 							class="w-full"
 						/>
-						<label
-							class="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--ui-border-muted)] px-2.5 py-2"
-							><input
-								type="checkbox"
-								bind:checked={pDenyOos}
-								class="size-4 rounded border-[var(--ui-border)]"
-							/><span class="text-[11.5px] font-semibold">Block sale when out of stock</span></label
-						>
+						<Checkbox
+							bind:checked={pDenyOos}
+							size="sm"
+							label="Block sale when out of stock"
+							class="items-center rounded-lg border border-[var(--ui-border-muted)] px-2.5 py-2"
+						/>
 					</div>
 				{/if}
+			</div>
 			</div>
 		</div>
 	{:else if dlgKind === 'categories'}

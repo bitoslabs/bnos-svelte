@@ -16,9 +16,22 @@ import { restoreTenantFromWorkspace } from './workspace.svelte';
 import { TYPE, type Staff, type UserRole } from '$lib/domain';
 import { COMPANY_WIDE_ROLES } from '$lib/domain/permissions';
 import { parseGloEvent } from '$lib/domain/helpers';
+import { syncKeyGrantsForCurrentUser } from '$lib/crypto/organization-key-grants';
 
 /** A status prevents login / app access. */
 const BLOCKING_STATUSES = new Set(['suspended', 'inactive', 'terminated']);
+
+function syncTenantBranchForStaff(member: { id: string; data: Staff }, reason: string) {
+	const branchIds = member.data.branchIds ?? [];
+	if (branchIds.length === 0) return;
+
+	const currentLocationId = tenant.state.locationId;
+	const nextLocationId = branchIds[0];
+	const shouldReplace = !currentLocationId || !branchIds.includes(currentLocationId);
+	if (!shouldReplace) return;
+
+	tenant.configure({ locationId: nextLocationId });
+}
 
 export type ResolveDestination = '/' | '/workspace' | '/setup' | '/blocked' | '/staff';
 
@@ -71,6 +84,9 @@ class MembershipsStore {
 			await glo.sync(TYPE.staff);
 			// 2. Records authored by other owners where this user is the staff member.
 			await this.fetchMembershipsByPTag();
+			// 3. Pull NIP-44 company key grants addressed to this user (kind 30512) so
+			//    the staff device can decrypt owner-authored records. Best-effort.
+			await syncKeyGrantsForCurrentUser().catch(() => ({ imported: 0, failed: 0 }));
 			return this.myActiveRecords;
 		} finally {
 			this.resolving = false;
@@ -115,10 +131,7 @@ class MembershipsStore {
 					setupComplete: true
 				});
 			}
-			// Prefer the staff member's assigned branch as the active location.
-			if (me.data.branchIds?.length && !tenant.state.locationId) {
-				tenant.configure({ locationId: me.data.branchIds[0] });
-			}
+			syncTenantBranchForStaff(me, 'resolveStaffWorkspace');
 			tenant.completeSetup();
 			tenant.setActiveStaff(toActiveStaffInfo(me));
 			return true;
@@ -221,6 +234,7 @@ class MembershipsStore {
 		const me = active[0];
 		const status = me.data.status ?? 'active';
 		if (BLOCKING_STATUSES.has(status)) return false;
+		syncTenantBranchForStaff(me, 'autoResolve');
 		tenant.setActiveStaff(toActiveStaffInfo(me));
 		return true;
 	};
@@ -248,7 +262,10 @@ class MembershipsStore {
 		await glo.upsert<Staff>(TYPE.staff, owner, { id: `owner-${me}` });
 		// Re-resolve so the just-created record is picked up.
 		const records = this.myStaffRecords;
-		if (records[0]) tenant.setActiveStaff(toActiveStaffInfo(records[0]));
+		if (records[0]) {
+			syncTenantBranchForStaff(records[0], 'bootstrapOwnerIfMissing');
+			tenant.setActiveStaff(toActiveStaffInfo(records[0]));
+		}
 	};
 
 	/** Clear cached membership state (on logout). */

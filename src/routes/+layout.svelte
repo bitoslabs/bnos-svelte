@@ -8,21 +8,24 @@
 	import { registerIcons } from '$lib/icons';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { preferences } from '$lib/theme/preferences.svelte';
+	import { features } from '$lib/features.svelte';
+	import { media } from '$lib/media/media.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { relays } from '$nostr/relay.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { warmRelays } from '$nostr/client';
-	import {
-		hasActiveWorkspaceContext,
-		resolveWorkspace,
-	} from '$nostr/workspace.svelte';
+	import { hasActiveWorkspaceContext, resolveWorkspace } from '$nostr/workspace.svelte';
 	import { memberships } from '$nostr/memberships.svelte';
+	import { profile } from '$nostr/profile.svelte';
+	import { organizationKey } from '$lib/crypto/organization-key.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import { sidebarState, loadCollapsed as loadSidebarCollapsed } from '$lib/sidebar-state.svelte';
 	import AppTopbar from '$lib/components/AppTopbar.svelte';
 	import BottomTabBar from '$lib/components/mobile/BottomTabBar.svelte';
 	import Toaster from '$lib/components/ui/Toaster.svelte';
+	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
+	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import PwaPrompt from '$lib/components/PwaPrompt.svelte';
 	import OfflineBadge from '$lib/components/OfflineBadge.svelte';
 	import { popovers } from '$lib/stores/popovers.svelte';
@@ -37,10 +40,12 @@
 
 	const isPublicRoute = $derived(
 		page.url.pathname === '/login' ||
-		page.url.pathname === '/resolve' ||
-		page.url.pathname.startsWith('/setup')
+			page.url.pathname === '/resolve' ||
+			page.url.pathname.startsWith('/setup')
 	);
-	const isPosRoute = $derived(page.url.pathname === '/pos' || page.url.pathname.startsWith('/pos/'));
+	const isPosRoute = $derived(
+		page.url.pathname === '/pos' || page.url.pathname.startsWith('/pos/')
+	);
 
 	registerIcons();
 	loadSidebarCollapsed();
@@ -48,10 +53,35 @@
 	onMount(() => {
 		preferences.load();
 		preferences.apply();
+		features.load();
+		media.load();
 		relays.load();
 		session.load();
 		tenant.load();
+		profile.load();
 		if (session.isAuthenticated) void warmRelays();
+	});
+
+	// Hydrate the kind-0 profile cache from relays whenever the active pubkey
+	// changes (boot / login / identity switch) so the app chrome shows the
+	// freshest display name + avatar. Best-effort and runs once per pubkey.
+	let profilePubkey = '';
+	$effect(() => {
+		const me = session.pubkey;
+		if (!me) {
+			// Signed out: drop any stale in-memory profile cache.
+			if (profilePubkey) {
+				profile.reset();
+				profilePubkey = '';
+			}
+			return;
+		}
+		if (!session.hydrated || !relays.hydrated) return;
+		if (profilePubkey === me) return;
+		// Identity changed (login / key switch): reset stale cache first.
+		if (profilePubkey && profilePubkey !== me) profile.reset();
+		profilePubkey = me;
+		void profile.fetchFromRelays();
 	});
 
 	$effect(() => {
@@ -120,6 +150,9 @@
 		if (path !== '/login' && !path.startsWith('/setup')) {
 			void (async () => {
 				await memberships.resolve();
+				// Ensure the active org has a local AES key (owner/admin mints it;
+				// staff already imported theirs via the grant sync in memberships.resolve).
+				await organizationKey.autoEnsureActiveKey();
 				if (memberships.autoResolve()) return;
 				await memberships.bootstrapOwnerIfMissing();
 				if (tenant.state.activeStaffId) return;
@@ -152,7 +185,9 @@
 	<div class="app-shell flex min-h-screen">
 		{#if !isPosRoute}
 			<aside
-				class="app-sidebar-shell app-chrome sticky top-0 hidden h-screen {sidebarState.collapsed ? 'w-16' : 'w-64'} shrink-0 border-r border-[var(--glass-border)] transition-[width] duration-200 ease-in-out lg:flex lg:flex-col"
+				class="app-sidebar-shell app-chrome sticky top-0 hidden h-screen {sidebarState.collapsed
+					? 'w-16'
+					: 'w-64'} shrink-0 border-r border-[var(--glass-border)] transition-[width] duration-200 ease-in-out lg:flex lg:flex-col"
 			>
 				<AppSidebar />
 			</aside>
@@ -162,7 +197,7 @@
 			<button
 				type="button"
 				aria-label="Close menu"
-				class="fixed inset-0 z-40 bg-black/50 backdrop-blur-[3px] transition-opacity lg:hidden animate-fade"
+				class="animate-fade fixed inset-0 z-40 bg-black/50 backdrop-blur-[3px] transition-opacity lg:hidden"
 				onclick={() => (drawerOpen = false)}
 			></button>
 			<aside
@@ -194,17 +229,25 @@
 {/if}
 
 {#if !isPublicRoute && postLoginSyncState === 'checking-workspace'}
-	<div class="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--ui-bg)]/80 backdrop-blur-sm">
-		<div class="flex flex-col items-center gap-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--surface-bg)] p-8 shadow-2xl">
+	<div
+		class="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--ui-bg)]/80 backdrop-blur-sm"
+	>
+		<div
+			class="flex flex-col items-center gap-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--surface-bg)] p-8 shadow-2xl"
+		>
 			<div class="relative">
-				<div class="size-12 animate-spin rounded-full border-[3px] border-[var(--ui-border)] border-t-primary-500"></div>
+				<div
+					class="size-12 animate-spin rounded-full border-[3px] border-[var(--ui-border)] border-t-primary-500"
+				></div>
 				<div class="absolute inset-0 grid place-items-center">
 					<Icon name="lucide:zap" class="size-5 text-primary-500" />
 				</div>
 			</div>
 			<div class="text-center">
 				<p class="font-display text-[15px] font-bold">Checking workspace</p>
-				<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">Restoring your active workspace and branch…</p>
+				<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
+					Restoring your active workspace and branch…
+				</p>
 			</div>
 		</div>
 	</div>
@@ -214,3 +257,5 @@
 <Toaster />
 <PwaPrompt />
 <OfflineBadge />
+<ConfirmDialog />
+<CommandPalette />

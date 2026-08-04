@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import ListToolbar from '$lib/components/list/ListToolbar.svelte';
 	import SortableTh from '$lib/components/list/SortableTh.svelte';
 	import Pagination from '$lib/components/list/Pagination.svelte';
@@ -15,11 +15,15 @@
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+	import { permissions } from '$lib/permissions.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, formatInt, relativeTime, titleCase } from '$lib/utils/format';
 	import { toOrderRows, type DashboardOrder, type OrderRow } from '$lib/dashboard/metrics';
-	import { TYPE, statusColor } from '$lib/domain';
+	import { TYPE, statusColor, type Location } from '$lib/domain';
 	import type { OrderLine, PickupInfo, ShippingInfo } from '$lib/domain/types';
+	import { ORDER_SOURCES, sourceLabel, sourceIcon } from '$lib/domain/order-sources';
+	import { printPackingSlip } from '$lib/pos/print';
+	import { btcRate } from '$lib/bitcoin/rate.svelte';
 
 	type OrderDetailData = DashboardOrder & {
 		shipping?: ShippingInfo;
@@ -27,8 +31,30 @@
 		tableId?: string;
 	};
 
-	onMount(() => {
-		dataSync.pageSync([TYPE.order, TYPE.payment], { scope: 'orders' });
+	// ── Branch scope ──────────────────────────────────────────
+	// '__all__' = every branch in the org; otherwise restrict the list (and the
+	// relay sync) to a single branch via the `glo:scope:org:loc` topic.
+	const locations = $derived(glo.all<Location, typeof TYPE.location>(TYPE.location));
+	const branchOptions = $derived.by(() => {
+		const opts: { id: string; label: string }[] = [];
+		for (const loc of locations) {
+			if (!permissions.canAccessBranch(loc.id)) continue;
+			opts.push({ id: loc.id, label: loc.data.name ?? loc.id });
+		}
+		return opts;
+	});
+	let branchFilter = $state<string>('__all__');
+	const activeBranchId = $derived(branchFilter === '__all__' ? null : branchFilter);
+
+	// Sync orders + payments scoped to the current branch filter. On mount this
+	// runs org-wide (branch = null); switching the branch filter re-syncs with
+	// the `glo:scope:org:loc` topic for just that branch.
+	$effect(() => {
+		const branch = activeBranchId;
+		void branch;
+		dataSync.pageSyncBranch([TYPE.order, TYPE.payment], branch, {
+			scope: `orders:branch:${branch ?? 'all'}`
+		});
 	});
 
 	const currency = $derived(tenant.state.currency);
@@ -60,9 +86,11 @@
 	] as const;
 	const TYPES = ['__all__', 'dine_in', 'takeaway', 'delivery', 'pickup'] as const;
 	const DATE_RANGES = ['__all__', 'today', '7d', '30d'] as const;
+	const SOURCES = ['__all__', ...ORDER_SOURCES.map((s) => s.value)] as const;
 
 	let statusFilter = $state<string>('__all__');
 	let typeFilter = $state<string>('__all__');
+	let sourceFilter = $state<string>('__all__');
 	let dateRangeFilter = $state<string>('__all__');
 
 	function matchDateRange(atMs: number): boolean {
@@ -85,7 +113,16 @@
 				(statusFilter === 'completed' && (s.includes('paid') || s.includes('complete'))) ||
 				(statusFilter === 'pending' && s.includes('pending'));
 			const matchesType = typeFilter === '__all__' || o.type === typeFilter;
-			return matchesStatus && matchesType && matchDateRange(o.atMs);
+			const matchesSource = sourceFilter === '__all__' || o.source === sourceFilter;
+			const matchesBranch =
+				activeBranchId === null ||
+				(o.branchId ?? null) === activeBranchId ||
+				// Orders created before branchId was stamped fall back to the tenant's
+				// active location only when that matches the filter.
+				(o.branchId == null && tenant.state.locationId === activeBranchId);
+			return (
+				matchesStatus && matchesType && matchesSource && matchesBranch && matchDateRange(o.atMs)
+			);
 		})
 	);
 
@@ -95,6 +132,7 @@
 			o.number.toLowerCase().includes(q) ||
 			o.status.toLowerCase().includes(q) ||
 			o.type.toLowerCase().includes(q) ||
+			sourceLabel(o.source).toLowerCase().includes(q) ||
 			o.method.toLowerCase().includes(q),
 		sortOptions: () => [
 			{ key: 'number', label: 'Order no.', value: (o) => o.number },
@@ -142,8 +180,14 @@
 					`<tr><td>${line.quantity}× ${line.productName || line.name || 'Item'}${line.variantName ? ` (${line.variantName})` : ''}</td><td style="text-align:right">${formatMoney(lineTotal(line), currency)}</td></tr>`
 			)
 			.join('');
+		const sats =
+			o.totalSats ?? (btcRate.canConvert(currency) ? btcRate.satsFromAmount(o.total, currency) : 0);
+		const satsRow =
+			sats > 0
+				? `<tr><td>in sats</td><td style="text-align:right">≈ ${sats.toLocaleString()} sats</td></tr>`
+				: '';
 		w.document.write(
-			`<html><head><title>Order ${o.number}</title><style>body{font-family:monospace;padding:16px;font-size:12px}h2{text-align:center}table{width:100%}td{padding:2px 0}.total{font-weight:bold;font-size:14px;border-top:1px dashed #000;padding-top:8px}</style></head><body><h2>${tenant.state.organizationName || 'BNOS'}</h2><p style="text-align:center">${o.number}</p><hr><table>${itemsHtml}</table><hr><table><tr class="total"><td>TOTAL</td><td style="text-align:right">${formatMoney(o.total, currency)}</td></tr></table><p style="text-align:center;margin-top:16px">Thank you!</p></body></html>`
+			`<html><head><title>Order ${o.number}</title><style>body{font-family:monospace;padding:16px;font-size:12px}h2{text-align:center}table{width:100%}td{padding:2px 0}.total{font-weight:bold;font-size:14px;border-top:1px dashed #000;padding-top:8px}</style></head><body><h2>${tenant.state.organizationName || 'BNOS'}</h2><p style="text-align:center">${o.number}</p><hr><table>${itemsHtml}</table><hr><table><tr class="total"><td>TOTAL</td><td style="text-align:right">${formatMoney(o.total, currency)}</td></tr>${satsRow}</table><p style="text-align:center;margin-top:16px">Thank you!</p></body></html>`
 		);
 		w.document.close();
 		w.print();
@@ -164,6 +208,10 @@
 	// ── Bulk selection ───────────────────────────────────────
 	const selectedIds = new SvelteSet<string>();
 	let selectAll = $state(false);
+	const selectIndeterminate = $derived(
+		selectedIds.size > 0 &&
+			!(selectedIds.size === controls.pagedList.length && controls.pagedList.length > 0)
+	);
 
 	function toggleSelectAll() {
 		if (selectAll) {
@@ -198,11 +246,22 @@
 	// ── CSV Export ───────────────────────────────────────────
 	function exportCSV() {
 		const rows = filteredByCriteria;
-		const header = ['Order', 'Status', 'Type', 'Customer', 'Items', 'Total', 'Method', 'Date'];
+		const header = [
+			'Order',
+			'Status',
+			'Type',
+			'Source',
+			'Customer',
+			'Items',
+			'Total',
+			'Method',
+			'Date'
+		];
 		const lines = rows.map((o) => [
 			o.number,
 			o.status,
 			o.type,
+			sourceLabel(o.source),
 			o.customerName,
 			String(o.items),
 			String(o.total),
@@ -272,6 +331,14 @@
 						rawItem = glo.get('commerce.order', o.id);
 						rawOpen = true;
 					}
+				},
+				{
+					label: 'Print packing slip',
+					icon: 'lucide:package',
+					onSelect: () => {
+						const obj = glo.get('commerce.order', o.id);
+						if (obj) printPackingSlip(obj as any);
+					}
 				}
 			],
 			[
@@ -291,7 +358,9 @@
 	function resetFilters() {
 		statusFilter = '__all__';
 		typeFilter = '__all__';
+		sourceFilter = '__all__';
 		dateRangeFilter = '__all__';
+		branchFilter = '__all__';
 		controls.search = '';
 	}
 
@@ -305,6 +374,7 @@
 		statusFilter !== '__all__' ||
 			typeFilter !== '__all__' ||
 			dateRangeFilter !== '__all__' ||
+			branchFilter !== '__all__' ||
 			controls.search
 	);
 </script>
@@ -386,6 +456,15 @@
 				<div class="font-display text-lg font-bold tabular-nums">
 					{formatMoney(totalRevenue, currency)}
 				</div>
+				{#if btcRate.canConvert(currency)}
+					<div
+						class="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+						title="Live sats equivalent at current BTC/{currency} rate"
+					>
+						<Icon name="lucide:zap" class="size-3" />≈
+						{formatInt(btcRate.satsFromAmount(totalRevenue, currency))} sats
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -480,6 +559,47 @@
 						class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
 					/>
 				</div>
+				<!-- Source filter -->
+				<div
+					class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+				>
+					<select
+						bind:value={sourceFilter}
+						class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium focus:outline-none"
+					>
+						{#each SOURCES as s (s)}
+							<option value={s}>{s === '__all__' ? 'All sources' : sourceLabel(s)}</option>
+						{/each}
+					</select>
+					<Icon
+						name="lucide:chevron-down"
+						class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+					/>
+				</div>
+				<!-- Branch filter (multi-branch tenants only) -->
+				{#if branchOptions.length > 1}
+					<div
+						class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+					>
+						<Icon
+							name="lucide:map-pin"
+							class="pointer-events-none absolute left-2.5 size-3.5 text-[var(--ui-text-dimmed)]"
+						/>
+						<select
+							bind:value={branchFilter}
+							class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-8 text-[13px] font-medium focus:outline-none"
+						>
+							<option value="__all__">All branches</option>
+							{#each branchOptions as b (b.id)}
+								<option value={b.id}>{b.label}</option>
+							{/each}
+						</select>
+						<Icon
+							name="lucide:chevron-down"
+							class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+						/>
+					</div>
+				{/if}
 				<!-- Date range filter -->
 				<div
 					class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
@@ -562,6 +682,13 @@
 					<div class="font-display text-xl font-bold tabular-nums">
 						{formatMoney(o.total, currency)}
 					</div>
+					{#if o.totalSats}
+						<div
+							class="flex items-center gap-0.5 text-[11px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+						>
+							<Icon name="lucide:zap" class="size-3" />{formatInt(o.totalSats)} sats
+						</div>
+					{/if}
 					<div class="mt-1 flex items-center gap-2 text-[11.5px] text-[var(--ui-text-muted)]">
 						<Icon name="lucide:boxes" class="size-3.5" />
 						{o.items} items
@@ -587,11 +714,11 @@
 					<thead>
 						<tr>
 							<th class="w-8 px-3 py-2.5">
-								<input
-									type="checkbox"
+								<Checkbox
+									size="sm"
 									checked={selectAll}
-									onchange={toggleSelectAll}
-									class="size-4 rounded border-[var(--ui-border)] accent-primary-500"
+									indeterminate={selectIndeterminate}
+									onCheckedChange={() => toggleSelectAll()}
 								/>
 							</th>
 							<th class="w-8 px-2 py-2.5"></th>
@@ -604,6 +731,10 @@
 							<th
 								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
 								>Type</th
+							>
+							<th
+								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+								>Source</th
 							>
 							<th
 								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
@@ -652,11 +783,10 @@
 								onclick={() => (expandedId = expandedId === o.id ? null : o.id)}
 							>
 								<td class="px-3 py-3" onclick={(e) => e.stopPropagation()}>
-									<input
-										type="checkbox"
+									<Checkbox
+										size="sm"
 										checked={selectedIds.has(o.id)}
-										onchange={() => toggleSelect(o.id)}
-										class="size-4 rounded border-[var(--ui-border)] accent-primary-500"
+										onCheckedChange={() => toggleSelect(o.id)}
 									/>
 								</td>
 								<td class="px-2 py-3 text-center" onclick={(e) => e.stopPropagation()}>
@@ -685,6 +815,17 @@
 										</span>
 									{/if}
 								</td>
+								<td class="px-5 py-3">
+									{#if o.source}
+										<span
+											class="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--ui-text-muted)]"
+											title={sourceLabel(o.source) + (o.sourceDetail ? ' · ' + o.sourceDetail : '')}
+										>
+											<Icon name={sourceIcon(o.source)} class="size-3" />
+											{sourceLabel(o.source)}
+										</span>
+									{/if}
+								</td>
 								<td class="px-5 py-3 text-[var(--ui-text-muted)]">
 									{o.customerName || '—'}
 								</td>
@@ -694,9 +835,16 @@
 								<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
 									>{o.items}</td
 								>
-								<td class="px-5 py-3 text-right font-semibold tabular-nums"
-									>{formatMoney(o.total, currency)}</td
-								>
+								<td class="px-5 py-3 text-right">
+									<div class="font-semibold tabular-nums">{formatMoney(o.total, currency)}</div>
+									{#if o.totalSats}
+										<div
+											class="flex items-center justify-end gap-0.5 text-[10.5px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+										>
+											<Icon name="lucide:zap" class="size-2.5" />{formatInt(o.totalSats)}
+										</div>
+									{/if}
+								</td>
 								<td class="px-5 py-3 text-right">
 									{#if o.method && o.method !== 'cash'}
 										<span
@@ -827,6 +975,29 @@
 													>
 														Payment
 													</h4>
+													{#if (data as any)?.discount || (data as any)?.orderDiscount}
+														{@const od = (data as any).orderDiscount}
+														<div
+															class="mb-1.5 flex items-center justify-between rounded-md bg-emerald-500/5 px-2 py-1 text-[11px]"
+														>
+															<span
+																class="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400"
+															>
+																<Icon name="lucide:ticket" class="size-3" />
+																{od?.couponCode
+																	? `Coupon ${od.couponCode}`
+																	: od?.promotionId
+																		? 'Promotion'
+																		: 'Discount'}
+															</span>
+															<span class="font-semibold text-red-600 tabular-nums"
+																>−{formatMoney(
+																	od?.amount ?? (data as any).discount ?? 0,
+																	currency
+																)}</span
+															>
+														</div>
+													{/if}
 													<div
 														class="flex items-center justify-between rounded-lg border border-[var(--ui-border-muted)] p-2.5 text-[12px]"
 													>

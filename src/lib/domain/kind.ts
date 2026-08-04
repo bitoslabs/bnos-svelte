@@ -58,7 +58,11 @@ export const TYPE = {
 	membershipSubscription: 'membership-subscription',
 	membershipCheckIn: 'membership-check-in',
 	shift: 'shift',
-	cashEvent: 'cash-event'
+	cashEvent: 'cash-event',
+	// marketplace (dedicated BNOS marketplace kinds 30950–30955)
+	marketplaceConnection: 'marketplace.connection',
+	marketplaceProduct: 'marketplace.product',
+	marketplaceReview: 'marketplace.review'
 } as const satisfies Record<string, GloObjectType | string>;
 
 export type DomainType = keyof typeof TYPE;
@@ -71,12 +75,25 @@ export type DomainTypeValue = (typeof TYPE)[DomainType];
  */
 const APP_KIND_OVERRIDES: Partial<Record<DomainType, number>> = {
 	shift: NOSTR_KINDS.SHIFT,
-	cashEvent: NOSTR_KINDS.CASH_EVENT
+	cashEvent: NOSTR_KINDS.CASH_EVENT,
+	// Marketplace types ride the dedicated BNOS marketplace kinds (30950–30955)
+	// reserved in @bitos/bnos-core but not yet registered in GLO_KIND_BY_TYPE.
+	marketplaceConnection: NOSTR_KINDS.STORE_CONNECTION,
+	marketplaceProduct: NOSTR_KINDS.MARKETPLACE_PRODUCT,
+	marketplaceReview: NOSTR_KINDS.MARKETPLACE_REVIEW
 };
 
 export const KIND = Object.fromEntries(
 	(Object.keys(TYPE) as DomainType[]).map((k) => [k, APP_KIND_OVERRIDES[k] ?? getGloKindForType(TYPE[k])])
 ) as { [K in DomainType]: number };
+
+/** Type-string → resolved kind (e.g. `kindForType('commerce.order') === 30200`). */
+export const KIND_BY_TYPE: Record<string, number> = Object.fromEntries(
+	(Object.keys(TYPE) as DomainType[]).map((k) => [TYPE[k], KIND[k]])
+);
+export function kindForType(type: string): number {
+	return KIND_BY_TYPE[type] ?? getGloKindForType(type);
+}
 
 /** Reverse lookup: kind number → list of client type keys using it. */
 export const TYPES_FOR_KIND: Record<number, DomainType[]> = (() => {

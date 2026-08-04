@@ -24,6 +24,25 @@
 
 	const d = $derived(product?.data ?? null);
 
+	// Build a de-duplicated image list: `images[]` with a legacy single
+	// `image` promoted to the front for backward compatibility.
+	const images = $derived.by(() => {
+		if (!d) return [];
+		const arr = Array.isArray((d as { images?: unknown }).images)
+			? ((d as { images?: string[] }).images as string[])
+			: [];
+		const single = (d as { image?: string }).image ? String((d as { image?: string }).image) : null;
+		const all = single && !arr.includes(single) ? [single, ...arr] : [...arr];
+		return all.filter(Boolean);
+	});
+
+	let activeImageIdx = $state(0);
+	// Reset the active thumbnail when the viewed product changes.
+	$effect(() => {
+		void product?.id;
+		activeImageIdx = 0;
+	});
+
 	const stockHistory = $derived(
 		product
 			? glo
@@ -86,9 +105,32 @@
 		<!-- Overview tab -->
 		{#if detailTab === 'overview'}
 			<div class="space-y-4 px-5 py-4">
-				<!-- Image -->
-				{#if d.image}
-					<img src={String(d.image)} alt={String(d.name ?? '')} class="h-40 w-full rounded-xl object-cover" />
+				<!-- Image gallery -->
+				{#if images.length > 0}
+					{@const ai = images[Math.min(activeImageIdx, images.length - 1)]}
+					<div class="space-y-2">
+						<div class="relative aspect-video w-full overflow-hidden rounded-xl bg-[var(--ui-bg-muted)]">
+							<img src={ai} alt={String(d.name ?? '')} class="h-full w-full object-cover" />
+							{#if images.length > 1}
+								<span class="absolute right-2 bottom-2 rounded-md bg-black/55 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+									{Math.min(activeImageIdx, images.length - 1) + 1}/{images.length}
+								</span>
+							{/if}
+						</div>
+						{#if images.length > 1}
+							<div class="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1">
+								{#each images as img, i (img + '-' + i)}
+									<button
+										type="button"
+										onclick={() => (activeImageIdx = i)}
+										class="size-12 shrink-0 overflow-hidden rounded-lg border-2 transition-all {Math.min(activeImageIdx, images.length - 1) === i ? 'border-primary-500' : 'border-transparent opacity-70 hover:opacity-100'}"
+									>
+										<img src={img} alt={`View ${i + 1}`} class="h-full w-full object-cover" loading="lazy" />
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
 				{/if}
 
 				<!-- Basic info -->

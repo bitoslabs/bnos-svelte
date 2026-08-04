@@ -7,6 +7,7 @@
 	import Select from '$lib/components/ui/Select.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 	import ListToolbar from '$lib/components/list/ListToolbar.svelte';
 	import SortableTh from '$lib/components/list/SortableTh.svelte';
 	import Pagination from '$lib/components/list/Pagination.svelte';
@@ -29,6 +30,8 @@
 
 	type Tab = 'overview' | 'counts' | 'adjustments' | 'suppliers' | 'orders';
 	let tab = $state<Tab>('overview');
+	let rawOpen = $state(false);
+	let rawItem = $state<any>(null);
 
 	onMount(() => {
 		dataSync.pageSync([TYPE.product, TYPE.adjustment, TYPE.supplier, TYPE.purchaseOrder], {
@@ -885,6 +888,13 @@
 										actions={[
 											[
 												{
+													label: 'View raw',
+													icon: 'lucide:code',
+													onSelect: () => { rawItem = glo.get(TYPE.adjustment, a.id); rawOpen = true; }
+												}
+											],
+											[
+												{
 													label: 'Delete',
 													icon: 'lucide:trash-2',
 													danger: true,
@@ -971,6 +981,13 @@
 										actions={[
 											[
 												{
+													label: 'View raw',
+													icon: 'lucide:code',
+													onSelect: () => { rawItem = glo.get(TYPE.supplier, s.id); rawOpen = true; }
+												}
+											],
+											[
+												{
 													label: 'Delete',
 													icon: 'lucide:trash-2',
 													danger: true,
@@ -1055,6 +1072,13 @@
 								<td class="px-5 py-3 text-right"
 									><RowActions
 										actions={[
+											[
+												{
+													label: 'View raw',
+													icon: 'lucide:code',
+													onSelect: () => { rawItem = glo.get(TYPE.purchaseOrder, o.id); rawOpen = true; }
+												}
+											],
 											[
 												{
 													label: 'Delete',
@@ -1281,3 +1305,5 @@
 			>Cancel</Button
 		><Button color="primary" icon="lucide:check" onclick={save}>Save</Button>{/snippet}
 </Dialog>
+
+<RawDataDialog bind:open={rawOpen} data={rawItem} title="Inventory Raw Data" />

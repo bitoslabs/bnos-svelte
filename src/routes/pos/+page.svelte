@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -9,12 +9,14 @@
 	import MenuItem from '$lib/components/ui/MenuItem.svelte';
 	import MenuDivider from '$lib/components/ui/MenuDivider.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Popover from '$lib/components/ui/Popover.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+	import { WORKSPACE_SETTINGS_SYNC_EVENT } from '$nostr/workspace-settings';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 	import { formatInt, formatMoney } from '$lib/utils/format';
-	import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
 	import {
 		TYPE,
 		statusColor,
@@ -22,12 +24,14 @@
 		type ProductVariant,
 		type ModifierGroup,
 		type GloObject,
-		type Shift,
 		type Order,
 		type PaymentMethod
 	} from '$lib/domain';
 	import { cart, type OrderType, type CartModifier } from '$lib/pos/cart.svelte';
+	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
 	import { computeStock, availableFor, canSell } from '$lib/pos/stock';
+	import { printPosReceipt } from '$lib/pos/pos-receipt';
+	import { btcRate } from '$lib/bitcoin/rate.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import {
@@ -89,7 +93,19 @@
 			now = new Date();
 		}, 60_000);
 
-		return () => window.clearInterval(timer);
+		const onWorkspaceSettingsSync = () => {
+			refreshLocalSettings();
+			if (payMethods.includes(generalSettings.defaultPayment)) {
+				method = generalSettings.defaultPayment;
+				if (splitPayments.length === 0) splitMethod = generalSettings.defaultPayment;
+			}
+		};
+		window.addEventListener(WORKSPACE_SETTINGS_SYNC_EVENT, onWorkspaceSettingsSync);
+
+		return () => {
+			window.clearInterval(timer);
+			window.removeEventListener(WORKSPACE_SETTINGS_SYNC_EVENT, onWorkspaceSettingsSync);
+		};
 	});
 
 	// Active promotions
@@ -161,6 +177,14 @@
 			const threshold = p.data.inventory?.lowStockThreshold ?? 0;
 			return p.data.trackInventory && threshold > 0 && availableFor(stockMap, p.id) <= threshold;
 		}).length
+	);
+	const lowStockItems = $derived(
+		products
+			.filter((p) => {
+				const threshold = p.data.inventory?.lowStockThreshold ?? 0;
+				return p.data.trackInventory && threshold > 0 && availableFor(stockMap, p.id) <= threshold;
+			})
+			.slice(0, 6)
 	);
 	const clockLabel = $derived(
 		new Intl.DateTimeFormat('en-US', {
@@ -327,6 +351,23 @@
 		typeof tendered === 'number' && tendered > 0 && tendered < grandTotal
 	);
 
+	// Bitcoin: live sats preview of the cart + grand total. Only shown when a
+	// rate exists and the merchant currency matches the rate currency (USD).
+	const showSats = $derived(btcRate.canConvert(currency));
+	const totalSats = $derived(
+		(showSats && btcRate.satsFromAmount(cart.totals.total, currency)) || 0
+	);
+	const grandTotalSats = $derived((showSats && btcRate.satsFromAmount(grandTotal, currency)) || 0);
+
+	// Keep a BTC rate for the merchant currency loaded. Reactive (not onMount) so
+	// a fresh page load — where tenant.currency hydrates AFTER mount — still
+	// fetches the right pair once the real currency arrives (USD → LAK, etc.).
+	$effect(() => {
+		if (!tenant.hydrated) return; // don't fetch for the default 'USD' pre-hydration
+		const cur = currency;
+		if (cur) untrack(() => void btcRate.ensureRate(cur));
+	});
+
 	// Quick cash denominations (de-duplicated, sorted)
 	const quickAmounts = $derived.by(() => {
 		const t = grandTotal;
@@ -443,121 +484,27 @@
 
 	function printReceipt() {
 		refreshLocalSettings();
-		if (!cart.lastCompleted) return;
+		const sale = cart.lastCompleted;
+		if (!sale) return;
 		if (hardwareSettings.printerType === 'none') {
 			toast.warning('Receipt printer is disabled in Hardware settings');
 			return;
 		}
-		const width = receiptSettings.paperSize === '58mm' ? 320 : 420;
-		const w = window.open('', '_blank', `width=${width},height=700`);
-		if (!w) return;
-		w.document.write(buildReceiptHtml());
-		w.document.close();
-		w.print();
-	}
-
-	function escapeHtml(value: unknown) {
-		return String(value ?? '')
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#039;');
+		printPosReceipt(sale, {
+			receipt: receiptSettings,
+			currency,
+			cashier: tenant.state.activeStaffInfo?.name ?? shiftStaffName.trim() ?? '',
+			customerName: sale.customerName,
+			satsTotal:
+				sale.totalSats ??
+				(btcRate.receiptShowSats && btcRate.canConvert(currency)
+					? btcRate.satsFromAmount(sale.totals.total, currency)
+					: undefined)
+		});
 	}
 
 	function recordValue<T>(value: T): T & Record<string, unknown> {
 		return value as T & Record<string, unknown>;
-	}
-
-	function buildReceiptHtml() {
-		const s = cart.lastCompleted!;
-		const receipt = receiptSettings;
-		const paperWidth = receipt.paperSize === '58mm' ? '58mm' : '80mm';
-		const cashier = tenant.state.activeStaffInfo?.name ?? shiftStaffName.trim() ?? '';
-		const lineTotal = (it: (typeof s.items)[number]) =>
-			(it.unitPrice + (it.modifiers?.reduce((a, m) => a + m.priceAdjustment, 0) ?? 0)) *
-			it.quantity;
-		const itemsHtml = s.items
-			.map((it) => {
-				const name = `${it.quantity}x ${it.name}${it.variantName ? ` (${it.variantName})` : ''}`;
-				return `<tr><td>${escapeHtml(name)}</td><td class="right">${escapeHtml(formatMoney(lineTotal(it), currency))}</td></tr>`;
-			})
-			.join('');
-		const headerHtml = [
-			receipt.showLogo && receipt.logoUrl
-				? `<div class="center logo"><img src="${escapeHtml(receipt.logoUrl)}" alt="Logo"></div>`
-				: '',
-			receipt.header ? `<div class="center muted">${escapeHtml(receipt.header)}</div>` : '',
-			receipt.showStoreName
-				? `<h2>${escapeHtml(receipt.storeName || tenant.state.organizationName || 'BNOS')}</h2>`
-				: '',
-			receipt.showPhone && receipt.phone
-				? `<div class="center muted">Tel: ${escapeHtml(receipt.phone)}</div>`
-				: '',
-			receipt.showAddress && receipt.address
-				? `<div class="center muted">${escapeHtml(receipt.address)}</div>`
-				: '',
-			receipt.showTaxId && receipt.taxId
-				? `<div class="center muted">Tax ID: ${escapeHtml(receipt.taxId)}</div>`
-				: ''
-		].join('');
-		const metaHtml = [
-			receipt.showDate
-				? `<tr><td>Date</td><td class="right">${escapeHtml(new Date().toLocaleString())}</td></tr>`
-				: '',
-			receipt.showOrderNumber
-				? `<tr><td>Order</td><td class="right">${escapeHtml(s.number)}</td></tr>`
-				: '',
-			receipt.showCashierName && cashier
-				? `<tr><td>Cashier</td><td class="right">${escapeHtml(cashier)}</td></tr>`
-				: ''
-		].join('');
-		const optionalHtml = [
-			receipt.showBarcode ? `<div class="barcode">${escapeHtml(s.number)}</div>` : '',
-			receipt.showQr && receipt.qrData
-				? `<div class="qr"><div>QR</div><small>${escapeHtml(receipt.qrData)}</small></div>`
-				: ''
-		].join('');
-
-		return `<!doctype html>
-<html>
-<head>
-	<title>Receipt ${escapeHtml(s.number)}</title>
-	<style>
-		@page { size: ${paperWidth} auto; margin: 4mm; }
-		* { box-sizing: border-box; }
-		body { width: ${paperWidth}; margin: 0 auto; padding: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: ${receipt.paperSize === '58mm' ? '10px' : '12px'}; color: #111; }
-		h2 { margin: 4px 0; text-align: center; font-size: 1.25em; }
-		table { width: 100%; border-collapse: collapse; }
-		td { padding: 2px 0; vertical-align: top; }
-		hr { border: 0; border-top: 1px dashed #111; margin: 8px 0; }
-		.right { text-align: right; white-space: nowrap; }
-		.center { text-align: center; }
-		.muted { color: #444; }
-		.total { font-weight: 700; font-size: 1.15em; }
-		.logo img { max-width: 42mm; max-height: 18mm; object-fit: contain; }
-		.barcode { margin: 10px 0 4px; text-align: center; letter-spacing: 3px; font-size: 18px; }
-		.qr { margin: 10px auto 4px; display: grid; min-height: 64px; place-items: center; border: 1px solid #999; text-align: center; }
-		.footer { margin-top: 10px; text-align: center; white-space: pre-wrap; }
-	</style>
-</head>
-<body>
-	${headerHtml}
-	<hr>
-	<table>${metaHtml}</table>
-	<hr>
-	<table>${itemsHtml}</table>
-	<hr>
-	<table>
-		<tr class="total"><td>TOTAL</td><td class="right">${escapeHtml(formatMoney(s.totals.total, currency))}</td></tr>
-		<tr><td>Method</td><td class="right">${escapeHtml(s.method)}</td></tr>
-		${s.change > 0 ? `<tr><td>Change</td><td class="right">${escapeHtml(formatMoney(s.change, currency))}</td></tr>` : ''}
-	</table>
-	${optionalHtml}
-	<hr>
-	<div class="footer">${escapeHtml(receipt.footer)}</div>
-</body>
-</html>`;
 	}
 
 	// ── mobile cart panel + line note ──
@@ -644,17 +591,28 @@
 		lightning: 'border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
 	};
 
-	function startNewSale() {
+	async function startNewSale() {
 		if (cart.isEmpty) return;
-		clearCart();
+		await clearCart();
+		if (!cart.isEmpty) return; // user cancelled the clear
 		tipAmount = 0;
 		resetSplit();
 		toast.info('Started a new sale');
 	}
 
-	function clearCart() {
+	async function clearCart() {
 		refreshLocalSettings();
-		if (generalSettings.confirmClear && !confirm('Clear the current cart?')) return;
+		if (
+			generalSettings.confirmClear &&
+			!(await confirm({
+				title: 'Clear cart?',
+				message: 'This removes every item from the current sale.',
+				tone: 'danger',
+				icon: 'lucide:cart-x',
+				confirmText: 'Clear cart'
+			}))
+		)
+			return;
 		cart.clear();
 	}
 
@@ -685,18 +643,17 @@
 		customOpen = false;
 	}
 
-	// ── B) Shift Gate ──
-	const shifts = $derived(glo.all<Shift, typeof TYPE.shift>(TYPE.shift));
-	const openShift = $derived(
-		shifts.find((s) => !s.data.closedAt && s.data.status !== 'closed') ?? null
-	);
+	// ── B) Shift Gate (branch-scoped) ──
+	// A shift is only "open" for POS purposes if it is active on THIS device's
+	// branch. Other branches' open shifts no longer gate this terminal.
+	const openShift = $derived(shiftStore.activeShift ?? null);
 	let shiftModalOpen = $state(false);
 	// Track whether shifts have been hydrated from IndexedDB.
 	// glo.version is $state — it bumps when hydration completes.
 	let shiftsLoaded = $state(false);
 	$effect(() => {
 		const trackedVersion = glo.version;
-		const trackedShiftCount = shifts.length;
+		const trackedShiftCount = shiftStore.all.length;
 		void trackedVersion;
 		void trackedShiftCount;
 		// Mark loaded once the type has been hydrated (data arrived from IDB).
@@ -718,23 +675,12 @@
 		return true;
 	}
 	async function openShiftAction() {
-		const number = nextReadableNumber({ prefix: 'SFT', scope: tenant.state.locationId });
 		const openingCash =
 			typeof shiftOpeningCash === 'number' ? shiftOpeningCash : Number(shiftOpeningCash) || 0;
-		await glo.upsert<Shift>(
-			TYPE.shift,
-			{
-				number,
-				status: 'active',
-				openedAt: new Date().toISOString(),
-				openingCash,
-				staffName: shiftStaffName.trim() || undefined,
-				branchId: tenant.state.locationId ?? undefined,
-				currency
-			},
-			{ id: newRecordId('shift') }
-		);
-		toast.success('Shift opened', number);
+		await shiftStore.openShift({
+			openingCash,
+			staffName: shiftStaffName.trim() || undefined
+		});
 		shiftModalOpen = false;
 		shiftOpeningCash = '';
 		shiftStaffName = '';
@@ -743,25 +689,89 @@
 		if (!openShift) return;
 		const closingCash =
 			typeof shiftOpeningCash === 'number' ? shiftOpeningCash : Number(shiftOpeningCash) || 0;
-		await glo.upsert<Shift>(
-			TYPE.shift,
-			{
-				...openShift.data,
-				status: 'closed',
-				closedAt: new Date().toISOString(),
-				closingCash
-			},
-			{ id: openShift.id }
-		);
-		toast.success('Shift closed', openShift.data.number);
-		shiftModalOpen = false;
+		const ok = await shiftStore.closeShift({ closingCash });
+		if (ok) {
+			shiftModalOpen = false;
+			shiftOpeningCash = '';
+		}
 	}
-	const shiftLabel = $derived.by(() => {
-		if (!openShift) return null;
-		const d = new Date(openShift.data.openedAt);
-		const time = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(d);
-		return `Shift ${openShift.data.number} · Started ${time}`;
+	// ── B2) Shift & Stock quick-view (header popovers) ──
+	function formatDuration(ms: number): string {
+		const s = Math.floor(ms / 1000);
+		if (s < 60) return 'just now';
+		const m = Math.floor(s / 60);
+		if (m < 60) return `${m}m`;
+		const h = Math.floor(m / 60);
+		if (h < 24) return `${h}h ${m % 60}m`;
+		const d = Math.floor(h / 24);
+		return `${d}d ${h % 24}h`;
+	}
+	let shiftPopoverOpen = $state(false);
+	let stockPopoverOpen = $state(false);
+	const shiftSummary = $derived(shiftStore.summaryFor(openShift?.id));
+	const shiftElapsedLabel = $derived.by(() => {
+		if (!openShift) return '';
+		const ms = Math.max(0, now.getTime() - new Date(openShift.data.openedAt).getTime());
+		return formatDuration(ms);
 	});
+	const openedTimeLabel = $derived(
+		openShift
+			? new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(
+					new Date(openShift.data.openedAt)
+				)
+			: '—'
+	);
+	const tenderRows = $derived.by(() => {
+		const s = shiftSummary;
+		const rows = [
+			{
+				label: 'Cash',
+				value: s.cashSales,
+				icon: 'lucide:banknote',
+				color: 'text-emerald-600 dark:text-emerald-400'
+			},
+			{
+				label: 'Card',
+				value: s.cardSales,
+				icon: 'lucide:credit-card',
+				color: 'text-blue-600 dark:text-blue-400'
+			},
+			{
+				label: 'QR',
+				value: s.qrSales,
+				icon: 'lucide:qr-code',
+				color: 'text-purple-600 dark:text-purple-400'
+			},
+			{
+				label: 'Lightning',
+				value: s.lightningSales,
+				icon: 'lucide:zap',
+				color: 'text-yellow-600 dark:text-yellow-400'
+			}
+		];
+		return rows.filter((t) => t.value > 0);
+	});
+	const shiftTriggerClass = $derived(
+		openShift
+			? 'inline-flex h-8 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 text-[12px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-500/15 dark:text-emerald-300'
+			: 'inline-flex h-8 items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 text-[12px] font-semibold text-amber-700 transition-colors hover:bg-amber-500/15 dark:text-amber-300'
+	);
+	const stockTriggerClass = $derived(
+		lowStockCount > 0
+			? 'inline-flex h-8 items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 text-[12px] font-semibold text-amber-700 transition-colors hover:bg-amber-500/15 dark:text-amber-300'
+			: 'inline-flex h-8 items-center gap-1.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'
+	);
+	function closeShiftFromPopover() {
+		shiftPopoverOpen = false;
+		shiftModalOpen = true;
+		shiftOpeningCash = '';
+	}
+	function openShiftFromPopover() {
+		shiftPopoverOpen = false;
+		shiftModalOpen = true;
+		shiftOpeningCash = '';
+		shiftStaffName = '';
+	}
 
 	// ── C) Payment Success Sound ──
 	function playSuccessChime() {
@@ -885,31 +895,262 @@
 			</div>
 
 			<div class="flex flex-wrap items-center gap-2">
-				{#if shiftLabel}
-					<Badge color="success">
-						<Icon name="lucide:clock" class="size-3.5" />
-						{shiftLabel}
-					</Badge>
-					<button
-						type="button"
-						onclick={() => {
-							shiftModalOpen = true;
-							shiftOpeningCash = '';
-						}}
-						class="text-[11px] font-semibold text-[var(--tone-error-text)] hover:underline"
-						>Close shift</button
-					>
-				{/if}
-				<Badge color={lowStockCount > 0 ? 'warning' : 'success'}>
-					<Icon name="lucide:boxes" class="size-3.5" />
-					{formatInt(trackedProducts)} tracked
-				</Badge>
-				{#if lowStockCount > 0}
-					<Badge color="warning">
-						<Icon name="lucide:triangle-alert" class="size-3.5" />
-						{formatInt(lowStockCount)} low stock
-					</Badge>
-				{/if}
+				<!-- Shift status → quick-view popover (sales, drawer, close) -->
+				<Popover
+					bind:open={shiftPopoverOpen}
+					align="end"
+					side="bottom"
+					triggerClass={shiftTriggerClass}
+					triggerActiveClass="ring-2 ring-primary-500/20"
+					class="w-80 p-0"
+				>
+					{#snippet trigger()}
+						{#if openShift}
+							<span class="relative flex size-2">
+								<span
+									class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75"
+								></span>
+								<span class="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
+							</span>
+							<span>Shift · {shiftElapsedLabel}</span>
+						{:else}
+							<Icon name="lucide:unlock" class="size-3.5" />
+							<span>No shift</span>
+						{/if}
+						<Icon name="lucide:chevron-down" class="size-3 opacity-60" />
+					{/snippet}
+					{#snippet content()}
+						<div class="w-80">
+							{#if openShift}
+								<div
+									class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-3.5 py-3"
+								>
+									<div class="flex min-w-0 items-center gap-2">
+										<span class="relative flex size-2.5 shrink-0">
+											<span
+												class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75"
+											></span>
+											<span class="relative inline-flex size-2.5 rounded-full bg-emerald-500"
+											></span>
+										</span>
+										<div class="min-w-0">
+											<div class="truncate text-[13px] leading-tight font-bold">
+												{openShift.data.number}
+											</div>
+											<div class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+												Open · {shiftElapsedLabel}
+											</div>
+										</div>
+									</div>
+									<Badge color="success">Live</Badge>
+								</div>
+								<div class="space-y-3 px-3.5 py-3">
+									<div class="grid grid-cols-2 gap-2 text-[11px]">
+										<div class="min-w-0">
+											<div class="text-[var(--ui-text-dimmed)]">Cashier</div>
+											<div class="truncate font-semibold">
+												{openShift.data.staffName || tenant.state.activeStaffInfo?.name || '—'}
+											</div>
+										</div>
+										<div>
+											<div class="text-[var(--ui-text-dimmed)]">Opened</div>
+											<div class="font-semibold">{openedTimeLabel}</div>
+										</div>
+									</div>
+
+									<div class="rounded-xl bg-[var(--ui-bg-muted)] p-3">
+										<div class="flex items-center justify-between">
+											<span
+												class="text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+												>Total sales</span
+											>
+											<Badge color="primary">{formatInt(shiftSummary.totalOrders)} orders</Badge>
+										</div>
+										<div class="mt-1 font-display text-2xl font-bold tabular-nums">
+											{formatMoney(shiftSummary.totalSales, currency)}
+										</div>
+									</div>
+
+									<div class="space-y-1">
+										<div
+											class="text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+										>
+											Tenders
+										</div>
+										{#if tenderRows.length === 0}
+											<p class="py-1 text-center text-[11.5px] text-[var(--ui-text-dimmed)]">
+												No sales recorded yet
+											</p>
+										{:else}
+											{#each tenderRows as t (t.label)}
+												<div class="flex items-center justify-between text-[12px]">
+													<span class="flex items-center gap-1.5 text-[var(--ui-text-muted)]"
+														><Icon name={t.icon} class="size-3.5 {t.color}" />{t.label}</span
+													>
+													<span class="font-semibold tabular-nums"
+														>{formatMoney(t.value, currency)}</span
+													>
+												</div>
+											{/each}
+										{/if}
+									</div>
+
+									<div class="space-y-1 rounded-xl border border-[var(--ui-border-muted)] p-3">
+										<div class="flex items-center justify-between text-[12px]">
+											<span class="text-[var(--ui-text-muted)]">Opening cash</span><span
+												class="tabular-nums"
+												>{formatMoney(openShift.data.openingCash ?? 0, currency)}</span
+											>
+										</div>
+										{#if shiftSummary.totalCashIn > 0}
+											<div class="flex items-center justify-between text-[12px]">
+												<span class="text-[var(--ui-text-muted)]">Cash in</span><span
+													class="text-[var(--tone-success-text)] tabular-nums"
+													>+{formatMoney(shiftSummary.totalCashIn, currency)}</span
+												>
+											</div>
+										{/if}
+										{#if shiftSummary.totalCashOut > 0}
+											<div class="flex items-center justify-between text-[12px]">
+												<span class="text-[var(--ui-text-muted)]">Cash out</span><span
+													class="text-[var(--tone-error-text)] tabular-nums"
+													>−{formatMoney(shiftSummary.totalCashOut, currency)}</span
+												>
+											</div>
+										{/if}
+										<div
+											class="flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-1.5 text-[12.5px] font-bold"
+										>
+											<span>Expected drawer</span><span
+												class="text-primary-600 tabular-nums dark:text-primary-400"
+												>{formatMoney(shiftSummary.expectedCash, currency)}</span
+											>
+										</div>
+									</div>
+								</div>
+								<div
+									class="grid grid-cols-2 gap-1.5 border-t border-[var(--ui-border-muted)] px-3.5 py-3"
+								>
+									<Button
+										size="sm"
+										color="neutral"
+										variant="subtle"
+										icon="lucide:line-chart"
+										href={resolve('/transactions/shifts')}
+										onclick={() => (shiftPopoverOpen = false)}>Report</Button
+									>
+									<Button
+										size="sm"
+										color="neutral"
+										variant="soft"
+										icon="lucide:lock"
+										onclick={closeShiftFromPopover}>Close shift</Button
+									>
+								</div>
+							{:else}
+								<div class="px-4 py-5 text-center">
+									<div
+										class="mx-auto mb-2 grid size-11 place-items-center rounded-full bg-[var(--tone-warning-bg)] text-[var(--tone-warning-text)]"
+									>
+										<Icon name="lucide:lock" class="size-5" />
+									</div>
+									<div class="text-[13px] font-bold">No active shift</div>
+									<p class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">
+										Open a shift to start processing sales and track the drawer.
+									</p>
+									<Button
+										class="mt-3"
+										color="primary"
+										size="sm"
+										block
+										icon="lucide:unlock"
+										onclick={openShiftFromPopover}>Open shift</Button
+									>
+								</div>
+							{/if}
+						</div>
+					{/snippet}
+				</Popover>
+				<!-- Stock / inventory → quick-view popover (low-stock list) -->
+				<Popover
+					bind:open={stockPopoverOpen}
+					align="end"
+					side="bottom"
+					triggerClass={stockTriggerClass}
+					triggerActiveClass="ring-2 ring-primary-500/20"
+					class="w-72 p-0"
+				>
+					{#snippet trigger()}
+						<Icon name="lucide:boxes" class="size-3.5" />
+						{#if lowStockCount > 0}
+							<span>{formatInt(lowStockCount)} low</span>
+						{:else}
+							<span>{formatInt(trackedProducts)} tracked</span>
+						{/if}
+						<Icon name="lucide:chevron-down" class="size-3 opacity-60" />
+					{/snippet}
+					{#snippet content()}
+						<div class="w-72">
+							<div
+								class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-3.5 py-3"
+							>
+								<div class="flex items-center gap-2">
+									<Icon name="lucide:boxes" class="size-4 text-[var(--ui-text-muted)]" />
+									<span class="text-[13px] font-bold">Inventory</span>
+								</div>
+								<a
+									href={resolve('/catalog')}
+									onclick={() => (stockPopoverOpen = false)}
+									class="text-[11.5px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
+									>Manage</a
+								>
+							</div>
+							<div class="px-3.5 py-3">
+								{#if lowStockItems.length === 0}
+									<div
+										class="flex items-center gap-2.5 rounded-xl bg-[var(--tone-success-bg)] px-3 py-2.5 text-[var(--tone-success-text)]"
+									>
+										<Icon name="lucide:check-circle-2" class="size-4 shrink-0" />
+										<span class="text-[12px] font-semibold">All tracked items stocked</span>
+									</div>
+									<p class="mt-2 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
+										{formatInt(trackedProducts)} products tracked
+									</p>
+								{:else}
+									<div
+										class="mb-2 text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+									>
+										{formatInt(lowStockCount)} low · {formatInt(trackedProducts)} tracked
+									</div>
+									<ul class="space-y-1">
+										{#each lowStockItems as p (p.id)}
+											{@const avail = availableFor(stockMap, p.id)}
+											{@const threshold = p.data.inventory?.lowStockThreshold ?? 0}
+											<li
+												class="flex items-center justify-between rounded-lg bg-[var(--ui-bg-muted)] px-2.5 py-1.5"
+											>
+												<span class="min-w-0 truncate text-[12px] font-semibold">{p.data.name}</span
+												>
+												<span
+													class="ml-2 shrink-0 rounded-md px-1.5 py-0.5 text-[10.5px] font-bold tabular-nums {avail <=
+													0
+														? 'bg-[var(--tone-error-bg)] text-[var(--tone-error-text)]'
+														: 'bg-[var(--tone-warning-bg)] text-[var(--tone-warning-text)]'}"
+													>{formatInt(avail)}{threshold ? ` / ${formatInt(threshold)}` : ''}</span
+												>
+											</li>
+										{/each}
+									</ul>
+									{#if lowStockCount > lowStockItems.length}
+										<p class="mt-2 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
+											+{formatInt(lowStockCount - lowStockItems.length)} more
+										</p>
+									{/if}
+								{/if}
+							</div>
+						</div>
+					{/snippet}
+				</Popover>
 
 				<!-- Primary actions -->
 				<Button
@@ -933,6 +1174,17 @@
 				>
 					Custom
 				</Button>
+				{#if cart.held.length > 0}
+					<button
+						type="button"
+						onclick={() => (heldOpen = true)}
+						class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--ui-border)] px-2.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+						title="Held orders"
+					>
+						<Icon name="lucide:pause" class="size-3.5" />
+						{formatInt(cart.held.length)}
+					</button>
+				{/if}
 				<a
 					href={resolve('/pos/customer-display')}
 					target="_blank"
@@ -946,7 +1198,7 @@
 				<!-- More options dropdown -->
 				<Menu id="pos-header-more" placement="bottom-end" width="md">
 					{#snippet trigger()}<Icon name="lucide:more-horizontal" class="size-4" />{/snippet}
-					<MenuItem icon="lucide:list-ordered" onclick={openHistory}>History</MenuItem>
+					<MenuItem icon="lucide:history" onclick={openHistory}>Recent orders</MenuItem>
 					<MenuItem
 						icon="lucide:pause"
 						onclick={() => {
@@ -1082,6 +1334,15 @@
 										<div class="text-[12.5px] font-bold text-primary-600 dark:text-primary-400">
 											{formatMoney(p.data.price ?? 0, p.data.currency ?? currency)}
 										</div>
+										{#if showSats && (p.data.price ?? 0) > 0}
+											<div
+												class="flex items-center gap-0.5 text-[10px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+											>
+												<Icon name="lucide:zap" class="size-2.5" />{formatInt(
+													btcRate.satsFromAmount(p.data.price ?? 0, p.data.currency ?? currency)
+												)} sats
+											</div>
+										{/if}
 										{#if p.data.trackInventory}
 											<div
 												class="mt-0.5 text-[10px] {lowStock
@@ -1445,6 +1706,15 @@
 					>{formatMoney(cart.totals.total, currency)}</span
 				>
 			</div>
+			{#if showSats}
+				<div
+					class="flex items-center justify-end gap-1 pt-0.5 text-[11px] font-semibold text-[var(--tone-warning-text)]"
+					title="Live sats estimate (BTC/{currency} {btcRate.ageLabelFor(currency) || 'cached'})"
+				>
+					<Icon name="lucide:zap" class="size-3" />
+					≈ {formatInt(totalSats)} sats
+				</div>
+			{/if}
 		</div>
 	</div>
 {/snippet}
@@ -1634,6 +1904,15 @@
 						>{formatMoney(grandTotal, currency)}</span
 					>
 				</div>
+				{#if showSats}
+					<div
+						class="flex items-center justify-end gap-1 text-[11px] font-semibold text-[var(--tone-warning-text)]"
+						title="Live sats estimate (BTC/{currency})"
+					>
+						<Icon name="lucide:zap" class="size-3" />
+						≈ {formatInt(grandTotalSats)} sats
+					</div>
+				{/if}
 			{/if}
 
 			{#if method === 'cash'}
@@ -2012,6 +2291,39 @@
 				</li>
 			{/each}
 		</ul>
+		<dl class="mt-2 space-y-1 border-t border-[var(--ui-border-muted)] pt-2 text-[12px]">
+			<div class="flex justify-between text-[var(--ui-text-muted)]">
+				<span>Subtotal</span><span class="tabular-nums"
+					>{formatMoney(s.totals.subtotal, currency)}</span
+				>
+			</div>
+			{#if s.totals.discountAmount > 0}
+				<div class="flex justify-between text-[var(--tone-success-text)]">
+					<span class="truncate"
+						>Discount{#if s.promotion?.name}
+							· {s.promotion.name}{/if}</span
+					>
+					<span class="tabular-nums">−{formatMoney(s.totals.discountAmount, currency)}</span>
+				</div>
+			{:else if s.promotion?.name}
+				<div class="flex items-center gap-1.5 text-[var(--ui-text-muted)]">
+					<Icon name="lucide:ticket-percent" class="size-3.5 shrink-0" />
+					<span class="truncate">{s.promotion.name}</span>
+				</div>
+			{/if}
+			<div class="flex justify-between text-[var(--ui-text-muted)]">
+				<span>Tax</span><span class="tabular-nums">{formatMoney(s.totals.tax, currency)}</span>
+			</div>
+			{#if s.totalSats}
+				<div
+					class="flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-1.5 text-[12px] font-semibold text-[var(--tone-warning-text)]"
+				>
+					<span class="flex items-center gap-1"
+						><Icon name="lucide:zap" class="size-3.5" />Sats</span
+					><span class="tabular-nums">≈ {formatInt(s.totalSats)}</span>
+				</div>
+			{/if}
+		</dl>
 	{/if}
 	{#snippet footer()}
 		<div class="flex gap-2">

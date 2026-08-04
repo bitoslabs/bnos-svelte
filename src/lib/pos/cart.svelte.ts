@@ -17,6 +17,8 @@ import { TYPE, type Order, type OrderType, type Payment, type PaymentMethod } fr
 import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
 import { computeTotals, NO_DISCOUNT, type CartDiscount, type Totals } from './totals';
 import { buildOrder, buildPayment, type CartLineForReceipt } from './receipt';
+import { shifts as shiftStore } from './shifts.svelte';
+import { btcRate } from '$lib/bitcoin/rate.svelte';
 
 const CART_KEY = 'bnos-os:pos:cart';
 const HELD_KEY = 'bnos-os:pos:held';
@@ -62,6 +64,15 @@ export interface CompletedSale {
 	method: PaymentMethod;
 	change: number;
 	completedAt: string;
+	/** Customer name captured at checkout, if any. */
+	customerName?: string;
+	/** Cart-level discount applied (percent/fixed), if any. */
+	discount?: { type: 'percent' | 'fixed'; value: number };
+	/** Promotion/coupon snapshot captured at checkout, if any. Lets the receipt
+	 *  show the coupon/promo name even after the cart is cleared. */
+	promotion?: { name: string; type: string; value: number };
+	/** Sats equivalent of `totals.total` at sale time (Bitcoin snapshot). */
+	totalSats?: number;
 }
 
 function lineKey(
@@ -291,6 +302,11 @@ class PosCart {
 		const totals = this.totals;
 		const change = Math.max(0, tendered - totals.total);
 		const completedAt = new Date().toISOString();
+		// Bitcoin: snapshot the sats equivalent of the total onto the order so the
+		// amount actually owed/charged is preserved even if the rate later moves.
+		const saleTotalSats = btcRate.canConvert(currency)
+			? btcRate.satsFromAmount(totals.total, currency)
+			: undefined;
 
 		const lines: CartLineForReceipt[] = this.items.map((l) => ({
 			productId: l.productId,
@@ -309,17 +325,22 @@ class PosCart {
 			lines,
 			totals,
 			orderType: this.orderType,
+			source: 'pos',
 			customerName: this.customerName || undefined,
 			customerId: this.customerId ?? undefined,
 			tableId: this.orderType === 'dine_in' ? this.tableId || undefined : undefined,
 			covers: this.orderType === 'dine_in' ? this.covers : undefined,
 			branchId: tenant.state.locationId ?? undefined,
 			cashierPubkey: session.pubkey ?? undefined,
+			shiftId: shiftStore.activeShift?.id,
 			discount:
 				this.discount.value > 0
 					? { type: this.discount.type, value: this.discount.value }
 					: undefined,
-			method
+			method,
+			totalSats: saleTotalSats,
+			btcRate: saleTotalSats != null ? btcRate.rateFor(currency) : undefined,
+			btcRateCurrency: saleTotalSats != null ? currency : undefined
 		});
 		const payment = buildPayment({
 			amount: totals.total,
@@ -329,6 +350,7 @@ class PosCart {
 			changeGiven: method === 'cash' ? change : undefined,
 			cashierPubkey: session.pubkey ?? undefined,
 			branchId: tenant.state.locationId ?? undefined,
+			shiftId: shiftStore.activeShift?.id,
 			paidAt: completedAt
 		});
 
@@ -422,6 +444,29 @@ class PosCart {
 			}
 		}
 
+		// Snapshot the applied promotion/coupon so the receipt can show its name
+		// even after the cart is cleared below.
+		let promotion: CompletedSale['promotion'];
+		if (this.appliedPromotionId) {
+			const promoObj = glo.get(TYPE.promotion, this.appliedPromotionId);
+			const pd = promoObj?.data as
+				| {
+						name?: string;
+						type?: string;
+						discountType?: string;
+						value?: number;
+						discountValue?: number;
+				  }
+				| undefined;
+			if (pd) {
+				promotion = {
+					name: pd.name ?? 'Promotion',
+					type: pd.type ?? pd.discountType ?? 'percent',
+					value: pd.value ?? pd.discountValue ?? 0
+				};
+			}
+		}
+
 		const sale: CompletedSale = {
 			number,
 			orderType: this.orderType,
@@ -429,7 +474,14 @@ class PosCart {
 			totals,
 			method,
 			change,
-			completedAt
+			completedAt,
+			customerName: this.customerName || undefined,
+			discount:
+				this.discount.value > 0
+					? { type: this.discount.type, value: this.discount.value }
+					: undefined,
+			promotion,
+			totalSats: saleTotalSats
 		};
 		this.lastCompleted = sale;
 		this.clear();

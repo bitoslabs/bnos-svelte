@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
@@ -9,6 +10,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { loadHardwareSettings, saveHardwareSettings } from '$lib/settings/local';
 	import { getDeviceCode } from '$lib/utils/record-id';
+	import { syncWorkspaceSettingsToOrganization } from '$nostr/workspace-settings';
 
 	let printerType = $state<'browser' | 'usb' | 'network' | 'none'>('browser');
 	let paperSize = $state<'58mm' | '80mm'>('80mm');
@@ -37,7 +39,7 @@
 			.slice(0, 4);
 	}
 
-	function save() {
+	async function save() {
 		if (!browser) return;
 		deviceCode = normalizeDeviceCode(deviceCode);
 		saveHardwareSettings({
@@ -49,6 +51,7 @@
 			customerDisplay,
 			scaleConnected
 		});
+		await syncWorkspaceSettingsToOrganization();
 		toast.success('Hardware settings saved');
 	}
 
@@ -62,12 +65,11 @@
 <svelte:head><title>Hardware · Settings</title></svelte:head>
 
 <div class="space-y-5">
-	<div>
-		<h1 class="font-display text-xl font-bold tracking-tight">Hardware</h1>
-		<p class="text-[12.5px] text-[var(--ui-text-muted)]">
-			Printers, cash drawer, scanners, and peripherals
-		</p>
-	</div>
+	<PageHeader
+		icon="lucide:cpu"
+		title="Hardware"
+		description="Printers, cash drawer, scanners, and peripherals"
+	/>
 
 	<!-- Printer -->
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">

@@ -5,9 +5,10 @@ import { session } from './session.svelte';
 import { tenant } from './tenant.svelte';
 import { warmRelays } from './client';
 import { TYPE } from '$lib/domain';
-import { syncOrganizationSettingsToWorkspace } from './organization-settings';
 import { memberships } from './memberships.svelte';
 import { restoreTenantFromWorkspace } from './workspace.svelte';
+import { applyWorkspaceSettingsFromOrganization } from './workspace-settings';
+import { hydrateOrganizationSettingsFromWorkspace } from './organization-settings';
 
 export const CORE_DATA_TYPES = [
 	TYPE.organization,
@@ -43,7 +44,10 @@ export const SECONDARY_DATA_TYPES = [
 	'restaurant.waiter-assignment',
 	'restaurant.order',
 	'blocked.entry',
-	'settings.payment-method'
+	'settings.payment-method',
+	TYPE.marketplaceConnection,
+	TYPE.marketplaceProduct,
+	TYPE.marketplaceReview
 ] as const;
 
 export const ALL_OPERATIONAL_DATA_TYPES = [...CORE_DATA_TYPES, ...SECONDARY_DATA_TYPES] as const;
@@ -109,7 +113,15 @@ class SyncStore {
 
 	async syncTypes(
 		types: readonly string[],
-		options: { force?: boolean; scope?: string; cooldownMs?: number; silent?: boolean } = {}
+		options: {
+			force?: boolean;
+			scope?: string;
+			cooldownMs?: number;
+			silent?: boolean;
+			/** Restrict the relay query to one branch (`glo:scope:org:loc` topic).
+			 *  Omit for org-wide sync. Workspace types ignore this. */
+			locationId?: string | null;
+		} = {}
 	) {
 		const scope = options.scope ?? types.join(',');
 		const cooldownMs = options.cooldownMs ?? BACKGROUND_SYNC_COOLDOWN_MS;
@@ -129,7 +141,7 @@ class SyncStore {
 			await warmRelays();
 			await glo.flushPublishQueue();
 			for (const type of types) {
-				await glo.sync(type);
+				await glo.sync(type, { locationId: options.locationId ?? null });
 				setLastSyncAt(typeScope(type));
 			}
 			if (includesWorkspaceTypes(types)) {
@@ -137,6 +149,11 @@ class SyncStore {
 				// also resolve via membership to fetch owner-authored org/location data.
 				await memberships.resolveStaffWorkspace();
 				restoreTenantFromWorkspace();
+				hydrateOrganizationSettingsFromWorkspace({
+					activeCompanyId: tenant.state.organizationId,
+					activeBranchId: tenant.state.locationId
+				});
+				applyWorkspaceSettingsFromOrganization();
 			}
 			setLastSyncAt(scope);
 			this.lastSyncedAt = Date.now();
@@ -199,8 +216,30 @@ class SyncStore {
 		});
 	}
 
+	/** Page-level sync restricted to a single branch (`glo:scope:org:loc`).
+	 *  Use on branch-scoped screens (e.g. a per-branch order list) so the relay
+	 *  query only returns that branch's records. Pass `null` to sync the
+	 *  org-wide (no-location) set. */
+	pageSyncBranch(
+		types: readonly string[],
+		branchId: string | null,
+		options: { force?: boolean; scope?: string } = {}
+	) {
+		this.hydrate(types);
+		idle(() => {
+			const syncTypes = options.force ? [...types] : staleTypes(types, PAGE_SYNC_COOLDOWN_MS);
+			if (!syncTypes.length) return;
+			void this.syncTypes(syncTypes, {
+				force: options.force,
+				scope: options.scope ?? `page-branch:${branchId ?? 'main'}:${types.join(',')}`,
+				cooldownMs: PAGE_SYNC_COOLDOWN_MS,
+				locationId: branchId,
+				silent: true
+			});
+		});
+	}
+
 	async manualSync() {
-		await syncOrganizationSettingsToWorkspace();
 		await this.syncTypes(CORE_DATA_TYPES, { force: true, scope: 'core', silent: false });
 		await this.syncTypes(SECONDARY_DATA_TYPES, { force: true, scope: 'secondary', silent: false });
 	}

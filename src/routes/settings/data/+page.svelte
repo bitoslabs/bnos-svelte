@@ -2,12 +2,14 @@
 	import { browser } from '$app/environment';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { goto } from '$app/navigation';
 	import { glo } from '$nostr/store.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 
 	const GLO_PREFIX = 'bnos-os:glo:';
 
@@ -74,10 +76,24 @@
 			}
 
 			// Re-hydrate GLO objects from localStorage
-			const types = ['catalog.product', 'catalog.category', 'catalog.unit', 'catalog.modifier-group',
-				'commerce.order', 'commerce.payment', 'crm.customer', 'identity.staff',
-				'location', 'organization', 'expense', 'supplier', 'coupon', 'promotion',
-				'membership', 'shift'];
+			const types = [
+				'catalog.product',
+				'catalog.category',
+				'catalog.unit',
+				'catalog.modifier-group',
+				'commerce.order',
+				'commerce.payment',
+				'crm.customer',
+				'identity.staff',
+				'location',
+				'organization',
+				'expense',
+				'supplier',
+				'coupon',
+				'promotion',
+				'membership',
+				'shift'
+			];
 			for (const t of types) {
 				glo.hydrate(t);
 			}
@@ -93,7 +109,17 @@
 
 	async function wipeData() {
 		if (!browser) return;
-		if (!confirm('Wipe all local data and sign out? This cannot be undone.')) return;
+		if (
+			!(await confirm({
+				title: 'Wipe all local data?',
+				message:
+					'Every record on this device will be erased and you will be signed out. This cannot be undone.',
+				tone: 'danger',
+				icon: 'lucide:database-zap',
+				confirmText: 'Wipe & sign out'
+			}))
+		)
+			return;
 		for (let i = localStorage.length - 1; i >= 0; i--) {
 			const k = localStorage.key(i);
 			if (k && k.startsWith('bnos-os:')) localStorage.removeItem(k);
@@ -130,12 +156,13 @@
 		// bytes → KB
 		return Math.round((total / 1024) * 10) / 10;
 	});
-
 </script>
 
 <svelte:head><title>Data · Settings</title></svelte:head>
 
 <div class="space-y-5">
+	<PageHeader icon="lucide:database" title="Data" description="Local storage, records & backup" />
+
 	<!-- Storage usage -->
 	<section class="surface-card p-5">
 		<div class="mb-4 flex items-center gap-3">
@@ -156,7 +183,9 @@
 			></div>
 		</div>
 		<p class="mt-1.5 text-[11px] text-[var(--ui-text-dimmed)]">
-			{storageKb < 50 ? 'Lightweight — mostly metadata and cached records.' : 'Includes cached product, order, and CRM data.'}
+			{storageKb < 50
+				? 'Lightweight — mostly metadata and cached records.'
+				: 'Includes cached product, order, and CRM data.'}
 		</p>
 	</section>
 
@@ -185,12 +214,18 @@
 			<Icon name="lucide:download" class="size-5 text-primary-500" />
 			<div>
 				<h2 class="font-display text-[15px] font-semibold tracking-tight">Backup &amp; restore</h2>
-				<p class="text-[12px] text-[var(--ui-text-muted)]">Export a JSON snapshot or restore from a backup file</p>
+				<p class="text-[12px] text-[var(--ui-text-muted)]">
+					Export a JSON snapshot or restore from a backup file
+				</p>
 			</div>
 		</div>
 		<div class="flex flex-wrap gap-2">
-			<Button color="neutral" variant="subtle" icon="lucide:download" onclick={exportData}>Export backup</Button>
-			<Button color="neutral" variant="subtle" icon="lucide:upload" onclick={triggerImport}>Import / restore</Button>
+			<Button color="neutral" variant="subtle" icon="lucide:download" onclick={exportData}
+				>Export backup</Button
+			>
+			<Button color="neutral" variant="subtle" icon="lucide:upload" onclick={triggerImport}
+				>Import / restore</Button
+			>
 			<input
 				bind:this={importInput}
 				type="file"
@@ -210,6 +245,8 @@
 				<p class="text-[12px] text-[var(--ui-text-muted)]">Wipe all local records and sign out</p>
 			</div>
 		</div>
-		<Button color="error" variant="subtle" icon="lucide:trash-2" onclick={wipeData}>Wipe local data</Button>
+		<Button color="error" variant="subtle" icon="lucide:trash-2" onclick={wipeData}
+			>Wipe local data</Button
+		>
 	</section>
 </div>

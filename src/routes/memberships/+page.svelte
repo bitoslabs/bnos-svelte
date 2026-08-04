@@ -8,6 +8,7 @@
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 	import Pagination from '$lib/components/list/Pagination.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
@@ -76,6 +77,8 @@
 
 	// ── Dialog state ──
 	let open = $state(false);
+	let rawOpen = $state(false);
+	let rawItem = $state<any>(null);
 	let dlgTab = $state<Tab>('plans');
 	let editingId = $state<string | null>(null);
 
@@ -439,6 +442,16 @@
 									color="neutral"
 									variant="ghost"
 									size="icon-sm"
+									icon="lucide:code"
+									onclick={() => {
+										rawItem = glo.get(TYPE.membership, p.id);
+										rawOpen = true;
+									}}
+								/>
+								<Button
+									color="neutral"
+									variant="ghost"
+									size="icon-sm"
 									icon="lucide:pencil"
 									onclick={() => openEditPlan(p)}
 								/>
@@ -496,6 +509,16 @@
 								>
 								<td class="px-5 py-3">
 									<div class="flex items-center justify-end gap-1">
+										<Button
+											color="neutral"
+											variant="ghost"
+											size="icon-sm"
+											icon="lucide:code"
+											onclick={() => {
+												rawItem = glo.get(TYPE.membershipSubscription, s.id);
+												rawOpen = true;
+											}}
+										/>
 										<Button
 											color="neutral"
 											variant="ghost"
@@ -804,3 +827,5 @@
 			>{isEditing ? 'Update' : 'Save'}</Button
 		>{/snippet}
 </Dialog>
+
+<RawDataDialog bind:open={rawOpen} data={rawItem} title="Membership Raw Data" />

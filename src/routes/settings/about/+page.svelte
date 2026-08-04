@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { truncateNpub } from '$lib/utils/format';
@@ -8,6 +9,8 @@
 <svelte:head><title>About · Settings</title></svelte:head>
 
 <div class="space-y-5">
+	<PageHeader icon="lucide:info" title="About" description="Version, build & data layer" />
+
 	<div class="surface-card flex flex-col items-center gap-3 p-8 text-center">
 		<div
 			class="grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 shadow-lg shadow-primary-500/25"

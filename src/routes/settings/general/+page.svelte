@@ -1,60 +1,120 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import SettingsSection from '$lib/components/ui/SettingsSection.svelte';
+	import SettingRow from '$lib/components/ui/SettingRow.svelte';
+	import SaveBar from '$lib/components/ui/SaveBar.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 	import { browser } from '$app/environment';
-	import { loadGeneralSettings, saveGeneralSettings } from '$lib/settings/local';
-	import { normalizeCurrencyCode } from '$lib/utils/format';
+	import {
+		loadGeneralSettings,
+		saveGeneralSettings,
+		type GeneralSettings
+	} from '$lib/settings/local';
+	import { syncWorkspaceSettingsToOrganization } from '$nostr/workspace-settings';
 
-	let currency = $state('USD');
-	let taxRate = $state(0);
-	let enableTax = $state(false);
-	let taxIncluded = $state(false);
+	// Business configuration (currency / tax) is owned by the Workspace page —
+	// it is org-level, not a device preference. It is shown read-only here and
+	// edited in /settings/organization to avoid two screens fighting over the
+	// same `tenant` fields.
+	const activeCompany = $derived(
+		tenant.state.organizationName || tenant.state.organizationId || '—'
+	);
+
+	let language = $state('en');
 	let defaultPayment = $state('cash');
 	let playSound = $state(true);
 	let paymentSound = $state(true);
 	let autoPrint = $state(false);
 	let confirmClear = $state(true);
 	let compactMode = $state(false);
-	let language = $state('en');
+
+	// Snapshot of the last persisted state — used to detect unsaved changes.
+	let saved = $state<GeneralSettings | null>(null);
 
 	onMount(() => {
 		if (!browser) return;
 		const s = loadGeneralSettings();
-		currency = normalizeCurrencyCode(tenant.state.currency || s.currency);
-		taxRate = tenant.state.defaultTaxRate || s.taxRate;
-		enableTax = taxRate > 0 || s.enableTax;
-		taxIncluded = tenant.state.taxIncludedInPrice;
+		language = s.language;
 		defaultPayment = s.defaultPayment;
 		playSound = s.playSound;
 		paymentSound = s.paymentSound;
 		autoPrint = s.autoPrint;
 		confirmClear = s.confirmClear;
 		compactMode = s.compactMode;
-		language = s.language;
+		saved = { ...s };
 	});
 
-	function save() {
-		if (!browser) return;
-		const normalizedCurrency = normalizeCurrencyCode(currency);
-		saveGeneralSettings({ currency: normalizedCurrency, taxRate, enableTax, taxIncluded, defaultPayment, playSound, paymentSound, autoPrint, confirmClear, compactMode, language });
-		tenant.configure({ currency: normalizedCurrency, defaultTaxRate: enableTax ? taxRate : 0, taxIncludedInPrice: taxIncluded });
-		toast.success('Settings saved');
+	function snapshot(): GeneralSettings {
+		return {
+			language,
+			defaultPayment,
+			playSound,
+			paymentSound,
+			autoPrint,
+			confirmClear,
+			compactMode
+		};
 	}
 
-	function resetAll() {
+	const dirty = $derived(saved !== null && JSON.stringify(snapshot()) !== JSON.stringify(saved));
+
+	async function save() {
 		if (!browser) return;
-		if (!confirm('Reset all POS settings to defaults?')) return;
+		const s = snapshot();
+		saveGeneralSettings(s);
+		saved = s;
+		await syncWorkspaceSettingsToOrganization();
+		toast.success('Preferences saved');
+	}
+
+	function discard() {
+		if (!saved) return;
+		language = saved.language;
+		defaultPayment = saved.defaultPayment;
+		playSound = saved.playSound;
+		paymentSound = saved.paymentSound;
+		autoPrint = saved.autoPrint;
+		confirmClear = saved.confirmClear;
+		compactMode = saved.compactMode;
+	}
+
+	async function resetAll() {
+		if (!browser) return;
+		if (
+			!(await confirm({
+				title: 'Reset POS preferences?',
+				message: 'All general POS preferences will return to their defaults.',
+				tone: 'danger',
+				icon: 'lucide:rotate-ccw',
+				confirmText: 'Reset all'
+			}))
+		)
+			return;
 		localStorage.removeItem('bnos-os:settings-general');
-		currency = 'USD'; taxRate = 0; enableTax = false; taxIncluded = false;
-		defaultPayment = 'cash'; playSound = true; paymentSound = true;
-		autoPrint = false; confirmClear = true; compactMode = false; language = 'en';
-		toast.info('Settings reset');
+		language = 'en';
+		defaultPayment = 'cash';
+		playSound = true;
+		paymentSound = true;
+		autoPrint = false;
+		confirmClear = true;
+		compactMode = false;
+		saved = snapshot();
+		toast.info('Preferences reset');
+	}
+
+	// Warn before closing/refreshing the tab while there are unsaved edits.
+	function guardUnload(e: BeforeUnloadEvent) {
+		if (dirty) {
+			e.preventDefault();
+			e.returnValue = '';
+		}
 	}
 
 	const paymentOptions = [
@@ -63,58 +123,103 @@
 		{ id: 'qr', label: 'QR Code', icon: 'lucide:qr-code' },
 		{ id: 'lightning', label: 'Lightning', icon: 'lucide:zap' }
 	];
+
+	const taxLabel = $derived(
+		tenant.state.defaultTaxRate > 0
+			? `${tenant.state.defaultTaxRate}%${tenant.state.taxIncludedInPrice ? ' · included in price' : ' · added on top'}`
+			: 'Disabled'
+	);
 </script>
 
 <svelte:head><title>General · Settings</title></svelte:head>
 
-<div class="space-y-5">
-	<div>
-		<h1 class="font-display text-xl font-bold tracking-tight">General</h1>
-		<p class="text-[12.5px] text-[var(--ui-text-muted)]">Currency, tax, payment, and display preferences</p>
-	</div>
+<svelte:window onbeforeunload={guardUnload} />
 
-	<!-- Language & Locale -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
-		<div class="flex items-center gap-2 px-5 py-3">
-			<Icon name="lucide:globe" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Language & locale</h2>
+<div class="space-y-5">
+	<PageHeader
+		icon="lucide:sliders-horizontal"
+		title="General"
+		description="Payment, checkout & display preferences for this device"
+	/>
+
+	<!-- Business configuration (read-only — owned by Workspace) -->
+	<SettingsSection
+		icon="lucide:building-2"
+		title="Business configuration"
+		meta="Managed in Workspace"
+	>
+		<div class="px-5 py-4">
+			<p class="mb-3 text-[11px] text-[var(--ui-text-dimmed)]">
+				Currency and tax apply to the whole organization and are configured per company in the
+				Workspace.
+			</p>
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+				<div
+					class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3.5 py-2.5"
+				>
+					<p
+						class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+					>
+						Active company
+					</p>
+					<p class="truncate text-[13px] font-bold">{activeCompany}</p>
+				</div>
+				<div
+					class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3.5 py-2.5"
+				>
+					<p
+						class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+					>
+						Currency
+					</p>
+					<p class="text-[13px] font-bold">{tenant.state.currency}</p>
+				</div>
+				<div
+					class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3.5 py-2.5"
+				>
+					<p
+						class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+					>
+						Tax
+					</p>
+					<p class="text-[13px] font-bold">{taxLabel}</p>
+				</div>
+			</div>
+			<div class="mt-3">
+				<Button
+					href="/settings/organization"
+					variant="subtle"
+					size="sm"
+					icon="lucide:arrow-up-right"
+				>
+					Open Workspace
+				</Button>
+			</div>
 		</div>
+	</SettingsSection>
+
+	<!-- Language -->
+	<SettingsSection icon="lucide:globe" title="Language">
 		<div class="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-start">
 			<div class="shrink-0 sm:w-44">
 				<label class="text-[13px] font-semibold">Language</label>
 				<p class="text-[11px] text-[var(--ui-text-dimmed)]">App display language</p>
 			</div>
-			<Select bind:value={language} options={[{ value: 'en', label: '🇬🇧 English' }, { value: 'lo', label: '🇱🇦 Lao' }, { value: 'th', label: '🇹🇭 Thai' }, { value: 'ja', label: '🇯🇵 Japanese' }]} class="sm:w-56" />
+			<Select
+				bind:value={language}
+				options={[
+					{ value: 'en', label: '🇬🇧 English' },
+					{ value: 'lo', label: '🇱🇦 Lao' },
+					{ value: 'th', label: '🇹🇭 Thai' },
+					{ value: 'ja', label: '🇯🇵 Japanese' }
+				]}
+				class="sm:w-56"
+			/>
 		</div>
-		<div class="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-start">
-			<div class="shrink-0 sm:w-44">
-				<label class="text-[13px] font-semibold">Currency</label>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">ISO currency used across the app</p>
-			</div>
-			<Select bind:value={currency} options={[{ value: 'USD', label: 'USD ($ Dollar)' }, { value: 'LAK', label: 'LAK (₭ Kip)' }, { value: 'THB', label: 'THB (฿ Baht)' }, { value: 'JPY', label: 'JPY (¥ Yen)' }, { value: 'CNY', label: 'CNY (¥ Yuan)' }, { value: 'EUR', label: 'EUR (€ Euro)' }, { value: 'GBP', label: 'GBP (£ Pound)' }, { value: 'BTC', label: 'BTC (Bitcoin)' }, { value: 'SATS', label: 'SATS (Satoshis)' }]} class="sm:w-56" />
-		</div>
-		<div class="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-start">
-			<div class="shrink-0 sm:w-44">
-				<label class="text-[13px] font-semibold">Tax rate</label>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">Applied to all sales</p>
-			</div>
-			<div class="flex flex-col gap-3">
-				<label class="flex items-center gap-3"><Switch bind:checked={enableTax} /><span class="text-[13px]">Enable tax</span></label>
-				<div class="flex items-center gap-2" class:!opacity-50={!enableTax} class:!pointer-events-none={!enableTax}>
-					<Input bind:value={taxRate} type="number" min="0" max="100" step="0.1" placeholder="8" class="w-24" />
-					<span class="text-[13px] font-bold text-[var(--ui-text-dimmed)]">%</span>
-					<label class="ml-3 flex items-center gap-2"><Switch bind:checked={taxIncluded} /><span class="text-[12px] text-[var(--ui-text-muted)]">Included in price</span></label>
-				</div>
-			</div>
-		</div>
-	</section>
+	</SettingsSection>
 
 	<!-- Payment & Checkout -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
-		<div class="flex items-center gap-2 px-5 py-3">
-			<Icon name="lucide:credit-card" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Payment & checkout</h2>
-		</div>
+	<SettingsSection icon="lucide:credit-card" title="Payment & checkout">
 		<div class="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-start">
 			<div class="shrink-0 sm:w-44">
 				<label class="text-[13px] font-semibold">Default payment</label>
@@ -122,48 +227,45 @@
 			</div>
 			<div class="flex flex-wrap gap-2">
 				{#each paymentOptions as m (m.id)}
-					<button type="button" onclick={() => (defaultPayment = m.id)}
-						class="inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-[12px] font-semibold capitalize transition-all {defaultPayment === m.id ? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400' : 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}">
+					<button
+						type="button"
+						onclick={() => (defaultPayment = m.id)}
+						class="inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-[12px] font-semibold capitalize transition-all {defaultPayment ===
+						m.id
+							? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
+							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
+					>
 						<Icon name={m.icon} class="size-3.5" />{m.label}
 					</button>
 				{/each}
 			</div>
 		</div>
-		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div><div class="text-[13px] font-semibold">Sound effects</div><p class="text-[11px] text-[var(--ui-text-dimmed)]">UI click sounds</p></div>
+
+		<SettingRow title="Sound effects" description="UI click sounds">
 			<Switch bind:checked={playSound} />
-		</div>
-		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div><div class="text-[13px] font-semibold">Payment sound</div><p class="text-[11px] text-[var(--ui-text-dimmed)]">Chime on successful payment</p></div>
+		</SettingRow>
+		<SettingRow title="Payment sound" description="Chime on successful payment">
 			<Switch bind:checked={paymentSound} />
-		</div>
-		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div><div class="text-[13px] font-semibold">Auto-print receipt</div><p class="text-[11px] text-[var(--ui-text-dimmed)]">Print automatically after payment</p></div>
+		</SettingRow>
+		<SettingRow title="Auto-print receipt" description="Print automatically after payment">
 			<Switch bind:checked={autoPrint} />
-		</div>
-		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div><div class="text-[13px] font-semibold">Confirm before clearing cart</div><p class="text-[11px] text-[var(--ui-text-dimmed)]">Show dialog to prevent accidents</p></div>
+		</SettingRow>
+		<SettingRow title="Confirm before clearing cart" description="Show dialog to prevent accidents">
 			<Switch bind:checked={confirmClear} />
-		</div>
-		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div><div class="text-[13px] font-semibold">Compact mode</div><p class="text-[11px] text-[var(--ui-text-dimmed)]">Denser layout, more items visible</p></div>
+		</SettingRow>
+		<SettingRow title="Compact mode" description="Denser layout, more items visible">
 			<Switch bind:checked={compactMode} />
-		</div>
-	</section>
+		</SettingRow>
+	</SettingsSection>
 
 	<!-- Danger Zone -->
-	<section class="surface-card danger-surface divide-y divide-[var(--ui-border-muted)]">
-		<div class="flex items-center gap-2 px-5 py-3">
-			<Icon name="lucide:triangle-alert" class="size-4 text-[var(--tone-error-text)]" />
-			<h2 class="font-display text-[14px] font-semibold text-[var(--tone-error-text)]">Danger zone</h2>
-		</div>
-		<div class="flex items-center justify-between gap-4 px-5 py-4">
-			<div><div class="text-[13px] font-semibold">Reset all settings</div><p class="text-[11px] text-[var(--ui-text-dimmed)]">Restore POS settings to defaults</p></div>
-			<Button color="error" variant="subtle" size="sm" icon="lucide:rotate-ccw" onclick={resetAll}>Reset</Button>
-		</div>
-	</section>
+	<SettingsSection icon="lucide:triangle-alert" title="Danger zone" danger>
+		<SettingRow title="Reset preferences" description="Restore POS preferences to defaults">
+			<Button color="error" variant="subtle" size="sm" icon="lucide:rotate-ccw" onclick={resetAll}>
+				Reset
+			</Button>
+		</SettingRow>
+	</SettingsSection>
 
-	<div class="flex justify-end">
-		<Button color="primary" icon="lucide:check" onclick={save}>Save changes</Button>
-	</div>
+	<SaveBar visible={dirty} onsave={save} ondiscard={discard} />
 </div>

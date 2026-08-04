@@ -34,7 +34,18 @@ export const STATUS_COLORS: Record<string, BadgeColor> = {
 	force_closed: 'warning',
 	on_leave: 'info',
 	frozen: 'info',
-	paused: 'info'
+	paused: 'info',
+	// marketplace connection / listing / review statuses
+	connected: 'success',
+	disconnected: 'neutral',
+	syncing: 'info',
+	published: 'success',
+	rejected: 'error',
+	flagged: 'warning',
+	replied: 'info',
+	hidden: 'neutral',
+	out_of_stock: 'warning',
+	archived: 'neutral'
 };
 
 /** Map any status string to a safe Badge color (collapses error/primary). */

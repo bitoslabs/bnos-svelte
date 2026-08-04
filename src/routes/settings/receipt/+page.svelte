@@ -2,11 +2,14 @@
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
+	import { syncWorkspaceSettingsToOrganization } from '$nostr/workspace-settings';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { loadReceiptSettings, saveReceiptSettings } from '$lib/settings/local';
 
@@ -65,7 +68,7 @@
 		address = p.address;
 	});
 
-	function save() {
+	async function save() {
 		saveReceiptSettings({
 			storeName,
 			header,
@@ -87,162 +90,227 @@
 			phone,
 			address
 		});
+		await syncWorkspaceSettingsToOrganization();
 		toast.success('Receipt saved');
 	}
 </script>
 
 <svelte:head><title>Receipt · Settings</title></svelte:head>
 
-<div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
-	<div class="space-y-5">
-		<!-- Header -->
-		<div class="flex items-center gap-3">
-			<Icon name="lucide:receipt-text" class="size-5 text-primary-500" />
-			<h2 class="font-display text-[15px] font-semibold tracking-tight">Receipt</h2>
+<div class="space-y-5">
+	<PageHeader
+		icon="lucide:receipt-text"
+		title="Receipt"
+		description="Layout, fields & print preview"
+	/>
+
+	<div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+		<div class="space-y-5">
+			<!-- Basic info -->
+			<section class="surface-card space-y-4 p-5">
+				<h3 class="text-[13px] font-semibold tracking-wider text-[var(--ui-text-muted)] uppercase">
+					Basic
+				</h3>
+				<label class="block">
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Store name on receipt</span
+					>
+					<Input bind:value={storeName} class="w-full" />
+				</label>
+				<label class="block">
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Header</span
+					>
+					<Input bind:value={header} class="w-full" />
+				</label>
+				<label class="block">
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Footer</span
+					>
+					<Input bind:value={footer} textarea class="w-full" />
+				</label>
+				<label class="block">
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Paper size</span
+					>
+					<Select
+						bind:value={paperSize}
+						options={[
+							{ value: '58mm', label: '58mm' },
+							{ value: '80mm', label: '80mm' }
+						]}
+						class="w-40"
+					/>
+				</label>
+			</section>
+
+			<!-- Logo & Tax ID -->
+			<section class="surface-card space-y-4 p-5">
+				<h3 class="text-[13px] font-semibold tracking-wider text-[var(--ui-text-muted)] uppercase">
+					Branding
+				</h3>
+				<div>
+					<div class="mb-1.5 flex items-center justify-between">
+						<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Receipt logo URL</span
+						>
+						<Switch checked={showLogo} onCheckedChange={(v) => (showLogo = v)} />
+					</div>
+					<MediaImageInput bind:value={logoUrl} purpose="receipt" preview="none" placeholder="https://…" label="" />
+				</div>
+				<div>
+					<div class="mb-1.5 flex items-center justify-between">
+						<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Tax ID</span>
+						<Switch checked={showTaxId} onCheckedChange={(v) => (showTaxId = v)} />
+					</div>
+					<Input
+						bind:value={taxId}
+						icon="lucide:badge-check"
+						placeholder="TIN / VAT number"
+						class="w-full"
+					/>
+				</div>
+			</section>
+
+			<!-- QR Code -->
+			<section class="surface-card space-y-4 p-5">
+				<h3 class="text-[13px] font-semibold tracking-wider text-[var(--ui-text-muted)] uppercase">
+					QR Code
+				</h3>
+				<div class="flex items-center justify-between">
+					<span class="text-[13px] font-semibold">Show QR code on receipt</span>
+					<Switch checked={showQr} onCheckedChange={(v) => (showQr = v)} />
+				</div>
+				{#if showQr}
+					<label class="block">
+						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>QR data (URL, payment address, etc.)</span
+						>
+						<Input
+							bind:value={qrData}
+							icon="lucide:qr-code"
+							placeholder="e.g. bitcoin:… or https://…"
+							class="w-full"
+						/>
+					</label>
+				{/if}
+			</section>
+
+			<!-- Show/hide fields -->
+			<section class="surface-card space-y-3 p-5">
+				<h3 class="text-[13px] font-semibold tracking-wider text-[var(--ui-text-muted)] uppercase">
+					Visible fields
+				</h3>
+				<div class="flex items-center justify-between py-1">
+					<span class="text-[13px]">Store name</span>
+					<Switch bind:checked={showStoreName} />
+				</div>
+				<div class="flex items-center justify-between py-1">
+					<div>
+						<span class="text-[13px]">Phone number</span>
+						{#if showPhone}
+							<Input
+								bind:value={phone}
+								icon="lucide:phone"
+								placeholder="+856 …"
+								class="mt-1.5 w-full"
+							/>
+						{/if}
+					</div>
+					<Switch bind:checked={showPhone} />
+				</div>
+				<div class="flex items-center justify-between py-1">
+					<div>
+						<span class="text-[13px]">Address</span>
+						{#if showAddress}
+							<Input
+								bind:value={address}
+								icon="lucide:map-pin"
+								placeholder="123 Main St"
+								class="mt-1.5 w-full"
+							/>
+						{/if}
+					</div>
+					<Switch bind:checked={showAddress} />
+				</div>
+				<div class="flex items-center justify-between py-1">
+					<span class="text-[13px]">Date</span>
+					<Switch bind:checked={showDate} />
+				</div>
+				<div class="flex items-center justify-between py-1">
+					<span class="text-[13px]">Order number</span>
+					<Switch bind:checked={showOrderNumber} />
+				</div>
+				<div class="flex items-center justify-between py-1">
+					<span class="text-[13px]">Barcode</span>
+					<Switch bind:checked={showBarcode} />
+				</div>
+				<div class="flex items-center justify-between py-1">
+					<span class="text-[13px]">Cashier name</span>
+					<Switch bind:checked={showCashierName} />
+				</div>
+			</section>
+
+			<Button color="primary" icon="lucide:save" onclick={save}>Save</Button>
 		</div>
 
-		<!-- Basic info -->
-		<section class="surface-card space-y-4 p-5">
-			<h3 class="text-[13px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider">Basic</h3>
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Store name on receipt</span>
-				<Input bind:value={storeName} class="w-full" />
-			</label>
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Header</span>
-				<Input bind:value={header} class="w-full" />
-			</label>
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Footer</span>
-				<Input bind:value={footer} textarea class="w-full" />
-			</label>
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Paper size</span>
-				<Select
-					bind:value={paperSize}
-					options={[
-						{ value: '58mm', label: '58mm' },
-						{ value: '80mm', label: '80mm' }
-					]}
-					class="w-40"
-				/>
-			</label>
-		</section>
-
-		<!-- Logo & Tax ID -->
-		<section class="surface-card space-y-4 p-5">
-			<h3 class="text-[13px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider">Branding</h3>
-			<div>
-				<div class="mb-1.5 flex items-center justify-between">
-					<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Receipt logo URL</span>
-					<Switch checked={showLogo} onCheckedChange={(v) => (showLogo = v)} />
-				</div>
-				<Input bind:value={logoUrl} icon="lucide:image" placeholder="https://…" class="w-full" />
+		<!-- Preview -->
+		<div class="surface-card p-5">
+			<div
+				class="mb-3 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+			>
+				Preview
 			</div>
-			<div>
-				<div class="mb-1.5 flex items-center justify-between">
-					<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Tax ID</span>
-					<Switch checked={showTaxId} onCheckedChange={(v) => (showTaxId = v)} />
-				</div>
-				<Input bind:value={taxId} icon="lucide:badge-check" placeholder="TIN / VAT number" class="w-full" />
-			</div>
-		</section>
-
-		<!-- QR Code -->
-		<section class="surface-card space-y-4 p-5">
-			<h3 class="text-[13px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider">QR Code</h3>
-			<div class="flex items-center justify-between">
-				<span class="text-[13px] font-semibold">Show QR code on receipt</span>
-				<Switch checked={showQr} onCheckedChange={(v) => (showQr = v)} />
-			</div>
-			{#if showQr}
-				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">QR data (URL, payment address, etc.)</span>
-					<Input bind:value={qrData} icon="lucide:qr-code" placeholder="e.g. bitcoin:… or https://…" class="w-full" />
-				</label>
-			{/if}
-		</section>
-
-		<!-- Show/hide fields -->
-		<section class="surface-card space-y-3 p-5">
-			<h3 class="text-[13px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider">Visible fields</h3>
-			<div class="flex items-center justify-between py-1">
-				<span class="text-[13px]">Store name</span>
-				<Switch bind:checked={showStoreName} />
-			</div>
-			<div class="flex items-center justify-between py-1">
-				<div>
-					<span class="text-[13px]">Phone number</span>
-					{#if showPhone}
-						<Input bind:value={phone} icon="lucide:phone" placeholder="+856 …" class="mt-1.5 w-full" />
-					{/if}
-				</div>
-				<Switch bind:checked={showPhone} />
-			</div>
-			<div class="flex items-center justify-between py-1">
-				<div>
-					<span class="text-[13px]">Address</span>
-					{#if showAddress}
-						<Input bind:value={address} icon="lucide:map-pin" placeholder="123 Main St" class="mt-1.5 w-full" />
-					{/if}
-				</div>
-				<Switch bind:checked={showAddress} />
-			</div>
-			<div class="flex items-center justify-between py-1">
-				<span class="text-[13px]">Date</span>
-				<Switch bind:checked={showDate} />
-			</div>
-			<div class="flex items-center justify-between py-1">
-				<span class="text-[13px]">Order number</span>
-				<Switch bind:checked={showOrderNumber} />
-			</div>
-			<div class="flex items-center justify-between py-1">
-				<span class="text-[13px]">Barcode</span>
-				<Switch bind:checked={showBarcode} />
-			</div>
-			<div class="flex items-center justify-between py-1">
-				<span class="text-[13px]">Cashier name</span>
-				<Switch bind:checked={showCashierName} />
-			</div>
-		</section>
-
-		<Button color="primary" icon="lucide:save" onclick={save}>Save</Button>
-	</div>
-
-	<!-- Preview -->
-	<div class="surface-card p-5">
-		<div class="mb-3 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">Preview</div>
-		<div class="mx-auto max-w-[14rem] rounded-lg border border-dashed border-[var(--ui-border-accented)] bg-white p-4 font-mono text-[11px] text-neutral-900">
-			{#if showLogo && logoUrl}
-				<div class="mb-2 flex justify-center">
-					<img src={logoUrl} alt="Logo" class="h-12 object-contain" />
-				</div>
-			{/if}
-			{#if header}<div class="text-center text-[10px] text-neutral-500">{header}</div>{/if}
-			{#if showStoreName}<div class="text-center text-[13px] font-bold">{storeName || 'My Store'}</div>{/if}
-			{#if showPhone && phone}<div class="text-center text-[10px] text-neutral-600">Tel: {phone}</div>{/if}
-			{#if showAddress && address}<div class="text-center text-[10px] text-neutral-600">{address}</div>{/if}
-			{#if showTaxId && taxId}<div class="text-center text-[10px] text-neutral-600">Tax ID: {taxId}</div>{/if}
-			<div class="my-2 border-t border-dashed border-neutral-300"></div>
-			{#if showDate}<div class="flex justify-between"><span>Date</span><span>{new Date().toLocaleDateString()}</span></div>{/if}
-			{#if showOrderNumber}<div class="flex justify-between"><span>Order</span><span>#0001</span></div>{/if}
-			{#if showCashierName}<div class="flex justify-between"><span>Cashier</span><span>Staff</span></div>{/if}
-			<div class="my-2 border-t border-dashed border-neutral-300"></div>
-			<div class="flex justify-between"><span>Item x1</span><span>0.00</span></div>
-			<div class="my-2 border-t border-dashed border-neutral-300"></div>
-			<div class="flex justify-between font-bold"><span>TOTAL</span><span>0.00</span></div>
-			{#if showBarcode}
-				<div class="my-2 flex justify-center"><span class="font-mono text-[20px] tracking-widest">||||||||</span></div>
-			{/if}
-			{#if showQr && qrData}
-				<div class="my-2 flex justify-center">
-					<div class="grid size-16 place-items-center rounded border border-neutral-300">
-						<Icon name="lucide:qr-code" class="size-10 text-neutral-700" />
+			<div
+				class="mx-auto max-w-[14rem] rounded-lg border border-dashed border-[var(--ui-border-accented)] bg-white p-4 font-mono text-[11px] text-neutral-900"
+			>
+				{#if showLogo && logoUrl}
+					<div class="mb-2 flex justify-center">
+						<img src={logoUrl} alt="Logo" class="h-12 object-contain" />
 					</div>
-				</div>
-			{/if}
-			<div class="my-2 border-t border-dashed border-neutral-300"></div>
-			<div class="text-center text-[10px]">{footer}</div>
+				{/if}
+				{#if header}<div class="text-center text-[10px] text-neutral-500">{header}</div>{/if}
+				{#if showStoreName}<div class="text-center text-[13px] font-bold">
+						{storeName || 'My Store'}
+					</div>{/if}
+				{#if showPhone && phone}<div class="text-center text-[10px] text-neutral-600">
+						Tel: {phone}
+					</div>{/if}
+				{#if showAddress && address}<div class="text-center text-[10px] text-neutral-600">
+						{address}
+					</div>{/if}
+				{#if showTaxId && taxId}<div class="text-center text-[10px] text-neutral-600">
+						Tax ID: {taxId}
+					</div>{/if}
+				<div class="my-2 border-t border-dashed border-neutral-300"></div>
+				{#if showDate}<div class="flex justify-between">
+						<span>Date</span><span>{new Date().toLocaleDateString()}</span>
+					</div>{/if}
+				{#if showOrderNumber}<div class="flex justify-between">
+						<span>Order</span><span>#0001</span>
+					</div>{/if}
+				{#if showCashierName}<div class="flex justify-between">
+						<span>Cashier</span><span>Staff</span>
+					</div>{/if}
+				<div class="my-2 border-t border-dashed border-neutral-300"></div>
+				<div class="flex justify-between"><span>Item x1</span><span>0.00</span></div>
+				<div class="my-2 border-t border-dashed border-neutral-300"></div>
+				<div class="flex justify-between font-bold"><span>TOTAL</span><span>0.00</span></div>
+				{#if showBarcode}
+					<div class="my-2 flex justify-center">
+						<span class="font-mono text-[20px] tracking-widest">||||||||</span>
+					</div>
+				{/if}
+				{#if showQr && qrData}
+					<div class="my-2 flex justify-center">
+						<div class="grid size-16 place-items-center rounded border border-neutral-300">
+							<Icon name="lucide:qr-code" class="size-10 text-neutral-700" />
+						</div>
+					</div>
+				{/if}
+				<div class="my-2 border-t border-dashed border-neutral-300"></div>
+				<div class="text-center text-[10px]">{footer}</div>
+			</div>
 		</div>
 	</div>
 </div>

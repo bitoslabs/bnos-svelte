@@ -1,5 +1,4 @@
 import { browser } from '$app/environment';
-import { normalizeCurrencyCode } from '$lib/utils/format';
 
 export const RECEIPT_SETTINGS_KEY = 'bnos-os:receipt';
 export const GENERAL_SETTINGS_KEY = 'bnos-os:settings-general';
@@ -28,10 +27,6 @@ export interface ReceiptSettings {
 }
 
 export interface GeneralSettings {
-	currency: string;
-	taxRate: number;
-	enableTax: boolean;
-	taxIncluded: boolean;
 	defaultPayment: string;
 	playSound: boolean;
 	paymentSound: boolean;
@@ -74,10 +69,6 @@ export const defaultReceiptSettings: ReceiptSettings = {
 };
 
 export const defaultGeneralSettings: GeneralSettings = {
-	currency: 'USD',
-	taxRate: 0,
-	enableTax: false,
-	taxIncluded: false,
 	defaultPayment: 'cash',
 	playSound: true,
 	paymentSound: true,
@@ -123,15 +114,11 @@ export function saveReceiptSettings(settings: ReceiptSettings) {
 }
 
 export function loadGeneralSettings(): GeneralSettings {
-	const settings = readJson(GENERAL_SETTINGS_KEY, defaultGeneralSettings);
-	return { ...settings, currency: normalizeCurrencyCode(settings.currency) };
+	return readJson(GENERAL_SETTINGS_KEY, defaultGeneralSettings);
 }
 
 export function saveGeneralSettings(settings: GeneralSettings) {
-	writeJson(GENERAL_SETTINGS_KEY, {
-		...settings,
-		currency: normalizeCurrencyCode(settings.currency)
-	});
+	writeJson(GENERAL_SETTINGS_KEY, settings);
 }
 
 export function loadHardwareSettings(): HardwareSettings {

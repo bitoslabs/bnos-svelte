@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -7,13 +7,18 @@
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { formatMoney, relativeTime, titleCase } from '$lib/utils/format';
+	import { confirm } from '$lib/stores/confirm.svelte';
+	import { formatMoney, formatInt, relativeTime, titleCase } from '$lib/utils/format';
 	import { newRecordId } from '$lib/utils/record-id';
 	import { TYPE, statusColor, type Order, type Payment, type GloObject } from '$lib/domain';
+	import { sourceLabel, SHIPPING_STATUSES, shippingStatusLabel } from '$lib/domain/order-sources';
+	import { printReceiptForOrder, printPackingSlip, buildWhatsAppLink } from '$lib/pos/print';
+	import { btcRate } from '$lib/bitcoin/rate.svelte';
 
 	const id = $derived(page.params.id);
 
@@ -29,6 +34,14 @@
 	);
 	const currency = $derived(tenant.state.currency);
 
+	// Keep a BTC rate for the merchant currency loaded so the printed receipt's
+	// sats line works for orders that have no persisted snapshot.
+	$effect(() => {
+		if (!tenant.hydrated) return;
+		const cur = currency;
+		if (cur) untrack(() => void btcRate.ensureRate(cur));
+	});
+
 	// ── Status flow ──────────────────────────────────────────
 	const statusFlow: { status: string; label: string; icon: string }[] = [
 		{ status: 'pending', label: 'Pending', icon: 'lucide:clock' },
@@ -42,6 +55,49 @@
 		order ? statusFlow.findIndex((s) => s.status === order.data.status) : -1
 	);
 	let showAllStatuses = $state(false);
+
+	// ── Shipping tracking (editable) ──
+	let trackNumber = $state('');
+	let trackStatus = $state<string>('pending');
+	let trackProvider = $state('');
+	let trackEta = $state('');
+	let trackDriver = $state('');
+	let trackDriverPhone = $state('');
+
+	$effect(() => {
+		if (order) {
+			const s = (order.data as any).shipping ?? {};
+			trackNumber = s.trackingNumber ?? '';
+			trackStatus = s.shippingStatus ?? 'pending';
+			trackProvider = s.deliveryProvider ?? '';
+			trackEta = s.estimatedDeliveryAt ?? '';
+			trackDriver = s.driverName ?? '';
+			trackDriverPhone = s.driverPhone ?? '';
+		}
+	});
+
+	async function updateTracking() {
+		if (!order) return;
+		const current = (order.data as any).shipping ?? {};
+		await glo.upsert<Order>(
+			TYPE.order,
+			{
+				...(order.data as any),
+				shipping: {
+					...current,
+					shippingStatus: trackStatus,
+					trackingNumber: trackNumber.trim() || undefined,
+					deliveryProvider: trackProvider.trim() || undefined,
+					estimatedDeliveryAt: trackEta || undefined,
+					driverName: trackDriver.trim() || undefined,
+					driverPhone: trackDriverPhone.trim() || undefined,
+					deliveredAt: trackStatus === 'delivered' ? new Date().toISOString() : current.deliveredAt
+				}
+			},
+			{ id: order.id }
+		);
+		toast.success('Tracking updated');
+	}
 
 	// Quick status actions (context-aware next steps)
 	const quickStatusActions = $derived(() => {
@@ -98,24 +154,44 @@
 		return 'neutral';
 	}
 
-	function sourceLabel(src: string): string {
-		const map: Record<string, string> = {
-			orders_page: 'Orders Page',
-			pos: 'POS',
-			online: 'Online',
-			phone: 'Phone',
-			whatsapp: 'WhatsApp',
-			tiktok: 'TikTok',
-			facebook: 'Facebook',
-			website: 'Website'
-		};
-		return map[src] ?? titleCase(src) ?? '—';
-	}
-
 	// ── Payment summary ──────────────────────────────────────
 	const paidAmount = $derived(payments.reduce((s, p) => s + ((p.data as any).amount ?? 0), 0));
 	const totalAmount = $derived((order?.data as any)?.total ?? 0);
 	const remainingBalance = $derived(totalAmount - paidAmount);
+
+	// Resolve structured discount / coupon / promotion for display.
+	const discountInfo = $derived.by(() => {
+		const d = order?.data as any;
+		const od = d?.orderDiscount;
+		const amount = Number(od?.amount ?? d?.discount ?? 0) || 0;
+		const type = od?.type as 'percent' | 'fixed' | 'coupon' | undefined;
+		const value = od?.value as number | undefined;
+		const couponCode = od?.couponCode as string | undefined;
+		const promotionId = od?.promotionId as string | undefined;
+		const reason = od?.reason as string | undefined;
+		let promoName = '';
+		let couponDesc = '';
+		if (promotionId) {
+			const p = glo.get(TYPE.promotion, promotionId);
+			promoName = (p?.data as any)?.name ?? '';
+		}
+		if (couponCode) {
+			const found = glo.all(TYPE.coupon).find((c) => (c.data as any).code === couponCode);
+			couponDesc = (found?.data as any)?.description ?? '';
+		}
+		const hasDiscount = amount > 0 || !!type || !!couponCode || !!promotionId;
+		return {
+			amount,
+			type,
+			value,
+			couponCode,
+			promotionId,
+			reason,
+			promoName,
+			couponDesc,
+			hasDiscount
+		};
+	});
 
 	// ── Activity log (simplified from order fields) ─────────
 	const activityLog = $derived(() => {
@@ -157,41 +233,47 @@
 
 	async function cancelOrder() {
 		if (!order) return;
-		if (!confirm('Cancel this order?')) return;
+		if (
+			!(await confirm({
+				title: 'Cancel this order?',
+				message: 'The order will be marked as cancelled.',
+				tone: 'warning',
+				icon: 'lucide:ban',
+				confirmText: 'Cancel order'
+			}))
+		)
+			return;
 		await updateStatus('cancelled');
 		toast.info('Order cancelled');
 	}
 
 	async function deleteOrder() {
 		if (!order) return;
-		if (!confirm('Delete this order? This cannot be undone.')) return;
+		if (
+			!(await confirm({
+				title: 'Delete this order?',
+				message: 'This permanently removes the order record. This cannot be undone.',
+				tone: 'danger',
+				confirmText: 'Delete'
+			}))
+		)
+			return;
 		glo.remove(TYPE.order, id ?? '');
 		toast.info('Order deleted');
 		goto('/orders');
 	}
 
 	function printReceipt() {
-		if (!order) return;
-		const d = order.data as any;
-		const w = window.open('', '_blank', 'width=400,height=600');
-		if (!w) return;
-		const itemsHtml = (d.lines || [])
-			.map(
-				(l: any) =>
-					`<tr><td>${l.quantity}× ${l.name || l.productName || ''}</td><td style="text-align:right">${formatMoney((l.total ?? l.unitPrice * l.quantity) || 0, currency)}</td></tr>`
-			)
-			.join('');
-		const paymentsHtml = payments
-			.map((p) => {
-				const pd = p.data as any;
-				return `<tr><td>${pd.method}</td><td style="text-align:right">${formatMoney(pd.amount ?? 0, currency)}</td></tr>`;
-			})
-			.join('');
-		w.document.write(
-			`<html><head><title>Receipt ${d.number ?? ''}</title><style>body{font-family:monospace;padding:16px;font-size:12px}h2{text-align:center}table{width:100%}td{padding:2px 0}.total{font-weight:bold;font-size:14px;border-top:1px dashed #000;padding-top:8px}</style></head><body><h2>${tenant.state.organizationName || 'BNOS'}</h2><p style="text-align:center">${d.number ?? ''}</p><p style="text-align:center;font-size:10px;color:#666">${new Date(d.occurredAt ?? Date.now()).toLocaleString()}</p><hr><table>${itemsHtml}</table><hr><table><tr class="total"><td>TOTAL</td><td style="text-align:right">${formatMoney(totalAmount, currency)}</td></tr></table>${paymentsHtml ? `<hr><table>${paymentsHtml}</table>` : ''}<p style="text-align:center;margin-top:16px">Thank you!</p></body></html>`
-		);
-		w.document.close();
-		w.print();
+		if (order)
+			printReceiptForOrder(order as any, {
+				currency,
+				payments,
+				satsTotal:
+					order.data.totalSats ??
+					(btcRate.canConvert(currency)
+						? btcRate.satsFromAmount(order.data.total ?? 0, currency)
+						: undefined)
+			});
 	}
 
 	// ── Add payment ──────────────────────────────────────────
@@ -311,6 +393,24 @@
 					icon="lucide:printer"
 					onclick={printReceipt}>Print</Button
 				>
+				<Button
+					color="neutral"
+					variant="subtle"
+					size="sm"
+					icon="lucide:package"
+					onclick={() => printPackingSlip(order as any)}>Slip</Button
+				>
+				{#if buildWhatsAppLink(order as any)}
+					<a
+						href={buildWhatsAppLink(order as any)}
+						target="_blank"
+						rel="noopener"
+						class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--ui-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:border-[var(--ui-text-dimmed)]"
+					>
+						<Icon name="lucide:share-2" class="size-3.5" />
+						Share
+					</a>
+				{/if}
 				<Button
 					color="neutral"
 					variant="ghost"
@@ -562,6 +662,93 @@
 					</div>
 				{/if}
 
+				<!-- Order tracking -->
+				{#if shipping || orderType === 'delivery'}
+					<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
+						<div class="flex items-center gap-2 px-5 py-3">
+							<Icon name="lucide:route" class="size-4 text-primary-500" />
+							<h2 class="font-display text-[14px] font-semibold">Order tracking</h2>
+							{#if shipping?.shippingStatus}
+								<Badge color="info">{shippingStatusLabel(shipping.shippingStatus)}</Badge>
+							{/if}
+						</div>
+						<div class="space-y-3 px-5 py-4">
+							<div>
+								<span
+									class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+									>Shipping status</span
+								>
+								<div class="flex flex-wrap gap-1.5">
+									{#each SHIPPING_STATUSES as ss (ss.value)}
+										<button
+											type="button"
+											class="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium capitalize transition-all {trackStatus ===
+											ss.value
+												? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
+												: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
+											onclick={() => (trackStatus = ss.value)}
+										>
+											<Icon name={ss.icon} class="size-3.5" />
+											{ss.label}
+										</button>
+									{/each}
+								</div>
+							</div>
+							<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+								<label class="block">
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+										>Tracking number</span
+									>
+									<Input
+										bind:value={trackNumber}
+										placeholder="e.g. DHL123456"
+										icon="lucide:hash"
+										class="w-full"
+									/>
+								</label>
+								<label class="block">
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+										>Provider</span
+									>
+									<Input
+										bind:value={trackProvider}
+										placeholder="Courier / provider"
+										class="w-full"
+									/>
+								</label>
+								<label class="block">
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+										>Est. delivery</span
+									>
+									<Input bind:value={trackEta} type="datetime-local" class="w-full" />
+								</label>
+								<label class="block">
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+										>Driver name</span
+									>
+									<Input bind:value={trackDriver} placeholder="Driver / courier" class="w-full" />
+								</label>
+								<label class="block sm:col-span-2">
+									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+										>Driver phone</span
+									>
+									<Input
+										bind:value={trackDriverPhone}
+										type="tel"
+										placeholder="020 xx xxx xxx"
+										class="w-full"
+									/>
+								</label>
+							</div>
+							<div class="flex justify-end">
+								<Button size="sm" color="primary" icon="lucide:save" onclick={updateTracking}
+									>Update tracking</Button
+								>
+							</div>
+						</div>
+					</div>
+				{/if}
+
 				<!-- Pickup info -->
 				{#if pickup}
 					<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
@@ -678,13 +865,60 @@
 								>{formatMoney((order.data as any).subtotal ?? 0, currency)}</span
 							>
 						</div>
-						{#if (order.data as any).discount}
+						{#if discountInfo.hasDiscount}
 							<div class="flex justify-between">
-								<span class="text-[var(--ui-text-muted)]">Discount</span><span
-									class="text-red-600 tabular-nums"
-									>−{formatMoney((order.data as any).discount ?? 0, currency)}</span
+								<span class="text-[var(--ui-text-muted)]"
+									>{discountInfo.couponCode
+										? 'Coupon'
+										: discountInfo.promoName
+											? 'Promotion'
+											: 'Discount'}</span
+								><span class="text-red-600 tabular-nums"
+									>−{formatMoney(discountInfo.amount, currency)}</span
 								>
 							</div>
+							{#if discountInfo.type || discountInfo.couponCode || discountInfo.promoName || discountInfo.reason}
+								<div class="-mt-1 flex flex-wrap items-center gap-1.5">
+									{#if discountInfo.type === 'percent' && discountInfo.value}
+										<span
+											class="inline-flex items-center gap-0.5 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400"
+										>
+											<Icon name="lucide:percent" class="size-3" />{discountInfo.value}% off
+										</span>
+									{:else if discountInfo.type === 'fixed'}
+										<span
+											class="inline-flex items-center gap-0.5 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400"
+										>
+											<Icon name="lucide:badge-percent" class="size-3" />Fixed amount
+										</span>
+									{/if}
+									{#if discountInfo.couponCode}
+										<span
+											class="inline-flex items-center gap-0.5 rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-sky-600 dark:text-sky-400"
+											title={discountInfo.couponDesc}
+										>
+											<Icon name="lucide:ticket" class="size-3" />{discountInfo.couponCode}
+										</span>
+									{/if}
+									{#if discountInfo.promoName}
+										<span
+											class="inline-flex items-center gap-0.5 rounded-md bg-primary-500/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-primary-600 dark:text-primary-400"
+										>
+											<Icon name="lucide:sparkles" class="size-3" />{discountInfo.promoName}
+										</span>
+									{/if}
+									{#if discountInfo.reason}
+										<span class="text-[10.5px] text-[var(--ui-text-dimmed)]"
+											>{discountInfo.reason}</span
+										>
+									{/if}
+								</div>
+								{#if discountInfo.couponDesc}
+									<p class="-mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">
+										{discountInfo.couponDesc}
+									</p>
+								{/if}
+							{/if}
 						{/if}
 						{#if order.data.taxAmount}
 							<div class="flex justify-between">
@@ -707,6 +941,16 @@
 								>{formatMoney(totalAmount, currency)}</span
 							>
 						</div>
+						{#if order.data.totalSats}
+							<div
+								class="flex items-center justify-between text-[12.5px] font-semibold text-[var(--tone-warning-text)]"
+							>
+								<span class="flex items-center gap-1"
+									><Icon name="lucide:zap" class="size-3.5" />in sats</span
+								>
+								<span class="tabular-nums">≈ {formatInt(order.data.totalSats)}</span>
+							</div>
+						{/if}
 
 						<!-- Payments list -->
 						{#if payments.length > 0}

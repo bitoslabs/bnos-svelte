@@ -29,16 +29,25 @@ export interface BuildOrderInput {
 	lines: CartLineForReceipt[];
 	totals: Totals;
 	orderType?: Order['type'];
+	/** Origin of the sale (pos, phone, whatsapp, …) — same field the Orders page
+	 *  exposes, so POS sales join the same source analytics. */
+	source?: Order['source'];
 	customerName?: string;
 	customerId?: string;
 	tableId?: string;
 	covers?: number;
 	branchId?: string;
 	cashierPubkey?: string;
+	/** Active shift this sale was tendered under (kind 30520 id). */
+	shiftId?: string;
 	discount?: { type: 'percent' | 'fixed'; value: number };
 	note?: string;
 	occurredAt?: string;
 	method?: string;
+	/** Sats snapshot of the total (Bitcoin). */
+	totalSats?: number;
+	btcRate?: number;
+	btcRateCurrency?: string;
 }
 
 export function buildOrder(input: BuildOrderInput): Order {
@@ -80,19 +89,24 @@ export function buildOrder(input: BuildOrderInput): Order {
 		method: input.method,
 		// bdgo-os extension fields:
 		type: input.orderType,
+		source: input.source,
 		customerName: input.customerName,
 		customerId: input.customerId,
 		tableId: input.tableId,
 		covers: input.covers,
 		branchId: input.branchId,
 		cashierPubkey: input.cashierPubkey,
+		shiftId: input.shiftId,
 		orderDiscount: input.discount
 			? {
 					type: input.discount.type,
 					value: input.discount.value,
 					amount: input.totals.discountAmount
 				}
-			: undefined
+			: undefined,
+		totalSats: input.totalSats,
+		btcRate: input.btcRate,
+		btcRateCurrency: input.btcRateCurrency
 	};
 }
 
@@ -106,6 +120,8 @@ export interface BuildPaymentInput {
 	reference?: string;
 	cashierPubkey?: string;
 	branchId?: string;
+	/** Active shift this payment was tendered under (kind 30520 id). */
+	shiftId?: string;
 	paidAt?: string;
 }
 
@@ -121,6 +137,7 @@ export function buildPayment(input: BuildPaymentInput): Payment {
 		cashReceived: input.cashReceived,
 		changeGiven: input.changeGiven,
 		cashierPubkey: input.cashierPubkey,
-		branchId: input.branchId
+		branchId: input.branchId,
+		shiftId: input.shiftId
 	};
 }

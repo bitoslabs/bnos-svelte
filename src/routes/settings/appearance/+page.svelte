@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import {
 		preferences,
 		accentOptions,
@@ -29,22 +30,19 @@
 <svelte:head><title>Appearance · Settings</title></svelte:head>
 
 <div class="space-y-5">
-	<!-- Page header -->
-	<div class="flex items-center gap-3">
-		<div class="grid size-11 place-items-center rounded-xl bg-primary-500/10 text-primary-600 dark:text-primary-400">
-			<Icon name="lucide:palette" class="size-5" />
-		</div>
-		<div>
-			<h2 class="font-display text-[16px] font-semibold tracking-tight">Appearance</h2>
-			<p class="text-[12px] text-[var(--ui-text-muted)]">Customize how BNOS looks across your devices</p>
-		</div>
-	</div>
+	<PageHeader
+		icon="lucide:palette"
+		title="Appearance"
+		description="Customize how BNOS looks across your devices"
+	/>
 
 	<!-- Color mode — visual cards -->
 	<section class="surface-card p-5">
 		<div class="mb-4">
 			<h3 class="font-display text-[14px] font-bold">Color mode</h3>
-			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">Choose light, dark or follow your system</p>
+			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
+				Choose light, dark or follow your system
+			</p>
 		</div>
 		<div class="grid grid-cols-3 gap-3">
 			{#each modes as m (m.key)}
@@ -58,7 +56,8 @@
 					aria-pressed={active}
 				>
 					<div
-						class="mb-2.5 grid h-14 place-items-center rounded-lg transition-colors {m.key === 'light'
+						class="mb-2.5 grid h-14 place-items-center rounded-lg transition-colors {m.key ===
+						'light'
 							? 'bg-[var(--ui-bg-muted)]'
 							: m.key === 'dark'
 								? 'bg-[var(--ui-bg-inverse)]'
@@ -89,7 +88,9 @@
 	<section class="surface-card p-5">
 		<div class="mb-4">
 			<h3 class="font-display text-[14px] font-bold">Accent color</h3>
-			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">The primary brand color used throughout the app</p>
+			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
+				The primary brand color used throughout the app
+			</p>
 		</div>
 		<div class="flex flex-wrap gap-3">
 			{#each accentOptions as opt (opt.key)}
@@ -117,7 +118,9 @@
 	<section class="surface-card p-5">
 		<div class="mb-4">
 			<h3 class="font-display text-[14px] font-bold">Neutral palette</h3>
-			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">Base gray used for text &amp; borders</p>
+			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
+				Base gray used for text &amp; borders
+			</p>
 		</div>
 		<div class="flex flex-wrap gap-3">
 			{#each neutralOptions as n (n.key)}
@@ -139,7 +142,9 @@
 	<section class="surface-card p-5">
 		<div class="mb-4">
 			<h3 class="font-display text-[14px] font-bold">Density</h3>
-			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">How tightly content is packed on screen</p>
+			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
+				How tightly content is packed on screen
+			</p>
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			{#each densities as d (d.key)}
@@ -154,10 +159,18 @@
 				>
 					<div class="mb-3 space-y-1.5">
 						<div class="h-2 rounded-full bg-current/25"></div>
-						<div class="h-2 rounded-full bg-current/20 {d.key === 'compact' ? 'w-3/4' : 'w-5/6'}"></div>
-						<div class="h-2 rounded-full bg-current/15 {d.key === 'compact' ? 'w-1/2' : 'w-2/3'}"></div>
+						<div
+							class="h-2 rounded-full bg-current/20 {d.key === 'compact' ? 'w-3/4' : 'w-5/6'}"
+						></div>
+						<div
+							class="h-2 rounded-full bg-current/15 {d.key === 'compact' ? 'w-1/2' : 'w-2/3'}"
+						></div>
 					</div>
-					<p class="text-[13px] font-bold {active ? 'text-primary-700 dark:text-primary-300' : 'text-[var(--ui-text)]'}">
+					<p
+						class="text-[13px] font-bold {active
+							? 'text-primary-700 dark:text-primary-300'
+							: 'text-[var(--ui-text)]'}"
+					>
 						{d.label}
 					</p>
 					<p class="mt-0.5 text-[11px] text-[var(--ui-text-muted)]">{d.description}</p>
@@ -183,7 +196,8 @@
 						class="rounded-lg border-2 px-3 py-1.5 text-[12.5px] font-semibold transition-colors {active
 							? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
 							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)]'}"
-					>{s.label}</button>
+						>{s.label}</button
+					>
 				{/each}
 			</div>
 		</div>
@@ -198,7 +212,8 @@
 						class="rounded-lg border-2 px-3 py-1.5 text-[12.5px] font-semibold transition-colors {active
 							? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
 							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)]'}"
-					>{st.label}</button>
+						>{st.label}</button
+					>
 				{/each}
 			</div>
 		</div>
@@ -220,7 +235,8 @@
 						class="rounded-lg border-2 px-3 py-1.5 text-[12.5px] font-semibold transition-colors {active
 							? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
 							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)]'}"
-					>{f.label}</button>
+						>{f.label}</button
+					>
 				{/each}
 			</div>
 		</div>
@@ -236,7 +252,8 @@
 							? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
 							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)]'}"
 					>
-						<span class="size-3.5 border-2 border-current/40" style="border-radius:{r.value}"></span>
+						<span class="size-3.5 border-2 border-current/40" style="border-radius:{r.value}"
+						></span>
 						{r.label}
 					</button>
 				{/each}

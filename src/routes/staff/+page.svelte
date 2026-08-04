@@ -5,6 +5,7 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
@@ -20,6 +21,7 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 	import { initialsFrom, truncateNpub } from '$lib/utils/format';
 	import { hashPin } from '$lib/utils/pin';
 	import {
@@ -397,8 +399,17 @@
 		}
 	}
 
-	function remove(id: string, name: string) {
-		if (!confirm(`Delete staff member "${name}"?`)) return;
+	async function remove(id: string, name: string) {
+		if (
+			!(await confirm({
+				title: 'Delete staff member?',
+				message: 'This will remove the staff record from this device.',
+				detail: name,
+				tone: 'danger',
+				confirmText: 'Delete'
+			}))
+		)
+			return;
 		glo.remove(TYPE.staff, id);
 		removeStaffKey(id);
 		toast.info('Staff removed');
@@ -882,17 +893,12 @@
 			</span>
 			<div class="space-y-1.5">
 				{#each locations as branch (branch.id)}
-					<label
-						class="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--ui-border)] px-3 py-2 text-[12.5px] hover:bg-[var(--ui-bg-accented)]"
+					<Checkbox
+						checked={form.branchIds.includes(branch.id)}
+						onCheckedChange={() => toggleBranch(branch.id)}
+						class="items-center gap-2 rounded-lg border border-[var(--ui-border)] px-3 py-2 text-[12.5px] hover:bg-[var(--ui-bg-accented)]"
+					>{(branch.data as { name?: string }).name ?? branch.id}</Checkbox
 					>
-						<input
-							type="checkbox"
-							checked={form.branchIds.includes(branch.id)}
-							onchange={() => toggleBranch(branch.id)}
-							class="accent-[var(--ui-color-primary-500)]"
-						/>
-						<span>{(branch.data as { name?: string }).name ?? branch.id}</span>
-					</label>
 				{:else}
 					<span class="text-[11px] text-[var(--ui-text-dimmed)]">No branches configured.</span>
 				{/each}
@@ -914,15 +920,12 @@
 							</p>
 							<div class="flex flex-wrap gap-x-2 gap-y-0.5">
 								{#each res.actions as action (action)}
-									<label class="flex cursor-pointer items-center gap-1 text-[11px] capitalize">
-										<input
-											type="checkbox"
-											checked={form.customPermissions.includes(`${res.id}:${action}`)}
-											onchange={() => togglePermission(`${res.id}:${action}`)}
-											class="accent-[var(--ui-color-primary-500)]"
-										/>
-										{action}
-									</label>
+									<Checkbox
+										checked={form.customPermissions.includes(`${res.id}:${action}`)}
+										onCheckedChange={() => togglePermission(`${res.id}:${action}`)}
+										size="sm"
+										class="inline-flex cursor-pointer items-center gap-1 text-[11px] capitalize"
+									>{action}</Checkbox>
 								{/each}
 							</div>
 						</div>

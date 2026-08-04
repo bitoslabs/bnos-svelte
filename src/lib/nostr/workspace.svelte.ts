@@ -3,6 +3,9 @@ import { relays } from './relay.svelte';
 import { session } from './session.svelte';
 import { glo } from './store.svelte';
 import { tenant } from './tenant.svelte';
+import { hydrateOrganizationSettingsFromWorkspace, readOrganizationSettings } from './organization-settings';
+import { applyWorkspaceSettingsFromOrganization } from './workspace-settings';
+import { BNOS_EXT_KEY } from '$lib/domain/helpers';
 
 const WORKSPACE_TYPES = ['organization', 'location'] as const;
 
@@ -22,18 +25,35 @@ export function restoreTenantFromWorkspace() {
 	const orgs = glo.all<Record<string, unknown>>('organization');
 	if (orgs.length === 0) return false;
 
-	const org = orgs[0];
+	const settingsSnapshot = readOrganizationSettings();
+	const preferredOrgId = tenant.state.organizationId || settingsSnapshot?.activeCompanyId || '';
+	const org = orgs.find((item) => item.id === preferredOrgId) ?? orgs[0];
 	const orgData = org.data as Record<string, unknown>;
+	const orgExt = org.extensions?.[BNOS_EXT_KEY];
+	const bnosExt = orgExt && typeof orgExt === 'object' ? (orgExt as Record<string, unknown>) : {};
 	tenant.configure({
 		organizationId: org.id,
 		organizationName: (orgData.name as string) ?? '',
 		organizationCode: (orgData.code as string) ?? '',
-		currency: (orgData.currency as string) ?? tenant.state.currency
+		currency: (orgData.currency as string) ?? tenant.state.currency,
+		businessModel:
+			(bnosExt.businessModel as typeof tenant.state.businessModel) ?? tenant.state.businessModel,
+		businessType:
+			(bnosExt.businessType as typeof tenant.state.businessType) ?? tenant.state.businessType,
+		defaultTaxRate: (bnosExt.taxRate as number) ?? tenant.state.defaultTaxRate,
+		taxIncludedInPrice: (bnosExt.taxInclusive as boolean) ?? tenant.state.taxIncludedInPrice
 	});
 
 	const locations = glo.all<Record<string, unknown>>('location');
 	if (locations.length > 0) {
-		const location = locations[0];
+		const preferredLocationId = tenant.state.locationId || settingsSnapshot?.activeBranchId || '';
+		const location =
+			locations.find((item) => item.id === preferredLocationId) ??
+			locations.find((item) => {
+				const scope = item.scope as Record<string, unknown> | undefined;
+				return scope?.organizationId === org.id;
+			}) ??
+			locations[0];
 		const locationData = location.data as Record<string, unknown>;
 		tenant.configure({
 			locationId: location.id,
@@ -42,6 +62,11 @@ export function restoreTenantFromWorkspace() {
 	}
 
 	tenant.completeSetup();
+	hydrateOrganizationSettingsFromWorkspace({
+		activeCompanyId: org.id,
+		activeBranchId: tenant.state.locationId
+	});
+	applyWorkspaceSettingsFromOrganization();
 	return true;
 }
 
@@ -66,10 +91,10 @@ export async function resolveWorkspace(options: { allowRelaySync?: boolean } = {
 	try {
 		await warmRelays();
 		await sleep(400);
-		// Bootstrap only needs the active workspace + one usable branch.
-		// A later background sync can fetch the full collections.
-		await glo.sync('organization', 1);
-		await glo.sync('location', 1);
+		// Bootstrap needs the full workspace collections so a fresh device can
+		// rebuild the complete company + branch list from relay data.
+		await glo.sync('organization');
+		await glo.sync('location');
 	} catch {
 		// Local-first fallback: treat sync failure as "not found yet".
 	}

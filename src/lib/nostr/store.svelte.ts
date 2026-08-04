@@ -49,13 +49,20 @@ import { session } from './session.svelte';
 import { relays } from './relay.svelte';
 import { tenant } from './tenant.svelte';
 import { fetchEvents, sendEvent } from './client';
+import { verifyEvent } from 'nostr-tools/pure';
+import { encryptGloObject, decryptGloEvent, shouldEncryptType } from '$lib/crypto/glo-cipher';
 
 const STORAGE_PREFIX = 'bnos-os:glo:';
 const PUBLISH_QUEUE_KEY = 'bnos-os:glo:publish-queue';
 const KIND_UPGRADE_PREFIX = 'bnos-os:glo:kind-upgraded:';
 const APP_KIND_BY_TYPE: Record<string, number> = {
 	shift: NOSTR_KINDS.SHIFT,
-	'cash-event': NOSTR_KINDS.CASH_EVENT
+	'cash-event': NOSTR_KINDS.CASH_EVENT,
+	// Dedicated BNOS marketplace kinds (registered app-side until bnos-core
+	// adds them to GLO_KIND_BY_TYPE). Keeps wire format standards-compliant.
+	'marketplace.connection': NOSTR_KINDS.STORE_CONNECTION,
+	'marketplace.product': NOSTR_KINDS.MARKETPLACE_PRODUCT,
+	'marketplace.review': NOSTR_KINDS.MARKETPLACE_REVIEW
 };
 
 function uid(): string {
@@ -63,7 +70,13 @@ function uid(): string {
 	return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-type AnyGloObject = GloObject<unknown> & { __eventCreatedAt?: number };
+type AnyGloObject = GloObject<unknown> & {
+	__eventCreatedAt?: number;
+	/** Persisted (cheap) — enables the fast `ids:[]` relay lookup in fetchEvent. */
+	__eventId?: string;
+	/** Ephemeral full event — stripped from IDB (see writeLocal) to avoid bloat. */
+	__event?: NostrEvent;
+};
 type QueuedPublish = {
 	type: string;
 	object: AnyGloObject;
@@ -78,7 +91,8 @@ function toTimestamp(value: unknown): number {
 }
 
 function objectTimestamp(object: AnyGloObject): number {
-	const data = object.data && typeof object.data === 'object' ? object.data as Record<string, unknown> : {};
+	const data =
+		object.data && typeof object.data === 'object' ? (object.data as Record<string, unknown>) : {};
 	return Math.max(
 		toTimestamp(data.updatedAt),
 		toTimestamp(data.createdAt),
@@ -89,9 +103,10 @@ function objectTimestamp(object: AnyGloObject): number {
 function stampData<TData>(data: TData, existing?: AnyGloObject): TData {
 	if (!data || typeof data !== 'object' || Array.isArray(data)) return data;
 	const now = new Date().toISOString();
-	const current = existing?.data && typeof existing.data === 'object'
-		? existing.data as Record<string, unknown>
-		: {};
+	const current =
+		existing?.data && typeof existing.data === 'object'
+			? (existing.data as Record<string, unknown>)
+			: {};
 	return {
 		...(data as Record<string, unknown>),
 		createdAt: (data as Record<string, unknown>).createdAt ?? current.createdAt ?? now,
@@ -102,12 +117,23 @@ function stampData<TData>(data: TData, existing?: AnyGloObject): TData {
 function appKindForType(type: string) {
 	return APP_KIND_BY_TYPE[type] ?? getGloKindForType(type);
 }
+/** Cryptographically validate a Nostr event (id + Schnorr sig). Never throws. */
+function safeVerify(ev: NostrEvent): boolean {
+	try {
+		return verifyEvent(ev as any);
+	} catch {
+		return false;
+	}
+}
 
 function kindUpgradeKey(type: string) {
 	return `${KIND_UPGRADE_PREFIX}${tenant.state.organizationId || 'no-workspace'}:${type}:${appKindForType(type)}`;
 }
 
-function createAppGloEventTemplate(object: GloObject<unknown>, options: { client?: string; summary?: string } = {}) {
+function createAppGloEventTemplate(
+	object: GloObject<unknown>,
+	options: { client?: string; summary?: string } = {}
+) {
 	const overrideKind = APP_KIND_BY_TYPE[object.type];
 	const template = overrideKind
 		? {
@@ -130,7 +156,12 @@ function createAppGloEventTemplate(object: GloObject<unknown>, options: { client
 	return template;
 }
 
-function parseAppGloEvent(event: NostrEvent): AnyGloObject {
+async function parseAppGloEvent(event: NostrEvent): Promise<AnyGloObject> {
+	// Encrypted event (SECURITY.md): decrypt content → full GLO envelope, then
+	// let the standard parseGloEvent validate envelope-vs-tags. decryptGloEvent
+	// returns null for plaintext content, so we fall through unchanged.
+	const decrypted = await decryptGloEvent<AnyGloObject>(event).catch(() => null);
+	if (decrypted) return decrypted;
 	try {
 		return parseGloEvent(event as never).object as AnyGloObject;
 	} catch (e) {
@@ -140,6 +171,54 @@ function parseAppGloEvent(event: NostrEvent): AnyGloObject {
 		if (getTagValue(event.tags, 'd') !== createGloIdentifier(object.type, object.id)) throw e;
 		return object;
 	}
+}
+
+/** The `createGloFilter` params `glo.sync` builds for a given type + context.
+ *
+ *  Author strategy (the key to owner ↔ staff device data sharing):
+ *  - workspace types (`organization`/`location`) → author = the device's own
+ *    pubkey, so each device finds the workspace records it authored. Staff
+ *    devices additionally resolve owner-authored workspace records through
+ *    `memberships.fetchOrgAndLocations`.
+ *  - operational types (catalog, orders, payments, shifts, …) with a known
+ *    org → discover via the org scope topic (`glo:organization:<orgId>`) with
+ *    NO author restriction. This is what lets a staff device read
+ *    owner-authored products AND lets an owner device read staff-authored
+ *    orders — the org id acts as an unguessable capability token.
+ *  - no org context yet → fall back to own key to avoid a global relay query.
+ *
+ *  `locationId` adds the `glo:scope:org:loc` topic for branch-scoped sync. */
+export interface SyncScopeInput {
+	type: string;
+	isWorkspaceType: boolean;
+	orgId?: string;
+	locationId?: string | null;
+	sessionPubkey?: string | null;
+	authors?: string[];
+}
+export interface SyncScopeParams {
+	types: [string];
+	authors?: string[];
+	organizationId?: string;
+	locationId?: string;
+}
+export function resolveSyncScope(input: SyncScopeInput): SyncScopeParams {
+	const { type, isWorkspaceType, orgId, sessionPubkey, authors } = input;
+	const locationId = input.locationId ?? undefined;
+	if (authors) {
+		return {
+			types: [type],
+			authors,
+			...(isWorkspaceType ? {} : { organizationId: orgId, locationId })
+		};
+	}
+	if (isWorkspaceType) {
+		return { types: [type], authors: sessionPubkey ? [sessionPubkey] : undefined };
+	}
+	if (orgId) {
+		return { types: [type], organizationId: orgId, locationId };
+	}
+	return { types: [type], authors: sessionPubkey ? [sessionPubkey] : undefined };
 }
 
 // ─── IndexedDB read/write helpers ────────────────────────────────────────────
@@ -158,7 +237,7 @@ async function writeLocal(type: string, items: AnyGloObject[]) {
 	if (!browser) return;
 	try {
 		// Strip Svelte $state proxies — IndexedDB structured clone can't handle them.
-		const plain = JSON.parse(JSON.stringify(items));
+		const plain = JSON.parse(JSON.stringify(items, (k, v) => (k === '__event' ? undefined : v)));
 		await idbSet(STORAGE_PREFIX + type, plain);
 	} catch (e) {
 		console.warn('[glo] IndexedDB write failed', type, e);
@@ -169,7 +248,9 @@ async function readPublishQueue(): Promise<QueuedPublish[]> {
 	if (!browser) return [];
 	try {
 		const queued = await idbGet<QueuedPublish[]>(PUBLISH_QUEUE_KEY);
-		return Array.isArray(queued) ? queued.filter((item) => item?.type && isGloObject(item.object)) : [];
+		return Array.isArray(queued)
+			? queued.filter((item) => item?.type && isGloObject(item.object))
+			: [];
 	} catch {
 		return [];
 	}
@@ -217,22 +298,24 @@ class ReactiveCollections {
 
 		// Fire async hydration — when it completes, update $state which
 		// triggers any $derived/$effect that read this collection.
-		void readLocal(type).then((items) => {
-			this._hydrating.delete(type);
-			// Don't overwrite if data was written while we were reading.
-			if (this._hydrated.has(type)) return;
-			this._hydrated.add(type);
-			this._map[type] = items;
-			console.debug(`[glo] hydrated "${type}" → ${items.length} items`);
-			// Bump version to signal hydration completed (for components
-			// that need to know when initial data has arrived).
-			if (gloInstance) gloInstance.bump();
-		}).catch((e) => {
-			this._hydrating.delete(type);
-			console.warn(`[glo] hydration failed for "${type}"`, e);
-			this._hydrated.add(type);
-			if (gloInstance) gloInstance.bump();
-		});
+		void readLocal(type)
+			.then((items) => {
+				this._hydrating.delete(type);
+				// Don't overwrite if data was written while we were reading.
+				if (this._hydrated.has(type)) return;
+				this._hydrated.add(type);
+				this._map[type] = items;
+				console.debug(`[glo] hydrated "${type}" → ${items.length} items`);
+				// Bump version to signal hydration completed (for components
+				// that need to know when initial data has arrived).
+				if (gloInstance) gloInstance.bump();
+			})
+			.catch((e) => {
+				this._hydrating.delete(type);
+				console.warn(`[glo] hydration failed for "${type}"`, e);
+				this._hydrated.add(type);
+				if (gloInstance) gloInstance.bump();
+			});
 	}
 
 	isHydrated(type: string) {
@@ -472,7 +555,11 @@ class GloStore {
 	};
 
 	/** Sign + publish a GLO object as a Nostr event. */
-	private publish = async (type: string, object: GloObject<unknown>, options: { queueOnFailure?: boolean } = {}) => {
+	private publish = async (
+		type: string,
+		object: GloObject<unknown>,
+		options: { queueOnFailure?: boolean } = {}
+	) => {
 		const { queueOnFailure = true } = options;
 		if (!session.snapshot || !relays.online || !relays.writableNormalized.length) {
 			if (queueOnFailure) await this.queuePublish(type, object);
@@ -483,6 +570,24 @@ class GloStore {
 				client: 'bdgo-os',
 				summary: `${type} ${object.id}`
 			});
+
+			// Encryption (opt-in, per SECURITY.md): for sensitive types, swap the
+			// plaintext GLO content for an AES-256-GCM ciphertext envelope and add
+			// bnos-core's honest encrypted/encryption/encryption-key tags. Local
+			// cache keeps the plaintext object; only the wire event is encrypted.
+			if (shouldEncryptType(type)) {
+				try {
+					const enc = await encryptGloObject(object);
+					if (enc) {
+						template.content = enc.content;
+						template.tags = [...template.tags, ...enc.encryptionTags];
+					}
+				} catch (e) {
+					// No company key yet (e.g. staff awaiting a grant) → publish plaintext.
+					console.debug('[glo] encryption skipped', type, e);
+				}
+			}
+
 			const event = await signNostrEvent({
 				template,
 				fallbackPubkey: session.snapshot.pubkey,
@@ -490,6 +595,11 @@ class GloStore {
 				nsec: session.snapshot.nsec,
 				extensionSigner: session.extensionSigner ?? undefined
 			});
+			// Retain the signed event in-memory so the Raw Data viewer can show the
+			// live Nostr event (id / sig / tags). Not persisted (writeLocal strips it).
+			(object as AnyGloObject).__event = event as NostrEvent;
+			(object as AnyGloObject).__eventId = (event as NostrEvent).id;
+			(object as AnyGloObject).__eventCreatedAt = (event as NostrEvent).created_at;
 			const published = await sendEvent(event as NostrEvent);
 			if (!published && queueOnFailure) await this.queuePublish(type, object);
 			return published;
@@ -541,18 +651,38 @@ class GloStore {
 		if (allPublished) localStorage.setItem(stampKey, String(Date.now()));
 	};
 
-	/** Pull the latest events for a type from relays and merge locally. */
-	sync = async (type: string, limit = 200) => {
+	/** Sync options.
+	 *  - `locationId`: restrict to one branch (adds the `glo:scope:org:loc`
+	 *    topic to the relay filter). Omit for org-wide sync.
+	 *  - `authors`: override the author set. By default operational types are
+	 *    discovered via the org scope topic regardless of author, so an owner
+	 *    device sees staff-authored orders and a staff device sees
+	 *    owner-authored catalog. Workspace types (organization/location) stay
+	 *    author-restricted to the device's own key.
+	 *  - `limit`: relay result cap. */
+	sync = async (
+		type: string,
+		options: { locationId?: string | null; authors?: string[]; limit?: number } = {}
+	) => {
+		const { locationId, authors, limit = 200 } = options;
 		if (!session.pubkey || !relays.online || !relays.readableNormalized.length) return;
 		if (this.syncing.has(type)) return;
 		this.syncing.add(type);
 		try {
 			await this.flushPublishQueue();
 			await this.publishLocalKindUpgrade(type);
+			const isWorkspaceType = type === 'organization' || type === 'location';
+			const orgId = tenant.state.organizationId || undefined;
+			const scopeParams = resolveSyncScope({
+				type,
+				isWorkspaceType,
+				orgId,
+				locationId,
+				sessionPubkey: session.pubkey,
+				authors
+			});
 			const filter = createGloFilter({
-				types: [type],
-				authors: [session.pubkey],
-				organizationId: tenant.state.organizationId || undefined,
+				...scopeParams,
 				limit
 			});
 			filter.kinds = [...new Set([...filter.kinds, appKindForType(type)])];
@@ -560,12 +690,10 @@ class GloStore {
 			const incoming: AnyGloObject[] = [];
 			for (const ev of events) {
 				try {
-					incoming.push({
-						...parseAppGloEvent(ev as NostrEvent),
-						__eventCreatedAt: ev.created_at
-					});
+					const parsed = await parseAppGloEvent(ev as NostrEvent);
+					incoming.push({ ...parsed, __eventCreatedAt: ev.created_at, __eventId: ev.id, __event: ev as NostrEvent });
 				} catch {
-					/* skip non-GLO / malformed */
+					/* skip non-GLO / malformed / undecryptable */
 				}
 			}
 			if (incoming.length) this.batchUpsert(type, incoming);
@@ -575,6 +703,72 @@ class GloStore {
 	};
 
 	/** Sync everything the app cares about. */
+	/** Lazily fetch the live Nostr event for one record (Raw Data viewer shows
+	 *  the real id/sig). Cached on the object in-memory; returns null offline /
+	 *  when not found. Single-record relay query (kind + author + #d). */
+	fetchEvent = async (
+		type: string,
+		id: string,
+		opts: { force?: boolean } = {}
+	): Promise<NostrEvent | null> => {
+		if (!browser) return null;
+		const existing = this.collections.find(type, id) as AnyGloObject | undefined;
+		if (!opts.force && existing?.__event) return existing.__event; // in-memory cache
+		if (!session.pubkey || !relays.online || !relays.readableNormalized.length) return null;
+		// Prefer a cryptographically-verified event so a single corrupt/truncated
+		// relay copy doesn't poison the viewer.
+		const pickVerified = (list: NostrEvent[]): NostrEvent | null => {
+			const seen = new Set<string>();
+			const dedup: NostrEvent[] = [];
+			for (const e of list) {
+				if (e && !seen.has(e.id)) {
+					seen.add(e.id);
+					dedup.push(e);
+				}
+			}
+			return dedup.find((e) => safeVerify(e)) ?? dedup[0] ?? null;
+		};
+		try {
+			let ev: NostrEvent | null = null;
+			let suspect: NostrEvent | null = null;
+			// 1) ids:[] — fast, universal. Accept immediately if it verifies.
+			if (existing?.__eventId) {
+				const c =
+					(
+						await fetchEvents({
+							ids: [existing.__eventId],
+							limit: 1
+						} as Parameters<typeof fetchEvents>[0])
+					)[0] ?? null;
+				if (c) {
+					if (safeVerify(c)) ev = c;
+					else suspect = c;
+				}
+			}
+			// 2) #d lookup — also finds a clean copy when the id one failed verify.
+			if (!ev) {
+				const author = existing?.scope?.ownerPubkey ?? session.pubkey;
+				const list = await fetchEvents({
+					kinds: [appKindForType(type)],
+					authors: [author],
+					'#d': [createGloIdentifier(type, id)],
+					limit: 5
+				} as Parameters<typeof fetchEvents>[0]);
+				ev = pickVerified(list);
+			}
+			// Last resort: surface a bad copy so the UI can warn about tampering.
+			if (!ev) ev = suspect;
+			if (ev && existing) {
+				existing.__event = ev;
+				existing.__eventId = ev.id;
+				existing.__eventCreatedAt = ev.created_at;
+			}
+			return ev;
+		} catch {
+			return null;
+		}
+	};
+
 	syncAll = async (types: string[]) => {
 		if (!session.pubkey) return;
 		await Promise.all(types.map((t) => this.sync(t)));

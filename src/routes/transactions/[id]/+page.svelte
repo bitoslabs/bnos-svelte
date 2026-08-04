@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { glo } from '$nostr/store.svelte';
@@ -20,6 +21,8 @@
 	});
 
 	// Try to find as order first, then as payment
+	let rawOpen = $state(false);
+	let rawItem = $state<any>(null);
 	const order = $derived(glo.get(TYPE.order, id ?? '') as GloObject<Order, typeof TYPE.order> | undefined);
 	const payment = $derived(glo.get(TYPE.payment, id ?? '') as GloObject<Payment, typeof TYPE.payment> | undefined);
 	const currency = $derived(tenant.state.currency);
@@ -59,6 +62,10 @@
 			{#if txType === 'order'}
 				<Button color="neutral" variant="subtle" size="sm" icon="lucide:receipt-text" href="/orders/{id}">View order</Button>
 			{/if}
+			<Button color="neutral" variant="subtle" size="sm" icon="lucide:code" onclick={() => {
+				rawItem = (order ?? payment) as any;
+				rawOpen = true;
+			}}>View raw</Button>
 		</div>
 
 		<div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -150,3 +157,5 @@
 		</div>
 	</div>
 {/if}
+
+<RawDataDialog bind:open={rawOpen} data={rawItem} title="Transaction Raw Data" />

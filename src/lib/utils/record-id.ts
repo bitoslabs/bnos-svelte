@@ -62,6 +62,28 @@ export function newRecordId(prefix = 'id') {
 	return `${prefix}-${Date.now()}-${randomToken(8)}`;
 }
 
+/**
+ * Opaque, unguessable, collision-free organization id — a 122-bit UUID behind a
+ * short `org_` prefix. Used as the GLO `organizationId` / scope-token.
+ *
+ * IMPORTANT: the org id is published in event tags (`organization`,
+ * `glo:organization:<id>`) for relay discovery, so it MUST be an unguessable
+ * capability token — never derived from the owner's pubkey (which is public and
+ * would let anyone harvest the org's events) and never a short human string
+ * (collision + guessing). A random UUID satisfies both uniqueness and
+ * unguessability. The human-readable `organizationCode` is separate (display).
+ */
+export function newOrganizationId(): string {
+	if (browser && crypto.randomUUID) return `org_${crypto.randomUUID()}`;
+	return `org_${Date.now().toString(36)}${randomToken(16)}`;
+}
+
+/** Opaque location/branch id (same rationale as `newOrganizationId`). */
+export function newLocationId(): string {
+	if (browser && crypto.randomUUID) return `loc_${crypto.randomUUID()}`;
+	return `loc_${Date.now().toString(36)}${randomToken(16)}`;
+}
+
 export function nowIso() {
 	return new Date().toISOString();
 }

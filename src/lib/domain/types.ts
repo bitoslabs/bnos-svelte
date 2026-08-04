@@ -230,7 +230,12 @@ export interface OrderLineBnosExt {
 /** Standardized order line = canonical GLO line widened with bdgo-os fields. */
 export type OrderLine = GloOrderLine & OrderLineBnosExt;
 
+/** Delivery lifecycle for shipping tracking (independent of kitchen status). */
+export type ShippingStatus =
+	'pending' | 'packed' | 'shipped' | 'in_transit' | 'delivered' | 'failed' | 'returned';
+
 export interface ShippingInfo {
+	shippingStatus?: ShippingStatus;
 	recipientName?: string;
 	phone?: string;
 	address?: string;
@@ -269,6 +274,8 @@ export interface OrderBnosExt {
 	orderNumber?: number | string;
 	type?: OrderType;
 	source?: OrderSource;
+	/** Free-text detail for a custom/"other" source (e.g. a Facebook post URL, influencer name). */
+	sourceDetail?: string;
 	channel?: OrderChannel;
 	status?: OrderStatus;
 	customerPubkey?: string;
@@ -285,6 +292,11 @@ export interface OrderBnosExt {
 	pickup?: PickupInfo;
 	orderDiscount?: OrderDiscountBnos;
 	totalsRounding?: number;
+	/** Sats equivalent of `total` captured at sale time (Bitcoin snapshot). */
+	totalSats?: number;
+	/** Fiat-per-BTC rate used to derive `totalSats` (audit snapshot). */
+	btcRate?: number;
+	btcRateCurrency?: string;
 }
 
 /** Standardized order = canonical GLO order, with widened line + bdgo extras. */
@@ -321,6 +333,9 @@ export interface PaymentBnosExt {
 	qrData?: string;
 	cashierPubkey?: string;
 	branchId?: string;
+	/** Active shift this payment was tendered under (kind 30520). Enables
+	 *  per-shift cash reconciliation without an order→payment join. */
+	shiftId?: string;
 }
 export type Payment = GloPayment & PaymentBnosExt;
 
@@ -775,7 +790,7 @@ export interface Expense {
 // STAFF OPS: SHIFT / CASH EVENT (extension types → 30078)
 // ════════════════════════════════════════════════════════════════════
 
-export type ShiftStatus = 'active' | 'closed' | 'force_closed';
+export type ShiftStatus = 'active' | 'closed' | 'force_closed' | 'cancelled';
 export interface Shift {
 	number: string;
 	status: ShiftStatus;
@@ -783,7 +798,12 @@ export interface Shift {
 	openingCash: number;
 	staffId?: string;
 	staffName?: string;
+	/** Canonical GLO branch id (kind 30520 `branchId`). `undefined` for
+	 *  single-location tenants so legacy global shifts keep matching. */
 	branchId?: string;
+	/** Denormalized branch name for offline display on staff devices that
+	 *  haven't yet synced the `location` record from the owner device. */
+	branchName?: string;
 	terminalId?: string;
 	closingCash?: number;
 	expectedCash?: number;
@@ -816,4 +836,94 @@ export interface CashEvent {
 	reason?: string;
 	approvedBy?: string;
 	occurredAt: string;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// MARKETPLACE (dedicated BNOS marketplace kinds 30950–30955)
+//   marketplace.connection → STORE_CONNECTION        (30953)
+//   marketplace.product    → MARKETPLACE_PRODUCT     (30951)
+//   marketplace.review     → MARKETPLACE_REVIEW      (30955)
+//   orders from channels reuse commerce.order (30200) with source/channel.
+// ════════════════════════════════════════════════════════════════════
+
+/** The platform a channel connects to (TikTok, Facebook, own website…). */
+export type MarketplaceChannelType =
+	| 'tiktok'
+	| 'facebook'
+	| 'instagram'
+	| 'website'
+	| 'shopee'
+	| 'lazada'
+	| 'tokopedia'
+	| 'amazon'
+	| 'whatsapp'
+	| 'shopify'
+	| 'custom';
+
+export type MarketplaceConnectionStatus = 'connected' | 'disconnected' | 'error' | 'pending';
+
+/** A connected external sales channel / store partnership.
+ *  Wire kind: STORE_CONNECTION (30953). */
+export interface MarketplaceConnection {
+	name: string;
+	type: MarketplaceChannelType;
+	status: MarketplaceConnectionStatus;
+	/** Storefront / shop URL on the channel. */
+	storeUrl?: string;
+	/** Whether orders/listings auto-sync. */
+	syncEnabled: boolean;
+	/** Mark orders fulfilled automatically once shipped. */
+	autoFulfill?: boolean;
+	lastSyncAt?: string;
+	/** Brand logo / emoji shown on chips. */
+	logo?: string;
+	/** Free-form channel config (apiKey masked in UI, region, currency…). */
+	config?: Record<string, string>;
+}
+
+export type MarketplaceProductStatus = 'draft' | 'active' | 'paused' | 'out_of_stock' | 'archived';
+
+/** A product published to one or more sales channels.
+ *  Wire kind: MARKETPLACE_PRODUCT (30951). */
+export interface MarketplaceProduct {
+	productId: string;
+	productName: string;
+	sku?: string;
+	/** Channel ids this listing is published to. */
+	channelIds: string[];
+	status: MarketplaceProductStatus;
+	price: number;
+	compareAtPrice?: number;
+	/** Per-channel price overrides (channelId → price). */
+	channelPrices?: Record<string, number>;
+	inventoryTracked: boolean;
+	stock?: number;
+	images?: string[];
+	description?: string;
+	publishedAt?: string;
+	/** Per-channel publish health. */
+	channelStatus?: Record<string, 'published' | 'syncing' | 'rejected'>;
+	// cached performance metrics
+	views?: number;
+	clicks?: number;
+	conversions?: number;
+}
+
+export type MarketplaceReviewStatus = 'published' | 'pending' | 'flagged' | 'hidden' | 'replied';
+
+/** A product/store review (synced from a channel or captured manually).
+ *  Wire kind: MARKETPLACE_REVIEW (30955). */
+export interface MarketplaceReview {
+	productId?: string;
+	productName?: string;
+	channelId?: string;
+	channelName?: string;
+	customerName: string;
+	rating: number; // 1–5
+	title?: string;
+	body?: string;
+	status: MarketplaceReviewStatus;
+	reply?: string;
+	verified: boolean;
+	helpful?: number;
 }
