@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { browser } from '$app/environment';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -11,16 +10,16 @@
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import { session, hasNip07Extension } from '$nostr/session.svelte';
+	import { profile } from '$nostr/profile.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { truncateNpub, initialsFrom, titleCase } from '$lib/utils/format';
 
-	const PROFILE_KEY = 'nostr_profile_kind0';
-
 	onMount(() => {
 		session.load();
 		tenant.load();
+		profile.load();
 		loadProfile();
 	});
 
@@ -42,38 +41,37 @@
 	const hasExt = $derived(hasNip07Extension());
 
 	function loadProfile() {
-		if (!browser) return;
-		try {
-			const raw = localStorage.getItem(PROFILE_KEY);
-			if (!raw) return;
-			const d = JSON.parse(raw);
-			displayName = d.display_name ?? '';
-			username = d.name ?? '';
-			about = d.about ?? '';
-			picture = d.picture ?? '';
-			website = d.website ?? '';
-			lud16 = d.lud16 ?? '';
-		} catch {
-			/* ignore */
-		}
+		// Seed the form from the reactive kind-0 cache (localStorage-hydrated).
+		displayName = profile.meta.display_name ?? '';
+		username = profile.meta.name ?? '';
+		about = profile.meta.about ?? '';
+		picture = profile.meta.picture ?? '';
+		website = profile.meta.website ?? '';
+		lud16 = profile.meta.lud16 ?? '';
 	}
 
-	function saveProfile() {
+	async function saveProfile() {
 		if (!snap?.pubkey) return;
 		isSaving = true;
 		try {
-			const data: Record<string, string> = {};
-			if (displayName) data.display_name = displayName;
-			if (username) data.name = username;
-			if (about) data.about = about;
-			if (picture) data.picture = picture;
-			if (website) data.website = website;
-			if (lud16) data.lud16 = lud16;
+			// 1. Update the local cache (reactive chrome updates immediately).
+			profile.save({
+				display_name: displayName,
+				name: username,
+				about,
+				picture,
+				website,
+				lud16
+			});
 
-			if (browser) localStorage.setItem(PROFILE_KEY, JSON.stringify(data));
+			// 2. Publish to Nostr as a kind-0 replaceable event (best-effort).
+			const published = await profile.publish();
 
 			profileSaved = true;
-			toast.success('Profile saved');
+			toast.success(
+				'Profile saved',
+				published ? 'Published to Nostr' : 'Saved locally (offline)'
+			);
 			setTimeout(() => (profileSaved = false), 2500);
 		} catch (e) {
 			toast.error('Failed to save profile', e instanceof Error ? e.message : undefined);

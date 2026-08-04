@@ -19,6 +19,7 @@
 	import { toOrderRows, type DashboardOrder, type OrderRow } from '$lib/dashboard/metrics';
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 	import { TYPE, type Shift } from '$lib/domain';
+	import { btcRate } from '$lib/bitcoin/rate.svelte';
 
 	onMount(() => {
 		dataSync.pageSync([TYPE.order, TYPE.payment, TYPE.shift], { scope: 'transactions' });
@@ -59,6 +60,8 @@
 
 	const inflow = $derived(ledger.reduce((s, o) => s + o.total, 0));
 	const count = $derived(ledger.length);
+	const inflowSats = $derived(ledger.reduce((s, o) => s + (o.totalSats ?? 0), 0));
+	const showSats = $derived(btcRate.canConvert(currency) || inflowSats > 0);
 
 	// ── Shift management ──
 	const shifts = $derived(glo.all<Shift, typeof TYPE.shift>(TYPE.shift));
@@ -175,6 +178,13 @@
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
 				{formatMoney(inflow, currency)}
 			</div>
+			{#if showSats}
+				<div
+					class="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-[var(--tone-warning-text)]"
+				>
+					<Icon name="lucide:zap" class="size-3" />≈ {formatInt(inflowSats)} sats
+				</div>
+			{/if}
 		</div>
 		<div class="metric-card p-4">
 			<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Entries</div>
@@ -369,10 +379,18 @@
 										>{row.status}</Badge
 									></td
 								>
-								<td
-									class="px-5 py-3 text-right font-semibold text-[var(--tone-success-text)] tabular-nums"
-									>+{formatMoney(row.total, currency)}</td
-								>
+								<td class="px-5 py-3 text-right">
+									<div class="font-semibold text-[var(--tone-success-text)] tabular-nums">
+										+{formatMoney(row.total, currency)}
+									</div>
+									{#if row.totalSats}
+										<div
+											class="flex items-center justify-end gap-0.5 text-[10.5px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+										>
+											<Icon name="lucide:zap" class="size-2.5" />{formatInt(row.totalSats)}
+										</div>
+									{/if}
+								</td>
 								<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
 									>{relativeTime(row.atMs)}</td
 								>

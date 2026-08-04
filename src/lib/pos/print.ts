@@ -18,6 +18,8 @@ export interface PrintOrderOptions {
 	currency?: string;
 	/** Payments may be raw `Payment` objects or GLO-wrapped `{ data: Payment }`. */
 	payments?: readonly unknown[];
+	/** Optional sats equivalent of the total (shown under TOTAL when provided). */
+	satsTotal?: number;
 }
 
 function esc(s: unknown): string {
@@ -150,6 +152,10 @@ export function printReceiptForOrder(order: { data: Order }, opts: PrintOrderOpt
 	totals.push(
 		`<tr class="total"><td>TOTAL</td><td class="right">${formatMoney(d.total ?? 0, currency)}</td></tr>`
 	);
+	if (opts.satsTotal && opts.satsTotal > 0)
+		totals.push(
+			`<tr><td>in sats</td><td class="right">≈ ${opts.satsTotal.toLocaleString()} sats</td></tr>`
+		);
 	rows.push(`<table>${totals.join('')}</table>`);
 
 	if (paymentsHtml) {

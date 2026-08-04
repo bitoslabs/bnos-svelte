@@ -22,6 +22,7 @@
 	import type { OrderLine, PickupInfo, ShippingInfo } from '$lib/domain/types';
 	import { ORDER_SOURCES, sourceLabel, sourceIcon } from '$lib/domain/order-sources';
 	import { printPackingSlip } from '$lib/pos/print';
+	import { btcRate } from '$lib/bitcoin/rate.svelte';
 
 	type OrderDetailData = DashboardOrder & {
 		shipping?: ShippingInfo;
@@ -178,8 +179,14 @@
 					`<tr><td>${line.quantity}× ${line.productName || line.name || 'Item'}${line.variantName ? ` (${line.variantName})` : ''}</td><td style="text-align:right">${formatMoney(lineTotal(line), currency)}</td></tr>`
 			)
 			.join('');
+		const sats =
+			o.totalSats ?? (btcRate.canConvert(currency) ? btcRate.satsFromAmount(o.total, currency) : 0);
+		const satsRow =
+			sats > 0
+				? `<tr><td>in sats</td><td style="text-align:right">≈ ${sats.toLocaleString()} sats</td></tr>`
+				: '';
 		w.document.write(
-			`<html><head><title>Order ${o.number}</title><style>body{font-family:monospace;padding:16px;font-size:12px}h2{text-align:center}table{width:100%}td{padding:2px 0}.total{font-weight:bold;font-size:14px;border-top:1px dashed #000;padding-top:8px}</style></head><body><h2>${tenant.state.organizationName || 'BNOS'}</h2><p style="text-align:center">${o.number}</p><hr><table>${itemsHtml}</table><hr><table><tr class="total"><td>TOTAL</td><td style="text-align:right">${formatMoney(o.total, currency)}</td></tr></table><p style="text-align:center;margin-top:16px">Thank you!</p></body></html>`
+			`<html><head><title>Order ${o.number}</title><style>body{font-family:monospace;padding:16px;font-size:12px}h2{text-align:center}table{width:100%}td{padding:2px 0}.total{font-weight:bold;font-size:14px;border-top:1px dashed #000;padding-top:8px}</style></head><body><h2>${tenant.state.organizationName || 'BNOS'}</h2><p style="text-align:center">${o.number}</p><hr><table>${itemsHtml}</table><hr><table><tr class="total"><td>TOTAL</td><td style="text-align:right">${formatMoney(o.total, currency)}</td></tr>${satsRow}</table><p style="text-align:center;margin-top:16px">Thank you!</p></body></html>`
 		);
 		w.document.close();
 		w.print();
@@ -444,6 +451,15 @@
 				<div class="font-display text-lg font-bold tabular-nums">
 					{formatMoney(totalRevenue, currency)}
 				</div>
+				{#if btcRate.canConvert(currency)}
+					<div
+						class="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+						title="Live sats equivalent at current BTC/{currency} rate"
+					>
+						<Icon name="lucide:zap" class="size-3" />≈
+						{formatInt(btcRate.satsFromAmount(totalRevenue, currency))} sats
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -661,6 +677,13 @@
 					<div class="font-display text-xl font-bold tabular-nums">
 						{formatMoney(o.total, currency)}
 					</div>
+					{#if o.totalSats}
+						<div
+							class="flex items-center gap-0.5 text-[11px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+						>
+							<Icon name="lucide:zap" class="size-3" />{formatInt(o.totalSats)} sats
+						</div>
+					{/if}
 					<div class="mt-1 flex items-center gap-2 text-[11.5px] text-[var(--ui-text-muted)]">
 						<Icon name="lucide:boxes" class="size-3.5" />
 						{o.items} items
@@ -808,9 +831,16 @@
 								<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
 									>{o.items}</td
 								>
-								<td class="px-5 py-3 text-right font-semibold tabular-nums"
-									>{formatMoney(o.total, currency)}</td
-								>
+								<td class="px-5 py-3 text-right">
+									<div class="font-semibold tabular-nums">{formatMoney(o.total, currency)}</div>
+									{#if o.totalSats}
+										<div
+											class="flex items-center justify-end gap-0.5 text-[10.5px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+										>
+											<Icon name="lucide:zap" class="size-2.5" />{formatInt(o.totalSats)}
+										</div>
+									{/if}
+								</td>
 								<td class="px-5 py-3 text-right">
 									{#if o.method && o.method !== 'cash'}
 										<span
@@ -943,12 +973,25 @@
 													</h4>
 													{#if (data as any)?.discount || (data as any)?.orderDiscount}
 														{@const od = (data as any).orderDiscount}
-														<div class="mb-1.5 flex items-center justify-between rounded-md bg-emerald-500/5 px-2 py-1 text-[11px]">
-															<span class="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+														<div
+															class="mb-1.5 flex items-center justify-between rounded-md bg-emerald-500/5 px-2 py-1 text-[11px]"
+														>
+															<span
+																class="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400"
+															>
 																<Icon name="lucide:ticket" class="size-3" />
-																{od?.couponCode ? `Coupon ${od.couponCode}` : od?.promotionId ? 'Promotion' : 'Discount'}
+																{od?.couponCode
+																	? `Coupon ${od.couponCode}`
+																	: od?.promotionId
+																		? 'Promotion'
+																		: 'Discount'}
 															</span>
-															<span class="font-semibold text-red-600 tabular-nums">−{formatMoney(od?.amount ?? (data as any).discount ?? 0, currency)}</span>
+															<span class="font-semibold text-red-600 tabular-nums"
+																>−{formatMoney(
+																	od?.amount ?? (data as any).discount ?? 0,
+																	currency
+																)}</span
+															>
 														</div>
 													{/if}
 													<div

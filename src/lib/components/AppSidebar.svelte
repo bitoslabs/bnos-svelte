@@ -7,6 +7,7 @@
 	import { findNavItem, navSections, permissionForNavItem, permissionForPath, type NavItem } from '$lib/nav';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { session } from '$nostr/session.svelte';
+	import { profile } from '$nostr/profile.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { permissions } from '$lib/permissions.svelte';
@@ -97,6 +98,67 @@
 </script>
 
 <div class="flex h-full flex-col">
+	{#snippet accountCard()}
+		<div class="w-64 p-1.5">
+			<div class="mb-2 flex items-center gap-2.5 rounded-lg px-2.5 py-2">
+				<div
+					class="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[12px] font-bold text-white shadow-sm"
+				>
+					{#if profile.hasAvatar}
+						<img
+							src={profile.picture}
+							alt={profile.displayLabel}
+							class="size-9 rounded-full object-cover"
+						/>
+					{:else}
+						{profile.avatarLetter}
+					{/if}
+				</div>
+				<div class="min-w-0 flex-1">
+					<div class="truncate text-[13px] font-semibold">
+						{profile.displayLabel}
+					</div>
+					<div class="truncate font-mono text-[11px] text-[var(--ui-text-dimmed)]">
+						{profile.subtitle}
+					</div>
+					<div class="mt-1 flex items-center gap-1.5">
+						<span class="live-dot"></span>
+						<span
+							class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-text-muted)]"
+						>
+							{session.loginMethod === 'extension' ? 'NIP-07 extension' : 'Private key'}
+						</span>
+					</div>
+				</div>
+			</div>
+			{#if canUseRoute('/settings')}
+				<a
+					href={resolve('/settings')}
+					onclick={() => (menuOpen = false)}
+					class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+				>
+					<Icon name="lucide:sliders-horizontal" class="size-4 text-[var(--ui-text-dimmed)]" />
+					Settings
+				</a>
+			{/if}
+			<a
+				href={resolve('/profile')}
+				onclick={() => (menuOpen = false)}
+				class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+			>
+				<Icon name="lucide:user-circle" class="size-4 text-[var(--ui-text-dimmed)]" />
+				Profile
+			</a>
+			<button
+				type="button"
+				onclick={signOut}
+				class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-[var(--tone-error-text)] transition-colors hover:bg-[var(--tone-error-bg)]"
+			>
+				<Icon name="lucide:log-out" class="size-4" />
+				Sign out
+			</button>
+		</div>
+	{/snippet}
 	<!-- Brand -->
 	<a
 		href={resolve('/')}
@@ -264,48 +326,7 @@
 					<Icon name="lucide:user-circle" class="size-5" />
 				{/snippet}
 				{#snippet content()}
-					<div class="w-64 p-1.5">
-						<div class="mb-2 rounded-lg px-2.5 py-2">
-							<div class="truncate text-[13px] font-semibold">
-								{session.shortNpub ?? 'Account'}
-							</div>
-							<div class="truncate text-[11.5px] text-[var(--ui-text-dimmed)]">
-								{session.npub ?? 'Nostr identity'}
-							</div>
-							<div class="mt-1.5 flex items-center gap-1.5">
-								<span class="live-dot"></span>
-								<span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-text-muted)]">
-									{session.loginMethod === 'extension' ? 'NIP-07 extension' : 'Private key'}
-								</span>
-							</div>
-						</div>
-						{#if canUseRoute('/settings')}
-							<a
-								href={resolve('/settings')}
-								onclick={() => (menuOpen = false)}
-								class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-							>
-								<Icon name="lucide:sliders-horizontal" class="size-4 text-[var(--ui-text-dimmed)]" />
-								Settings
-							</a>
-						{/if}
-						<a
-							href={resolve('/profile')}
-							onclick={() => (menuOpen = false)}
-							class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-						>
-							<Icon name="lucide:user-circle" class="size-4 text-[var(--ui-text-dimmed)]" />
-							Profile
-						</a>
-						<button
-							type="button"
-							onclick={signOut}
-							class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-[var(--tone-error-text)] transition-colors hover:bg-[var(--tone-error-bg)]"
-						>
-							<Icon name="lucide:log-out" class="size-4" />
-							Sign out
-						</button>
-					</div>
+					{@render accountCard()}
 				{/snippet}
 			</Popover>
 		{:else}
@@ -314,48 +335,7 @@
 					<Icon name="lucide:user-circle" class="size-5" />
 				{/snippet}
 				{#snippet content()}
-					<div class="w-64 p-1.5">
-						<div class="mb-2 rounded-lg px-2.5 py-2">
-							<div class="truncate text-[13px] font-semibold">
-								{session.shortNpub ?? 'Account'}
-							</div>
-							<div class="truncate text-[11.5px] text-[var(--ui-text-dimmed)]">
-								{session.npub ?? 'Nostr identity'}
-							</div>
-							<div class="mt-1.5 flex items-center gap-1.5">
-								<span class="live-dot"></span>
-								<span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-text-muted)]">
-									{session.loginMethod === 'extension' ? 'NIP-07 extension' : 'Private key'}
-								</span>
-							</div>
-						</div>
-						{#if canUseRoute('/settings')}
-							<a
-								href={resolve('/settings')}
-								onclick={() => (menuOpen = false)}
-								class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-							>
-								<Icon name="lucide:sliders-horizontal" class="size-4 text-[var(--ui-text-dimmed)]" />
-								Settings
-							</a>
-						{/if}
-						<a
-							href={resolve('/profile')}
-							onclick={() => (menuOpen = false)}
-							class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-						>
-							<Icon name="lucide:user-circle" class="size-4 text-[var(--ui-text-dimmed)]" />
-							Profile
-						</a>
-						<button
-							type="button"
-							onclick={signOut}
-							class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-[var(--tone-error-text)] transition-colors hover:bg-[var(--tone-error-bg)]"
-						>
-							<Icon name="lucide:log-out" class="size-4" />
-							Sign out
-						</button>
-					</div>
+					{@render accountCard()}
 				{/snippet}
 			</Popover>
 		{/if}

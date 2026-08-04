@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -13,11 +13,12 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
-	import { formatMoney, relativeTime, titleCase } from '$lib/utils/format';
+	import { formatMoney, formatInt, relativeTime, titleCase } from '$lib/utils/format';
 	import { newRecordId } from '$lib/utils/record-id';
 	import { TYPE, statusColor, type Order, type Payment, type GloObject } from '$lib/domain';
 	import { sourceLabel, SHIPPING_STATUSES, shippingStatusLabel } from '$lib/domain/order-sources';
 	import { printReceiptForOrder, printPackingSlip, buildWhatsAppLink } from '$lib/pos/print';
+	import { btcRate } from '$lib/bitcoin/rate.svelte';
 
 	const id = $derived(page.params.id);
 
@@ -32,6 +33,14 @@
 		glo.all<Payment, typeof TYPE.payment>(TYPE.payment).filter((p) => p.data.orderId === id)
 	);
 	const currency = $derived(tenant.state.currency);
+
+	// Keep a BTC rate for the merchant currency loaded so the printed receipt's
+	// sats line works for orders that have no persisted snapshot.
+	$effect(() => {
+		if (!tenant.hydrated) return;
+		const cur = currency;
+		if (cur) untrack(() => void btcRate.ensureRate(cur));
+	});
 
 	// ── Status flow ──────────────────────────────────────────
 	const statusFlow: { status: string; label: string; icon: string }[] = [
@@ -255,7 +264,16 @@
 	}
 
 	function printReceipt() {
-		if (order) printReceiptForOrder(order as any, { currency, payments });
+		if (order)
+			printReceiptForOrder(order as any, {
+				currency,
+				payments,
+				satsTotal:
+					order.data.totalSats ??
+					(btcRate.canConvert(currency)
+						? btcRate.satsFromAmount(order.data.total ?? 0, currency)
+						: undefined)
+			});
 	}
 
 	// ── Add payment ──────────────────────────────────────────
@@ -923,6 +941,16 @@
 								>{formatMoney(totalAmount, currency)}</span
 							>
 						</div>
+						{#if order.data.totalSats}
+							<div
+								class="flex items-center justify-between text-[12.5px] font-semibold text-[var(--tone-warning-text)]"
+							>
+								<span class="flex items-center gap-1"
+									><Icon name="lucide:zap" class="size-3.5" />in sats</span
+								>
+								<span class="tabular-nums">≈ {formatInt(order.data.totalSats)}</span>
+							</div>
+						{/if}
 
 						<!-- Payments list -->
 						{#if payments.length > 0}

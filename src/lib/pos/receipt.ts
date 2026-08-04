@@ -44,6 +44,10 @@ export interface BuildOrderInput {
 	note?: string;
 	occurredAt?: string;
 	method?: string;
+	/** Sats snapshot of the total (Bitcoin). */
+	totalSats?: number;
+	btcRate?: number;
+	btcRateCurrency?: string;
 }
 
 export function buildOrder(input: BuildOrderInput): Order {
@@ -99,7 +103,10 @@ export function buildOrder(input: BuildOrderInput): Order {
 					value: input.discount.value,
 					amount: input.totals.discountAmount
 				}
-			: undefined
+			: undefined,
+		totalSats: input.totalSats,
+		btcRate: input.btcRate,
+		btcRateCurrency: input.btcRateCurrency
 	};
 }
 

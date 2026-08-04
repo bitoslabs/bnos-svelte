@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -31,6 +31,7 @@
 	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
 	import { computeStock, availableFor, canSell } from '$lib/pos/stock';
 	import { printPosReceipt } from '$lib/pos/pos-receipt';
+	import { btcRate } from '$lib/bitcoin/rate.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import {
@@ -350,6 +351,23 @@
 		typeof tendered === 'number' && tendered > 0 && tendered < grandTotal
 	);
 
+	// Bitcoin: live sats preview of the cart + grand total. Only shown when a
+	// rate exists and the merchant currency matches the rate currency (USD).
+	const showSats = $derived(btcRate.canConvert(currency));
+	const totalSats = $derived(
+		(showSats && btcRate.satsFromAmount(cart.totals.total, currency)) || 0
+	);
+	const grandTotalSats = $derived((showSats && btcRate.satsFromAmount(grandTotal, currency)) || 0);
+
+	// Keep a BTC rate for the merchant currency loaded. Reactive (not onMount) so
+	// a fresh page load — where tenant.currency hydrates AFTER mount — still
+	// fetches the right pair once the real currency arrives (USD → LAK, etc.).
+	$effect(() => {
+		if (!tenant.hydrated) return; // don't fetch for the default 'USD' pre-hydration
+		const cur = currency;
+		if (cur) untrack(() => void btcRate.ensureRate(cur));
+	});
+
 	// Quick cash denominations (de-duplicated, sorted)
 	const quickAmounts = $derived.by(() => {
 		const t = grandTotal;
@@ -476,7 +494,12 @@
 			receipt: receiptSettings,
 			currency,
 			cashier: tenant.state.activeStaffInfo?.name ?? shiftStaffName.trim() ?? '',
-			customerName: sale.customerName
+			customerName: sale.customerName,
+			satsTotal:
+				sale.totalSats ??
+				(btcRate.receiptShowSats && btcRate.canConvert(currency)
+					? btcRate.satsFromAmount(sale.totals.total, currency)
+					: undefined)
 		});
 	}
 
@@ -1311,6 +1334,15 @@
 										<div class="text-[12.5px] font-bold text-primary-600 dark:text-primary-400">
 											{formatMoney(p.data.price ?? 0, p.data.currency ?? currency)}
 										</div>
+										{#if showSats && (p.data.price ?? 0) > 0}
+											<div
+												class="flex items-center gap-0.5 text-[10px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+											>
+												<Icon name="lucide:zap" class="size-2.5" />{formatInt(
+													btcRate.satsFromAmount(p.data.price ?? 0, p.data.currency ?? currency)
+												)} sats
+											</div>
+										{/if}
 										{#if p.data.trackInventory}
 											<div
 												class="mt-0.5 text-[10px] {lowStock
@@ -1674,6 +1706,15 @@
 					>{formatMoney(cart.totals.total, currency)}</span
 				>
 			</div>
+			{#if showSats}
+				<div
+					class="flex items-center justify-end gap-1 pt-0.5 text-[11px] font-semibold text-[var(--tone-warning-text)]"
+					title="Live sats estimate (BTC/{currency} {btcRate.ageLabelFor(currency) || 'cached'})"
+				>
+					<Icon name="lucide:zap" class="size-3" />
+					≈ {formatInt(totalSats)} sats
+				</div>
+			{/if}
 		</div>
 	</div>
 {/snippet}
@@ -1863,6 +1904,15 @@
 						>{formatMoney(grandTotal, currency)}</span
 					>
 				</div>
+				{#if showSats}
+					<div
+						class="flex items-center justify-end gap-1 text-[11px] font-semibold text-[var(--tone-warning-text)]"
+						title="Live sats estimate (BTC/{currency})"
+					>
+						<Icon name="lucide:zap" class="size-3" />
+						≈ {formatInt(grandTotalSats)} sats
+					</div>
+				{/if}
 			{/if}
 
 			{#if method === 'cash'}
@@ -2264,6 +2314,15 @@
 			<div class="flex justify-between text-[var(--ui-text-muted)]">
 				<span>Tax</span><span class="tabular-nums">{formatMoney(s.totals.tax, currency)}</span>
 			</div>
+			{#if s.totalSats}
+				<div
+					class="flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-1.5 text-[12px] font-semibold text-[var(--tone-warning-text)]"
+				>
+					<span class="flex items-center gap-1"
+						><Icon name="lucide:zap" class="size-3.5" />Sats</span
+					><span class="tabular-nums">≈ {formatInt(s.totalSats)}</span>
+				</div>
+			{/if}
 		</dl>
 	{/if}
 	{#snippet footer()}

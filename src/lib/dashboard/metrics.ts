@@ -24,6 +24,8 @@ export type OrderRow = {
 	customerName: string;
 	/** Branch/location this order belongs to (kind 30200 `branchId`). */
 	branchId?: string;
+	/** Sats snapshot captured at sale time (Bitcoin), if any. */
+	totalSats?: number;
 	atMs: number;
 };
 
@@ -75,6 +77,7 @@ export function toOrderRows(
 			shipping: d.shipping as ShippingInfo | undefined,
 			customerName: d.customerName ?? '',
 			branchId: (d as { branchId?: string }).branchId,
+			totalSats: d.totalSats,
 			atMs: Number.isFinite(atMs) ? atMs : 0
 		};
 	});

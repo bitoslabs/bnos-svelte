@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -12,7 +12,8 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { formatMoney, titleCase } from '$lib/utils/format';
+	import { formatMoney, formatInt, titleCase } from '$lib/utils/format';
+	import { btcRate } from '$lib/bitcoin/rate.svelte';
 	import {
 		TYPE,
 		type Order,
@@ -283,6 +284,15 @@
 		Math.max(0, subtotal - discountAmount + taxAmount + tipAmount + deliveryFee)
 	);
 
+	// Bitcoin: live sats preview of the order total (currency-aware).
+	const showSats = $derived(btcRate.canConvert(currency ?? 'USD'));
+	const totalSats = $derived((showSats && btcRate.satsFromAmount(total, currency ?? 'USD')) || 0);
+	$effect(() => {
+		if (!tenant.hydrated) return;
+		const cur = currency ?? 'USD';
+		if (cur) untrack(() => void btcRate.ensureRate(cur));
+	});
+
 	// ── Save ─────────────────────────────────────────────────
 	let saving = $state(false);
 
@@ -292,6 +302,10 @@
 		const orderId = newRecordId('order');
 		const orderNumber = nextReadableNumber({ prefix: 'ORD', scope: tenant.state.locationId });
 		const finalStatus = asDraft ? 'draft' : status;
+
+		const savedTotalSats = btcRate.canConvert(currency)
+			? btcRate.satsFromAmount(total, currency)
+			: undefined;
 
 		const orderData: any = {
 			orderNumber,
@@ -308,6 +322,9 @@
 			tip: tipAmount || undefined,
 			total,
 			currency,
+			totalSats: savedTotalSats,
+			btcRate: savedTotalSats != null ? btcRate.rateFor(currency) : undefined,
+			btcRateCurrency: savedTotalSats != null ? currency : undefined,
 			paymentMethod,
 			// Branch + staff + shift context (mirrors POS checkout so manual orders
 			// flow through the same per-branch / per-shift reconciliation).
@@ -1167,6 +1184,13 @@
 						<span>Total</span>
 						<span class="tabular-nums">{formatMoney(total, currency ?? 'USD')}</span>
 					</div>
+					{#if showSats}
+						<div
+							class="flex items-center justify-end gap-1 text-[12px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+						>
+							<Icon name="lucide:zap" class="size-3.5" />≈ {formatInt(totalSats)} sats
+						</div>
+					{/if}
 
 					<div class="border-t border-[var(--ui-border-muted)] pt-3">
 						<span

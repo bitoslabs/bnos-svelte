@@ -24,6 +24,8 @@ export interface PrintPosReceiptOptions {
 	currency: string;
 	cashier?: string;
 	customerName?: string;
+	/** Optional sats equivalent of the total (shown under TOTAL when provided). */
+	satsTotal?: number;
 }
 
 function esc(s: unknown): string {
@@ -102,7 +104,10 @@ export function printPosReceipt(sale: CompletedSale, opts: PrintPosReceiptOption
 		`<tr><td>Subtotal</td><td class="right">${formatMoney(s.totals.subtotal, currency)}</td></tr>`,
 		discountRow,
 		`<tr><td>Tax</td><td class="right">${formatMoney(s.totals.tax, currency)}</td></tr>`,
-		`<tr class="total"><td>TOTAL</td><td class="right">${formatMoney(s.totals.total, currency)}</td></tr>`
+		`<tr class="total"><td>TOTAL</td><td class="right">${formatMoney(s.totals.total, currency)}</td></tr>`,
+		opts.satsTotal && opts.satsTotal > 0
+			? `<tr><td>in sats</td><td class="right">≈ ${opts.satsTotal.toLocaleString()} sats</td></tr>`
+			: ''
 	].join('');
 
 	const tenderHtml = [

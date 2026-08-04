@@ -292,6 +292,11 @@ export interface OrderBnosExt {
 	pickup?: PickupInfo;
 	orderDiscount?: OrderDiscountBnos;
 	totalsRounding?: number;
+	/** Sats equivalent of `total` captured at sale time (Bitcoin snapshot). */
+	totalSats?: number;
+	/** Fiat-per-BTC rate used to derive `totalSats` (audit snapshot). */
+	btcRate?: number;
+	btcRateCurrency?: string;
 }
 
 /** Standardized order = canonical GLO order, with widened line + bdgo extras. */

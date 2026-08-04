@@ -16,6 +16,7 @@
 	import { warmRelays } from '$nostr/client';
 	import { hasActiveWorkspaceContext, resolveWorkspace } from '$nostr/workspace.svelte';
 	import { memberships } from '$nostr/memberships.svelte';
+	import { profile } from '$nostr/profile.svelte';
 	import { organizationKey } from '$lib/crypto/organization-key.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
@@ -57,7 +58,30 @@
 		relays.load();
 		session.load();
 		tenant.load();
+		profile.load();
 		if (session.isAuthenticated) void warmRelays();
+	});
+
+	// Hydrate the kind-0 profile cache from relays whenever the active pubkey
+	// changes (boot / login / identity switch) so the app chrome shows the
+	// freshest display name + avatar. Best-effort and runs once per pubkey.
+	let profilePubkey = '';
+	$effect(() => {
+		const me = session.pubkey;
+		if (!me) {
+			// Signed out: drop any stale in-memory profile cache.
+			if (profilePubkey) {
+				profile.reset();
+				profilePubkey = '';
+			}
+			return;
+		}
+		if (!session.hydrated || !relays.hydrated) return;
+		if (profilePubkey === me) return;
+		// Identity changed (login / key switch): reset stale cache first.
+		if (profilePubkey && profilePubkey !== me) profile.reset();
+		profilePubkey = me;
+		void profile.fetchFromRelays();
 	});
 
 	$effect(() => {

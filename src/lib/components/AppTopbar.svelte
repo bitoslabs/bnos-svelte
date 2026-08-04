@@ -8,6 +8,7 @@
 	import { findNavItem, navSections } from '$lib/nav';
 	import { relays } from '$nostr/relay.svelte';
 	import { session } from '$nostr/session.svelte';
+	import { profile } from '$nostr/profile.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 
 	let { onmenutoggle }: { onmenutoggle?: () => void } = $props();
@@ -236,16 +237,24 @@
 					class="flex items-center gap-3 rounded-t-xl border-b border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3.5 py-3 transition-colors hover:bg-[var(--ui-bg-accented)]"
 				>
 					<div
-						class="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[13px] font-bold text-white shadow-sm"
+						class="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[13px] font-bold text-white shadow-sm"
 					>
-						{(session.shortNpub ?? 'B').charAt(0).toUpperCase()}
+						{#if profile.hasAvatar}
+							<img
+								src={profile.picture}
+								alt={profile.displayLabel}
+								class="size-9 rounded-full object-cover"
+							/>
+						{:else}
+							{profile.avatarLetter}
+						{/if}
 					</div>
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-[12.5px] font-semibold text-[var(--ui-text)]">
-							{session.shortNpub ?? 'Account'}
+							{profile.displayLabel}
 						</p>
 						<p class="truncate text-[10.5px] text-[var(--ui-text-dimmed)]">
-							{session.npub ?? 'Nostr identity'}
+							{profile.subtitle}
 						</p>
 					</div>
 					<Icon name="lucide:chevron-right" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
