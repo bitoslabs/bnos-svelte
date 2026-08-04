@@ -21,8 +21,8 @@ import { browser } from '$app/environment';
 import { tenant } from '$nostr/tenant.svelte';
 import { session } from '$nostr/session.svelte';
 import {
+	getActiveKidForScope,
 	getOrCreateSensitiveDataKey,
-	getSensitiveDataKeyId,
 	getSensitiveDataScopeId,
 	getStoredSensitiveDataKey,
 	isEncryptionEnvelope,
@@ -53,16 +53,18 @@ class OrganizationKeyStore {
 		return getSensitiveDataScopeId(tenant.state.organizationId, session.pubkey);
 	}
 
-	/** Key id for the active organization scope (`organization:<orgId>:v1`). */
+	/** Opaque key id active for this organization scope (`k_<random>`), or null
+	 *  until a key is minted/imported. Resolved via the local scope→kid pointer —
+	 *  the wire kid never embeds the org id. */
 	get activeKeyId(): string | null {
 		if (!this.activeScopeId) return null;
-		return getSensitiveDataKeyId(this.activeScopeId);
+		return getActiveKidForScope(this.activeScopeId);
 	}
 
 	/** Is the active organization's AES key present locally? */
 	get hasActiveKey(): boolean {
-		if (!this.activeKeyId) return false;
-		return !!getStoredSensitiveDataKey(this.activeKeyId);
+		const kid = this.activeKeyId;
+		return !!kid && !!getStoredSensitiveDataKey(kid);
 	}
 
 	/** Only owner/admin may mint a new organization key. */
@@ -80,17 +82,17 @@ class OrganizationKeyStore {
 	ensureActiveKey = async (options: { allowCreate?: boolean } = {}): Promise<string> => {
 		const scopeId = this.activeScopeId;
 		if (!scopeId) throw new Error('No active organization to secure');
-		const keyId = getSensitiveDataKeyId(scopeId);
-		if (getStoredSensitiveDataKey(keyId)) return keyId;
+		const existingKid = getActiveKidForScope(scopeId);
+		if (existingKid && getStoredSensitiveDataKey(existingKid)) return existingKid;
 
 		if (options.allowCreate !== false && this.canCreateKey) {
-			getOrCreateSensitiveDataKey(scopeId);
-			return keyId;
+			return getOrCreateSensitiveDataKey(scopeId).keyId;
 		}
 
 		// Staff path: pull the key through NIP-44 grants.
 		await syncKeyGrantsForCurrentUser();
-		if (getStoredSensitiveDataKey(keyId)) return keyId;
+		const kid = getActiveKidForScope(scopeId);
+		if (kid && getStoredSensitiveDataKey(kid)) return kid;
 
 		throw new Error(
 			'Organization encryption key is not available. Ask an owner/admin to grant this staff key.'
@@ -116,7 +118,8 @@ class OrganizationKeyStore {
 	) => {
 		const scopeId = this.activeScopeId;
 		if (!scopeId) throw new Error('No active organization to encrypt for');
-		if (!getStoredSensitiveDataKey(getSensitiveDataKeyId(scopeId))) {
+		const kid = getActiveKidForScope(scopeId);
+		if (!kid || !getStoredSensitiveDataKey(kid)) {
 			await this.ensureActiveKey({ allowCreate: this.canCreateKey });
 		}
 		return protectSensitiveValue(value, {

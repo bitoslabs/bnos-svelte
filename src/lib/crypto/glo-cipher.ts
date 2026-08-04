@@ -40,7 +40,10 @@ import {
 import { organizationKey, isEncryptionEnabled } from './organization-key.svelte';
 import type { SensitiveDataDomain } from './privacy';
 
-/** GLO object type → sensitive-data domain. Only types listed here are encrypted. */
+/** GLO object type → sensitive-data domain. Only types listed here are
+ *  candidates for encryption (and only when their visibility is non-public).
+ *  Public-discovery types (marketplace listings, store profile, reviews) are
+ *  intentionally ABSENT — they must stay plaintext for relay discovery. */
 export const ENCRYPTED_DOMAIN_BY_TYPE: Record<string, SensitiveDataDomain> = {
 	'commerce.order': 'order',
 	'commerce.payment': 'payment',
@@ -48,7 +51,10 @@ export const ENCRYPTED_DOMAIN_BY_TYPE: Record<string, SensitiveDataDomain> = {
 	'crm.customer': 'customer',
 	'identity.staff': 'staff',
 	shift: 'shift',
-	'cash-event': 'cash_event'
+	'cash-event': 'cash_event',
+	// Marketplace channel connections carry API keys/credentials in `config` →
+	// org-internal, must be encrypted. (Listings/reviews stay plaintext.)
+	'marketplace.connection': 'settings'
 };
 
 /** The sensitive domain for a GLO type, or undefined if it is not encrypted. */
@@ -77,16 +83,18 @@ export interface EncryptedPayload {
 
 /**
  * Encrypt a GLO object's envelope into a ciphertext `content` blob. Returns
- * null when encryption is off, the type isn't sensitive, or no key is
- * available (so callers fall back to plaintext publishing harmlessly).
+ * null (→ caller publishes plaintext) when ANY of these hold:
+ *  - encryption is off, no org key, or the type isn't sensitive;
+ *  - **visibility is `public`** (marketplace listings, store profile, reviews
+ *    are meant for relay discovery — encrypting them would hide them).
  *
  * The plaintext bound into the AAD is the full GLO envelope JSON, keyed by the
- * record id + scope so the same ciphertext can't be replayed against another
- * object.
+ * record id so the same ciphertext can't be replayed against another object.
  */
 export async function encryptGloObject(
 	object: GloObject<unknown>
 ): Promise<EncryptedPayload | null> {
+	if (object.visibility === 'public') return null; // discovery data stays public
 	const domain = sensitiveDomainForType(object.type);
 	const scopeId = organizationKey.activeScopeId;
 	const keyId = organizationKey.activeKeyId;
@@ -136,7 +144,8 @@ export async function decryptGloEvent<T>(event: {
 export async function encryptTemplateContent(
 	object: GloObject<unknown>,
 	plaintextContent: string
-): Promise<{ content: string; encryptionTags: string[][] } | null> {
+): Promise<{ content: string; encryptionTags: GloTag[] } | null> {
+	if (object.visibility === 'public') return null; // discovery data stays public
 	const domain = sensitiveDomainForType(object.type);
 	const scopeId = organizationKey.activeScopeId;
 	const keyId = organizationKey.activeKeyId;

@@ -140,6 +140,17 @@
 			fetching = false;
 		});
 	});
+
+	// Force a fresh relay query (bypasses the in-memory cache) — used when a relay
+	// served a corrupt/truncated copy so the viewer flagged “Invalid sig”.
+	async function refetch() {
+		if (!isGlo || fetching) return;
+		liveOverride = null;
+		fetching = true;
+		const ev = await glo.fetchEvent(obj.type, obj.id, { force: true });
+		if (ev) liveOverride = ev;
+		fetching = false;
+	}
 </script>
 
 <Dialog bind:open {title} size="xl">
@@ -304,6 +315,13 @@
 							<Icon name="lucide:shield-x" class="size-3.5" />
 							Signature invalid — the id or signature does not match. This event may be corrupt or tampered.
 						</div>
+						<button
+							type="button"
+							onclick={refetch}
+							class="inline-flex items-center gap-1 rounded-md border border-red-500/30 px-2 py-0.5 text-[11px] font-semibold text-red-600 hover:bg-red-500/10 dark:text-red-400"
+						>
+							<Icon name="lucide:refresh-cw" class="size-3" />Re-fetch from relays
+						</button>
 					{/if}
 					<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
 						{#each [['id', eventView.event?.id, 'id'], ['pubkey', eventView.event?.pubkey, 'pubkey'], ['sig', eventView.event?.sig, 'sig']] as [label, value, which] (label)}

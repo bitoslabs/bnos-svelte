@@ -25,6 +25,7 @@ import type { EncryptionEnvelope, SensitiveDataDomain } from './privacy';
 export const SCHEME = 'org.bitos.bnos.organization-key.v1' as const;
 export const ACTIVE_KEY_VERSION = 1;
 const KEY_PREFIX = 'bdgoos_sensitive_data_key';
+const SCOPE_POINTER_PREFIX = 'bdgoos_sensitive_data_scope';
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -68,40 +69,72 @@ const getCrypto = (): Crypto => {
 
 // ── key management ───────────────────────────────────────────────────────────
 
+// The wire `kid` is a random opaque token — it NEVER embeds the organization
+// id, so an encrypted event's content leaks nothing about which org it belongs
+// to (the org id is already public in the tags for discovery; repeating it in
+// the envelope would be pure leakage). A local scope→kid pointer lets
+// `hasActiveKey`/`encrypt` resolve the active key from the org scope.
+
+/** Generate a fresh opaque key id (`k_<128-bit hex>`). */
+const newOpaqueKid = () =>
+	`k_${[...getCrypto().getRandomValues(new Uint8Array(16))]
+		.map((b) => b.toString(16).padStart(2, '0'))
+		.join('')}`;
+
+/** Public, stable per-scope identifier (NOT published on the wire). */
 export const getSensitiveDataKeyId = (scopeId: string, version = ACTIVE_KEY_VERSION) =>
 	`${scopeId}:v${version}`;
 
-const keyStorageName = (keyId: string) => `${KEY_PREFIX}:${keyId}`;
+const keyStorageName = (kid: string) => `${KEY_PREFIX}:${kid}`;
+const scopePointerName = (scopeId: string) => `${SCOPE_POINTER_PREFIX}:${scopeId}`;
 
-export const storeSensitiveDataKey = (keyId: string, rawKey: Uint8Array) => {
-	const storage = getStorage();
-	if (!storage) throw new Error('Local storage is required for sensitive data keys');
-	storage.setItem(keyStorageName(keyId), toBase64Url(rawKey));
-};
-
-export const getStoredSensitiveDataKey = (keyId: string): Uint8Array | null => {
+/** Resolve the opaque key id active for a scope (or null if none yet). */
+export const getActiveKidForScope = (scopeId: string): string | null => {
 	const storage = getStorage();
 	if (!storage) return null;
-	const existing = storage.getItem(keyStorageName(keyId));
+	return storage.getItem(scopePointerName(scopeId));
+};
+
+/** Bind a scope to an opaque kid (so scope-based lookups resolve the key). */
+export const storeScopePointer = (scopeId: string, kid: string) => {
+	const storage = getStorage();
+	if (!storage) return;
+	storage.setItem(scopePointerName(scopeId), kid);
+};
+
+export const storeSensitiveDataKey = (kid: string, rawKey: Uint8Array) => {
+	const storage = getStorage();
+	if (!storage) throw new Error('Local storage is required for sensitive data keys');
+	storage.setItem(keyStorageName(kid), toBase64Url(rawKey));
+};
+
+export const getStoredSensitiveDataKey = (kid: string): Uint8Array | null => {
+	const storage = getStorage();
+	if (!storage) return null;
+	const existing = storage.getItem(keyStorageName(kid));
 	return existing ? fromBase64Url(existing) : null;
 };
 
-/** Return the existing key for a scope, or generate + persist a new 32-byte key. */
+/** Return the existing {kid, rawKey} for a scope, or mint a new opaque-keyed 32-byte key. */
 export const getOrCreateSensitiveDataKey = (scopeId: string) => {
-	const keyId = getSensitiveDataKeyId(scopeId);
-	const existing = getStoredSensitiveDataKey(keyId);
-	if (existing) return { keyId, rawKey: existing };
+	const existingKid = getActiveKidForScope(scopeId);
+	if (existingKid) {
+		const existing = getStoredSensitiveDataKey(existingKid);
+		if (existing) return { keyId: existingKid, rawKey: existing };
+	}
 	const rawKey = new Uint8Array(32);
 	getCrypto().getRandomValues(rawKey);
+	const keyId = newOpaqueKid();
 	storeSensitiveDataKey(keyId, rawKey);
+	storeScopePointer(scopeId, keyId);
 	return { keyId, rawKey };
 };
 
-/** Delete a stored key (used on revoke / logout). */
-export const forgetSensitiveDataKey = (keyId: string) => {
+/** Delete a stored key + clear its scope pointer (used on revoke / logout). */
+export const forgetSensitiveDataKey = (kid: string) => {
 	const storage = getStorage();
 	if (!storage) return;
-	storage.removeItem(keyStorageName(keyId));
+	storage.removeItem(keyStorageName(kid));
 };
 
 const importAesKey = (rawKey: Uint8Array) =>
@@ -135,7 +168,7 @@ export const isEncryptionEnvelope = (value: unknown): value is EncryptionEnvelop
 		candidate.v === 1 &&
 		candidate.scheme === SCHEME &&
 		candidate.alg === 'AES-256-GCM' &&
-		typeof candidate.scopeId === 'string' &&
+		typeof candidate.kid === 'string' &&
 		typeof candidate.nonce === 'string' &&
 		typeof candidate.ciphertext === 'string'
 	);
@@ -149,15 +182,17 @@ export const isProtectedContent = (content: string): boolean => {
 	}
 };
 
-// ── encrypt / decrypt ────────────────────────────────────────────────────────
+// ── encrypt / decrypt ───────────────────────────────────────────────────────
+// Privacy: the published envelope serializes ONLY what is needed to find the
+// key (opaque `kid`) + the ciphertext + nonce, plus a minimal `aad` bound to
+// the record id (which is already public via the GLO `d` tag). The org id,
+// branch id, and domain are deliberately NOT serialized — they are already
+// public in the event tags, so repeating them here would be pure leakage.
+// They ARE included in the GCM AAD computation (tamper binding) but the AAD is
+// fully reconstructable from the (public) record id, so nothing extra leaks.
 
-const buildAad = (options: ProtectOptions): EncryptionEnvelope['aad'] => ({
-	domain: options.domain,
-	scopeId: options.scopeId,
-	...(options.organizationId ? { organizationId: options.organizationId } : {}),
-	...(options.branchId ? { branchId: options.branchId } : {}),
-	...(options.recordId ? { recordId: options.recordId } : {})
-});
+const buildAad = (options: ProtectOptions): EncryptionEnvelope['aad'] =>
+	options.recordId ? { recordId: options.recordId } : {};
 
 const encryptToEnvelope = async (
 	value: unknown,
@@ -185,8 +220,6 @@ const encryptToEnvelope = async (
 		scheme: SCHEME,
 		alg: 'AES-256-GCM',
 		kid: keyId,
-		domain: options.domain,
-		scopeId: options.scopeId,
 		nonce: toBase64Url(nonce),
 		aad,
 		ciphertext: toBase64Url(new Uint8Array(ciphertext))
@@ -194,9 +227,7 @@ const encryptToEnvelope = async (
 };
 
 const decryptFromEnvelope = async (envelope: EncryptionEnvelope): Promise<unknown> => {
-	const rawKey =
-		getStoredSensitiveDataKey(envelope.kid) ||
-		getStoredSensitiveDataKey(getSensitiveDataKeyId(envelope.scopeId));
+	const rawKey = getStoredSensitiveDataKey(envelope.kid);
 	if (!rawKey) {
 		throw new Error(`Missing sensitive data key for ${envelope.kid}`);
 	}

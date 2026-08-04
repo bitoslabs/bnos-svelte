@@ -10,25 +10,49 @@
 	import { upsertOrganizationSettingsFromTenant } from '$nostr/organization-settings';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { truncateNpub, titleCase } from '$lib/utils/format';
+	import { newOrganizationId, newLocationId } from '$lib/utils/record-id';
 
 	let creating = $state(false);
 	let publishStatus = $state('');
 
-	const orgId = $derived(tenant.state.organizationId || 'org-' + (session.pubkey?.slice(0, 8) ?? 'seed'));
-	const locationId = $derived(tenant.state.locationId || 'loc-main');
+	// Opaque, unguessable ids (UUID-backed). NEVER derive these from the owner
+	// pubkey — the pubkey is public, so a derivable id would let anyone harvest
+	// the org's events. A random id is both unique and a genuine capability token.
+	const orgId = $derived(tenant.state.organizationId || newOrganizationId());
+	const locationId = $derived(tenant.state.locationId || newLocationId());
 	const productCount = $derived(glo.all('catalog.product').length);
 
 	const rows = $derived([
-		{ label: 'Nostr identity', value: truncateNpub(session.npub ?? '', 14, 8), icon: 'lucide:fingerprint' },
+		{
+			label: 'Nostr identity',
+			value: truncateNpub(session.npub ?? '', 14, 8),
+			icon: 'lucide:fingerprint'
+		},
 		{ label: 'Company', value: tenant.state.organizationName || '—', icon: 'lucide:building-2' },
 		{ label: 'Company code', value: tenant.state.organizationCode || '—', icon: 'lucide:hash' },
-		{ label: 'Business model', value: titleCase(tenant.state.businessModel.replace(/_/g, ' ')), icon: 'lucide:network' },
+		{
+			label: 'Business model',
+			value: titleCase(tenant.state.businessModel.replace(/_/g, ' ')),
+			icon: 'lucide:network'
+		},
 		{ label: 'Business type', value: titleCase(tenant.state.businessType), icon: 'lucide:store' },
 		{ label: 'Branch', value: tenant.state.locationName || '—', icon: 'lucide:map-pin' },
 		{ label: 'Currency', value: tenant.state.currency, icon: 'lucide:coins' },
-		{ label: 'Tax', value: `${tenant.state.defaultTaxRate}%${tenant.state.taxIncludedInPrice ? ' (incl.)' : ''}`, icon: 'lucide:percent' },
-		{ label: 'Relays', value: `${relays.activeRelays.length} active / ${relays.relays.length} configured`, icon: 'lucide:radio' },
-		{ label: 'Catalog', value: `${productCount} product${productCount === 1 ? '' : 's'}`, icon: 'lucide:package' }
+		{
+			label: 'Tax',
+			value: `${tenant.state.defaultTaxRate}%${tenant.state.taxIncludedInPrice ? ' (incl.)' : ''}`,
+			icon: 'lucide:percent'
+		},
+		{
+			label: 'Relays',
+			value: `${relays.activeRelays.length} active / ${relays.relays.length} configured`,
+			icon: 'lucide:radio'
+		},
+		{
+			label: 'Catalog',
+			value: `${productCount} product${productCount === 1 ? '' : 's'}`,
+			icon: 'lucide:package'
+		}
 	]);
 
 	async function create() {
@@ -44,7 +68,8 @@
 				id: orgId,
 				name: tenant.state.organizationName,
 				currency: tenant.state.currency,
-				code: tenant.state.organizationCode || tenant.state.organizationName.slice(0, 3).toUpperCase(),
+				code:
+					tenant.state.organizationCode || tenant.state.organizationName.slice(0, 3).toUpperCase(),
 				status: 'active'
 			} as unknown as Parameters<typeof makeOrganizationObject>[0]);
 			tenant.configure({ organizationId: orgId });
@@ -52,15 +77,19 @@
 				id: org.id,
 				scope: { organizationId: org.id }
 			});
-			await glo.upsert('location', {
-				name: tenant.state.locationName || 'Main Branch',
-				code: 'main',
-				type: 'store',
-				status: 'active'
-			}, {
-				id: locationId,
-				scope: { organizationId: org.id, locationId }
-			});
+			await glo.upsert(
+				'location',
+				{
+					name: tenant.state.locationName || 'Main Branch',
+					code: 'main',
+					type: 'store',
+					status: 'active'
+				},
+				{
+					id: locationId,
+					scope: { organizationId: org.id, locationId }
+				}
+			);
 			tenant.configure({ organizationId: orgId, locationId });
 			upsertOrganizationSettingsFromTenant({
 				...tenant.state,
@@ -73,8 +102,8 @@
 			publishStatus = 'Publishing to Nostr…';
 			try {
 				// glo.upsert already publishes to relays internally (awaited)
-			// Just verify it was saved
-			await new Promise(r => setTimeout(r, 500));
+				// Just verify it was saved
+				await new Promise((r) => setTimeout(r, 500));
 				publishStatus = 'Published ✓';
 			} catch {
 				publishStatus = 'Saved locally (will sync when online)';
@@ -100,10 +129,14 @@
 		</p>
 	</div>
 
-	<dl class="divide-y divide-[var(--ui-border-muted)] overflow-hidden rounded-xl border border-[var(--ui-border)]">
+	<dl
+		class="divide-y divide-[var(--ui-border-muted)] overflow-hidden rounded-xl border border-[var(--ui-border)]"
+	>
 		{#each rows as row (row.label)}
 			<div class="flex items-center gap-3 px-4 py-3">
-				<div class="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]">
+				<div
+					class="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]"
+				>
 					<Icon name={row.icon} class="size-4" />
 				</div>
 				<dt class="text-[12.5px] text-[var(--ui-text-muted)]">{row.label}</dt>

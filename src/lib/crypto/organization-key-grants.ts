@@ -20,6 +20,7 @@ import {
 	fromBase64Url,
 	getOrCreateSensitiveDataKey,
 	getSensitiveDataScopeId,
+	storeScopePointer,
 	storeSensitiveDataKey,
 	toBase64Url
 } from './sensitive-data';
@@ -164,6 +165,9 @@ export async function importOrganizationKeyGrantEvent(event: NostrEvent): Promis
 		await decryptFromPubkey(event.pubkey, grant.wrappedKey, session.snapshot?.nsec ?? null)
 	);
 	storeSensitiveDataKey(grant.keyId, rawKey);
+	// Wire the opaque kid back to the org scope so scope-based lookups
+	// (hasActiveKey / encrypt) resolve the imported key.
+	storeScopePointer(getSensitiveDataScopeId(grant.organizationId, me), grant.keyId);
 	return true;
 }
 

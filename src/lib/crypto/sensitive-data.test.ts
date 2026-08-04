@@ -100,23 +100,77 @@ describe('protect/unprotect (object surface, for GLO data)', () => {
 });
 
 describe('AAD binding (payload substitution defense)', () => {
-	it('cannot decrypt with a key from a different scope', async () => {
-		const secret = { order: 'ORD-1', total: 99 };
-		// Encrypt under org-A's key.
+	it('rejects ciphertext replayed across records under the same key (recordId AAD)', async () => {
+		const scope = getSensitiveDataScopeId('org-A', 'pk');
+		const envA = JSON.parse(
+			await protectSensitiveJson(
+				{ total: 100 },
+				{ domain: 'order', scopeId: scope, recordId: 'rec-A' }
+			)
+		) as Record<string, unknown>;
+		const envB = JSON.parse(
+			await protectSensitiveJson(
+				{ total: 200 },
+				{ domain: 'order', scopeId: scope, recordId: 'rec-B' }
+			)
+		) as Record<string, unknown>;
+		// Swap record-A's ciphertext into record-B's envelope (same key, same nonce
+		// space) — GCM must reject because the AAD (recordId) no longer matches.
+		const replayed = { ...envB, ciphertext: envA.ciphertext, nonce: envA.nonce };
+		await expect(unprotectSensitiveJson(JSON.stringify(replayed))).rejects.toThrow();
+	});
+
+	it('cannot decrypt with a key from a different scope (wrong opaque kid)', async () => {
 		const scopeA = getSensitiveDataScopeId('org-A', 'pk');
-		const envelopeA = await protectSensitiveJson(secret, { domain: 'order', scopeId: scopeA });
-		// Store org-B's key under the SAME key id — decryption must fail (wrong key).
+		const envelopeA = JSON.parse(
+			await protectSensitiveJson({ total: 9 }, { domain: 'order', scopeId: scopeA })
+		) as { kid: string };
+		// Wipe org-A's key, mint org-B's (different random key + opaque kid).
 		memStore.clear();
-		const scopeB = getSensitiveDataScopeId('org-B', 'pk');
-		// Force a key for scopeB so getStoredSensitiveDataKeyId resolves, but it's
-		// a different random key than the one that encrypted envelopeA.
-		storeSensitiveDataKey(getSensitiveDataKeyId(scopeB), new Uint8Array(32).fill(1));
-		// Rewrite the envelope's kid to point at scopeB's key id to simulate
-		// an attacker replaying org-A's ciphertext against org-B.
-		const tampered = JSON.parse(envelopeA);
-		tampered.kid = getSensitiveDataKeyId(scopeB);
-		tampered.scopeId = scopeB;
+		await protectSensitiveJson(
+			{ x: 1 },
+			{ domain: 'order', scopeId: getSensitiveDataScopeId('org-B', 'pk') }
+		);
+		// Point org-A's ciphertext at org-B's kid → wrong key → GCM auth failure.
+		const orgBkid = (
+			JSON.parse(
+				await protectSensitiveJson(
+					{ x: 1 },
+					{ domain: 'order', scopeId: getSensitiveDataScopeId('org-B', 'pk') }
+				)
+			) as { kid: string }
+		).kid;
+		const tampered = { ...envelopeA, kid: orgBkid };
 		await expect(unprotectSensitiveJson(JSON.stringify(tampered))).rejects.toThrow();
+	});
+});
+
+describe('privacy — envelope leaks no org/branch/domain metadata', () => {
+	it('does not serialize organizationId, branchId, domain, or scopeId', async () => {
+		const scope = getSensitiveDataScopeId('org-secret', 'pk');
+		const envelope = JSON.parse(
+			await protectSensitiveJson(
+				{ customer: 'Satoshi', card: '4242' },
+				{
+					domain: 'payment',
+					scopeId: scope,
+					organizationId: 'org-secret',
+					branchId: 'branch-1',
+					recordId: 'rec-1'
+				}
+			)
+		) as Record<string, unknown>;
+		expect(envelope).not.toHaveProperty('organizationId');
+		expect(envelope).not.toHaveProperty('branchId');
+		expect(envelope).not.toHaveProperty('domain');
+		expect(envelope).not.toHaveProperty('scopeId');
+		expect(envelope).not.toHaveProperty('companyId');
+		// The kid is opaque and carries no org identifier.
+		expect(String(envelope.kid)).toMatch(/^k_[0-9a-f]{32}$/);
+		expect(String(envelope.kid)).not.toContain('org-secret');
+		// And the plaintext secrets are not present.
+		expect(JSON.stringify(envelope)).not.toContain('Satoshi');
+		expect(JSON.stringify(envelope)).not.toContain('4242');
 	});
 });
 

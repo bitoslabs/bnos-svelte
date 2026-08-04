@@ -28,6 +28,7 @@
 		type MarketplaceConnection,
 		type Product
 	} from '$lib/domain';
+	import { toPublicListing, redactListing } from '$lib/domain/marketplace-publish';
 
 	const currency = $derived(tenant.state.currency);
 	const connections = $derived(
@@ -159,31 +160,44 @@
 		fImages = productImages(fProductId);
 	}
 
-	const canSave = $derived(fProductId !== '' && (typeof fPrice === 'number' ? fPrice : Number(fPrice)) >= 0);
+	const canSave = $derived(
+		fProductId !== '' && (typeof fPrice === 'number' ? fPrice : Number(fPrice)) >= 0
+	);
 
 	async function save() {
 		if (!canSave || saving) return;
 		saving = true;
 		const num = (v: number | '') => (typeof v === 'number' ? v : Number(v) || 0);
-		const data: MarketplaceProduct = {
-			productId: fProductId,
-			productName: productName(fProductId),
-			channelIds: fChannelIds.slice(),
-			status: fStatus,
-			price: num(fPrice),
-			compareAtPrice: fCompareAt === '' ? undefined : num(fCompareAt),
-			inventoryTracked: fTrackInv,
-			stock: fTrackInv ? num(fStock) : undefined,
-			description: fDescription.trim() || undefined,
-			images: fImages.length ? fImages : undefined,
-			publishedAt: fStatus === 'active' ? new Date().toISOString() : undefined
-		};
+		const product = products.find((x) => x.id === fProductId);
+		const publishedAt = fStatus === 'active' ? new Date().toISOString() : undefined;
+		// Build the listing via the leak-safe projection: only allowlisted public
+		// fields are copied from the catalog product, so cost/supplier/reorder
+		// thresholds can never reach a public channel. `redactListing` is
+		// defense-in-depth in case a future field sneaks internal data in.
+		const data: MarketplaceProduct = redactListing(
+			toPublicListing(
+				{ id: fProductId, data: (product?.data ?? { name: productName(fProductId) }) as Product },
+				{
+					channelIds: fChannelIds,
+					price: num(fPrice),
+					compareAtPrice: fCompareAt === '' ? undefined : num(fCompareAt),
+					inventoryTracked: fTrackInv,
+					stock: fTrackInv ? num(fStock) : undefined,
+					description: fDescription.trim() || undefined,
+					images: fImages,
+					status: fStatus,
+					publishedAt
+				}
+			)
+		);
 		try {
 			if (editingId) {
 				await glo.upsert<MarketplaceProduct>(TYPE.marketplaceProduct, data, { id: editingId });
 				toast.success('Listing updated');
 			} else {
-				await glo.upsert<MarketplaceProduct>(TYPE.marketplaceProduct, data, { id: newRecordId('mp-listing') });
+				await glo.upsert<MarketplaceProduct>(TYPE.marketplaceProduct, data, {
+					id: newRecordId('mp-listing')
+				});
 				toast.success('Listing created');
 			}
 			modalOpen = false;
@@ -194,7 +208,11 @@
 		}
 	}
 
-	async function quickStatus(id: string, data: MarketplaceProduct, status: MarketplaceProduct['status']) {
+	async function quickStatus(
+		id: string,
+		data: MarketplaceProduct,
+		status: MarketplaceProduct['status']
+	) {
 		await glo.upsert<MarketplaceProduct>(TYPE.marketplaceProduct, { ...data, status }, { id });
 		toast.success(`Marked ${listingStatusLabel(status)}`);
 	}
@@ -216,9 +234,16 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h2 class="font-display text-lg font-bold tracking-tight">Listings</h2>
-			<p class="text-[12px] text-[var(--ui-text-muted)]">{formatInt(filtered.length)} listings across {connections.length} channels</p>
+			<p class="text-[12px] text-[var(--ui-text-muted)]">
+				{formatInt(filtered.length)} listings across {connections.length} channels
+			</p>
 		</div>
-		<Button color="primary" icon="lucide:plus" onclick={openCreate} disabled={!hasChannels || availableProducts.length === 0}>
+		<Button
+			color="primary"
+			icon="lucide:plus"
+			onclick={openCreate}
+			disabled={!hasChannels || availableProducts.length === 0}
+		>
 			New listing
 		</Button>
 	</div>
@@ -230,7 +255,9 @@
 			description="You need at least one sales channel before publishing listings."
 		>
 			{#snippet actions()}
-				<Button color="primary" size="sm" icon="lucide:plus" href="/marketplace/channels">Connect channel</Button>
+				<Button color="primary" size="sm" icon="lucide:plus" href="/marketplace/channels"
+					>Connect channel</Button
+				>
 			{/snippet}
 		</EmptyState>
 	{:else if listings.length === 0}
@@ -240,7 +267,13 @@
 			description="Publish a catalog product to one or more channels to start selling."
 		>
 			{#snippet actions()}
-				<Button color="primary" size="sm" icon="lucide:plus" onclick={openCreate} disabled={availableProducts.length === 0}>
+				<Button
+					color="primary"
+					size="sm"
+					icon="lucide:plus"
+					onclick={openCreate}
+					disabled={availableProducts.length === 0}
+				>
 					{availableProducts.length === 0 ? 'All products listed' : 'New listing'}
 				</Button>
 			{/snippet}
@@ -265,7 +298,10 @@
 		<!-- Search + filters -->
 		<div class="flex flex-wrap items-center gap-2">
 			<div class="relative min-w-48 flex-1">
-				<Icon name="lucide:search" class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--ui-text-dimmed)]" />
+				<Icon
+					name="lucide:search"
+					class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--ui-text-dimmed)]"
+				/>
 				<input
 					bind:value={search}
 					placeholder="Search listings…"
@@ -273,23 +309,45 @@
 				/>
 			</div>
 			<div class="flex items-center gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
-				<button type="button" onclick={() => (statusFilter = '')} class="rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all {statusFilter === '' ? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm' : 'text-[var(--ui-text-muted)]'}">All</button>
+				<button
+					type="button"
+					onclick={() => (statusFilter = '')}
+					class="rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all {statusFilter ===
+					''
+						? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
+						: 'text-[var(--ui-text-muted)]'}">All</button
+				>
 				{#each LISTING_STATUSES as s (s.value)}
-					<button type="button" onclick={() => (statusFilter = statusFilter === s.value ? '' : s.value)} class="rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {statusFilter === s.value ? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm' : 'text-[var(--ui-text-muted)]'}">{s.label}</button>
+					<button
+						type="button"
+						onclick={() => (statusFilter = statusFilter === s.value ? '' : s.value)}
+						class="rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {statusFilter ===
+						s.value
+							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
+							: 'text-[var(--ui-text-muted)]'}">{s.label}</button
+					>
 				{/each}
 			</div>
 		</div>
 
 		<!-- List -->
-		<div class="overflow-hidden rounded-2xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-elevated)] shadow-sm">
+		<div
+			class="overflow-hidden rounded-2xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-elevated)] shadow-sm"
+		>
 			<div class="divide-y divide-[var(--ui-border-muted)]">
 				{#each controls.pagedList as l (l.id)}
 					<div class="group p-4 transition-colors hover:bg-[var(--ui-bg-muted)] sm:p-5">
 						<div class="flex items-start justify-between gap-3">
 							<div class="flex min-w-0 items-start gap-3">
-								<div class="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]">
+								<div
+									class="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]"
+								>
 									{#if listingCover(l.data)}
-										<img src={listingCover(l.data)} alt={l.data.productName} class="h-full w-full object-cover" />
+										<img
+											src={listingCover(l.data)}
+											alt={l.data.productName}
+											class="h-full w-full object-cover"
+										/>
 									{:else}
 										<Icon name="lucide:package" class="size-5" />
 									{/if}
@@ -297,20 +355,28 @@
 								<div class="min-w-0">
 									<div class="flex flex-wrap items-center gap-2">
 										<p class="truncate text-[14px] font-bold">{l.data.productName}</p>
-										<Badge color={statusColor(l.data.status)}>{listingStatusLabel(l.data.status)}</Badge>
+										<Badge color={statusColor(l.data.status)}
+											>{listingStatusLabel(l.data.status)}</Badge
+										>
 										{#if l.data.inventoryTracked && (l.data.stock ?? 0) <= 5}
-											<Badge color="warning">{(l.data.stock ?? 0) === 0 ? 'Out of stock' : 'Low stock'}</Badge>
+											<Badge color="warning"
+												>{(l.data.stock ?? 0) === 0 ? 'Out of stock' : 'Low stock'}</Badge
+											>
 										{/if}
 									</div>
 									{#if l.data.sku}
-										<p class="mt-0.5 font-mono text-[11px] text-[var(--ui-text-dimmed)]">{l.data.sku}</p>
+										<p class="mt-0.5 font-mono text-[11px] text-[var(--ui-text-dimmed)]">
+											{l.data.sku}
+										</p>
 									{/if}
 									<!-- Channel chips -->
 									<div class="mt-1.5 flex flex-wrap items-center gap-1">
 										{#each l.data.channelIds as cid (cid)}
 											{@const conn = connections.find((c) => c.id === cid)}
 											{@const m = conn ? channelMeta(conn.data.type) : null}
-											<span class="inline-flex items-center gap-0.5 rounded-full bg-[var(--ui-bg-muted)] px-1.5 py-0.5 text-[9px] font-medium text-[var(--ui-text-muted)]">
+											<span
+												class="inline-flex items-center gap-0.5 rounded-full bg-[var(--ui-bg-muted)] px-1.5 py-0.5 text-[9px] font-medium text-[var(--ui-text-muted)]"
+											>
 												{#if m}<Icon name={m.icon} class="size-2.5" />{/if}
 												{conn?.data.name ?? cid.slice(0, 6)}
 											</span>
@@ -323,19 +389,51 @@
 							</div>
 							<div class="flex shrink-0 flex-col items-end gap-2">
 								<div class="text-right">
-									<div class="font-display text-[15px] font-bold tabular-nums">{formatMoney(l.data.price, currency)}</div>
+									<div class="font-display text-[15px] font-bold tabular-nums">
+										{formatMoney(l.data.price, currency)}
+									</div>
 									{#if l.data.compareAtPrice}
-										<div class="text-[10px] text-[var(--ui-text-dimmed)] line-through tabular-nums">{formatMoney(l.data.compareAtPrice, currency)}</div>
+										<div class="text-[10px] text-[var(--ui-text-dimmed)] tabular-nums line-through">
+											{formatMoney(l.data.compareAtPrice, currency)}
+										</div>
 									{/if}
 								</div>
 								<div class="flex items-center gap-1">
 									{#if l.data.status === 'active'}
-										<Button size="icon-sm" color="neutral" variant="ghost" icon="lucide:pause" title="Pause" onclick={() => quickStatus(l.id, l.data, 'paused')} />
+										<Button
+											size="icon-sm"
+											color="neutral"
+											variant="ghost"
+											icon="lucide:pause"
+											title="Pause"
+											onclick={() => quickStatus(l.id, l.data, 'paused')}
+										/>
 									{:else}
-										<Button size="icon-sm" color="neutral" variant="ghost" icon="lucide:play" title="Activate" onclick={() => quickStatus(l.id, l.data, 'active')} />
+										<Button
+											size="icon-sm"
+											color="neutral"
+											variant="ghost"
+											icon="lucide:play"
+											title="Activate"
+											onclick={() => quickStatus(l.id, l.data, 'active')}
+										/>
 									{/if}
-									<Button size="icon-sm" color="neutral" variant="ghost" icon="lucide:pencil" title="Edit" onclick={() => openEdit(l.id, l.data)} />
-									<Button size="icon-sm" color="neutral" variant="ghost" icon="lucide:trash-2" title="Delete" onclick={() => (confirmDeleteId = l.id)} />
+									<Button
+										size="icon-sm"
+										color="neutral"
+										variant="ghost"
+										icon="lucide:pencil"
+										title="Edit"
+										onclick={() => openEdit(l.id, l.data)}
+									/>
+									<Button
+										size="icon-sm"
+										color="neutral"
+										variant="ghost"
+										icon="lucide:trash-2"
+										title="Delete"
+										onclick={() => (confirmDeleteId = l.id)}
+									/>
 								</div>
 							</div>
 						</div>
@@ -343,7 +441,7 @@
 				{/each}
 			</div>
 		</div>
-		<Pagination controls={controls} />
+		<Pagination {controls} />
 	{/if}
 </div>
 
@@ -352,9 +450,15 @@
 	<div class="max-h-[70vh] space-y-4 overflow-y-auto">
 		<!-- Product -->
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Product <span class="text-red-500">*</span></span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Product <span class="text-red-500">*</span></span
+			>
 			{#if editingId}
-				<div class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[13px] font-medium">{productName(fProductId)}</div>
+				<div
+					class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[13px] font-medium"
+				>
+					{productName(fProductId)}
+				</div>
 			{:else}
 				<div class="relative">
 					<select
@@ -363,26 +467,41 @@
 						class="w-full appearance-none rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] py-2.5 pr-9 pl-3 text-[13px] font-medium focus:border-[var(--ui-color-primary-500)] focus:outline-none"
 					>
 						{#each availableProducts as p (p.id)}
-							<option value={p.id}>{p.data.name}{#if p.data.sku} ({p.data.sku}){/if}</option>
+							<option value={p.id}
+								>{p.data.name}{#if p.data.sku}
+									({p.data.sku}){/if}</option
+							>
 						{/each}
 					</select>
-					<Icon name="lucide:chevron-down" class="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-[var(--ui-text-dimmed)]" />
+					<Icon
+						name="lucide:chevron-down"
+						class="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-[var(--ui-text-dimmed)]"
+					/>
 				</div>
 			{/if}
 		</label>
 
 		<!-- Channels -->
 		<div>
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Publish to channels</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Publish to channels</span
+			>
 			<div class="flex flex-wrap gap-1.5">
 				{#each connections as c (c.id)}
 					{@const m = channelMeta(c.data.type)}
 					<button
 						type="button"
 						onclick={() => toggleChannel(c.id)}
-						class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all {fChannelIds.includes(c.id) ? 'bg-primary-500/15 text-primary-600 ring-1 ring-primary-500/30 dark:text-primary-300' : 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+						class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all {fChannelIds.includes(
+							c.id
+						)
+							? 'bg-primary-500/15 text-primary-600 ring-1 ring-primary-500/30 dark:text-primary-300'
+							: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
 					>
-						{#if fChannelIds.includes(c.id)}<Icon name="lucide:check" class="size-3" />{:else}<Icon name={m.icon} class="size-3" />{/if}
+						{#if fChannelIds.includes(c.id)}<Icon name="lucide:check" class="size-3" />{:else}<Icon
+								name={m.icon}
+								class="size-3"
+							/>{/if}
 						{c.data.name}
 					</button>
 				{/each}
@@ -392,11 +511,15 @@
 		<!-- Pricing -->
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Price ({currency}) <span class="text-red-500">*</span></span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Price ({currency}) <span class="text-red-500">*</span></span
+				>
 				<Input bind:value={fPrice} type="number" min="0" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Compare-at price</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Compare-at price</span
+				>
 				<Input bind:value={fCompareAt} type="number" min="0" placeholder="0.00" class="w-full" />
 			</label>
 		</div>
@@ -412,7 +535,9 @@
 			</div>
 			{#if fTrackInv}
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Stock quantity</span>
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Stock quantity</span
+					>
 					<Input bind:value={fStock} type="number" min="0" class="w-full" />
 				</label>
 			{/if}
@@ -423,7 +548,14 @@
 			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Status</span>
 			<div class="flex flex-wrap gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
 				{#each LISTING_STATUSES as s (s.value)}
-					<button type="button" onclick={() => (fStatus = s.value)} class="flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all {fStatus === s.value ? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm' : 'text-[var(--ui-text-muted)]'}">
+					<button
+						type="button"
+						onclick={() => (fStatus = s.value)}
+						class="flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all {fStatus ===
+						s.value
+							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
+							: 'text-[var(--ui-text-muted)]'}"
+					>
 						<Icon name={s.icon} class="size-3" />{s.label}
 					</button>
 				{/each}
@@ -431,31 +563,55 @@
 		</div>
 
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Description</span>
-			<Input bind:value={fDescription} textarea rows={2} placeholder="Listing copy shown on the channel…" class="w-full" />
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Description</span
+			>
+			<Input
+				bind:value={fDescription}
+				textarea
+				rows={2}
+				placeholder="Listing copy shown on the channel…"
+				class="w-full"
+			/>
 		</label>
 	</div>
 
 	{#snippet footer()}
 		<Button color="neutral" variant="ghost" onclick={() => (modalOpen = false)}>Cancel</Button>
-		<Button color="primary" icon="lucide:check" disabled={!canSave || saving} onclick={save}>{saving ? 'Saving…' : editingId ? 'Update' : 'Publish'}</Button>
+		<Button color="primary" icon="lucide:check" disabled={!canSave || saving} onclick={save}
+			>{saving ? 'Saving…' : editingId ? 'Update' : 'Publish'}</Button
+		>
 	{/snippet}
 </Dialog>
 
 <!-- Delete confirm -->
 {#if confirmDeleteId}
 	<div class="fixed inset-0 z-[95] flex items-center justify-center p-4">
-		<button type="button" tabindex="-1" class="fixed inset-0 bg-black/45 backdrop-blur-[2px]" onclick={() => (confirmDeleteId = null)} aria-label="Cancel"></button>
-		<div class="animate-rise relative w-full max-w-sm rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-5 shadow-2xl">
+		<button
+			type="button"
+			tabindex="-1"
+			class="fixed inset-0 bg-black/45 backdrop-blur-[2px]"
+			onclick={() => (confirmDeleteId = null)}
+			aria-label="Cancel"
+		></button>
+		<div
+			class="animate-rise relative w-full max-w-sm rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-5 shadow-2xl"
+		>
 			<div class="flex items-center gap-3">
-				<div class="grid size-10 place-items-center rounded-xl bg-red-500/10 text-red-500"><Icon name="lucide:trash-2" class="size-5" /></div>
+				<div class="grid size-10 place-items-center rounded-xl bg-red-500/10 text-red-500">
+					<Icon name="lucide:trash-2" class="size-5" />
+				</div>
 				<div>
 					<p class="font-display text-[14px] font-bold">Delete listing?</p>
-					<p class="text-[11.5px] text-[var(--ui-text-dimmed)]">It will be unpublished from all channels.</p>
+					<p class="text-[11.5px] text-[var(--ui-text-dimmed)]">
+						It will be unpublished from all channels.
+					</p>
 				</div>
 			</div>
 			<div class="mt-4 flex justify-end gap-2">
-				<Button color="neutral" variant="ghost" size="sm" onclick={() => (confirmDeleteId = null)}>Cancel</Button>
+				<Button color="neutral" variant="ghost" size="sm" onclick={() => (confirmDeleteId = null)}
+					>Cancel</Button
+				>
 				<Button color="error" size="sm" icon="lucide:trash-2" onclick={doDelete}>Delete</Button>
 			</div>
 		</div>

@@ -22,25 +22,25 @@ export type SensitiveDataDomain =
 export type DataVisibility = 'public' | 'private';
 
 /**
- * AES-256-GCM encryption envelope. Serialized as JSON (string or embedded as
- * an object inside a GLO `data` field). `aad` binds the ciphertext to its
- * domain/scope so a record can't be replayed against a different context.
+ * AES-256-GCM encryption envelope — the published (plaintext) wrapper around a
+ * ciphertext payload. Privacy: it carries ONLY the opaque key id, nonce,
+ * ciphertext, and a minimal `aad` bound to the record id (which is already
+ * public via the GLO `d` tag). It deliberately does NOT serialize the org id,
+ * branch id, or domain — those are already public in the event tags, so
+ * repeating them here would be pure metadata leakage.
  */
 export interface EncryptionEnvelope {
 	v: 1;
 	encrypted: true;
 	scheme: 'org.bitos.bnos.organization-key.v1';
 	alg: 'AES-256-GCM';
-	/** Key id (`<scopeId>:v1`) — names the local key used to decrypt. */
+	/** Opaque key id (`k_<random>`) — names the local AES key. Never embeds the
+	 *  organization id, so the envelope leaks nothing about which org it belongs to. */
 	kid: string;
-	domain: SensitiveDataDomain;
-	scopeId: string;
 	nonce: string;
 	aad: {
-		domain: SensitiveDataDomain;
-		scopeId: string;
-		organizationId?: string;
-		branchId?: string;
+		/** Record/object id (already public via the GLO `d` tag). Binds ciphertext
+		 *  to its record so it can't be replayed against another object. */
 		recordId?: string;
 	};
 	ciphertext: string;

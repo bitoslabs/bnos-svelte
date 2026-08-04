@@ -49,6 +49,7 @@ import { session } from './session.svelte';
 import { relays } from './relay.svelte';
 import { tenant } from './tenant.svelte';
 import { fetchEvents, sendEvent } from './client';
+import { verifyEvent } from 'nostr-tools/pure';
 import { encryptGloObject, decryptGloEvent, shouldEncryptType } from '$lib/crypto/glo-cipher';
 
 const STORAGE_PREFIX = 'bnos-os:glo:';
@@ -115,6 +116,14 @@ function stampData<TData>(data: TData, existing?: AnyGloObject): TData {
 
 function appKindForType(type: string) {
 	return APP_KIND_BY_TYPE[type] ?? getGloKindForType(type);
+}
+/** Cryptographically validate a Nostr event (id + Schnorr sig). Never throws. */
+function safeVerify(ev: NostrEvent): boolean {
+	try {
+		return verifyEvent(ev as any);
+	} catch {
+		return false;
+	}
 }
 
 function kindUpgradeKey(type: string) {
@@ -697,38 +706,58 @@ class GloStore {
 	/** Lazily fetch the live Nostr event for one record (Raw Data viewer shows
 	 *  the real id/sig). Cached on the object in-memory; returns null offline /
 	 *  when not found. Single-record relay query (kind + author + #d). */
-	fetchEvent = async (type: string, id: string): Promise<NostrEvent | null> => {
+	fetchEvent = async (
+		type: string,
+		id: string,
+		opts: { force?: boolean } = {}
+	): Promise<NostrEvent | null> => {
 		if (!browser) return null;
 		const existing = this.collections.find(type, id) as AnyGloObject | undefined;
-		if (existing?.__event) return existing.__event; // in-memory cache
+		if (!opts.force && existing?.__event) return existing.__event; // in-memory cache
 		if (!session.pubkey || !relays.online || !relays.readableNormalized.length) return null;
+		// Prefer a cryptographically-verified event so a single corrupt/truncated
+		// relay copy doesn't poison the viewer.
+		const pickVerified = (list: NostrEvent[]): NostrEvent | null => {
+			const seen = new Set<string>();
+			const dedup: NostrEvent[] = [];
+			for (const e of list) {
+				if (e && !seen.has(e.id)) {
+					seen.add(e.id);
+					dedup.push(e);
+				}
+			}
+			return dedup.find((e) => safeVerify(e)) ?? dedup[0] ?? null;
+		};
 		try {
 			let ev: NostrEvent | null = null;
-			// 1) Preferred: O(1) lookup by event id — universally indexed (NIP-01),
-			//    no author needed, returns the exact signed event.
+			let suspect: NostrEvent | null = null;
+			// 1) ids:[] — fast, universal. Accept immediately if it verifies.
 			if (existing?.__eventId) {
-				ev =
+				const c =
 					(
 						await fetchEvents({
 							ids: [existing.__eventId],
 							limit: 1
 						} as Parameters<typeof fetchEvents>[0])
 					)[0] ?? null;
+				if (c) {
+					if (safeVerify(c)) ev = c;
+					else suspect = c;
+				}
 			}
-			// 2) Fallback: parameterized-replaceable lookup by d-tag + author + kind
-			//    (covers records whose id isn't cached yet, or id misses).
+			// 2) #d lookup — also finds a clean copy when the id one failed verify.
 			if (!ev) {
 				const author = existing?.scope?.ownerPubkey ?? session.pubkey;
-				ev =
-					(
-						await fetchEvents({
-							kinds: [appKindForType(type)],
-							authors: [author],
-							'#d': [createGloIdentifier(type, id)],
-							limit: 1
-						} as Parameters<typeof fetchEvents>[0])
-					)[0] ?? null;
+				const list = await fetchEvents({
+					kinds: [appKindForType(type)],
+					authors: [author],
+					'#d': [createGloIdentifier(type, id)],
+					limit: 5
+				} as Parameters<typeof fetchEvents>[0]);
+				ev = pickVerified(list);
 			}
+			// Last resort: surface a bad copy so the UI can warn about tampering.
+			if (!ev) ev = suspect;
 			if (ev && existing) {
 				existing.__event = ev;
 				existing.__eventId = ev.id;
