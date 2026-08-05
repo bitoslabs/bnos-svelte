@@ -41,7 +41,8 @@
 	const isPublicRoute = $derived(
 		page.url.pathname === '/login' ||
 			page.url.pathname === '/resolve' ||
-			page.url.pathname.startsWith('/setup')
+			page.url.pathname.startsWith('/setup') ||
+			page.url.pathname.startsWith('/legal')
 	);
 	const isPosRoute = $derived(
 		page.url.pathname === '/pos' || page.url.pathname.startsWith('/pos/')

@@ -705,7 +705,7 @@
 				</div>
 			{/each}
 		</div>
-		<Pagination {controls} class="mt-3 rounded-xl border border-[var(--ui-border)] shadow-sm" />
+		<Pagination {controls} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
 	{:else}
 		<!-- TABLE VIEW -->
 		<div class="data-panel">

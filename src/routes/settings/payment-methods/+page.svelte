@@ -11,6 +11,8 @@
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
+	import { hasQrConfigured, loadPayConfig } from '$lib/pos/pay-config';
+	import { isLightningReady } from '$lib/pos/lightning';
 
 	// ── Types ──────────────────────────────────────────────
 	type PaymentType =
@@ -287,6 +289,27 @@
 		return TYPE_OPTIONS.find((o) => o.value === t)?.label ?? t;
 	}
 
+	// ── Cross-page readiness ───────────────────────
+	// Tells the merchant whether the enabled method will actually work at the POS.
+	function methodReadiness(m: PaymentMethod):
+		| { state: 'ready'; detail: string }
+		| { state: 'config'; detail: string; href: string }
+		| { state: 'ok' } {
+		if (!m.enabled) return { state: 'ok' };
+		if (m.type === 'lightning' || m.id === 'lightning') {
+			return isLightningReady()
+				? { state: 'ready', detail: 'Lightning address connected' }
+				: { state: 'config', detail: 'No Lightning address', href: '/settings/bitcoin' };
+		}
+		if (m.type === 'qr' || m.id === 'qr' || m.type === 'bank_transfer') {
+			return hasQrConfigured(loadPayConfig())
+				? { state: 'ready', detail: 'Pay QR configured' }
+				: { state: 'config', detail: 'Pay QR not set up', href: '/settings/pay-qr' };
+		}
+		return { state: 'ok' };
+	}
+	// Re-evaluated on every render (methods is $state so toggles re-render).
+
 	// ── Lifecycle ──────────────────────────────────────────
 	$effect(() => {
 		load();
@@ -359,6 +382,15 @@
 							{/if}
 						</div>
 						<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">ID: {m.id}</p>
+						{#if methodReadiness(m).state === 'ready'}
+							<span class="mt-1 inline-flex items-center gap-1 text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400">
+								<Icon name="lucide:check-circle-2" class="size-3" />{(methodReadiness(m) as { state: 'ready'; detail: string }).detail}
+							</span>
+						{:else if methodReadiness(m).state === 'config'}
+							<a href={(methodReadiness(m) as { state: 'config'; detail: string; href: string }).href} class="mt-1 inline-flex items-center gap-1 text-[10.5px] font-semibold text-amber-600 hover:underline dark:text-amber-400">
+								<Icon name="lucide:triangle-alert" class="size-3" />{(methodReadiness(m) as { state: 'config'; detail: string; href: string }).detail} · set up
+							</a>
+						{/if}
 					</div>
 
 					<!-- Actions -->

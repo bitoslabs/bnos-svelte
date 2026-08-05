@@ -610,7 +610,7 @@
 			</EmptyState>
 		{:else}
 			<div
-				class="overflow-hidden rounded-2xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-elevated)] shadow-sm"
+				class="overflow-hidden rounded-2xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-elevated)]"
 			>
 				<div class="divide-y divide-[var(--ui-border-muted)]">
 					{#each pCtrl.pagedList as p (p.id)}

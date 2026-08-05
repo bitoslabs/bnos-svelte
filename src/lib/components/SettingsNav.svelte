@@ -31,7 +31,8 @@
 				{ to: '/settings/payment-methods', icon: 'lucide:credit-card', label: 'Payment methods' },
 				{ to: '/settings/receipt', icon: 'lucide:receipt-text', label: 'Receipt' },
 				{ to: '/settings/media', icon: 'lucide:image-up', label: 'Media & uploads' },
-				{ to: '/settings/bitcoin', icon: 'lucide:bitcoin', label: 'Bitcoin' }
+				{ to: '/settings/bitcoin', icon: 'lucide:bitcoin', label: 'Bitcoin' },
+				{ to: '/settings/pay-qr', icon: 'lucide:qr-code', label: 'Pay QR' }
 			]
 		},
 		{
@@ -53,6 +54,14 @@
 				{ to: '/settings/appearance', icon: 'lucide:palette', label: 'Appearance' },
 				{ to: '/settings/data', icon: 'lucide:database', label: 'Data' },
 				{ to: '/settings/about', icon: 'lucide:info', label: 'About' }
+			]
+		},
+		{
+			label: 'Legal',
+			items: [
+				{ to: '/legal/privacy', icon: 'lucide:shield-check', label: 'Privacy Policy' },
+				{ to: '/legal/terms', icon: 'lucide:file-text', label: 'Terms of Service' },
+				{ to: '/legal/license', icon: 'lucide:scale', label: 'License' }
 			]
 		}
 	];
