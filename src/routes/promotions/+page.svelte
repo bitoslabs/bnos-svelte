@@ -10,6 +10,8 @@
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 	import Pagination from '$lib/components/list/Pagination.svelte';
+	import ListToolbar from '$lib/components/list/ListToolbar.svelte';
+	import SortableTh from '$lib/components/list/SortableTh.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
@@ -589,6 +591,35 @@
 				<span class="ml-1 text-[11px] text-[var(--ui-text-dimmed)]">
 					{filteredPromos.length} items
 				</span>
+				<div class="segmented ml-auto flex items-center gap-0.5">
+					<button
+						type="button"
+						onclick={() => pCtrl.setViewMode('list')}
+						class="grid size-8 place-items-center rounded-md transition-colors {pCtrl.viewMode ===
+						'list'
+							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
+							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
+						title="List view"><Icon name="lucide:list" class="size-4" /></button
+					>
+					<button
+						type="button"
+						onclick={() => pCtrl.setViewMode('grid')}
+						class="grid size-8 place-items-center rounded-md transition-colors {pCtrl.viewMode ===
+						'grid'
+							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
+							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
+						title="Grid view"><Icon name="lucide:layout-grid" class="size-4" /></button
+					>
+					<button
+						type="button"
+						onclick={() => pCtrl.setViewMode('table')}
+						class="grid size-8 place-items-center rounded-md transition-colors {pCtrl.viewMode ===
+						'table'
+							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
+							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
+						title="Table view"><Icon name="lucide:table" class="size-4" /></button
+					>
+				</div>
 			</div>
 		</div>
 
@@ -608,6 +639,221 @@
 					>
 				{/snippet}
 			</EmptyState>
+		{:else if pCtrl.viewMode === 'grid'}
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+				{#each pCtrl.pagedList as p (p.id)}
+					{@const ps = promoStatus(p.data)}
+					<div class="metric-card p-4">
+						<div class="flex items-start justify-between gap-2">
+							<div class="flex min-w-0 items-center gap-2.5">
+								<div
+									class="grid size-10 shrink-0 place-items-center rounded-xl {PROMO_TYPE_COLOR[
+										p.data.type
+									] ?? 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]'}"
+								>
+									<Icon name={PROMO_TYPE_ICON[p.data.type] ?? 'lucide:tag'} class="size-5" />
+								</div>
+								<div class="min-w-0">
+									<div class="truncate font-semibold">{p.data.name}</div>
+									<div class="truncate text-[11px] text-[var(--ui-text-muted)]">
+										{promoTypeLabel(p.data.type)} · {promoValueLabel(p.data)}
+									</div>
+								</div>
+							</div>
+							<Badge color={promoStatusBadgeColor(ps)}>{promoStatusLabel(ps)}</Badge>
+						</div>
+						{#if p.data.description}
+							<p class="mt-2 line-clamp-2 text-[11.5px] text-[var(--ui-text-muted)]">
+								{p.data.description}
+							</p>
+						{/if}
+						<div
+							class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[var(--ui-text-dimmed)]"
+						>
+							{#if p.data.maxUsage && p.data.maxUsage > 0}
+								<span>{p.data.currentUsage ?? 0}/{p.data.maxUsage} uses</span>
+							{:else}
+								<span>Unlimited</span>
+							{/if}
+							{#if p.data.validFrom || p.data.validUntil}
+								<span>
+									{#if p.data.validFrom}{new Date(
+											p.data.validFrom
+										).toLocaleDateString()}{/if}→{#if p.data.validUntil}{new Date(
+											p.data.validUntil
+										).toLocaleDateString()}{:else}∞{/if}
+								</span>
+							{/if}
+						</div>
+						<div
+							class="mt-3 flex items-center justify-end gap-1 border-t border-[var(--ui-border-muted)] pt-2.5"
+						>
+							<button
+								type="button"
+								onclick={() => togglePromoActive(p.id, p.data)}
+								class="grid size-8 place-items-center rounded-lg transition-colors {p.data.active
+									? 'text-emerald-500 hover:bg-emerald-500/10'
+									: 'text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)]'}"
+								title={p.data.active ? 'Deactivate' : 'Activate'}
+								><Icon
+									name={p.data.active ? 'lucide:circle-check' : 'lucide:circle-x'}
+									class="size-4"
+								/></button
+							>
+							<button
+								type="button"
+								onclick={() => {
+									rawItem = glo.get(TYPE.promotion, p.id);
+									rawOpen = true;
+								}}
+								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+								title="View raw"><Icon name="lucide:code" class="size-4" /></button
+							>
+							<button
+								type="button"
+								onclick={() => openEditPromo(p.id, p.data)}
+								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
+								title="Edit"><Icon name="lucide:pencil" class="size-4" /></button
+							>
+							<button
+								type="button"
+								onclick={() => confirmDelete(p.id)}
+								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
+								title="Delete"><Icon name="lucide:trash-2" class="size-4" /></button
+							>
+						</div>
+					</div>
+				{/each}
+			</div>
+			<Pagination controls={pCtrl} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
+		{:else if pCtrl.viewMode === 'table'}
+			<div class="data-panel">
+				<div class="overflow-x-auto">
+					<table class="table-surface w-full text-left">
+						<thead>
+							<tr>
+								<SortableTh
+									column="name"
+									active={pCtrl.sortKey === 'name'}
+									direction={pCtrl.sortDir}
+									applySort={pCtrl.applySort}>Promotion</SortableTh
+								>
+								<th
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Type</th
+								>
+								<SortableTh
+									column="value"
+									active={pCtrl.sortKey === 'value'}
+									direction={pCtrl.sortDir}
+									align="right"
+									applySort={pCtrl.applySort}>Value</SortableTh
+								>
+								<SortableTh
+									column="status"
+									active={pCtrl.sortKey === 'status'}
+									direction={pCtrl.sortDir}
+									applySort={pCtrl.applySort}>Status</SortableTh
+								>
+								<th
+									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Usage</th
+								>
+								<th
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Validity</th
+								>
+								<th class="w-10 px-5 py-2.5"></th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+							{#each pCtrl.pagedList as p (p.id)}
+								{@const ps = promoStatus(p.data)}
+								<tr class="hover:bg-[var(--ui-bg-accented)]/40">
+									<td class="px-5 py-3">
+										<div class="flex items-center gap-3">
+											<div
+												class="grid size-8 shrink-0 place-items-center rounded-lg {PROMO_TYPE_COLOR[
+													p.data.type
+												] ?? 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]'}"
+											>
+												<Icon name={PROMO_TYPE_ICON[p.data.type] ?? 'lucide:tag'} class="size-4" />
+											</div>
+											<div class="min-w-0">
+												<div class="font-semibold">{p.data.name}</div>
+												{#if p.data.description}
+													<div class="line-clamp-1 text-[11px] text-[var(--ui-text-dimmed)]">
+														{p.data.description}
+													</div>
+												{/if}
+											</div>
+										</div>
+									</td>
+									<td class="px-5 py-3 text-[var(--ui-text-muted)]"
+										>{promoTypeLabel(p.data.type)}</td
+									>
+									<td class="px-5 py-3 text-right font-semibold tabular-nums"
+										>{promoValueLabel(p.data)}</td
+									>
+									<td class="px-5 py-3"
+										><Badge color={promoStatusBadgeColor(ps)}>{promoStatusLabel(ps)}</Badge></td
+									>
+									<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
+										>{#if p.data.maxUsage && p.data.maxUsage > 0}{p.data.currentUsage ?? 0}/{p.data
+												.maxUsage}{:else}∞{/if}</td
+									>
+									<td class="px-5 py-3 text-[11px] text-[var(--ui-text-dimmed)]"
+										>{#if p.data.validFrom || p.data.validUntil}{#if p.data.validFrom}{new Date(
+													p.data.validFrom
+												).toLocaleDateString()}{/if}→{#if p.data.validUntil}{new Date(
+													p.data.validUntil
+												).toLocaleDateString()}{:else}∞{/if}{:else}—{/if}</td
+									>
+									<td class="px-5 py-3">
+										<div class="flex items-center justify-end gap-1">
+											<button
+												type="button"
+												onclick={() => togglePromoActive(p.id, p.data)}
+												class="grid size-8 place-items-center rounded-lg transition-colors {p.data
+													.active
+													? 'text-emerald-500 hover:bg-emerald-500/10'
+													: 'text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)]'}"
+												title={p.data.active ? 'Deactivate' : 'Activate'}
+												><Icon
+													name={p.data.active ? 'lucide:circle-check' : 'lucide:circle-x'}
+													class="size-4"
+												/></button
+											>
+											<button
+												type="button"
+												onclick={() => {
+													rawItem = glo.get(TYPE.promotion, p.id);
+													rawOpen = true;
+												}}
+												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+												title="View raw"><Icon name="lucide:code" class="size-4" /></button
+											>
+											<button
+												type="button"
+												onclick={() => openEditPromo(p.id, p.data)}
+												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
+												title="Edit"><Icon name="lucide:pencil" class="size-4" /></button
+											>
+											<button
+												type="button"
+												onclick={() => confirmDelete(p.id)}
+												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
+												title="Delete"><Icon name="lucide:trash-2" class="size-4" /></button
+											>
+										</div>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				<Pagination controls={pCtrl} />
+			</div>
 		{:else}
 			<div
 				class="overflow-hidden rounded-2xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-elevated)]"
@@ -762,23 +1008,129 @@
 					{/each}
 				</div>
 			</div>
-			<Pagination controls={pCtrl} />
+			<Pagination controls={pCtrl} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
 		{/if}
 
 		<!-- ═══════════════ COUPONS TAB ═══════════════ -->
 	{:else}
-		{#if coupons.length === 0}
+		{#if coupons.length || cCtrl.search}
+			<ListToolbar
+				bind:search={cCtrl.search}
+				bind:sortKey={cCtrl.sortKey}
+				bind:sortDir={cCtrl.sortDir}
+				bind:viewMode={cCtrl.viewMode}
+				sortItems={cCtrl.sortItems}
+				searchPlaceholder="Search code…"
+				applySort={cCtrl.applySort}
+				setViewMode={cCtrl.setViewMode}
+			/>
+		{/if}
+		{#if cCtrl.list.length === 0}
 			<EmptyState
 				icon="lucide:ticket"
-				title="No coupons"
-				description="Create discount codes for checkout."
+				title={cCtrl.search ? 'No matching coupons' : 'No coupons'}
+				description={cCtrl.search
+					? 'Try a different search.'
+					: 'Create discount codes for checkout.'}
 			>
 				{#snippet actions()}
-					<Button color="primary" size="sm" icon="lucide:plus" onclick={() => openCreate('coupons')}
-						>New coupon</Button
-					>
+					{#if !cCtrl.search}
+						<Button
+							color="primary"
+							size="sm"
+							icon="lucide:plus"
+							onclick={() => openCreate('coupons')}>New coupon</Button
+						>
+					{/if}
 				{/snippet}
 			</EmptyState>
+		{:else if cCtrl.viewMode === 'table'}
+			<div class="data-panel">
+				<div class="overflow-x-auto">
+					<table class="table-surface w-full text-left">
+						<thead>
+							<tr>
+								<SortableTh
+									column="code"
+									active={cCtrl.sortKey === 'code'}
+									direction={cCtrl.sortDir}
+									applySort={cCtrl.applySort}>Code</SortableTh
+								>
+								<th
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Type</th
+								>
+								<th
+									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Value</th
+								>
+								<SortableTh
+									column="uses"
+									active={cCtrl.sortKey === 'uses'}
+									direction={cCtrl.sortDir}
+									align="right"
+									applySort={cCtrl.applySort}>Uses</SortableTh
+								>
+								<th
+									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Min spend</th
+								>
+								<SortableTh
+									column="status"
+									active={cCtrl.sortKey === 'status'}
+									direction={cCtrl.sortDir}
+									applySort={cCtrl.applySort}>Status</SortableTh
+								>
+								<th class="w-10 px-5 py-2.5"></th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+							{#each cCtrl.pagedList as c (c.id)}
+								<tr class="hover:bg-[var(--ui-bg-accented)]/40">
+									<td class="px-5 py-3 font-mono font-semibold">{c.data.code}</td>
+									<td class="px-5 py-3 text-[var(--ui-text-muted)] capitalize">{c.data.type}</td>
+									<td class="px-5 py-3 text-right font-semibold tabular-nums">{badge(c.data)}</td>
+									<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
+										>{c.data.uses ?? 0}{#if c.data.maxUses}/{c.data.maxUses}{/if}</td
+									>
+									<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
+										>{#if c.data.minSpend}{formatMoney(c.data.minSpend, currency)}{:else}—{/if}</td
+									>
+									<td class="px-5 py-3"
+										><Badge color={statusColor(c.data.status)}>{c.data.status}</Badge></td
+									>
+									<td class="px-5 py-3">
+										<div class="flex items-center justify-end gap-1">
+											<button
+												type="button"
+												onclick={() => {
+													rawItem = glo.get(TYPE.coupon, c.id);
+													rawOpen = true;
+												}}
+												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+												title="View raw"><Icon name="lucide:code" class="size-4" /></button
+											>
+											<button
+												type="button"
+												onclick={() => openEditCoupon(c.id, c.data)}
+												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
+												title="Edit"><Icon name="lucide:pencil" class="size-4" /></button
+											>
+											<button
+												type="button"
+												onclick={() => confirmDelete(c.id)}
+												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
+												title="Delete"><Icon name="lucide:trash-2" class="size-4" /></button
+											>
+										</div>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				<Pagination controls={cCtrl} />
+			</div>
 		{:else}
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 				{#each cCtrl.pagedList as c (c.id)}
@@ -837,7 +1189,7 @@
 					</div>
 				{/each}
 			</div>
-			<Pagination controls={cCtrl} />
+			<Pagination controls={cCtrl} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
 		{/if}
 	{/if}
 </div>
