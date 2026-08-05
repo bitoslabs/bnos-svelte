@@ -186,6 +186,7 @@
 	<div class="app-shell flex min-h-screen">
 		{#if !isPosRoute}
 			<aside
+				data-collapsed={sidebarState.collapsed || undefined}
 				class="app-sidebar-shell app-chrome sticky top-0 hidden h-screen {sidebarState.collapsed
 					? 'w-16'
 					: 'w-64'} shrink-0 border-r border-[var(--glass-border)] transition-[width] duration-200 ease-in-out lg:flex lg:flex-col"

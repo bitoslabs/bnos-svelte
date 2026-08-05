@@ -153,9 +153,9 @@
 
 <svelte:head><title>BNOS · Dashboard</title></svelte:head>
 
-<div class="space-y-6 pt-1 pb-12">
+<div class="dashboard-page dashboard-stack pt-1 pb-12">
 	<!-- Welcome header -->
-	<header class="flex flex-wrap items-end justify-between gap-3">
+	<header class="dashboard-header flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<p class="text-[12px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
 				{greeting()}
@@ -168,7 +168,7 @@
 			</p>
 		</div>
 		<div
-			class="flex items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-4 py-2"
+			class="dashboard-clock flex items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-4 py-2"
 		>
 			<Icon name="lucide:clock" class="size-4 text-[var(--ui-text-dimmed)]" />
 			<span class="font-mono text-[14px] font-semibold tabular-nums">{clock}</span>
@@ -176,13 +176,13 @@
 	</header>
 
 	<!-- Quick actions -->
-	<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+	<div class="dashboard-quick-actions grid grid-cols-2 lg:grid-cols-4">
 			{#each quickActions as action (action.label)}
 				<a
 					href={action.to}
-					class="surface-card group flex items-center gap-3 p-4 transition-colors hover:border-[var(--ui-border-accented)]"
+					class="dashboard-quick-action surface-card group flex items-center transition-colors hover:border-[var(--ui-border-accented)]"
 				>
-				<div class="grid size-10 shrink-0 place-items-center rounded-xl {action.bg} {action.color}">
+				<div class="dashboard-quick-action-icon grid size-10 shrink-0 place-items-center rounded-xl {action.bg} {action.color}">
 					<Icon name={action.icon} class="size-5" />
 				</div>
 				<div class="min-w-0">
@@ -194,11 +194,11 @@
 	</div>
 
 	<!-- Main grid -->
-	<div class="grid grid-cols-1 gap-5 xl:grid-cols-12">
+	<div class="dashboard-grid grid grid-cols-1 xl:grid-cols-12">
 		<!-- LEFT COLUMN -->
-		<div class="flex flex-col gap-5 xl:col-span-5">
+		<div class="dashboard-column flex flex-col xl:col-span-5">
 			<!-- Today's sales -->
-			<div class="accent-bar surface-card p-5" style="--accent: var(--ui-color-primary-500);">
+			<div class="dashboard-card accent-bar surface-card" style="--accent: var(--ui-color-primary-500);">
 				<div class="flex items-start justify-between">
 					<div>
 						<div class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Today's sales</div>
@@ -222,13 +222,13 @@
 					{/if}
 				</div>
 				<div class="mt-4 grid grid-cols-2 gap-3">
-					<div class="rounded-lg bg-[var(--ui-bg-muted)] p-3">
+					<div class="dashboard-stat rounded-lg bg-[var(--ui-bg-muted)]">
 						<div class="text-[11px] text-[var(--ui-text-dimmed)]">Orders</div>
 						<div class="font-display text-lg font-bold tabular-nums">
 							{formatInt(m.todaysCount)}
 						</div>
 					</div>
-					<div class="rounded-lg bg-[var(--ui-bg-muted)] p-3">
+					<div class="dashboard-stat rounded-lg bg-[var(--ui-bg-muted)]">
 						<div class="text-[11px] text-[var(--ui-text-dimmed)]">Avg. order</div>
 						<div class="font-display text-lg font-bold tabular-nums">
 							{formatMoney(m.avgOrder, currency)}
@@ -238,7 +238,7 @@
 			</div>
 
 			<!-- Hourly sales -->
-			<div class="surface-card p-5">
+			<div class="dashboard-card surface-card">
 				<div class="mb-4 flex items-center justify-between">
 					<h3 class="font-display text-[15px] font-semibold tracking-tight">Hourly sales</h3>
 					<span class="text-[11px] text-[var(--ui-text-dimmed)]">today</span>
@@ -268,7 +268,7 @@
 			</div>
 
 			<!-- Payment breakdown -->
-			<div class="surface-card p-5">
+			<div class="dashboard-card surface-card">
 				<h3 class="mb-3 font-display text-[15px] font-semibold tracking-tight">Payment methods</h3>
 				{#if payments.length}
 					<div class="space-y-2.5">
@@ -304,7 +304,7 @@
 			</div>
 
 			<!-- Order types + top products -->
-			<div class="surface-card p-5">
+			<div class="dashboard-card surface-card">
 				<h3 class="mb-3 font-display text-[15px] font-semibold tracking-tight">Order types</h3>
 				{#if segments.length}
 					<div class="mb-4 flex flex-wrap gap-2">
@@ -347,24 +347,24 @@
 		</div>
 
 		<!-- RIGHT COLUMN -->
-		<div class="flex flex-col gap-5 xl:col-span-7">
+		<div class="dashboard-column flex flex-col xl:col-span-7">
 			<!-- Metrics row -->
-			<div class="grid grid-cols-3 gap-3">
-				<div class="metric-card p-4">
+			<div class="dashboard-metrics grid grid-cols-3">
+				<div class="metric-card dashboard-metric-card">
 					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Today</div>
 					<div class="mt-1 font-display text-lg font-bold tabular-nums">
 						{formatMoney(m.todaysTotal, currency)}
 					</div>
 					<div class="text-[11px] text-[var(--ui-text-muted)]">{m.todaysCount} orders</div>
 				</div>
-				<div class="metric-card p-4">
+				<div class="metric-card dashboard-metric-card">
 					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">This week</div>
 					<div class="mt-1 font-display text-lg font-bold tabular-nums">
 						{formatMoney(m.weekTotal, currency)}
 					</div>
 					<div class="text-[11px] text-[var(--ui-text-muted)]">{m.weekCount} orders</div>
 				</div>
-				<div class="metric-card p-4">
+				<div class="metric-card dashboard-metric-card">
 					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">This month</div>
 					<div class="mt-1 font-display text-lg font-bold tabular-nums">
 						{formatMoney(m.monthTotal, currency)}
@@ -374,7 +374,7 @@
 			</div>
 
 			<!-- Sales chart (7 days) -->
-			<div class="surface-card p-5">
+			<div class="dashboard-card surface-card">
 				<div class="mb-4 flex items-center justify-between">
 					<h3 class="font-display text-[15px] font-semibold tracking-tight">Sales · last 7 days</h3>
 					<span
@@ -411,7 +411,7 @@
 			<!-- Recent orders -->
 			<div class="surface-card overflow-hidden">
 				<div
-					class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-5 py-3.5"
+					class="dashboard-card-header flex items-center justify-between border-b border-[var(--ui-border-muted)]"
 				>
 					<h3 class="font-display text-[15px] font-semibold tracking-tight">Recent orders</h3>
 					<a
@@ -421,7 +421,7 @@
 					>
 				</div>
 				{#if recent.length === 0}
-					<div class="p-5">
+					<div class="dashboard-card-body">
 						<EmptyState
 							icon="lucide:receipt-text"
 							title="No orders yet"
@@ -439,7 +439,7 @@
 						{#each recent as o (o.id)}
 							<a
 								href={resolve(`/orders/${o.id}`)}
-								class="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-[var(--ui-bg-accented)]"
+								class="dashboard-order-row flex items-center gap-3 transition-colors hover:bg-[var(--ui-bg-accented)]"
 							>
 								<div
 									class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400"

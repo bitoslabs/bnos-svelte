@@ -121,7 +121,7 @@
 
 <svelte:head><title>BNOS · Settings</title></svelte:head>
 
-<div class="space-y-5">
+<div class="settings-home settings-home-stack">
 	<PageHeader
 		icon="lucide:settings"
 		title="Settings"
@@ -132,18 +132,18 @@
 	<SettingsNav class="lg:hidden" />
 
 	<!-- Organization (read-only — owned by Workspace) -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
-		<div class="flex items-center gap-2 px-5 py-3">
+	<section class="settings-home-card surface-card divide-y divide-[var(--ui-border-muted)]">
+		<div class="settings-home-card-header flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:building-2" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">Organization</h2>
 			<span class="ml-auto text-[10px] font-medium text-[var(--ui-text-dimmed)]"
 				>GLO · kind 30078</span
 			>
 		</div>
-		<div class="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-2">
+		<div class="settings-home-org-grid grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-2">
 			{#each orgRows as row (row.label)}
 				<div
-					class="flex items-center gap-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3.5 py-2.5"
+					class="settings-home-org-item flex items-center gap-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3.5 py-2.5"
 				>
 					<Icon name={row.icon} class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 					<div class="min-w-0">
@@ -157,7 +157,7 @@
 				</div>
 			{/each}
 		</div>
-		<div class="flex flex-wrap items-center gap-2 px-5 py-3">
+		<div class="settings-home-card-footer flex flex-wrap items-center gap-2 px-5 py-3">
 			{#if tenant.restaurantEnabled}
 				<Badge color="info"
 					><Icon name="lucide:utensils" class="mr-1 size-3" />Restaurant module on</Badge
@@ -182,8 +182,8 @@
 	</section>
 
 	<!-- Identity -->
-	<section class="surface-card p-5">
-		<div class="mb-4 flex items-center gap-3">
+	<section class="settings-home-card settings-home-panel surface-card p-5">
+		<div class="settings-home-panel-header mb-4 flex items-center gap-3">
 			<Icon name="lucide:fingerprint" class="size-5 text-primary-500" />
 			<div class="min-w-0 flex-1">
 				<h2 class="font-display text-[15px] font-semibold tracking-tight">Nostr identity</h2>
@@ -214,7 +214,7 @@
 			</Menu>
 		</div>
 		<div
-			class="flex items-center justify-between gap-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-4 py-3"
+			class="settings-home-identity-box flex items-center justify-between gap-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-4 py-3"
 		>
 			<div class="min-w-0">
 				<div class="truncate font-mono text-[13px] font-semibold">
@@ -229,8 +229,8 @@
 	</section>
 
 	<!-- Security / encryption -->
-	<section class="surface-card p-5">
-		<div class="mb-4 flex items-center gap-3">
+	<section class="settings-home-card settings-home-panel surface-card p-5">
+		<div class="settings-home-panel-header mb-4 flex items-center gap-3">
 			<Icon
 				name="lucide:shield-check"
 				class="size-5 {encryptionOn ? 'text-emerald-500' : 'text-[var(--ui-text-dimmed)]'}"

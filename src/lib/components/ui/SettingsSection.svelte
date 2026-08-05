@@ -33,13 +33,13 @@
 
 <section
 	class={cn(
-		'surface-card divide-y divide-[var(--ui-border-muted)]',
+		'surface-card settings-section divide-y divide-[var(--ui-border-muted)]',
 		danger && 'danger-surface',
 		cls
 	)}
 >
 	{#if title || actions}
-		<div class="flex items-center gap-2 px-5 py-3">
+		<div class="settings-section-header flex items-center gap-2 px-5 py-3">
 			{#if icon}
 				<Icon
 					name={icon}

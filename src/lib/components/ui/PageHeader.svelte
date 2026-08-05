@@ -36,10 +36,10 @@
 	};
 </script>
 
-<header class={cn('flex items-center gap-3', cls)}>
+<header class={cn('page-header flex items-center gap-3', cls)}>
 	{#if icon}
 		<div
-			class="grid size-10 shrink-0 place-items-center rounded-xl {accentClasses[accent]}"
+			class="page-header-icon grid size-10 shrink-0 place-items-center rounded-xl {accentClasses[accent]}"
 			aria-hidden="true"
 		>
 			<Icon name={icon} class="size-5" />
