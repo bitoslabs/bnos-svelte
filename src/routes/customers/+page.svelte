@@ -18,7 +18,7 @@
 	import { newRecordId } from '$lib/utils/record-id';
 	import { tenant } from '$nostr/tenant.svelte';
 	import type { GloCustomer, GloObject } from '@bitos/bnos-core/glo';
-	import { TYPE, type CustomerSegment } from '$lib/domain';
+	import { TYPE } from '$lib/domain';
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 
 	type CustomerRow = GloObject<GloCustomer, 'crm.customer'>;
@@ -305,7 +305,7 @@
 				</div>
 			{/each}
 		</div>
-		<Pagination {controls} class="mt-3 rounded-xl border border-[var(--ui-border)] shadow-sm" />
+		<Pagination {controls} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
 	{:else}
 		<div class="data-panel">
 			<div class="overflow-x-auto">

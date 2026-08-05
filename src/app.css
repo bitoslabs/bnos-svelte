@@ -506,7 +506,9 @@
 		-webkit-backdrop-filter: saturate(180%) blur(20px);
 	}
 	.app-main {
-		--app-main-x: 1.25rem;
+		/* Page gutter — tracks --spacing so the full-bleed .data-panel negative
+	   margins stay perfectly aligned with the page padding in every density. */
+		--app-main-x: calc(var(--spacing) * 5);
 	}
 	.surface-card {
 		background-color: var(--surface-bg);
@@ -518,6 +520,63 @@
 		background-color: var(--surface-bg-soft);
 		border: 1px solid var(--ui-border-muted);
 		border-radius: var(--ui-radius);
+	}
+	.settings-nav > * + * {
+		margin-top: 1.25rem;
+	}
+	.settings-home-stack > * + * {
+		margin-top: 1.25rem;
+	}
+	.settings-home-card-header {
+		padding: 0.75rem 1.25rem;
+	}
+	.settings-home-org-grid {
+		padding: 1rem 1.25rem;
+	}
+	.settings-home-org-item {
+		padding: 0.625rem 0.875rem;
+	}
+	.settings-home-card-footer {
+		padding: 0.75rem 1.25rem;
+	}
+	.settings-home-panel {
+		padding: 1.25rem;
+	}
+	.settings-home-identity-box {
+		padding: 0.75rem 1rem;
+	}
+	.dashboard-stack > * + * {
+		margin-top: 1.5rem;
+	}
+	.dashboard-quick-actions {
+		gap: 0.75rem;
+	}
+	.dashboard-quick-action {
+		gap: 0.75rem;
+		padding: 1rem;
+	}
+	.dashboard-grid,
+	.dashboard-column {
+		gap: 1.25rem;
+	}
+	.dashboard-card {
+		padding: 1.25rem;
+	}
+	.dashboard-stat,
+	.dashboard-metric-card {
+		padding: 1rem;
+	}
+	.dashboard-metrics {
+		gap: 0.75rem;
+	}
+	.dashboard-card-header {
+		padding: 0.875rem 1.25rem;
+	}
+	.dashboard-card-body {
+		padding: 1.25rem;
+	}
+	.dashboard-order-row {
+		padding: 0.75rem 1.25rem;
 	}
 	.data-panel {
 		margin-right: calc(var(--app-main-x) * -1);
@@ -625,18 +684,21 @@
 		outline: none;
 	}
 
-	html[data-density='compact'] .app-topbar,
-	html[data-density='compact'] .app-sidebar-brand {
-		height: 3.5rem;
+	/* ── Global density (the actual engine) ─────────────────────────────────
+	   Tailwind v4 derives *every* spacing utility — p-*, m-*, gap-*, space-y-*,
+	   px-*, py-*, size-*, h-*, w-* — from a single --spacing token (default
+	   0.25rem, declared in @theme). Scaling it under [data-density='compact']
+	   propagates the setting to ALL pages & components at once, not just the
+	   dashboard: non-dashboard pages are built from utilities (space-y-4, gap-3,
+	   p-4, …) rather than the hand-tuned .dashboard-* / .surface-card classes,
+	   so the per-class overrides below could never reach them.
+	   Font sizes are intentionally left alone (legibility); only the spacing
+	   rhythm tightens. Layered here in @layer components so it cleanly beats
+	   the @theme default. */
+	html[data-density='compact'] {
+		--spacing: 0.2rem; /* 0.25rem → 80%: tighter gutters, padding & gaps app-wide */
 	}
-	html[data-density='compact'] .app-sidebar-shell {
-		width: 14.5rem;
-	}
-	html[data-density='compact'] .app-main {
-		padding-top: 0.75rem;
-		padding-left: 1.25rem;
-		padding-right: 1.25rem;
-	}
+
 	html[data-density='compact'] .app-nav {
 		padding: 0.375rem 0.625rem;
 	}
@@ -651,6 +713,30 @@
 		padding: 0.375rem 0.625rem;
 		font-size: 0.8125rem;
 	}
+	html[data-density='compact'] .sidebar-account-card {
+		width: 15rem;
+	}
+	html[data-density='compact'] .sidebar-account-summary {
+		gap: 0.5rem;
+		padding: 0.375rem 0.5rem;
+	}
+	html[data-density='compact'] .sidebar-nav-group-wrap {
+		margin-bottom: 0.125rem;
+	}
+	html[data-density='compact'] .sidebar-nav-parent-link {
+		gap: 0.625rem;
+		padding: 0.375rem 0.625rem;
+		font-size: 0.8125rem;
+	}
+	html[data-density='compact'] .sidebar-nav-child {
+		gap: 0.5rem;
+		padding: 0.3125rem 0.5rem;
+		font-size: 0.75rem;
+	}
+	html[data-density='compact'] .sidebar-nav-group {
+		margin-left: 1.1rem;
+		padding-left: 0.5rem;
+	}
 	html[data-density='compact'] .app-tenant-pill {
 		margin-left: 0.625rem;
 		margin-right: 0.625rem;
@@ -661,6 +747,130 @@
 	}
 	html[data-density='compact'] .surface-card {
 		border-radius: var(--ui-radius);
+	}
+	html[data-density='compact'] .ui-card {
+		padding: 1rem;
+	}
+	html[data-density='compact'] .ui-card-header {
+		margin-bottom: 0.75rem;
+		gap: 0.75rem;
+	}
+	html[data-density='compact'] .ui-card-header-main {
+		gap: 0.625rem;
+	}
+	html[data-density='compact'] .ui-card-icon {
+		width: 2rem;
+		height: 2rem;
+	}
+	html[data-density='compact'] .page-header {
+		gap: 0.75rem;
+	}
+	html[data-density='compact'] .page-header-icon {
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: calc(var(--ui-radius) + 0.125rem);
+	}
+	html[data-density='compact'] .settings-section-header {
+		padding-top: 0.625rem;
+		padding-bottom: 0.625rem;
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
+	html[data-density='compact'] .setting-row {
+		padding-top: 0.75rem;
+		padding-bottom: 0.75rem;
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
+	html[data-density='compact'] .settings-layout-sidebar {
+		top: 4.5rem;
+		max-height: calc(100vh - 5.25rem);
+	}
+	html[data-density='compact'] .settings-layout-back {
+		margin-bottom: 0.75rem;
+	}
+	html[data-density='compact'] .settings-nav > * + * {
+		margin-top: 1rem;
+	}
+	html[data-density='compact'] .settings-nav-label {
+		padding-bottom: 0.25rem;
+	}
+	html[data-density='compact'] .settings-nav-link {
+		gap: 0.625rem;
+		padding: 0.625rem 0.875rem;
+		font-size: 0.8125rem;
+	}
+	html[data-density='compact'] .settings-home-stack > * + * {
+		margin-top: 1rem;
+	}
+	html[data-density='compact'] .settings-home-card-header {
+		padding: 0.625rem 1rem;
+	}
+	html[data-density='compact'] .settings-home-org-grid {
+		padding: 0.875rem 1rem;
+		gap: 0.625rem;
+	}
+	html[data-density='compact'] .settings-home-org-item {
+		gap: 0.625rem;
+		padding: 0.5rem 0.75rem;
+	}
+	html[data-density='compact'] .settings-home-card-footer {
+		padding: 0.625rem 1rem;
+	}
+	html[data-density='compact'] .settings-home-panel {
+		padding: 1rem;
+	}
+	html[data-density='compact'] .settings-home-panel-header {
+		margin-bottom: 0.75rem;
+		gap: 0.625rem;
+	}
+	html[data-density='compact'] .settings-home-identity-box {
+		padding: 0.625rem 0.875rem;
+	}
+	html[data-density='compact'] .dashboard-page {
+		padding-bottom: 2rem;
+	}
+	html[data-density='compact'] .dashboard-stack > * + * {
+		margin-top: 1.25rem;
+	}
+	html[data-density='compact'] .dashboard-header {
+		gap: 0.75rem;
+	}
+	html[data-density='compact'] .dashboard-clock {
+		padding: 0.375rem 0.75rem;
+	}
+	html[data-density='compact'] .dashboard-quick-actions,
+	html[data-density='compact'] .dashboard-metrics {
+		gap: 0.625rem;
+	}
+	html[data-density='compact'] .dashboard-quick-action {
+		gap: 0.625rem;
+		padding: 0.75rem;
+	}
+	html[data-density='compact'] .dashboard-quick-action-icon {
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: calc(var(--ui-radius) + 0.125rem);
+	}
+	html[data-density='compact'] .dashboard-grid,
+	html[data-density='compact'] .dashboard-column {
+		gap: 1rem;
+	}
+	html[data-density='compact'] .dashboard-card {
+		padding: 1rem;
+	}
+	html[data-density='compact'] .dashboard-stat,
+	html[data-density='compact'] .dashboard-metric-card {
+		padding: 0.75rem;
+	}
+	html[data-density='compact'] .dashboard-card-header {
+		padding: 0.875rem 1rem;
+	}
+	html[data-density='compact'] .dashboard-card-body {
+		padding: 1rem;
+	}
+	html[data-density='compact'] .dashboard-order-row {
+		padding: 0.75rem 1rem;
 	}
 	html[data-density='compact'] .table-surface th,
 	html[data-density='compact'] .table-surface td {
@@ -754,6 +964,26 @@
 	.no-scrollbar {
 		-ms-overflow-style: none;
 		scrollbar-width: none;
+	}
+
+	/* ── Density: structural chrome ─────────────────────────────────────────
+	   Pins the app-shell dimensions in compact so the sidebar rail and top bar
+	   match the design intent exactly, rather than shrinking uncontrolled via
+	   the global --spacing scale. These live in @layer utilities on purpose:
+	   the sidebar/topbar sizes come from w-64 / w-16 / h-16 utilities, so an
+	   override placed in @layer components is silently shadowed (utilities >
+	   components in the cascade). Here, same layer + higher specificity
+	   (html[data-density] …) wins. The expanded desktop sidebar is pinned only
+	   at the lg breakpoint so the mobile drawer (lg:hidden) is unaffected, and
+	   the collapsed icon-rail (w-16) is left to scale naturally. */
+	html[data-density='compact'] .app-topbar,
+	html[data-density='compact'] .app-sidebar-brand {
+		height: 3.5rem;
+	}
+	@media (min-width: 1024px) {
+		html[data-density='compact'] .app-sidebar-shell:not([data-collapsed]) {
+			width: 14.5rem;
+		}
 	}
 }
 

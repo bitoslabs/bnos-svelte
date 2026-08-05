@@ -17,10 +17,10 @@
 	import Pagination from '$lib/components/list/Pagination.svelte';
 	import RowActions, { type RowAction } from '$lib/components/list/RowActions.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
-	import { glo } from '$nostr/store.svelte';
-	import { tenant } from '$nostr/tenant.svelte';
+	import { glo } from '$nostr/store.svelte';	import { tenant } from '$nostr/tenant.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { grantKeyToPubkey, canDistributeKey } from '$lib/crypto/key-grants-manage';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { initialsFrom, truncateNpub } from '$lib/utils/format';
 	import { hashPin } from '$lib/utils/pin';
@@ -378,6 +378,14 @@
 					});
 				}
 				toast.success('Staff updated', form.name.trim());
+				// If encryption is on and this device is the owner/admin, share the org
+				// AES key with this staff member so they can decrypt encrypted records.
+				if (hexPk && canDistributeKey()) {
+					grantKeyToPubkey(hexPk).then((r) => {
+						if (r.ok) toast.success('Encrypted key shared', `${form.name} can now sync securely.`);
+						else if (r.error) toast.warning('Could not share key', r.error);
+					});
+				}
 			} else {
 				const staffId = newRecordId('staff');
 				await glo.upsert<Staff>(TYPE.staff, payload, { id: staffId });
@@ -392,6 +400,12 @@
 					});
 				}
 				toast.success('Staff added', form.name.trim());
+				if (hexPk && canDistributeKey()) {
+					grantKeyToPubkey(hexPk).then((r) => {
+						if (r.ok) toast.success('Encrypted key shared', `${form.name} can now sync securely.`);
+						else if (r.error) toast.warning('Could not share key', r.error);
+					});
+				}
 			}
 			open = false;
 		} catch (e) {
@@ -638,7 +652,7 @@
 				</div>
 			{/each}
 		</div>
-		<Pagination {controls} class="mt-3 rounded-xl border border-[var(--ui-border)] shadow-sm" />
+		<Pagination {controls} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
 	{:else}
 		<div class="data-panel">
 			<table class="table-surface w-full text-left">

@@ -10,6 +10,8 @@
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 	import Pagination from '$lib/components/list/Pagination.svelte';
+	import ListToolbar from '$lib/components/list/ListToolbar.svelte';
+	import SortableTh from '$lib/components/list/SortableTh.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
@@ -349,17 +351,152 @@
 	</div>
 
 	{#if tab === 'plans'}
-		{#if plans.length === 0}<EmptyState
+		{#if plans.length || planCtrl.search}
+			<ListToolbar
+				bind:search={planCtrl.search}
+				bind:sortKey={planCtrl.sortKey}
+				bind:sortDir={planCtrl.sortDir}
+				bind:viewMode={planCtrl.viewMode}
+				sortItems={planCtrl.sortItems}
+				searchPlaceholder="Search plan name…"
+				applySort={planCtrl.applySort}
+				setViewMode={planCtrl.setViewMode}
+			/>
+		{/if}
+		{#if planCtrl.list.length === 0}
+			<EmptyState
 				icon="lucide:layers"
-				title="No membership plans"
-				description="Create tiers for gyms, clubs or VIP customers."
-				>{#snippet actions()}<Button
-						color="primary"
-						size="sm"
-						icon="lucide:plus"
-						onclick={() => openCreate('plans')}>New plan</Button
-					>{/snippet}</EmptyState
+				title={planCtrl.search ? 'No matching plans' : 'No membership plans'}
+				description={planCtrl.search
+					? 'Try a different search.'
+					: 'Create tiers for gyms, clubs or VIP customers.'}
 			>
+				{#snippet actions()}
+					{#if !planCtrl.search}
+						<Button color="primary" size="sm" icon="lucide:plus" onclick={() => openCreate('plans')}
+							>New plan</Button
+						>
+					{/if}
+				{/snippet}
+			</EmptyState>
+		{:else if planCtrl.viewMode === 'table'}
+			<div class="data-panel">
+				<div class="overflow-x-auto">
+					<table class="table-surface w-full text-left">
+						<thead>
+							<tr>
+								<SortableTh
+									column="name"
+									active={planCtrl.sortKey === 'name'}
+									direction={planCtrl.sortDir}
+									applySort={planCtrl.applySort}>Plan</SortableTh
+								>
+								<SortableTh
+									column="price"
+									active={planCtrl.sortKey === 'price'}
+									direction={planCtrl.sortDir}
+									align="right"
+									applySort={planCtrl.applySort}>Price</SortableTh
+								>
+								<th
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Period</th
+								>
+								<th
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Duration</th
+								>
+								<th
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Mode</th
+								>
+								<th
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Status</th
+								>
+								<th class="w-10 px-5 py-2.5"></th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+							{#each planCtrl.pagedList as p (p.id)}
+								{@const pActive = p.data.active ?? p.data.status === 'active'}
+								<tr class="hover:bg-[var(--ui-bg-accented)]/40">
+									<td class="px-5 py-3">
+										<div class="flex items-center gap-3">
+											<div
+												class="grid size-8 shrink-0 place-items-center rounded-lg"
+												style="background-color:{(p.data.color ?? '#6366F1') + '1a'}; color:{p.data
+													.color ?? '#6366F1'}"
+											>
+												<Icon
+													name={p.data.mode === 'gym' ? 'lucide:dumbbell' : 'lucide:crown'}
+													class="size-4"
+												/>
+											</div>
+											<div class="min-w-0">
+												<div class="font-semibold">{p.data.name}</div>
+												{#if p.data.description}
+													<div class="line-clamp-1 text-[11px] text-[var(--ui-text-dimmed)]">
+														{p.data.description}
+													</div>
+												{/if}
+											</div>
+										</div>
+									</td>
+									<td class="px-5 py-3 text-right font-semibold tabular-nums">
+										{formatMoney(p.data.price, p.data.currency || currency)}
+									</td>
+									<td class="px-5 py-3 text-[var(--ui-text-muted)] capitalize">{p.data.period}</td>
+									<td class="px-5 py-3 text-[var(--ui-text-muted)] tabular-nums">
+										{p.data.durationDays ?? '∞'}d
+									</td>
+									<td class="px-5 py-3"
+										><Badge color={modeBadgeColor(p.data.mode)}>{p.data.mode ?? 'normal'}</Badge
+										></td
+									>
+									<td class="px-5 py-3"
+										><Badge color={pActive ? 'success' : 'neutral'}
+											>{pActive ? 'active' : 'inactive'}</Badge
+										></td
+									>
+									<td class="px-5 py-3">
+										<div class="flex items-center justify-end gap-1">
+											<Button
+												color="neutral"
+												variant="ghost"
+												size="icon-sm"
+												icon="lucide:code"
+												onclick={() => {
+													rawItem = glo.get(TYPE.membership, p.id);
+													rawOpen = true;
+												}}
+											/>
+											<Button
+												color="neutral"
+												variant="ghost"
+												size="icon-sm"
+												icon="lucide:pencil"
+												onclick={() => openEditPlan(p)}
+											/>
+											<Button
+												color="neutral"
+												variant="ghost"
+												size="icon-sm"
+												icon="lucide:trash-2"
+												onclick={() => {
+													glo.remove(TYPE.membership, p.id);
+													toast.info('Removed');
+												}}
+											/>
+										</div>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				<Pagination controls={planCtrl} />
+			</div>
 		{:else}
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 				{#each planCtrl.pagedList as p (p.id)}
@@ -470,124 +607,284 @@
 					</div>
 				{/each}
 			</div>
-			<Pagination controls={planCtrl} />
+			<Pagination controls={planCtrl} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
 		{/if}
 	{:else if tab === 'subscriptions'}
-		{#if subs.length === 0}<EmptyState
+		{#if subs.length || subCtrl.search}
+			<ListToolbar
+				bind:search={subCtrl.search}
+				bind:sortKey={subCtrl.sortKey}
+				bind:sortDir={subCtrl.sortDir}
+				bind:viewMode={subCtrl.viewMode}
+				sortItems={subCtrl.sortItems}
+				searchPlaceholder="Search customer…"
+				applySort={subCtrl.applySort}
+				setViewMode={subCtrl.setViewMode}
+			/>
+		{/if}
+		{#if subCtrl.list.length === 0}
+			<EmptyState
 				icon="lucide:badge-check"
-				title="No subscriptions"
-				description="Enroll customers into a membership plan."
-				>{#snippet actions()}<Button
-						color="primary"
-						size="sm"
-						icon="lucide:plus"
-						onclick={() => openCreate('subscriptions')}>New subscription</Button
-					>{/snippet}</EmptyState
+				title={subCtrl.search ? 'No matching subscriptions' : 'No subscriptions'}
+				description={subCtrl.search
+					? 'Try a different search.'
+					: 'Enroll customers into a membership plan.'}
 			>
+				{#snippet actions()}
+					{#if !subCtrl.search}
+						<Button
+							color="primary"
+							size="sm"
+							icon="lucide:plus"
+							onclick={() => openCreate('subscriptions')}>New subscription</Button
+						>
+					{/if}
+				{/snippet}
+			</EmptyState>
+		{:else if subCtrl.viewMode === 'grid'}
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+				{#each subCtrl.pagedList as s (s.id)}
+					<div class="metric-card p-4">
+						<div class="flex items-start justify-between gap-2">
+							<div class="min-w-0">
+								<div class="truncate font-semibold">{s.data.customerName ?? '—'}</div>
+								<div class="truncate text-[12px] text-[var(--ui-text-muted)]">
+									{s.data.membershipName ?? '—'}
+								</div>
+							</div>
+							<Badge color={statusColor(s.data.status)}>{s.data.status}</Badge>
+						</div>
+						<div class="mt-2 flex items-center gap-1 text-[11px] text-[var(--ui-text-dimmed)]">
+							<Icon name="lucide:calendar-clock" class="size-3.5" />
+							{s.data.endsAt ? relativeTime(s.data.endsAt) : 'No end date'}
+						</div>
+						<div
+							class="mt-3 flex items-center justify-end gap-1 border-t border-[var(--ui-border-muted)] pt-2.5"
+						>
+							<Button
+								color="neutral"
+								variant="ghost"
+								size="icon-sm"
+								icon="lucide:code"
+								onclick={() => {
+									rawItem = glo.get(TYPE.membershipSubscription, s.id);
+									rawOpen = true;
+								}}
+							/>
+							<Button
+								color="neutral"
+								variant="ghost"
+								size="icon-sm"
+								icon="lucide:pencil"
+								onclick={() => openEditSub(s)}
+							/>
+							<Button
+								color="neutral"
+								variant="ghost"
+								size="icon-sm"
+								icon="lucide:trash-2"
+								onclick={() => {
+									glo.remove(TYPE.membershipSubscription, s.id);
+									toast.info('Removed');
+								}}
+							/>
+						</div>
+					</div>
+				{/each}
+			</div>
+			<Pagination controls={subCtrl} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
 		{:else}
 			<div class="data-panel">
-				<table class="table-surface w-full text-left">
-					<thead
-						><tr
-							><th class="px-5 py-2.5">Customer</th><th class="px-5 py-2.5">Plan</th><th
-								class="px-5 py-2.5">Status</th
-							><th class="px-5 py-2.5 text-right">Ends</th><th class="px-5 py-2.5 text-right"
-								>Actions</th
-							></tr
-						></thead
-					>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
-						{#each subCtrl.pagedList as s (s.id)}<tr class="hover:bg-[var(--ui-bg-accented)]/40">
-								<td class="px-5 py-3 font-semibold">{s.data.customerName ?? '—'}</td>
-								<td class="px-5 py-3 text-[var(--ui-text-muted)]">{s.data.membershipName ?? '—'}</td
+				<div class="overflow-x-auto">
+					<table class="table-surface w-full text-left">
+						<thead>
+							<tr>
+								<SortableTh
+									column="customer"
+									active={subCtrl.sortKey === 'customer'}
+									direction={subCtrl.sortDir}
+									applySort={subCtrl.applySort}>Customer</SortableTh
 								>
-								<td class="px-5 py-3"
-									><Badge color={statusColor(s.data.status)}>{s.data.status}</Badge></td
+								<th
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Plan</th
 								>
-								<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
-									>{s.data.endsAt ? relativeTime(s.data.endsAt) : '—'}</td
+								<SortableTh
+									column="status"
+									active={subCtrl.sortKey === 'status'}
+									direction={subCtrl.sortDir}
+									applySort={subCtrl.applySort}>Status</SortableTh
 								>
-								<td class="px-5 py-3">
-									<div class="flex items-center justify-end gap-1">
-										<Button
-											color="neutral"
-											variant="ghost"
-											size="icon-sm"
-											icon="lucide:code"
-											onclick={() => {
-												rawItem = glo.get(TYPE.membershipSubscription, s.id);
-												rawOpen = true;
-											}}
-										/>
-										<Button
-											color="neutral"
-											variant="ghost"
-											size="icon-sm"
-											icon="lucide:pencil"
-											onclick={() => openEditSub(s)}
-										/>
+								<th
+									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Ends</th
+								>
+								<th
+									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Actions</th
+								>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+							{#each subCtrl.pagedList as s (s.id)}
+								<tr class="hover:bg-[var(--ui-bg-accented)]/40">
+									<td class="px-5 py-3 font-semibold">{s.data.customerName ?? '—'}</td>
+									<td class="px-5 py-3 text-[var(--ui-text-muted)]"
+										>{s.data.membershipName ?? '—'}</td
+									>
+									<td class="px-5 py-3"
+										><Badge color={statusColor(s.data.status)}>{s.data.status}</Badge></td
+									>
+									<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
+										>{s.data.endsAt ? relativeTime(s.data.endsAt) : '—'}</td
+									>
+									<td class="px-5 py-3">
+										<div class="flex items-center justify-end gap-1">
+											<Button
+												color="neutral"
+												variant="ghost"
+												size="icon-sm"
+												icon="lucide:code"
+												onclick={() => {
+													rawItem = glo.get(TYPE.membershipSubscription, s.id);
+													rawOpen = true;
+												}}
+											/>
+											<Button
+												color="neutral"
+												variant="ghost"
+												size="icon-sm"
+												icon="lucide:pencil"
+												onclick={() => openEditSub(s)}
+											/>
+											<Button
+												color="neutral"
+												variant="ghost"
+												size="icon-sm"
+												icon="lucide:trash-2"
+												onclick={() => {
+													glo.remove(TYPE.membershipSubscription, s.id);
+													toast.info('Removed');
+												}}
+											/>
+										</div>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				<Pagination controls={subCtrl} />
+			</div>
+		{/if}
+	{:else}
+		{#if checkins.length || ciCtrl.search}
+			<ListToolbar
+				bind:search={ciCtrl.search}
+				bind:sortKey={ciCtrl.sortKey}
+				bind:sortDir={ciCtrl.sortDir}
+				bind:viewMode={ciCtrl.viewMode}
+				sortItems={ciCtrl.sortItems}
+				searchPlaceholder="Search customer…"
+				applySort={ciCtrl.applySort}
+				setViewMode={ciCtrl.setViewMode}
+			/>
+		{/if}
+		{#if ciCtrl.list.length === 0}
+			<EmptyState
+				icon="lucide:door-open"
+				title={ciCtrl.search ? 'No matching check-ins' : 'No check-ins'}
+				description={ciCtrl.search ? 'Try a different search.' : 'Record gym/club attendance.'}
+			>
+				{#snippet actions()}
+					{#if !ciCtrl.search}
+						<Button
+							color="primary"
+							size="sm"
+							icon="lucide:plus"
+							onclick={() => openCreate('checkins')}>New check-in</Button
+						>
+					{/if}
+				{/snippet}
+			</EmptyState>
+		{:else if ciCtrl.viewMode === 'grid'}
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+				{#each ciCtrl.pagedList as c (c.id)}
+					<div class="metric-card flex items-center gap-3 p-4">
+						<div
+							class="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]"
+						>
+							<Icon
+								name={c.data.result === 'denied'
+									? 'lucide:x'
+									: c.data.result === 'override'
+										? 'lucide:shield-check'
+										: 'lucide:check'}
+								class="size-5"
+							/>
+						</div>
+						<div class="min-w-0 flex-1">
+							<div class="truncate font-semibold">{c.data.customerName ?? '—'}</div>
+							<div class="text-[11px] text-[var(--ui-text-dimmed)]">
+								{relativeTime(c.data.occurredAt)}
+							</div>
+						</div>
+						<Badge color={statusColor(c.data.result)}>{c.data.result}</Badge>
+					</div>
+				{/each}
+			</div>
+			<Pagination controls={ciCtrl} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
+		{:else}
+			<div class="data-panel">
+				<div class="overflow-x-auto">
+					<table class="table-surface w-full text-left">
+						<thead>
+							<tr>
+								<th
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Customer</th
+								>
+								<th
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>Result</th
+								>
+								<SortableTh
+									column="date"
+									active={ciCtrl.sortKey === 'date'}
+									direction={ciCtrl.sortDir}
+									align="right"
+									applySort={ciCtrl.applySort}>When</SortableTh
+								>
+								<th class="w-10 px-5 py-2.5"></th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+							{#each ciCtrl.pagedList as c (c.id)}
+								<tr>
+									<td class="px-5 py-3 font-semibold">{c.data.customerName ?? '—'}</td>
+									<td class="px-5 py-3"
+										><Badge color={statusColor(c.data.result)}>{c.data.result}</Badge></td
+									>
+									<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
+										>{relativeTime(c.data.occurredAt)}</td
+									>
+									<td class="px-5 py-3 text-right">
 										<Button
 											color="neutral"
 											variant="ghost"
 											size="icon-sm"
 											icon="lucide:trash-2"
 											onclick={() => {
-												glo.remove(TYPE.membershipSubscription, s.id);
+												glo.remove(TYPE.membershipCheckIn, c.id);
 												toast.info('Removed');
 											}}
 										/>
-									</div>
-								</td>
-							</tr>{/each}
-					</tbody>
-				</table>
-				<Pagination controls={subCtrl} />
-			</div>
-		{/if}
-	{:else}
-		{#if checkins.length === 0}<EmptyState
-				icon="lucide:door-open"
-				title="No check-ins"
-				description="Record gym/club attendance."
-				>{#snippet actions()}<Button
-						color="primary"
-						size="sm"
-						icon="lucide:plus"
-						onclick={() => openCreate('checkins')}>New check-in</Button
-					>{/snippet}</EmptyState
-			>
-		{:else}
-			<div class="data-panel">
-				<table class="table-surface w-full text-left">
-					<thead
-						><tr
-							><th class="px-5 py-2.5">Customer</th><th class="px-5 py-2.5">Result</th><th
-								class="px-5 py-2.5 text-right">When</th
-							><th class="w-10 px-5 py-2.5"></th></tr
-						></thead
-					>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
-						{#each ciCtrl.pagedList as c (c.id)}<tr
-								><td class="px-5 py-3 font-semibold">{c.data.customerName ?? '—'}</td><td
-									class="px-5 py-3"
-									><Badge color={statusColor(c.data.result)}>{c.data.result}</Badge></td
-								><td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
-									>{relativeTime(c.data.occurredAt)}</td
-								><td class="px-5 py-3 text-right"
-									><Button
-										color="neutral"
-										variant="ghost"
-										size="icon-sm"
-										icon="lucide:trash-2"
-										onclick={() => {
-											glo.remove(TYPE.membershipCheckIn, c.id);
-											toast.info('Removed');
-										}}
-									/></td
-								></tr
-							>{/each}
-					</tbody>
-				</table>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
 				<Pagination controls={ciCtrl} />
 			</div>
 		{/if}

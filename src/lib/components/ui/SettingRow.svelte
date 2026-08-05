@@ -16,7 +16,7 @@
 	}: { title: string; description?: string; children: Snippet } = $props();
 </script>
 
-<div class="flex items-center justify-between gap-4 px-5 py-4">
+<div class="setting-row flex items-center justify-between gap-4 px-5 py-4">
 	<div class="min-w-0">
 		<div class="text-[13px] font-semibold text-[var(--ui-text)]">{title}</div>
 		{#if description}

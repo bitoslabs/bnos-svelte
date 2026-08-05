@@ -99,8 +99,8 @@
 
 <div class="flex h-full flex-col">
 	{#snippet accountCard()}
-		<div class="w-64 p-1.5">
-			<div class="mb-2 flex items-center gap-2.5 rounded-lg px-2.5 py-2">
+		<div class="sidebar-account-card w-64 p-1.5">
+			<div class="sidebar-account-summary mb-2 flex items-center gap-2.5 rounded-lg px-2.5 py-2">
 				<div
 					class="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[12px] font-bold text-white shadow-sm"
 				>
@@ -201,16 +201,16 @@
 					{#if hasChildren(item) && !sidebarState.collapsed}
 						{@const groupActive = isGroupActive(item)}
 						{@const groupExpanded = isGroupExpanded(item)}
-						<div class="mb-0.5">
+						<div class="sidebar-nav-group-wrap mb-0.5">
 							<div
-								class="nav-active group flex items-center rounded-lg pr-1 {groupActive
+								class="sidebar-nav-parent nav-active group flex items-center rounded-lg pr-1 {groupActive
 									? 'is-active-surface'
 									: 'soft-hover'}"
 							>
 							<a
 								href={resolvedHref(item.to)}
 								title={item.label}
-								class="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors {groupActive
+								class="sidebar-nav-parent-link flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors {groupActive
 									? 'text-[var(--ui-text)]'
 									: 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
 								onclick={() => onnavigate?.()}
@@ -237,14 +237,14 @@
 						</div>
 							{#if groupExpanded}
 								<div
-									class="ml-[1.35rem] mt-0.5 flex flex-col gap-0.5 border-l border-[var(--ui-border-muted)] pl-2"
+									class="sidebar-nav-group ml-[1.35rem] mt-0.5 flex flex-col gap-0.5 border-l border-[var(--ui-border-muted)] pl-2"
 								>
 									{#each item.children as child (child.to)}
 										{@const childActive = isActive(child)}
 										<a
 											href={resolvedHref(child.to)}
 											title={child.label}
-											class="nav-active group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors {childActive
+											class="sidebar-nav-child nav-active group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors {childActive
 												? 'is-active-surface text-[var(--ui-text)]'
 												: 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
 											onclick={() => onnavigate?.()}

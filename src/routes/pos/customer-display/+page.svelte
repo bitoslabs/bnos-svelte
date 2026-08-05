@@ -2,12 +2,14 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { fade, scale } from 'svelte/transition';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import QrCode from '$lib/components/ui/QrCode.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { browser } from '$app/environment';
 	import { formatMoney } from '$lib/utils/format';
 
 	// Customer display: dark, full-screen, customer-facing
-	// Listens for cart updates and checkout events via BroadcastChannel
+	// Listens for cart updates, checkout events AND payment-QR events via
+	// BroadcastChannel so the customer can scan to pay from the big screen.
 
 	type CartItem = {
 		name: string;
@@ -34,6 +36,18 @@
 		currency: string;
 	};
 
+	type PayQrMessage = {
+		type: 'pay-qr';
+		payload: string;
+		total: number;
+		method: string;
+		currency: string;
+		kind: string;
+		badge: string;
+	};
+
+	type PayQrClearMessage = { type: 'pay-qr-clear' };
+
 	let currentSlide = $state(0);
 	let slideTimer: ReturnType<typeof setInterval>;
 	const SLIDE_INTERVAL = 5000;
@@ -52,17 +66,25 @@
 
 	let channel: BroadcastChannel | null = null;
 
+	// Active payment QR (when cashier opens the QR checkout)
+	let payQr = $state<{
+		payload: string;
+		total: number;
+		kind: string;
+		badge: string;
+	} | null>(null);
+
 	onMount(() => {
 		slideTimer = setInterval(() => {
-			if (!cartItems.length && !showSuccess) {
+			if (!cartItems.length && !showSuccess && !payQr) {
 				currentSlide = (currentSlide + 1) % SLIDES;
 			}
 		}, SLIDE_INTERVAL);
 
-		// Listen for cart updates from POS
+		// Listen for cart updates + payment events from POS
 		if (typeof BroadcastChannel !== 'undefined') {
 			channel = new BroadcastChannel('bnos-customer-display');
-			channel.onmessage = (e: MessageEvent<CartMessage | CheckoutMessage>) => {
+			channel.onmessage = (e: MessageEvent<CartMessage | CheckoutMessage | PayQrMessage | PayQrClearMessage>) => {
 				const msg = e.data;
 				if (msg.type === 'cart') {
 					cartItems = msg.items;
@@ -70,7 +92,12 @@
 					cartItemCount = msg.itemCount;
 					cartCustomerName = msg.customerName;
 					cartOrderType = msg.orderType;
+				} else if (msg.type === 'pay-qr') {
+					payQr = { payload: msg.payload, total: msg.total, kind: msg.kind, badge: msg.badge };
+				} else if (msg.type === 'pay-qr-clear') {
+					payQr = null;
 				} else if (msg.type === 'checkout-success') {
+					payQr = null;
 					cartItems = [];
 					cartTotal = msg.total;
 					cartItemCount = 0;
@@ -128,8 +155,55 @@
 		</div>
 	{/if}
 
+	<!-- Payment QR full-screen view -->
+	{#if payQr && !showSuccess}
+		<div
+			class="absolute inset-0 z-40 flex flex-col items-center justify-center gap-8 px-12 py-10"
+			in:scale={{ duration: 300, start: 0.96 }}
+			out:fade={{ duration: 300 }}
+		>
+			<div class="text-center">
+				<div
+					class="mx-auto mb-4 grid size-14 place-items-center rounded-2xl {payQr.badge === 'lightning'
+						? 'bg-amber-500/15 text-amber-400'
+						: 'bg-primary-500/15 text-primary-400'}"
+				>
+					<Icon
+						name={payQr.badge === 'lightning' ? 'lucide:zap' : 'lucide:qr-code'}
+						class="size-7"
+					/>
+				</div>
+				<p class="font-display text-2xl font-black text-white">Scan to pay</p>
+				<p class="mt-1 text-sm capitalize text-gray-500">{payQr.kind}</p>
+			</div>
+
+			<div class="rounded-3xl border border-white/10 bg-white p-5 shadow-2xl">
+				<QrCode value={payQr.payload} size={320} badge={payQr.badge as any} />
+			</div>
+
+			<div class="text-center">
+				<p class="text-[11px] font-semibold tracking-wider text-gray-500 uppercase">Amount due</p>
+				<p class="font-display text-5xl font-black tabular-nums text-white">
+					{formatMoney(payQr.total, cartItems.length ? currency : tenant.state.currency)}
+				</p>
+			</div>
+
+			<div
+				class="flex items-center gap-2 rounded-full bg-amber-500/10 px-4 py-2 text-[13px] font-semibold text-amber-400"
+			>
+				<span class="relative flex size-2">
+					<span
+						class="absolute inline-flex size-full animate-ping rounded-full bg-amber-400 opacity-75"
+					></span>
+					<span class="relative inline-flex size-2 rounded-full bg-amber-500"></span>
+				</span>
+				Awaiting payment…
+			</div>
+		</div>
+	{/if}
+
 	<!-- Live cart view -->
-	{#if hasActiveCart && !showSuccess}
+	{#if hasActiveCart && !showSuccess && !payQr}
 		<div class="relative z-10 flex h-full flex-col px-12 py-10" in:fade={{ duration: 200 }}>
 			<!-- Cart header -->
 			<div class="mb-6 flex items-center justify-between">
@@ -181,7 +255,7 @@
 				</div>
 			</div>
 		</div>
-	{:else if !showSuccess}
+	{:else if !showSuccess && !payQr}
 		<!-- Idle / Onboarding slides -->
 		<div class="relative z-10 flex flex-1 flex-col items-center justify-center px-12">
 			{#if currentSlide === 0}

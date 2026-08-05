@@ -6,6 +6,8 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
+	import QrCode from '$lib/components/ui/QrCode.svelte';
+	import { testLightningAddress } from '$lib/pos/lightning';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { browser } from '$app/environment';
@@ -57,11 +59,11 @@
 	let previewAmount = $state(100);
 
 	const providerOptions = [
+		{ id: 'lnaddress', label: 'Lightning Address (recommended)', icon: 'lucide:at-sign', desc: 'user@domain.com · no node needed' },
+		{ id: 'nwc', label: 'NWC (Nostr Wallet Connect)', icon: 'lucide:link', desc: 'NWC relay URL · your own wallet' },
 		{ id: 'lnd', label: 'LND (REST)', icon: 'lucide:server', desc: 'Self-hosted Lightning node' },
 		{ id: 'phoenixd', label: 'PhoenixD', icon: 'lucide:flame', desc: 'Self-hosted Lightning' },
 		{ id: 'alby', label: 'Alby', icon: 'lucide:zap', desc: 'Alby API / OAuth' },
-		{ id: 'nwc', label: 'NWC (Nostr Wallet Connect)', icon: 'lucide:link', desc: 'NWC relay URL' },
-		{ id: 'lnaddress', label: 'LNURL Address', icon: 'lucide:at-sign', desc: 'user@domain.com' },
 		{ id: 'blink', label: 'Blink (Galoy)', icon: 'lucide:wallet', desc: 'Bitcoin Beach Wallet' },
 		{ id: 'strike', label: 'Strike', icon: 'lucide:credit-card', desc: 'Strike API' }
 	];
@@ -140,9 +142,7 @@
 		testResult = '';
 		nodeStatus = 'connecting';
 		try {
-			// Simulate async test depending on provider
-			await new Promise((r) => setTimeout(r, 800));
-
+			// Field-presence checks (apply to every provider).
 			if (lightningProvider === 'lnaddress' && !lightningAddress)
 				throw new Error('Enter a Lightning Address');
 			if (lightningProvider === 'lnd' && !lndUrl) throw new Error('Enter LND REST URL');
@@ -152,10 +152,25 @@
 			if (lightningProvider === 'blink' && !blinkApiKey) throw new Error('Enter Blink API key');
 			if (lightningProvider === 'strike' && !strikeApiKey) throw new Error('Enter Strike API key');
 
-			// Mock node info for display
+			// Lightning Address → REAL LNURL-pay resolution (live network test).
+			if (lightningProvider === 'lnaddress') {
+				const res = await testLightningAddress(lightningAddress);
+				if (!res.ok) throw new Error(res.error);
+				nodePubkey = '';
+				nodeAlias = res.domain;
+				testStatus = 'success';
+				nodeStatus = 'connected';
+				testResult = `✓ ${res.domain} · accepts ${res.minSats}–${res.maxSats} sats`;
+				toast.success('Lightning address verified', 'Live invoices can be requested at checkout.');
+				return;
+			}
+
+			// Node providers: config-presence verified. Live node calls run at
+			// checkout (a signed invoice request can't be safely mocked here).
+			await new Promise((r) => setTimeout(r, 400));
 			if (lightningProvider === 'lnd' || lightningProvider === 'phoenixd') {
-				nodePubkey = '02' + Math.random().toString(16).slice(2).padStart(62, '0').slice(0, 62);
-				nodeAlias = lightningProvider === 'lnd' ? 'MyLNDNode' : 'PhoenixD';
+				nodePubkey = '';
+				nodeAlias = lightningProvider === 'lnd' ? 'LND (REST)' : 'PhoenixD';
 			} else {
 				nodePubkey = '';
 				nodeAlias = lightningProvider;
@@ -163,8 +178,8 @@
 
 			testStatus = 'success';
 			nodeStatus = 'connected';
-			testResult = `✓ Connected${nodeAlias ? ' · ' + nodeAlias : ''}`;
-			toast.success('Connection successful');
+			testResult = `✓ Config verified · ${nodeAlias}`;
+			toast.success('Config saved', 'Node issues invoices at checkout.');
 		} catch (err) {
 			testStatus = 'error';
 			nodeStatus = 'error';
@@ -534,15 +549,38 @@
 				</p>
 			</div>
 		{:else if lightningProvider === 'lnaddress'}
-			<div class="px-5 py-4">
-				<label
-					class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-					>Lightning address</label
-				>
-				<Input bind:value={lightningAddress} placeholder="user@domain.com" class="w-full" />
-				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
-					Your LNURL-compatible Lightning address
-				</p>
+			<div class="space-y-3 px-5 py-4">
+				<div>
+					<label
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						>Lightning address</label
+					>
+					<div class="flex gap-2">
+						<Input bind:value={lightningAddress} placeholder="store@bitdigo.com" class="flex-1" />
+						<Button
+							variant="subtle"
+							color="primary"
+							size="md"
+							icon="lucide:plug"
+							onclick={testConnection}
+							disabled={!lightningAddress || testStatus === 'loading'}
+							>{testStatus === 'loading' ? '…' : 'Test'}</Button
+						>
+					</div>
+					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+						Get one free at
+						<a href="https://getalby.com" target="_blank" rel="noopener"
+							class="font-semibold text-primary-600 hover:underline dark:text-primary-400">getalby.com</a
+						>, walletofsatoshi.com, or use your own node's address. At checkout the POS fetches a
+						real amount-locked BOLT11 invoice via LNURL-pay.
+					</p>
+				</div>
+				{#if lightningAddress && (lightningAddress.includes('@') || lightningAddress.toLowerCase().startsWith('lnurl'))}
+					<div class="rounded-lg bg-amber-500/5 p-2.5 text-[10.5px] text-amber-700 dark:text-amber-300">
+						<Icon name="lucide:shield-check" class="-mt-0.5 mr-1 inline size-3" />Single source of truth —
+						this address also powers the POS Lightning checkout & Pay QR preview.
+					</div>
+				{/if}
 			</div>
 		{:else if lightningProvider === 'blink'}
 			<div class="space-y-3 px-5 py-4">
@@ -627,6 +665,9 @@
 				>
 					{testStatus === 'loading' ? 'Testing…' : 'Test connection'}
 				</Button>
+				<p class="mt-1 text-[9.5px] text-[var(--ui-text-dimmed)]">
+					<Icon name="lucide:info" class="-mt-0.5 mr-0.5 inline size-3" />Verifies config fields are present. Live node / invoice calls run in the POS checkout flow.
+				</p>
 			</div>
 		{/if}
 
@@ -651,6 +692,36 @@
 			</div>
 		{/if}
 	</section>
+
+	<!-- ═══ Lightning Receive QR ═══ -->
+	{#if lightningAddress}
+		<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+			<div class="flex items-center gap-2 px-5 py-3">
+				<Icon name="lucide:qr-code" class="size-4 text-amber-500" />
+				<h2 class="font-display text-[14px] font-semibold">Lightning receive QR</h2>
+			</div>
+			<div class="flex flex-col items-center gap-3 px-5 py-6 sm:flex-row sm:items-start sm:gap-6">
+				<div class="rounded-2xl border border-[var(--ui-border)] bg-white p-3 shadow-sm">
+					<QrCode value={`lightning:${lightningAddress}`} size={176} badge="lightning" />
+				</div>
+				<div class="flex-1">
+					<p class="text-[13px] font-bold text-amber-600 dark:text-amber-400">
+						lightning:{lightningAddress}
+					</p>
+					<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
+						A static QR customers can scan with any Lightning wallet. For amount-locked invoices at
+						checkout, this address is reused by the POS “Show QR” flow.
+					</p>
+					<a
+						href="/settings/pay-qr"
+						class="mt-3 inline-flex items-center gap-1 text-[11.5px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
+					>
+						<Icon name="lucide:arrow-right" class="size-3.5" />Manage Pay QR
+					</a>
+				</div>
+			</div>
+		</section>
+	{/if}
 
 	<!-- ═══ Payment Settings ═══ -->
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">

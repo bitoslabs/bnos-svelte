@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { fly } from 'svelte/transition';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -13,6 +14,7 @@
 	import { relays } from '$nostr/relay.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { setMode, mode } from 'mode-watcher';
+	import { site } from '$lib/site';
 
 	let nsec = $state('');
 	let showKey = $state(false);
@@ -309,6 +311,26 @@
 
 		<p class="mt-6 text-center text-[11.5px] text-[var(--ui-text-dimmed)]">
 			Your key never leaves this device. Records are signed locally and published to Nostr relays.
+		</p>
+
+		<!-- Footer links: legal + open source -->
+		<div class="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px]">
+			<a href={resolve('/legal/privacy')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">Privacy</a>
+			<span class="text-[var(--ui-text-dimmed)]">·</span>
+			<a href={resolve('/legal/terms')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">Terms</a>
+			<span class="text-[var(--ui-text-dimmed)]">·</span>
+			<a href={resolve('/legal/license')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">License</a>
+			<span class="text-[var(--ui-text-dimmed)]">·</span>
+			<a href={site.source.url} target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">
+				<Icon name="lucide:github" class="size-3" />Source
+			</a>
+			<span class="text-[var(--ui-text-dimmed)]">·</span>
+			<a href={site.website.url} target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">
+				<Icon name="lucide:globe" class="size-3" />{site.website.label}
+			</a>
+		</div>
+		<p class="mt-2 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
+			© {new Date().getFullYear()} {site.name} contributors · {site.license}
 		</p>
 	</div>
 </div>

@@ -5,6 +5,7 @@
 	import {
 		preferences,
 		accentOptions,
+		densityOptions,
 		surfaceOptions,
 		surfaceTintOptions,
 		neutralOptions,
@@ -21,10 +22,10 @@
 		{ key: 'system', label: 'System', icon: 'lucide:monitor' }
 	] as const;
 
-	const densities = [
-		{ key: 'normal', label: 'Normal', description: 'Comfortable spacing' },
-		{ key: 'compact', label: 'Compact', description: 'More content on screen' }
-	] as const;
+	const densityDescriptions: Record<(typeof densityOptions)[number]['key'], string> = {
+		normal: 'Comfortable spacing',
+		compact: 'More content on screen'
+	};
 </script>
 
 <svelte:head><title>Appearance · Settings</title></svelte:head>
@@ -147,7 +148,7 @@
 			</p>
 		</div>
 		<div class="grid grid-cols-2 gap-3">
-			{#each densities as d (d.key)}
+			{#each densityOptions as d (d.key)}
 				{@const active = preferences.state.density === d.key}
 				<button
 					type="button"
@@ -173,7 +174,9 @@
 					>
 						{d.label}
 					</p>
-					<p class="mt-0.5 text-[11px] text-[var(--ui-text-muted)]">{d.description}</p>
+					<p class="mt-0.5 text-[11px] text-[var(--ui-text-muted)]">
+						{densityDescriptions[d.key]}
+					</p>
 				</button>
 			{/each}
 		</div>

@@ -31,7 +31,8 @@
 				{ to: '/settings/payment-methods', icon: 'lucide:credit-card', label: 'Payment methods' },
 				{ to: '/settings/receipt', icon: 'lucide:receipt-text', label: 'Receipt' },
 				{ to: '/settings/media', icon: 'lucide:image-up', label: 'Media & uploads' },
-				{ to: '/settings/bitcoin', icon: 'lucide:bitcoin', label: 'Bitcoin' }
+				{ to: '/settings/bitcoin', icon: 'lucide:bitcoin', label: 'Bitcoin' },
+				{ to: '/settings/pay-qr', icon: 'lucide:qr-code', label: 'Pay QR' }
 			]
 		},
 		{
@@ -53,6 +54,14 @@
 				{ to: '/settings/appearance', icon: 'lucide:palette', label: 'Appearance' },
 				{ to: '/settings/data', icon: 'lucide:database', label: 'Data' },
 				{ to: '/settings/about', icon: 'lucide:info', label: 'About' }
+			]
+		},
+		{
+			label: 'Legal',
+			items: [
+				{ to: '/legal/privacy', icon: 'lucide:shield-check', label: 'Privacy Policy' },
+				{ to: '/legal/terms', icon: 'lucide:file-text', label: 'Terms of Service' },
+				{ to: '/legal/license', icon: 'lucide:scale', label: 'License' }
 			]
 		}
 	];
@@ -76,16 +85,16 @@
 	);
 </script>
 
-<nav class={cn('space-y-5 lg:space-y-4', cls)} aria-label="Settings">
+<nav class={cn('settings-nav space-y-5 lg:space-y-4', cls)} aria-label="Settings">
 	{#each visibleGroups as g (g.label)}
-		<section>
+		<section class="settings-nav-group">
 			<div
-				class="px-1 pb-1.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase lg:px-3 lg:text-[10px] lg:tracking-[0.16em]"
+				class="settings-nav-label px-1 pb-1.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase lg:px-3 lg:text-[10px] lg:tracking-[0.16em]"
 			>
 				{g.label}
 			</div>
 			<ul
-				class="divide-y divide-[var(--ui-border-muted)] overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] lg:divide-y-0 lg:rounded-none lg:border-0 lg:bg-transparent"
+				class="settings-nav-list divide-y divide-[var(--ui-border-muted)] overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] lg:divide-y-0 lg:rounded-none lg:border-0 lg:bg-transparent"
 			>
 				{#each g.items as it (it.to)}
 					{@const isActive = active(it.to)}
@@ -93,7 +102,7 @@
 						<a
 							href={resolve(it.to)}
 							aria-current={isActive ? 'page' : undefined}
-							class="group flex items-center gap-3 px-3.5 py-3 text-[14px] font-medium transition-colors lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-2 lg:text-[13px] {isActive
+							class="settings-nav-link group flex items-center gap-3 px-3.5 py-3 text-[14px] font-medium transition-colors lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-2 lg:text-[13px] {isActive
 								? 'is-active-surface'
 								: 'text-[var(--ui-text)] hover:bg-[var(--ui-bg-accented)] lg:text-[var(--ui-text-muted)] lg:hover:text-[var(--ui-text)]'}"
 						>

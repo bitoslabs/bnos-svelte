@@ -69,6 +69,7 @@ export const routePermissions: Record<string, RoutePermission> = {
 	'/settings/receipt': { resource: 'settings', action: 'write' },
 	'/settings/media': { resource: 'settings', action: 'write' },
 	'/settings/bitcoin': { resource: 'settings', action: 'write' },
+	'/settings/pay-qr': { resource: 'settings', action: 'write' },
 	'/settings/hardware': { resource: 'settings', action: 'write' },
 	'/settings/printers': { resource: 'settings', action: 'write' },
 	'/settings/billing': { resource: 'settings', action: 'write' },
