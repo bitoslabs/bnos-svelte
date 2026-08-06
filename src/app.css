@@ -958,6 +958,115 @@
 			opacity: 0;
 		}
 	}
+	/* ── Payment success animation system ───────────────────────────────────
+	   Used by PaymentSuccessOverlay (POS + customer display). All gated by
+	   the global prefers-reduced-motion nuke at the bottom of this file. */
+	.ps-pop {
+		animation: ps-pop 0.5s cubic-bezier(0.18, 0.9, 0.32, 1.2) both;
+	}
+	@keyframes ps-pop {
+		0% {
+			opacity: 0;
+			transform: scale(0.7);
+		}
+		60% {
+			opacity: 1;
+			transform: scale(1.03);
+		}
+		100% {
+			transform: scale(1);
+		}
+	}
+	.ps-check-draw {
+		stroke-dasharray: 48;
+		stroke-dashoffset: 48;
+		animation: ps-check-draw 0.45s 0.28s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+	}
+	@keyframes ps-check-draw {
+		to {
+			stroke-dashoffset: 0;
+		}
+	}
+	.ps-ring {
+		animation: ps-ring 1.1s ease-out forwards;
+	}
+	.ps-ring-2 {
+		animation-delay: 0.16s;
+	}
+	.ps-ring-3 {
+		animation-delay: 0.32s;
+	}
+	@keyframes ps-ring {
+		0% {
+			transform: scale(0.4);
+			opacity: 0.6;
+		}
+		100% {
+			transform: scale(2.6);
+			opacity: 0;
+		}
+	}
+	.ps-confetti {
+		position: absolute;
+		top: -4%;
+		will-change: transform, opacity;
+		animation-name: ps-confetti;
+		animation-timing-function: cubic-bezier(0.3, 0.7, 0.7, 1);
+		animation-fill-mode: forwards;
+	}
+	@keyframes ps-confetti {
+		0% {
+			transform: translate3d(0, -10px, 0) rotate(0deg);
+			opacity: 0;
+		}
+		8% {
+			opacity: 1;
+		}
+		100% {
+			transform: translate3d(var(--cx, 0px), 104vh, 0) rotate(var(--cr, 720deg));
+			opacity: 0;
+		}
+	}
+	.ps-countbar {
+		transform-origin: left center;
+		animation: ps-countbar linear forwards;
+	}
+	@keyframes ps-countbar {
+		from {
+			transform: scaleX(1);
+		}
+		to {
+			transform: scaleX(0);
+		}
+	}
+	.ps-shimmer {
+		background-size: 200% 100%;
+		animation: ps-shimmer 2.2s linear infinite;
+	}
+	@keyframes ps-shimmer {
+		to {
+			background-position: -200% 0;
+		}
+	}
+	.ps-fade-up {
+		animation: ps-fade-up 0.5s 0.4s cubic-bezier(0.22, 0.7, 0.3, 1) both;
+	}
+	.ps-fade-up-2 {
+		animation-delay: 0.55s;
+	}
+	.ps-fade-up-3 {
+		animation-delay: 0.7s;
+	}
+	@keyframes ps-fade-up {
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
 	.no-scrollbar::-webkit-scrollbar {
 		display: none;
 	}

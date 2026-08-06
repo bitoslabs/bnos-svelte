@@ -10,56 +10,19 @@
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { browser } from '$app/environment';
-
-	const KEY = 'bnos-os:printers';
-
-	type ConnectionType = 'browser' | 'usb' | 'network' | 'bluetooth' | 'websocket' | 'webhook';
-
-	interface Printer {
-		id: string;
-		name: string;
-		enabled: boolean;
-		isDefault: boolean;
-		connectionType: ConnectionType;
-		ip: string;
-		port: string;
-		macAddress: string;
-		url: string;
-		authToken: string;
-		payloadFormat: 'raw' | 'json';
-		charsPerLine: number;
-		autoPrint: boolean;
-		autoCut: boolean;
-		cutMode: 'full' | 'partial';
-		paperSize: '58mm' | '80mm';
-		copies: number;
-		printDensity: number;
-		cashDrawerEnabled: boolean;
-	}
-
-	function defaultPrinter(): Printer {
-		return {
-			id: '',
-			name: '',
-			enabled: true,
-			isDefault: false,
-			connectionType: 'browser',
-			ip: '',
-			port: '9100',
-			macAddress: '',
-			url: '',
-			authToken: '',
-			payloadFormat: 'raw',
-			charsPerLine: 48,
-			autoPrint: false,
-			autoCut: false,
-			cutMode: 'full',
-			paperSize: '80mm',
-			copies: 1,
-			printDensity: 8,
-			cashDrawerEnabled: false
-		};
-	}
+	import { resolve } from '$app/paths';
+	import {
+		CONNECTION_OPTIONS,
+		defaultPrinter,
+		isPrinterComplete,
+		loadPrinters,
+		savePrinters,
+		testPrinter,
+		validatePrinter,
+		type ConnectionType,
+		type FieldErrors,
+		type Printer
+	} from '$lib/settings/printers';
 
 	let printers = $state<Printer[]>([]);
 	let showForm = $state(false);
@@ -69,20 +32,19 @@
 	let deletingIdx = $state(-1);
 	let deletingName = $state('');
 	let form = $state<Printer>(defaultPrinter());
+	let errors = $state<FieldErrors>({});
+	/** id → "idle" | "testing" | "ok" | "fail" + message. */
+	let status = $state<
+		Record<string, { state: 'idle' | 'testing' | 'ok' | 'fail'; message?: string }>
+	>({});
 
 	onMount(() => {
 		if (!browser) return;
-		try {
-			const raw = localStorage.getItem(KEY);
-			if (raw) printers = JSON.parse(raw);
-		} catch {
-			/* */
-		}
+		printers = loadPrinters();
 	});
 
 	function persist() {
-		if (!browser) return;
-		localStorage.setItem(KEY, JSON.stringify(printers));
+		savePrinters(printers);
 	}
 
 	function slugify(s: string) {
@@ -92,49 +54,37 @@
 			.replace(/^-|-$/g, '');
 	}
 
-	// ── Color / icon helpers ──
-	const printerColors = [
+	// ── Color swatch (stable per printer id) ──
+	const swatches = [
 		'bg-blue-500/10 text-blue-500',
 		'bg-amber-500/10 text-amber-500',
-		'bg-red-500/10 text-red-500',
 		'bg-purple-500/10 text-purple-500',
 		'bg-cyan-500/10 text-cyan-500',
-		'bg-pink-500/10 text-pink-500'
+		'bg-pink-500/10 text-pink-500',
+		'bg-emerald-500/10 text-emerald-500'
 	];
-
-	const printerIcons = [
+	const swatchIcons = [
 		'lucide:printer',
-		'lucide:printer',
-		'lucide:file-text',
 		'lucide:receipt',
+		'lucide:file-text',
 		'lucide:clipboard-list',
-		'lucide:tag'
+		'lucide:tag',
+		'lucide:utensils'
 	];
-
 	function hashIdx(id: string, mod: number) {
 		return Math.abs(id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % mod;
 	}
-
-	const connectionOptions: { id: ConnectionType; label: string; icon: string }[] = [
-		{ id: 'browser', label: 'Browser', icon: 'lucide:globe' },
-		{ id: 'network', label: 'Network / IP', icon: 'lucide:server' },
-		{ id: 'usb', label: 'USB', icon: 'lucide:usb' },
-		{ id: 'bluetooth', label: 'Bluetooth', icon: 'lucide:bluetooth' },
-		{ id: 'websocket', label: 'WebSocket', icon: 'lucide:cloud' },
-		{ id: 'webhook', label: 'Webhook', icon: 'lucide:webhook' }
-	];
-
-	function connLabel(ct: string) {
-		return connectionOptions.find((c) => c.id === ct)?.label ?? ct;
+	function swatch(id: string) {
+		return swatches[hashIdx(id, swatches.length)];
 	}
-
-	function connIcon(ct: string) {
-		return connectionOptions.find((c) => c.id === ct)?.icon ?? 'lucide:printer';
+	function swatchIcon(id: string) {
+		return swatchIcons[hashIdx(id, swatchIcons.length)];
 	}
 
 	// ── CRUD ──
 	function openAdd() {
 		form = { ...defaultPrinter() };
+		errors = {};
 		isEditing = false;
 		editingId = '';
 		showForm = true;
@@ -142,33 +92,42 @@
 
 	function openEdit(p: Printer) {
 		form = { ...p };
+		errors = {};
 		isEditing = true;
 		editingId = p.id;
 		showForm = true;
 	}
 
 	function onNameInput() {
-		if (!isEditing) {
-			form.id = slugify(form.name);
-		}
+		if (!isEditing) form.id = slugify(form.name);
+	}
+
+	function validate(): boolean {
+		errors = validatePrinter(form);
+		return Object.keys(errors).length === 0;
 	}
 
 	function savePrinter() {
-		if (!form.name.trim()) return;
-		if (!isEditing && !form.id.trim()) return;
+		if (!form.name.trim()) {
+			errors = { name: 'Name is required' };
+			return;
+		}
+		if (!isEditing && !form.id.trim()) {
+			errors = { id: 'ID is required' };
+			return;
+		}
+		if (!validate()) return;
 
 		if (isEditing) {
 			const idx = printers.findIndex((p) => p.id === editingId);
-			if (idx >= 0) {
-				printers[idx] = { ...form };
-			}
+			if (idx >= 0) printers[idx] = { ...form };
 		} else {
 			const slug = slugify(form.id);
 			if (printers.some((p) => p.id === slug)) {
-				toast.error('A printer with that ID already exists');
+				errors = { id: 'A printer with that ID already exists' };
 				return;
 			}
-			// First printer becomes default automatically
+			// First printer becomes default automatically.
 			if (printers.length === 0) form.isDefault = true;
 			printers = [...printers, { ...form, id: slug }];
 		}
@@ -189,12 +148,12 @@
 		const idx = deletingIdx;
 		if (idx < 0) return;
 		const wasDefault = printers[idx].isDefault;
+		const removedId = printers[idx].id;
 		printers.splice(idx, 1);
-		// Reassign default if needed
-		if (wasDefault && printers.length > 0) {
-			printers[0].isDefault = true;
-		}
+		if (wasDefault && printers.length > 0) printers[0].isDefault = true;
 		printers = [...printers];
+		delete status[removedId];
+		status = { ...status };
 		persist();
 		showDelete = false;
 		deletingIdx = -1;
@@ -203,102 +162,112 @@
 	}
 
 	function toggleEnabled(idx: number) {
-		printers[idx].enabled = !printers[idx].enabled;
-		printers = [...printers];
+		const p = printers[idx];
+		const nextEnabled = !p.enabled;
+		printers = printers.map((o, i) => (i === idx ? { ...o, enabled: nextEnabled } : o));
+		// If we just disabled the default printer, promote another enabled one.
+		if (p.isDefault && !nextEnabled) {
+			const heir = printers.find((o) => o.enabled);
+			printers = printers.map((o) => ({
+				...o,
+				isDefault: heir ? o.id === heir.id : o.isDefault
+			}));
+		}
 		persist();
 	}
 
 	function setDefault(idx: number) {
-		printers = printers.map((p, i) => ({ ...p, isDefault: i === idx }));
+		printers = printers.map((p, i) => ({
+			...p,
+			isDefault: i === idx,
+			enabled: i === idx ? true : p.enabled
+		}));
 		persist();
 		toast.success(`"${printers[idx].name}" set as default`);
 	}
 
-	function testPrint(p?: Printer) {
-		const target = p ?? printers.find((p) => p.enabled);
-		if (!target) {
-			toast.warning('No printer available');
-			return;
-		}
-		toast.info(`Sending test print to "${target.name}"…`);
-		// Browser print fallback
-		if (target.connectionType === 'browser') {
-			window.print();
-		}
+	async function runTest(p: Printer) {
+		status = { ...status, [p.id]: { state: 'testing' } };
+		const res = await testPrinter(p);
+		status = { ...status, [p.id]: { state: res.ok ? 'ok' : 'fail', message: res.message } };
+		if (res.ok) toast.success('Printer test', res.message);
+		else toast.warning('Printer test failed', res.message);
 	}
 
-	// Auto-save when toggling default from the card
-	function toggleDefault(idx: number) {
-		if (printers[idx].isDefault) {
-			printers[idx].isDefault = false;
-		} else {
-			printers = printers.map((p, i) => ({ ...p, isDefault: i === idx }));
+	async function testAll() {
+		const enabled = printers.filter((p) => p.enabled);
+		if (enabled.length === 0) {
+			toast.warning('No enabled printers to test');
+			return;
 		}
-		printers = [...printers];
-		persist();
+		toast.info(`Testing ${enabled.length} printer${enabled.length === 1 ? '' : 's'}…`);
+		await Promise.all(enabled.map(runTest));
 	}
 
 	const paperSizes = [
 		{ id: '58mm' as const, label: '58mm' },
 		{ id: '80mm' as const, label: '80mm' }
 	];
-
 	const cutModes = [
 		{ id: 'full' as const, label: 'Full' },
 		{ id: 'partial' as const, label: 'Partial' }
 	];
+
+	const activeCount = $derived(printers.filter((p) => p.enabled).length);
 </script>
 
 <svelte:head><title>Printers · Settings</title></svelte:head>
 
 <div class="space-y-5">
-	<!-- Page header -->
 	<PageHeader
 		icon="lucide:printer"
 		title="Printers"
-		description="Receipt printer profiles and print options"
+		description="Receipt & kitchen printer profiles — the single source of truth"
 	>
 		{#snippet actions()}
+			<Button
+				color="neutral"
+				variant="subtle"
+				icon="lucide:plug-zap"
+				onclick={testAll}
+				disabled={printers.length === 0}>Test all</Button
+			>
 			<Button color="primary" icon="lucide:plus" onclick={openAdd}>Add printer</Button>
 		{/snippet}
 	</PageHeader>
 
-	<!-- Empty state -->
 	{#if printers.length === 0}
 		<EmptyState
 			icon="lucide:printer"
 			title="No printers configured"
-			description="Add a printer profile to start printing receipts, kitchen tickets, and reports."
+			description="Add a printer profile to start printing receipts, kitchen tickets, and reports. Printers configured here are used everywhere — the POS, orders, and the Hardware page."
 		>
 			{#snippet actions()}
 				<Button color="primary" icon="lucide:plus" onclick={openAdd}>Add printer</Button>
 			{/snippet}
 		</EmptyState>
 	{:else}
-		<!-- Printer list -->
 		<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 			<div class="flex items-center gap-2 px-5 py-3">
 				<Icon name="lucide:printer" class="size-4 text-primary-500" />
 				<h2 class="font-display text-[14px] font-semibold">Printer profiles</h2>
 				<span class="ml-auto text-[11px] text-[var(--ui-text-dimmed)]"
-					>{printers.length} {printers.length === 1 ? 'printer' : 'printers'}</span
+					>{activeCount} active · {printers.length} total</span
 				>
 			</div>
 
 			{#each printers as printer, i (printer.id)}
+				{@const meta =
+					CONNECTION_OPTIONS.find((c) => c.id === printer.connectionType) ?? CONNECTION_OPTIONS[0]}
+				{@const st = status[printer.id]}
+				{@const complete = isPrinterComplete(printer)}
 				<div class="flex items-center gap-3 px-5 py-3.5">
-					<!-- Icon -->
-					<div
-						class="grid size-9 shrink-0 place-items-center rounded-lg text-[16px] {printerColors[
-							hashIdx(printer.id, printerColors.length)
-						]}"
-					>
-						<Icon name={printerIcons[hashIdx(printer.id, printerIcons.length)]} class="size-4" />
+					<div class="grid size-9 shrink-0 place-items-center rounded-lg {swatch(printer.id)}">
+						<Icon name={swatchIcon(printer.id)} class="size-4" />
 					</div>
 
-					<!-- Name + meta -->
 					<div class="min-w-0 flex-1">
-						<div class="flex items-center gap-2">
+						<div class="flex flex-wrap items-center gap-2">
 							<p class="truncate text-[13px] font-semibold">{printer.name}</p>
 							{#if printer.isDefault}
 								<Badge color="primary">Default</Badge>
@@ -309,59 +278,72 @@
 								>
 							{:else}
 								<Badge color="neutral"
-									><span class="size-1.5 rounded-full bg-[var(--ui-text-dimmed)]" />Inactive</Badge
+									><span class="size-1.5 rounded-full bg-[var(--ui-text-dimmed)]" />Off</Badge
 								>
+							{/if}
+							{#if !complete}
+								<Badge color="warning">Incomplete</Badge>
 							{/if}
 						</div>
 						<div
-							class="mt-0.5 flex items-center gap-1.5 text-[10.5px] text-[var(--ui-text-dimmed)]"
+							class="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10.5px] text-[var(--ui-text-dimmed)]"
 						>
-							<Icon name={connIcon(printer.connectionType)} class="size-3" />
-							{connLabel(printer.connectionType)}
+							<Icon name={meta.icon} class="size-3" />
+							{meta.label}
 							<span>·</span>
 							<span>{printer.paperSize}</span>
 							<span>·</span>
-							<span>{printer.copies}× copies</span>
+							<span>{printer.copies}× cop{printer.copies === 1 ? 'y' : 'ies'}</span>
 							{#if printer.connectionType === 'network' && printer.ip}
 								<span>·</span>
 								<span class="font-mono">{printer.ip}:{printer.port || '9100'}</span>
 							{/if}
 							{#if printer.cashDrawerEnabled}
 								<span>·</span>
-								<span class="text-amber-500">💵 Cash drawer</span>
+								<span
+									><Icon name="lucide:archive" class="mb-0.5 inline size-3 text-amber-500" /> Drawer</span
+								>
+							{/if}
+							{#if st?.state === 'testing'}
+								<span>·</span>
+								<span class="text-primary-500"
+									><Icon name="lucide:loader-circle" class="mb-0.5 inline size-3 animate-spin" /> Testing…</span
+								>
+							{:else if st?.state === 'ok'}
+								<span>·</span>
+								<span class="text-emerald-500"
+									><Icon name="lucide:check-circle-2" class="mb-0.5 inline size-3" />
+									{st.message}</span
+								>
+							{:else if st?.state === 'fail'}
+								<span>·</span>
+								<span class="text-red-500"
+									><Icon name="lucide:alert-triangle" class="mb-0.5 inline size-3" />
+									{st.message}</span
+								>
 							{/if}
 						</div>
 					</div>
 
-					<!-- Actions -->
 					<div class="flex shrink-0 items-center gap-1">
-						{#if !printer.isDefault}
-							<Button
-								size="icon-sm"
-								variant="ghost"
-								color="neutral"
-								icon="lucide:star"
-								onclick={() => setDefault(i)}
-								title="Set as default"
-							/>
-						{:else}
-							<Button
-								size="icon-sm"
-								variant="ghost"
-								color="neutral"
-								icon="lucide:star"
-								class="text-amber-400"
-								onclick={() => toggleDefault(i)}
-								title="Unset default"
-							/>
-						{/if}
 						<Button
 							size="icon-sm"
 							variant="ghost"
 							color="neutral"
-							icon="lucide:printer"
-							onclick={() => testPrint(printer)}
-							title="Test print"
+							icon={printer.isDefault ? 'lucide:star' : 'lucide:star'}
+							class={printer.isDefault ? 'text-amber-400' : ''}
+							onclick={() => setDefault(i)}
+							disabled={printer.isDefault}
+							title={printer.isDefault ? 'Default printer' : 'Set as default'}
+						/>
+						<Button
+							size="icon-sm"
+							variant="ghost"
+							color="neutral"
+							icon="lucide:plug-zap"
+							onclick={() => runTest(printer)}
+							disabled={!printer.enabled || st?.state === 'testing'}
+							title="Test connection"
 						/>
 						<Button
 							size="icon-sm"
@@ -385,21 +367,6 @@
 					</div>
 				</div>
 			{/each}
-
-			<!-- Footer -->
-			<div class="flex items-center justify-between px-5 py-3">
-				<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
-					{printers.filter((p) => p.enabled).length} active · {printers.filter((p) => p.isDefault)
-						.length} default
-				</p>
-				<Button
-					size="sm"
-					variant="ghost"
-					color="neutral"
-					icon="lucide:printer"
-					onclick={() => testPrint()}>Test all</Button
-				>
-			</div>
 		</section>
 	{/if}
 
@@ -411,31 +378,40 @@
 				<p class="text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
 					Identity
 				</p>
-				<label class="block">
-					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Name *</span
-					>
-					<Input
-						bind:value={form.name}
-						placeholder="Kitchen printer"
-						class="w-full"
-						oninput={onNameInput}
-					/>
-				</label>
-				<label class="block">
-					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>ID {#if !isEditing}*{/if}</span
-					>
-					<Input
-						bind:value={form.id}
-						placeholder="kitchen-printer"
-						disabled={isEditing}
-						class="w-full"
-					/>
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
-						Unique slug used internally to reference this printer
-					</p>
-				</label>
+				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+					<label class="block">
+						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Name *</span
+						>
+						<Input
+							bind:value={form.name}
+							placeholder="Kitchen printer"
+							class="w-full"
+							oninput={onNameInput}
+						/>
+						{#if errors.name}
+							<p class="mt-1 text-[10.5px] font-medium text-red-500">{errors.name}</p>
+						{/if}
+					</label>
+					<label class="block">
+						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
+							ID {#if !isEditing}*{/if}
+						</span>
+						<Input
+							bind:value={form.id}
+							placeholder="kitchen-printer"
+							disabled={isEditing}
+							class="w-full"
+						/>
+						{#if errors.id}
+							<p class="mt-1 text-[10.5px] font-medium text-red-500">{errors.id}</p>
+						{:else}
+							<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+								Unique slug used internally to reference this printer
+							</p>
+						{/if}
+					</label>
+				</div>
 			</div>
 
 			<div class="border-t border-[var(--ui-border-muted)]"></div>
@@ -446,10 +422,13 @@
 					Connection
 				</p>
 				<div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
-					{#each connectionOptions as ct (ct.id)}
+					{#each CONNECTION_OPTIONS as ct (ct.id)}
 						<button
 							type="button"
-							onclick={() => (form.connectionType = ct.id)}
+							onclick={() => {
+								form.connectionType = ct.id as ConnectionType;
+								errors = {};
+							}}
 							class="rounded-xl border-2 p-3 text-center transition-all {form.connectionType ===
 							ct.id
 								? 'border-primary-500 bg-primary-500/10'
@@ -471,6 +450,9 @@
 						</button>
 					{/each}
 				</div>
+				<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+					{CONNECTION_OPTIONS.find((c) => c.id === form.connectionType)?.hint}
+				</p>
 
 				{#if form.connectionType === 'network'}
 					<div class="grid grid-cols-2 gap-3">
@@ -479,12 +461,18 @@
 								>IP address</span
 							>
 							<Input bind:value={form.ip} placeholder="192.168.1.100" class="w-full" />
+							{#if errors.ip}<p class="mt-1 text-[10.5px] font-medium text-red-500">
+									{errors.ip}
+								</p>{/if}
 						</label>
 						<label class="block">
 							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 								>Port</span
 							>
-							<Input bind:value={form.port} placeholder="9100" class="w-full" />
+							<Input bind:value={form.port} placeholder="9100" class="w-full" inputmode="numeric" />
+							{#if errors.port}<p class="mt-1 text-[10.5px] font-medium text-red-500">
+									{errors.port}
+								</p>{/if}
 						</label>
 					</div>
 				{/if}
@@ -492,11 +480,11 @@
 				{#if form.connectionType === 'websocket' || form.connectionType === 'webhook'}
 					<div class="space-y-3">
 						<label class="block">
-							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-								>URL ({form.connectionType === 'websocket'
+							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
+								URL ({form.connectionType === 'websocket'
 									? 'ws:// or wss://'
-									: 'http:// or https://'})</span
-							>
+									: 'http:// or https://'})
+							</span>
 							<Input
 								bind:value={form.url}
 								placeholder={form.connectionType === 'websocket'
@@ -504,12 +492,15 @@
 									: 'https://my-api.com/print'}
 								class="w-full"
 							/>
+							{#if errors.url}<p class="mt-1 text-[10.5px] font-medium text-red-500">
+									{errors.url}
+								</p>{/if}
 						</label>
 						{#if form.connectionType === 'webhook'}
 							<label class="block">
-								<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-									>Authorization token (optional)</span
-								>
+								<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
+									Authorization token (optional)
+								</span>
 								<Input
 									bind:value={form.authToken}
 									type="password"
@@ -546,26 +537,29 @@
 							>MAC address</span
 						>
 						<Input bind:value={form.macAddress} placeholder="00:1A:7D:DA:71:13" class="w-full" />
+						{#if errors.macAddress}
+							<p class="mt-1 text-[10.5px] font-medium text-red-500">{errors.macAddress}</p>
+						{/if}
 					</label>
 				{/if}
 
 				{#if form.connectionType === 'usb'}
 					<div
-						class="flex items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-500/10 p-3"
+						class="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3"
 					>
-						<Icon name="lucide:info" class="size-4 shrink-0 text-blue-500" />
-						<p class="text-[11px] text-blue-600 dark:text-blue-400">
+						<Icon name="lucide:info" class="mt-0.5 size-4 shrink-0 text-amber-500" />
+						<p class="text-[11px] text-amber-600 dark:text-amber-400">
 							USB printers require WebUSB support and will prompt for device permission when
-							printing.
+							printing. Chrome/Edge only.
 						</p>
 					</div>
 				{/if}
 
 				{#if form.connectionType === 'browser'}
 					<div
-						class="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3"
+						class="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3"
 					>
-						<Icon name="lucide:info" class="size-4 shrink-0 text-emerald-500" />
+						<Icon name="lucide:info" class="mt-0.5 size-4 shrink-0 text-emerald-500" />
 						<p class="text-[11px] text-emerald-600 dark:text-emerald-400">
 							Browser printing uses the system print dialog. No additional drivers required.
 						</p>
@@ -582,7 +576,6 @@
 				</p>
 
 				<div class="grid grid-cols-2 gap-3">
-					<!-- Paper size -->
 					<div>
 						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 							>Paper size</span
@@ -603,7 +596,6 @@
 						</div>
 					</div>
 
-					<!-- Copies -->
 					<label class="block">
 						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 							>Copies</span
@@ -619,43 +611,46 @@
 					</label>
 				</div>
 
-				<!-- Chars per line -->
-				<label class="block">
-					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Characters per line</span
-					>
-					<Input bind:value={form.charsPerLine} type="number" placeholder="48" class="w-full" />
-				</label>
-
-				<!-- Print density -->
-				<div>
-					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Print density</span
-					>
-					<div class="flex items-center gap-3">
-						<input
-							bind:value={form.printDensity}
-							type="range"
-							min="1"
-							max="15"
-							step="1"
-							class="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-[var(--ui-bg-accented)] accent-[var(--ui-color-primary-500)]"
-						/>
-						<span class="min-w-[24px] text-center text-[11px] font-bold"
-							>{form.printDensity || 8}</span
+				<div class="grid grid-cols-2 gap-3">
+					<label class="block">
+						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Characters per line</span
 						>
+						<Input
+							bind:value={form.charsPerLine}
+							type="number"
+							min="16"
+							max="96"
+							placeholder="48"
+							class="w-full"
+						/>
+					</label>
+					<div>
+						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Print density</span
+						>
+						<div class="flex items-center gap-3">
+							<input
+								bind:value={form.printDensity}
+								type="range"
+								min="1"
+								max="15"
+								step="1"
+								class="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-[var(--ui-bg-accented)] accent-[var(--ui-color-primary-500)]"
+							/>
+							<span class="min-w-[24px] text-center text-[11px] font-bold"
+								>{form.printDensity || 8}</span
+							>
+						</div>
 					</div>
 				</div>
 
-				<!-- Auto cut -->
 				<div class="flex items-center justify-between py-1">
 					<div>
 						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 							>Auto cut</label
 						>
-						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
-							Automatically cut paper after printing
-						</p>
+						<p class="text-[10px] text-[var(--ui-text-dimmed)]">Cut paper after printing</p>
 					</div>
 					<Switch bind:checked={form.autoCut} />
 				</div>
@@ -682,40 +677,44 @@
 					</div>
 				{/if}
 
-				<!-- Auto print -->
 				<div class="flex items-center justify-between py-1">
 					<div>
 						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 							>Auto print</label
 						>
 						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
-							Print automatically when a transaction completes
+							Print when a transaction completes
 						</p>
 					</div>
 					<Switch bind:checked={form.autoPrint} />
 				</div>
 
-				<!-- Cash drawer -->
 				<div class="flex items-center justify-between py-1">
 					<div>
 						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 							>Cash drawer</label
 						>
 						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
-							Send kick signal to open cash drawer
+							Send kick signal to open the drawer
 						</p>
 					</div>
 					<Switch bind:checked={form.cashDrawerEnabled} />
 				</div>
 
-				<!-- Enabled -->
+				<label class="block py-1">
+					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Note (optional)</span
+					>
+					<Input bind:value={form.note} placeholder="e.g. next to register 2" class="w-full" />
+				</label>
+
 				<div class="flex items-center justify-between py-1">
 					<div>
 						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 							>Enabled</label
 						>
 						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
-							Disable to temporarily take this printer offline
+							Take this printer offline temporarily
 						</p>
 					</div>
 					<Switch bind:checked={form.enabled} />
@@ -752,4 +751,12 @@
 			<Button color="error" block onclick={deletePrinter}>Delete</Button>
 		{/snippet}
 	</Dialog>
+
+	<!-- Help link to hardware -->
+	<p class="px-1 text-center text-[11px] text-[var(--ui-text-dimmed)]">
+		Need to wire a barcode scanner, scale, or cash drawer?
+		<a class="font-semibold text-primary-500 hover:underline" href={resolve('/settings/hardware')}
+			>Configure hardware</a
+		>.
+	</p>
 </div>

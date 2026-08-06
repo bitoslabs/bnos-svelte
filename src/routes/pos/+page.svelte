@@ -28,21 +28,15 @@
 		type PaymentMethod
 	} from '$lib/domain';
 	import { cart, type OrderType, type CartModifier } from '$lib/pos/cart.svelte';
+	import PaymentSuccessHeader from '$lib/pos/PaymentSuccessHeader.svelte';
 	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
 	import { computeStock, availableFor, canSell } from '$lib/pos/stock';
 	import { printPosReceipt } from '$lib/pos/pos-receipt';
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
-	import {
-		buildPaymentQr,
-		isQrMethod,
-		type PaymentQrResult
-	} from '$lib/pos/payment-qr';
+	import { buildPaymentQr, isQrMethod, type PaymentQrResult } from '$lib/pos/payment-qr';
 	import { loadPayConfig } from '$lib/pos/pay-config';
 	import { getMerchantLightning } from '$lib/pos/lightning';
-	import {
-		getActiveLightningProvider,
-		type LightningProvider
-	} from '$lib/pos/lightning-providers';
+	import { getActiveLightningProvider, type LightningProvider } from '$lib/pos/lightning-providers';
 	import QrCode from '$lib/components/ui/QrCode.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -422,8 +416,10 @@
 		splitMode = false;
 	}
 
-	// Payment success visual feedback
-	let showSuccessOverlay = $state(false);
+	// Payment success visual feedback — holds the just-completed sale + context
+	// so the celebration overlay can show amount, change due, tip, method, etc.
+	let successTip = $state(0);
+	let successTendered = $state(0);
 
 	// ── QR / Lightning checkout flow ──
 	// When the cashier taps Charge on a QR/Lightning method we open a payment-QR
@@ -537,7 +533,12 @@
 			if (wallet) {
 				const fallback = `lightning:${wallet.address}`;
 				payQrIsInvoice = false;
-				payQrResult = { payload: fallback, kind: 'lightning', configured: true, badge: 'lightning' };
+				payQrResult = {
+					payload: fallback,
+					kind: 'lightning',
+					configured: true,
+					badge: 'lightning'
+				};
 				toast.warning(
 					'Live invoice unavailable',
 					`Showing static address. ${e instanceof Error ? e.message : ''}`.trim()
@@ -645,8 +646,8 @@
 			const sale = await cart.checkout(paidMethod, 0);
 			if (sale) {
 				playSuccessChime();
-				showSuccessOverlay = true;
-				setTimeout(() => (showSuccessOverlay = false), 1500);
+				successTip = tipAmount;
+				successTendered = 0;
 				broadcastCheckoutSuccess(paidAmount, paidMethod);
 				toast.success('Payment received', `${formatMoney(paidAmount, currency)} · ${sale.number}`);
 				tendered = '';
@@ -684,8 +685,8 @@
 			);
 			if (sale) {
 				playSuccessChime();
-				showSuccessOverlay = true;
-				setTimeout(() => (showSuccessOverlay = false), 1500);
+				successTip = tipAmount;
+				successTendered = typeof tendered === 'number' ? tendered : 0;
 				broadcastCheckoutSuccess(grandTotal, method);
 				toast.success('Sale complete', `${formatMoney(grandTotal, currency)} · ${sale.number}`);
 				tendered = '';
@@ -718,8 +719,8 @@
 			const sale = await cart.checkout(primary.method as PaymentMethod, primary.amount);
 			if (sale) {
 				playSuccessChime();
-				showSuccessOverlay = true;
-				setTimeout(() => (showSuccessOverlay = false), 1500);
+				successTip = tipAmount;
+				successTendered = splitPayments.reduce((s, p) => s + p.amount, 0);
 				broadcastCheckoutSuccess(grandTotal, splitPayments[0].method);
 				toast.success(
 					'Sale complete',
@@ -1120,7 +1121,19 @@
 		});
 	});
 	function broadcastCheckoutSuccess(total: number, payMethod: string) {
-		displayChannel?.postMessage({ type: 'checkout-success', total, method: payMethod, currency });
+		const s = cart.lastCompleted;
+		displayChannel?.postMessage({
+			type: 'checkout-success',
+			total,
+			method: payMethod,
+			currency,
+			number: s?.number,
+			change: s?.change ?? 0,
+			itemCount: s?.items.reduce((n, i) => n + i.quantity, 0) ?? 0,
+			orderType: s?.orderType,
+			totalSats: s?.totalSats,
+			tip: successTip
+		});
 	}
 	function broadcastPayQr(
 		payload: string,
@@ -1500,9 +1513,7 @@
 
 	<div class="min-h-0 flex-1 overflow-hidden">
 		<div
-			class="grid h-full min-h-0 gap-4 {cart.isEmpty
-				? 'lg:grid-cols-1'
-				: 'lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem]'}"
+			class="grid h-full min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem]"
 		>
 			<!-- Product browser -->
 			<section class="flex min-h-0 min-w-0 flex-col overflow-hidden">
@@ -1562,9 +1573,7 @@
 						</EmptyState>
 					{:else}
 						<div
-							class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-5 {cart.isEmpty
-								? 'lg:grid-cols-6 xl:grid-cols-7'
-								: ''}"
+							class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-5"
 							class:pb-24={!cart.isEmpty}
 						>
 							{#each filtered as p (p.id)}
@@ -1638,37 +1647,56 @@
 				</div>
 			</section>
 
-			<!-- Desktop cart sidebar (lg+) — hidden when empty for full-width browsing -->
-			{#if !cart.isEmpty}
-				<aside
-					class="hidden min-h-0 flex-col overflow-hidden border-l border-[var(--ui-border-muted)] bg-[var(--surface-bg)] lg:flex"
+			<!-- Desktop cart sidebar (lg+) — always present; empty-state when no items -->
+			<aside
+				class="hidden min-h-0 flex-col overflow-hidden border-l border-[var(--ui-border-muted)] bg-[var(--surface-bg)] lg:flex"
+			>
+				<header
+					class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-4 py-3"
 				>
-					<header
-						class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-4 py-3"
-					>
-						<div class="flex items-center gap-2">
-							<Icon name="lucide:shopping-cart" class="size-4 text-primary-500" />
-							<h2 class="font-display text-[15px] font-semibold tracking-tight">Current sale</h2>
-							{#if cart.itemCount}<Badge color="primary">{cart.itemCount}</Badge>{/if}
-						</div>
-						{#if !cart.isEmpty}
-							<button
-								type="button"
-								class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
-								onclick={clearCart}>Clear</button
-							>
-						{/if}
-					</header>
-					{#if cart.isEmpty}
-						<!-- sidebar is hidden when empty; this never shows -->
-					{:else}
-						<div class="min-h-0 flex-1 overflow-y-auto">
-							{@render cartContent()}
-						</div>
-						{@render tenderBlock()}
+					<div class="flex items-center gap-2">
+						<Icon name="lucide:shopping-cart" class="size-4 text-primary-500" />
+						<h2 class="font-display text-[15px] font-semibold tracking-tight">Current sale</h2>
+						{#if cart.itemCount}<Badge color="primary">{cart.itemCount}</Badge>{/if}
+					</div>
+					{#if !cart.isEmpty}
+						<button
+							type="button"
+							class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
+							onclick={clearCart}>Clear</button
+						>
 					{/if}
-				</aside>
-			{/if}
+				</header>
+				{#if cart.isEmpty}
+					<div
+						class="animate-fade flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 text-center"
+					>
+						<div
+							class="grid size-14 place-items-center rounded-2xl bg-[var(--ui-bg-muted)] text-[var(--ui-text-dimmed)]"
+						>
+							<Icon name="lucide:shopping-cart" class="size-7" />
+						</div>
+						<div>
+							<p class="text-[13.5px] font-bold text-[var(--ui-text)]">Cart is empty</p>
+							<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
+								Tap a product to start a new sale.
+							</p>
+						</div>
+						<button
+							type="button"
+							onclick={openCustom}
+							class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--ui-bg-muted)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+						>
+							<Icon name="lucide:plus-circle" class="size-3.5" /> Custom item
+						</button>
+					</div>
+				{:else}
+					<div class="min-h-0 flex-1 overflow-y-auto">
+						{@render cartContent()}
+					</div>
+					{@render tenderBlock()}
+				{/if}
+			</aside>
 		</div>
 	</div>
 
@@ -1705,19 +1733,6 @@
 		</div>
 	{/if}
 </div>
-
-<!-- Payment success overlay -->
-{#if showSuccessOverlay}
-	<div class="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center">
-		<div class="rounded-full bg-green-500/20 p-6">
-			<div
-				class="grid size-20 place-items-center rounded-full bg-green-500 text-white shadow-lg shadow-green-500/50"
-			>
-				<Icon name="lucide:check" class="size-10" />
-			</div>
-		</div>
-	</div>
-{/if}
 
 <!-- Mobile floating "view cart" bar (sits above the bottom tab bar) -->
 {#if !cart.isEmpty}
@@ -2265,18 +2280,20 @@
 					disabled={processing}
 					onclick={() => cart.hold()}>Hold</Button
 				>
-				<Button color="primary" disabled={processing}
+				<Button
+					color="primary"
+					disabled={processing}
 					onclick={() => (isQrMethod(method) ? openQrCheckout() : checkout())}
 					>{#if processing}<Icon
 							name="lucide:loader-circle"
 							class="size-4 animate-spin"
-						/>…{:else if isQrMethod(method)}<Icon
-								name="lucide:qr-code"
-								class="size-4"
-							/>{method === 'lightning' ? 'Invoice' : 'Show QR'}{:else}<Icon
-								name="lucide:check-circle"
-								class="size-4"
-							/>Charge{/if}</Button
+						/>…{:else if isQrMethod(method)}<Icon name="lucide:qr-code" class="size-4" />{method ===
+						'lightning'
+							? 'Invoice'
+							: 'Show QR'}{:else}<Icon
+							name="lucide:check-circle"
+							class="size-4"
+						/>Charge{/if}</Button
 				>
 			</div>
 		{/if}
@@ -2541,25 +2558,19 @@
 </Dialog>
 
 <!-- Receipt -->
-<Dialog bind:open={receiptOpen} title="Sale complete" size="sm">
+<Dialog bind:open={receiptOpen} size="sm">
 	{#if cart.lastCompleted}
 		{@const s = cart.lastCompleted}
-		<div class="text-center">
-			<div
-				class="mx-auto grid size-12 place-items-center rounded-full bg-[var(--tone-success-bg)] text-[var(--tone-success-text)]"
-			>
-				<Icon name="lucide:check" class="size-6" />
-			</div>
-			<div class="mt-2 font-mono text-[14px] font-bold">{s.number}</div>
-			<div class="font-display text-2xl font-bold tabular-nums">
-				{formatMoney(s.totals.total, currency)}
-			</div>
-			<div class="text-[11.5px] text-[var(--ui-text-muted)] capitalize">
-				{s.method} · {s.orderType.replace('_', '-')}{#if s.change > 0}
-					· change {formatMoney(s.change, currency)}{/if}
-			</div>
-		</div>
-		<ul class="mt-3 divide-y divide-[var(--ui-border-muted)] text-[12.5px]">
+		<PaymentSuccessHeader
+			sale={s}
+			{currency}
+			tip={successTip}
+			tendered={successTendered}
+			onClose={() => (receiptOpen = false)}
+		/>
+		<ul
+			class="mt-4 divide-y divide-[var(--ui-border-muted)] border-t border-[var(--ui-border-muted)] pt-3 text-[12.5px]"
+		>
 			{#each s.items as it (it.key)}
 				<li class="flex justify-between py-1.5">
 					<span class="min-w-0 truncate"
@@ -2799,24 +2810,30 @@
 			<div class="flex items-center gap-2">
 				<Icon
 					name={payQrResult.badge === 'lightning' ? 'lucide:zap' : 'lucide:qr-code'}
-					class="size-4 {payQrResult.badge === 'lightning'
-						? 'text-amber-500'
-						: 'text-primary-500'}"
+					class="size-4 {payQrResult.badge === 'lightning' ? 'text-amber-500' : 'text-primary-500'}"
 				/>
-				<span class="text-[12px] font-bold capitalize text-[var(--ui-text-muted)]">
+				<span class="text-[12px] font-bold text-[var(--ui-text-muted)] capitalize">
 					{payQrResult.kind}
 				</span>
 				{#if payQrIsInvoice}
-					<span class="rounded-full bg-amber-500/10 px-2 py-0.5 text-[9.5px] font-bold text-amber-600 dark:text-amber-400">amount-locked invoice</span>
+					<span
+						class="rounded-full bg-amber-500/10 px-2 py-0.5 text-[9.5px] font-bold text-amber-600 dark:text-amber-400"
+						>amount-locked invoice</span
+					>
 				{/if}
 				{#if payQrProvider?.label}
-					<span class="rounded-full bg-[var(--ui-bg-accented)] px-2 py-0.5 text-[9.5px] font-bold text-[var(--ui-text-muted)]">{payQrProvider.label}</span>
+					<span
+						class="rounded-full bg-[var(--ui-bg-accented)] px-2 py-0.5 text-[9.5px] font-bold text-[var(--ui-text-muted)]"
+						>{payQrProvider.label}</span
+					>
 				{/if}
 			</div>
 
 			<div class="rounded-2xl border border-[var(--ui-border)] bg-white p-3 shadow-sm">
 				{#if payQrFetching}
-					<div class="flex size-[224px] flex-col items-center justify-center gap-3 text-[var(--ui-text-dimmed)]">
+					<div
+						class="flex size-[224px] flex-col items-center justify-center gap-3 text-[var(--ui-text-dimmed)]"
+					>
 						<Icon name="lucide:loader-circle" class="size-8 animate-spin text-amber-500" />
 						<span class="text-[11.5px] font-semibold">Generating Lightning invoice…</span>
 						<span class="text-[10px] text-[var(--ui-text-dimmed)]">Contacting wallet provider</span>
@@ -2831,15 +2848,21 @@
 			</div>
 
 			{#if payQrMethod === 'lightning' && !payQrFetching}
-				<button type="button" onclick={regenerateInvoice}
+				<button
+					type="button"
+					onclick={regenerateInvoice}
 					class="flex items-center gap-1 text-[11px] font-semibold text-amber-600 hover:underline dark:text-amber-400"
 				>
-					<Icon name="lucide:refresh-cw" class="size-3.5" />{payQrIsInvoice ? 'New invoice' : 'Try live invoice again'}
+					<Icon name="lucide:refresh-cw" class="size-3.5" />{payQrIsInvoice
+						? 'New invoice'
+						: 'Try live invoice again'}
 				</button>
 			{/if}
 
 			<div class="text-center">
-				<p class="text-[10.5px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+				<p
+					class="text-[10.5px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+				>
 					Amount due
 				</p>
 				<p class="font-display text-3xl font-black tabular-nums">
@@ -2862,18 +2885,24 @@
 					: 'text-[var(--ui-text-muted)]'}"
 			>
 				<Icon name="lucide:clock" class="size-3.5" />
-				{payQrSecondsLeft > 0 ? `Expires in ${fmtQrCountdown(payQrSecondsLeft)}` : 'Expired — regenerate'}
+				{payQrSecondsLeft > 0
+					? `Expires in ${fmtQrCountdown(payQrSecondsLeft)}`
+					: 'Expired — regenerate'}
 			</div>
 
 			{#if payQrIsInvoice && payQrProvider?.autoConfirms}
-				<div class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold {payQrPaid
-					? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-					: 'bg-amber-500/5 text-amber-700 dark:text-amber-300'}">
+				<div
+					class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold {payQrPaid
+						? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+						: 'bg-amber-500/5 text-amber-700 dark:text-amber-300'}"
+				>
 					{#if payQrPaid}
 						<Icon name="lucide:check-circle-2" class="size-3.5" />Payment received — completing…
 					{:else}
 						<span class="relative flex size-2">
-							<span class="absolute inline-flex size-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
+							<span
+								class="absolute inline-flex size-full animate-ping rounded-full bg-amber-400 opacity-75"
+							></span>
 							<span class="relative inline-flex size-2 rounded-full bg-amber-500"></span>
 						</span>
 						Watching wallet — will auto-complete on payment
@@ -2917,7 +2946,11 @@
 		<Button color="neutral" variant="subtle" icon="lucide:x" onclick={closeQrCheckout}
 			>Cancel</Button
 		>
-		<Button color="primary" icon="lucide:check" onclick={confirmQrPaid} disabled={payQrLoading || payQrFetching}
+		<Button
+			color="primary"
+			icon="lucide:check"
+			onclick={confirmQrPaid}
+			disabled={payQrLoading || payQrFetching}
 			>{#if payQrLoading}<Icon name="lucide:loader-circle" class="size-4 animate-spin" />…{:else}
 				Mark paid
 			{/if}</Button
