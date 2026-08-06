@@ -3,7 +3,6 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import StockBadge from '$lib/components/ui/StockBadge.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { TYPE, type StockAdjustment, type Order } from '$lib/domain';

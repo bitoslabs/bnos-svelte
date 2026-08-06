@@ -29,6 +29,20 @@
 	} from '$lib/domain';
 	import { cart, type OrderType, type CartModifier } from '$lib/pos/cart.svelte';
 	import PaymentSuccessHeader from '$lib/pos/PaymentSuccessHeader.svelte';
+	import {
+		isAutoApplicable,
+		isPromotionEligible,
+		isPromoLive,
+		promoCoversProduct,
+		normalizeType,
+		promoValue,
+		promoName,
+		promoValueLabel,
+		promoIcon,
+		promoSavings,
+		type PromoCtx,
+		type PromoData
+	} from '$lib/pos/promotions';
 	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
 	import { computeStock, availableFor, canSell } from '$lib/pos/stock';
 	import { printPosReceipt } from '$lib/pos/pos-receipt';
@@ -52,6 +66,7 @@
 	interface PromotionData {
 		status?: string;
 		isActive?: boolean;
+		active?: boolean;
 		startDate?: string;
 		endDate?: string;
 		usageLimit?: number;
@@ -114,40 +129,37 @@
 		};
 	});
 
-	// Active promotions
-	const activePromotions = $derived(
-		glo.all<PromotionData, typeof TYPE.promotion>(TYPE.promotion).filter((p) => {
-			const d = p.data;
-			const now = new Date();
-			const active = d.status === 'active' || d.isActive !== false;
-			const notExpired = !d.endDate || new Date(d.endDate) >= now;
-			const started = !d.startDate || new Date(d.startDate) <= now;
-			const notExhausted = !d.usageLimit || (d.currentUsage ?? 0) < d.usageLimit;
-			return active && notExpired && started && notExhausted;
-		})
+	// ── Promotions ──
+	// All broadly-active promotions (status check only). Per-cart eligibility
+	// (date / time window / min-spend / targeting / usage) is evaluated by the
+	// promo engine so the cart rail can auto-suggest offers the current sale
+	// actually qualifies for. See ./promotions.ts.
+	const allPromotions = $derived(
+		glo
+			.all<PromotionData, typeof TYPE.promotion>(TYPE.promotion)
+			.filter(
+				(p) => p.data.status === 'active' || p.data.isActive !== false || p.data.active !== false
+			)
 	);
 
 	let promoOpen = $state(false);
-	let selectedPromoId = $state<string | null>(null);
 
 	function applyPromotion(promoId: string | null) {
-		selectedPromoId = promoId;
 		if (promoId) {
-			const promo = activePromotions.find((p) => p.id === promoId);
+			const promo = allPromotions.find((p) => p.id === promoId);
 			if (promo) {
 				const d = promo.data;
-				if (d.type === 'percent' || d.discountType === 'percent') {
-					cart.setDiscount({ type: 'percent', value: d.value ?? d.discountValue ?? 0 });
-				} else if (d.type === 'fixed' || d.discountType === 'fixed') {
-					cart.setDiscount({ type: 'fixed', value: d.value ?? d.discountValue ?? 0 });
-				}
+				const kind = normalizeType(d.type ?? d.discountType);
+				if (kind === 'percent') cart.setDiscount({ type: 'percent', value: promoValue(d) });
+				else if (kind === 'fixed') cart.setDiscount({ type: 'fixed', value: promoValue(d) });
+				// manual types (BOGO / bundle) → tag the order only, no auto discount
 				cart.setPromotion(promoId);
-				toast.success('Promotion applied: ' + (d.name ?? 'Discount'));
+				toast.success('Promotion applied', promoName(d, currency));
 			}
 		} else {
 			cart.setDiscount({ type: 'percent', value: 0 });
 			cart.setPromotion(null);
-			selectedPromoId = null;
+			toast.info('Promotion removed');
 		}
 		promoOpen = false;
 	}
@@ -157,6 +169,91 @@
 	const modifiers = $derived(glo.all<ModifierGroup, typeof TYPE.modifierGroup>(TYPE.modifierGroup));
 	const branchId = $derived(tenant.state.locationId ?? undefined);
 	const stockMap = $derived(computeStock(glo.all(TYPE.adjustment), branchId));
+
+	// Promotion eligibility context for the live cart (product/category targeting
+	// + subtotal for minimum-spend checks).
+	const productCategoryMap = $derived(
+		new Map(products.map((p) => [p.id, (p.data.categoryId as string | undefined) ?? undefined]))
+	);
+	const cartProductIds = $derived(cart.items.map((i) => i.productId));
+	const cartCategoryIds = $derived(
+		Array.from(
+			new Set(
+				cart.items.map((i) => productCategoryMap.get(i.productId)).filter((v): v is string => !!v)
+			)
+		)
+	);
+	const promoCtx = $derived<PromoCtx>({
+		subtotal: cart.totals.subtotal,
+		currency,
+		now,
+		cartProductIds,
+		cartCategoryIds
+	});
+	// Offers the current cart qualifies for AND the cart can apply automatically.
+	const eligiblePromotions = $derived(
+		allPromotions.filter(
+			(p) => isAutoApplicable(p.data) && isPromotionEligible(p.data, promoCtx).ok
+		)
+	);
+	// The promotion currently linked to the cart (drives the "applied" banner).
+	const appliedPromoObj = $derived(
+		cart.appliedPromotionId
+			? (allPromotions.find((p) => p.id === cart.appliedPromotionId) ?? null)
+			: null
+	);
+	// Auto-release a promotion that is no longer valid for this cart — e.g. the
+	// customer removed items and the subtotal dropped below the minimum spend, or
+	// a happy-hour window just ended.
+	$effect(() => {
+		const id = cart.appliedPromotionId;
+		if (!id) return;
+		const promo = allPromotions.find((p) => p.id === id);
+		if (!promo) return;
+		const elig = isPromotionEligible(promo.data, promoCtx);
+		if (!elig.ok) {
+			cart.setPromotion(null);
+			cart.setDiscount({ type: 'percent', value: 0 });
+			toast.info(
+				'Promotion removed',
+				`${promoName(promo.data, currency)} — ${elig.reason.toLowerCase()}`
+			);
+		}
+	});
+
+	// Best live promotion per product — drives the "on offer" badge + effective
+	// (discounted) price on each product card. Ignores cart state so the badge is
+	// stable; the cart rail handles actual eligibility + apply.
+	type ProductPromo = { data: PromoData; savings: number; newPrice: number; label: string };
+	const productPromoMap = $derived.by(() => {
+		const map = new Map<string, ProductPromo>();
+		if (allPromotions.length === 0) return map;
+		for (const prod of products) {
+			const price = prod.data.price ?? 0;
+			if (price <= 0) continue;
+			const cat = prod.data.categoryId as string | undefined;
+			let best: { data: PromoData; savings: number } | null = null;
+			for (const promo of allPromotions) {
+				const d = promo.data;
+				if (!isAutoApplicable(d) || !isPromoLive(d, now).ok) continue;
+				if (!promoCoversProduct(d, prod.id, cat)) continue;
+				const savings = promoSavings(d, price);
+				if (savings <= 0) continue;
+				if (!best || savings > best.savings) best = { data: d, savings };
+			}
+			if (best) {
+				map.set(prod.id, {
+					data: best.data,
+					savings: best.savings,
+					newPrice: Math.max(0, price - best.savings),
+					label: promoValueLabel(best.data, currency)
+				});
+			}
+		}
+		return map;
+	});
+	const offersCount = $derived(productPromoMap.size);
+	let offersOnly = $state(false);
 
 	let query = $state('');
 	let activeCat = $state<string>('all');
@@ -174,7 +271,8 @@
 			const q = query.trim().toLowerCase();
 			const matchesQuery = !q || (p.data.name ?? '').toLowerCase().includes(q);
 			const sellable = p.data.status !== 'inactive' && p.data.status !== 'archived';
-			return matchesCat && matchesQuery && sellable;
+			const matchesOffers = !offersOnly || productPromoMap.has(p.id);
+			return matchesCat && matchesQuery && sellable && matchesOffers;
 		})
 	);
 	const trackedProducts = $derived(products.filter((p) => p.data.trackInventory).length);
@@ -1549,6 +1647,22 @@
 									{cat}
 								</button>
 							{/each}
+							{#if offersCount > 0}
+								<button
+									type="button"
+									onclick={() => (offersOnly = !offersOnly)}
+									class="flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[12.5px] font-semibold transition-colors {offersOnly
+										? 'bg-primary-500 text-white'
+										: 'bg-primary-500/10 text-primary-700 hover:bg-primary-500/15 dark:text-primary-300'}"
+								>
+									<Icon name="lucide:ticket-percent" class="size-3.5" />
+									Offers
+									<span
+										class="rounded-full bg-black/10 px-1.5 text-[10px] tabular-nums dark:bg-white/25"
+										>{formatInt(offersCount)}</span
+									>
+								</button>
+							{/if}
 						</div>
 						<div class="flex items-center gap-2 text-[12px] text-[var(--ui-text-dimmed)]">
 							<span>{formatInt(filtered.length)} visible</span>
@@ -1558,7 +1672,7 @@
 					</div>
 				</div>
 
-				<div class="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-5 sm:pb-5 lg:px-6 lg:pb-6">
+				<div class="min-h-0 pt-1 flex-1 overflow-y-auto px-4 pb-4 sm:px-5 sm:pb-5 lg:px-6 lg:pb-6">
 					{#if filtered.length === 0}
 						<EmptyState
 							icon="lucide:package"
@@ -1587,16 +1701,26 @@
 									p.data.inventory?.denySaleWhenOutOfStock &&
 									!p.data.inventory.allowBackorder &&
 									avail <= 0}
+								{@const promo = productPromoMap.get(p.id)}
 								<button
 									type="button"
 									onclick={() => tapProduct(p)}
 									disabled={outOfStock as boolean}
-									class="surface-card group relative flex flex-col gap-2 p-2.5 text-left transition-all enabled:hover:-translate-y-0.5 enabled:hover:border-primary-500/40 enabled:active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
+									class="surface-card group relative flex flex-col gap-2 p-2.5 text-left transition-all enabled:hover:-translate-y-0.5 enabled:hover:border-primary-500/40 enabled:active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 {promo
+										? 'ring-1 ring-primary-500/40'
+										: ''}"
 								>
 									<div
 										class="relative grid aspect-square w-full place-items-center rounded-xl bg-[var(--ui-bg-accented)] text-[var(--ui-text-dimmed)]"
 									>
 										<Icon name="lucide:cup-soda" class="size-6 sm:size-7" />
+										{#if promo}
+											<span
+												class="absolute top-1.5 left-1.5 inline-flex items-center gap-0.5 rounded-full bg-primary-500 px-1.5 py-0.5 text-[8.5px] font-bold text-white shadow-sm"
+											>
+												<Icon name={promoIcon(promo.data)} class="size-2.5" />{promo.label}
+											</span>
+										{/if}
 										{#if p.data.variants?.length}
 											<span
 												class="absolute top-1.5 right-1.5 rounded-full bg-black/45 px-1.5 py-0.5 text-[8.5px] font-bold text-white"
@@ -1617,15 +1741,30 @@
 									</div>
 									<div class="min-w-0">
 										<div class="truncate text-[12.5px] font-semibold">{p.data.name}</div>
-										<div class="text-[12.5px] font-bold text-primary-600 dark:text-primary-400">
-											{formatMoney(p.data.price ?? 0, p.data.currency ?? currency)}
-										</div>
+										{#if promo && promo.savings > 0}
+											<div class="flex items-baseline gap-1">
+												<span
+													class="text-[10.5px] font-medium text-[var(--ui-text-dimmed)] line-through"
+													>{formatMoney(p.data.price ?? 0, p.data.currency ?? currency)}</span
+												>
+												<span class="text-[12.5px] font-bold text-[var(--tone-success-text)]"
+													>{formatMoney(promo.newPrice, p.data.currency ?? currency)}</span
+												>
+											</div>
+										{:else}
+											<div class="text-[12.5px] font-bold text-primary-600 dark:text-primary-400">
+												{formatMoney(p.data.price ?? 0, p.data.currency ?? currency)}
+											</div>
+										{/if}
 										{#if showSats && (p.data.price ?? 0) > 0}
 											<div
 												class="flex items-center gap-0.5 text-[10px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
 											>
 												<Icon name="lucide:zap" class="size-2.5" />{formatInt(
-													btcRate.satsFromAmount(p.data.price ?? 0, p.data.currency ?? currency)
+													btcRate.satsFromAmount(
+														promo?.newPrice ?? p.data.price ?? 0,
+														p.data.currency ?? currency
+													)
 												)} sats
 											</div>
 										{/if}
@@ -1953,20 +2092,96 @@
 								>−{formatMoney(cart.totals.discountAmount, currency)}</span
 							>{:else}<span class="text-[var(--ui-text-dimmed)]">None</span>{/if}
 					</button>
-					{#if activePromotions.length > 0}
-						<button
-							type="button"
-							onclick={() => (promoOpen = true)}
-							class="flex items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3 py-1.5 text-[12px] font-semibold text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-800 dark:bg-primary-950 dark:text-primary-300 dark:hover:bg-primary-900"
-						>
-							<Icon name="lucide:ticket-percent" class="size-3.5" />
-							{selectedPromoId ? 'Promo applied' : 'Promotions'}
-							{#if activePromotions.length > 1}
-								<span class="rounded-full bg-primary-200 px-1.5 text-[10px] dark:bg-primary-800"
-									>{formatInt(activePromotions.length)}</span
+					{#if allPromotions.length > 0}
+						<div class="space-y-1.5">
+							{#if appliedPromoObj}
+								{@const pd = appliedPromoObj.data}
+								{@const savings = promoSavings(pd, cart.totals.subtotal)}
+								<div
+									class="flex items-center gap-2 rounded-lg border border-[var(--tone-success-text)]/30 bg-[var(--tone-success-bg)] px-2.5 py-1.5"
 								>
+									<Icon
+										name={promoIcon(pd)}
+										class="size-4 shrink-0 text-[var(--tone-success-text)]"
+									/>
+									<button
+										type="button"
+										onclick={() => (promoOpen = true)}
+										class="min-w-0 flex-1 text-left"
+									>
+										<div class="truncate text-[12px] font-bold text-[var(--tone-success-text)]">
+											{promoName(pd, currency)}
+										</div>
+										<div
+											class="truncate text-[10.5px] font-semibold text-[var(--tone-success-text)]/80"
+										>
+											{#if savings > 0}−{formatMoney(savings, currency)} · {promoValueLabel(
+													pd,
+													currency
+												)}{:else}{promoValueLabel(pd, currency)}{/if}
+										</div>
+									</button>
+									<button
+										type="button"
+										onclick={() => applyPromotion(null)}
+										aria-label="Remove promotion"
+										class="grid size-6 shrink-0 place-items-center rounded-md text-[var(--tone-success-text)] transition-colors hover:bg-[var(--tone-success-text)]/10"
+									>
+										<Icon name="lucide:x" class="size-3.5" />
+									</button>
+								</div>
+							{:else if eligiblePromotions.length > 0}
+								<div
+									class="flex items-center gap-1 px-0.5 text-[9.5px] font-bold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+								>
+									<Icon name="lucide:sparkles" class="size-3 text-primary-500" />
+									<span>Available offers</span>
+								</div>
+								{#each eligiblePromotions.slice(0, 3) as promo (promo.id)}
+									{@const pd = promo.data}
+									{@const savings = promoSavings(pd, cart.totals.subtotal)}
+									<button
+										type="button"
+										onclick={() => applyPromotion(promo.id)}
+										class="flex w-full items-center gap-2 rounded-lg border border-primary-500/25 bg-primary-500/5 px-2.5 py-1.5 text-left transition-colors hover:border-primary-500/50 hover:bg-primary-500/10"
+									>
+										<Icon
+											name={promoIcon(pd)}
+											class="size-4 shrink-0 text-primary-600 dark:text-primary-400"
+										/>
+										<div class="min-w-0 flex-1">
+											<div class="truncate text-[12px] font-bold text-[var(--ui-text)]">
+												{promoName(pd, currency)}
+											</div>
+											<div
+												class="truncate text-[10.5px] font-semibold text-primary-600 dark:text-primary-400"
+											>
+												{#if savings > 0}Save {formatMoney(
+														savings,
+														currency
+													)}{:else}{promoValueLabel(pd, currency)}{/if}
+											</div>
+										</div>
+										<span
+											class="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-primary-500/15 px-1.5 py-0.5 text-[10px] font-bold text-primary-700 dark:text-primary-300"
+										>
+											<Icon name="lucide:plus" class="size-3" />Apply
+										</span>
+									</button>
+								{/each}
 							{/if}
-						</button>
+							<button
+								type="button"
+								onclick={() => (promoOpen = true)}
+								class="flex w-full items-center justify-center gap-1 pt-0.5 text-[10.5px] font-semibold text-[var(--ui-text-dimmed)] transition-colors hover:text-[var(--ui-text-muted)]"
+							>
+								<Icon name="lucide:ticket" class="size-3" />
+								{appliedPromoObj ? 'Change promotion' : 'View all'}
+								<span class="rounded-full bg-[var(--ui-bg-muted)] px-1.5 text-[9.5px]"
+									>{formatInt(allPromotions.length)}</span
+								>
+							</button>
+						</div>
 					{/if}
 				</div>
 			{/if}
@@ -2456,48 +2671,87 @@
 </Dialog>
 
 <!-- Promotion picker -->
-<Dialog bind:open={promoOpen} title="Active promotions" size="md">
+<Dialog bind:open={promoOpen} title="Promotions" size="md">
 	<div class="space-y-2">
-		{#if selectedPromoId}
+		{#if cart.appliedPromotionId}
 			<button
 				type="button"
 				onclick={() => applyPromotion(null)}
 				class="flex w-full items-center gap-3 rounded-lg border border-[var(--tone-error-bg)] bg-[var(--tone-error-bg)]/50 p-3 text-left transition-colors hover:bg-[var(--tone-error-bg)]"
 			>
-				<Icon name="lucide:x-circle" class="size-5 text-[var(--tone-error-text)]" />
-				<div>
+				<Icon name="lucide:x-circle" class="size-5 shrink-0 text-[var(--tone-error-text)]" />
+				<div class="min-w-0">
 					<p class="text-[13px] font-semibold text-[var(--tone-error-text)]">Remove promotion</p>
-					<p class="text-[11px] text-[var(--ui-text-muted)]">Clear active promotion & discount</p>
+					<p class="truncate text-[11px] text-[var(--ui-text-muted)]">
+						{#if appliedPromoObj}{promoName(appliedPromoObj.data, currency)} — clears the discount too{/if}
+					</p>
 				</div>
 			</button>
 		{/if}
-		{#each activePromotions as promo (promo.id)}
+		{#each allPromotions as promo (promo.id)}
 			{@const d = promo.data}
+			{@const elig = isPromotionEligible(d, promoCtx)}
+			{@const savings = promoSavings(d, cart.totals.subtotal)}
+			{@const applied = cart.appliedPromotionId === promo.id}
+			{@const auto = isAutoApplicable(d)}
 			<button
 				type="button"
-				onclick={() => applyPromotion(promo.id)}
-				class="flex w-full items-center gap-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-3 text-left transition-colors hover:bg-[var(--ui-bg-accented)]"
+				disabled={!applied && !elig.ok}
+				onclick={() => applyPromotion(applied ? null : promo.id)}
+				class="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors {applied
+					? 'border-primary-500 bg-primary-500/10'
+					: elig.ok
+						? 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] hover:bg-[var(--ui-bg-accented)]'
+						: 'cursor-not-allowed border-dashed border-[var(--ui-border-muted)] opacity-55'}"
 			>
 				<div
-					class="grid size-10 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 text-white"
+					class="grid size-10 shrink-0 place-items-center rounded-lg text-white {applied
+						? 'bg-gradient-to-br from-primary-400 to-primary-600'
+						: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]'}"
 				>
-					<Icon name="lucide:ticket-percent" class="size-5" />
+					<Icon name={promoIcon(d)} class="size-5" />
 				</div>
 				<div class="min-w-0 flex-1">
-					<p class="truncate text-[13px] font-bold">{d.name ?? 'Unnamed promotion'}</p>
+					<div class="flex items-center gap-1.5">
+						<p class="truncate text-[13px] font-bold">{promoName(d, currency)}</p>
+						{#if applied}
+							<span
+								class="rounded-full bg-primary-500/15 px-1.5 py-0.5 text-[9.5px] font-bold text-primary-700 dark:text-primary-300"
+								>APPLIED</span
+							>
+						{/if}
+					</div>
 					<p class="truncate text-[11.5px] text-[var(--ui-text-muted)]">
-						{d.type === 'percent' || d.discountType === 'percent'
-							? `${d.value ?? d.discountValue ?? 0}% off`
-							: d.type === 'fixed' || d.discountType === 'fixed'
-								? formatMoney(d.value ?? d.discountValue ?? 0, currency)
-								: (d.description ?? 'Special offer')}
+						{promoValueLabel(d, currency)}{#if savings > 0}
+							· save {formatMoney(savings, currency)}{/if}
 					</p>
 				</div>
-				{#if selectedPromoId === promo.id}
-					<Icon name="lucide:check-circle-2" class="size-5 text-primary-500" />
+				{#if applied}
+					<Icon name="lucide:check-circle-2" class="size-5 shrink-0 text-primary-500" />
+				{:else if !elig.ok}
+					<span
+						class="shrink-0 rounded-full bg-[var(--tone-warning-bg)] px-2 py-0.5 text-[10px] font-semibold text-[var(--tone-warning-text)]"
+						>{elig.reason}</span
+					>
+				{:else if !auto}
+					<span
+						class="shrink-0 rounded-full bg-[var(--ui-bg-accented)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ui-text-muted)]"
+						>Manual</span
+					>
+				{:else}
+					<Icon name="lucide:plus-circle" class="size-5 shrink-0 text-primary-500" />
 				{/if}
 			</button>
 		{/each}
+		{#if allPromotions.length === 0}
+			<p class="py-6 text-center text-[12.5px] text-[var(--ui-text-muted)]">
+				No active promotions. Create some in
+				<a
+					class="font-semibold text-primary-600 hover:underline dark:text-primary-400"
+					href={resolve('/promotions')}>Promotions</a
+				>.
+			</p>
+		{/if}
 	</div>
 	{#snippet footer()}
 		<Button color="neutral" variant="ghost" onclick={() => (promoOpen = false)}>Close</Button>
