@@ -59,6 +59,8 @@ export const TYPE = {
 	membershipCheckIn: 'membership-check-in',
 	shift: 'shift',
 	cashEvent: 'cash-event',
+	// audit / activity feed (NIP-78 fallback 30078)
+	activity: 'activity',
 	// marketplace (dedicated BNOS marketplace kinds 30950–30955)
 	marketplaceConnection: 'marketplace.connection',
 	marketplaceProduct: 'marketplace.product',
@@ -84,7 +86,10 @@ const APP_KIND_OVERRIDES: Partial<Record<DomainType, number>> = {
 };
 
 export const KIND = Object.fromEntries(
-	(Object.keys(TYPE) as DomainType[]).map((k) => [k, APP_KIND_OVERRIDES[k] ?? getGloKindForType(TYPE[k])])
+	(Object.keys(TYPE) as DomainType[]).map((k) => [
+		k,
+		APP_KIND_OVERRIDES[k] ?? getGloKindForType(TYPE[k])
+	])
 ) as { [K in DomainType]: number };
 
 /** Type-string → resolved kind (e.g. `kindForType('commerce.order') === 30200`). */

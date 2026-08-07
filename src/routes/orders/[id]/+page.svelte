@@ -37,6 +37,8 @@
 		refundReasonLabel,
 		refundReasonIcon
 	} from '$lib/pos/refund';
+	import { logActivity } from '$lib/audit.svelte';
+	import { permissions } from '$lib/permissions.svelte';
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
 
 	const id = $derived(page.params.id);
@@ -61,6 +63,9 @@
 	const canRefund = $derived(
 		!!order && !!refundState && order.data.status !== 'cancelled' && isOrderRefundable(refundState)
 	);
+	// Action permissions (RBAC). Cashiers can't refund or void — only managers+.
+	const canIssueRefund = $derived(permissions.can('refunds', 'write'));
+	const canVoid = $derived(permissions.can('orders', 'delete'));
 	let refundOpen = $state(false);
 
 	// Keep a BTC rate for the merchant currency loaded so the printed receipt's
@@ -274,6 +279,14 @@
 			return;
 		await updateStatus('cancelled');
 		toast.info('Order cancelled');
+		void logActivity({
+			action: 'void',
+			resource: 'order',
+			resourceId: id ?? '',
+			summary: `Voided order ${order.data.orderNumber ?? id?.slice(0, 8)}`,
+			amount: order.data.total,
+			currency: order.data.currency
+		});
 	}
 
 	async function deleteOrder() {
@@ -463,13 +476,21 @@
 						color="error"
 						variant="subtle"
 						size="sm"
-						icon="lucide:undo-2"
-						onclick={() => (refundOpen = true)}>Refund</Button
+						icon={canIssueRefund ? 'lucide:undo-2' : 'lucide:lock'}
+						disabled={!canIssueRefund}
+						title={canIssueRefund ? 'Refund' : 'Requires refund permission (manager+)'}
+						onclick={() => canIssueRefund && (refundOpen = true)}>Refund</Button
 					>
 				{/if}
 				{#if order.data.status !== 'cancelled' && order.data.status !== 'completed'}
-					<Button color="error" variant="subtle" size="sm" icon="lucide:x" onclick={cancelOrder}
-						>Cancel</Button
+					<Button
+						color="error"
+						variant="subtle"
+						size="sm"
+						icon={canVoid ? 'lucide:x' : 'lucide:lock'}
+						disabled={!canVoid}
+						title={canVoid ? 'Cancel order' : 'Requires delete permission (manager+)'}
+						onclick={() => canVoid && cancelOrder()}>Cancel</Button
 					>
 				{/if}
 				<Button color="error" variant="ghost" size="sm" icon="lucide:trash-2" onclick={deleteOrder}

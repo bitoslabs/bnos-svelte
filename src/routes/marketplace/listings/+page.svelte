@@ -22,6 +22,7 @@
 		TYPE,
 		statusColor,
 		channelMeta,
+		NATIVE_STORE,
 		listingStatusLabel,
 		LISTING_STATUSES,
 		type MarketplaceProduct,
@@ -225,7 +226,6 @@
 		confirmDeleteId = null;
 	}
 
-	const hasChannels = $derived(connections.length > 0);
 </script>
 
 <svelte:head><title>Marketplace · Listings</title></svelte:head>
@@ -235,47 +235,50 @@
 		<div>
 			<h2 class="font-display text-lg font-bold tracking-tight">Listings</h2>
 			<p class="text-[12px] text-[var(--ui-text-muted)]">
-				{formatInt(filtered.length)} listings across {connections.length} channels
+				{formatInt(filtered.length)} listings · <span
+					class="font-semibold text-emerald-600 dark:text-emerald-400">{NATIVE_STORE.label}</span
+				>{#if connections.length > 0} + {connections.length} channel{connections.length === 1
+					? ''
+					: 's'}{/if}
 			</p>
 		</div>
 		<Button
 			color="primary"
 			icon="lucide:plus"
 			onclick={openCreate}
-			disabled={!hasChannels || availableProducts.length === 0}
+			disabled={availableProducts.length === 0}
 		>
-			New listing
+			{availableProducts.length === 0 ? 'All products listed' : 'New listing'}
 		</Button>
 	</div>
 
-	{#if !hasChannels}
-		<EmptyState
-			icon="lucide:radio"
-			title="Connect a channel first"
-			description="You need at least one sales channel before publishing listings."
-		>
-			{#snippet actions()}
-				<Button color="primary" size="sm" icon="lucide:plus" href="/marketplace/channels"
-					>Connect channel</Button
-				>
-			{/snippet}
-		</EmptyState>
-	{:else if listings.length === 0}
+	{#if listings.length === 0}
 		<EmptyState
 			icon="lucide:tags"
-			title="No listings yet"
-			description="Publish a catalog product to one or more channels to start selling."
+			title={availableProducts.length === 0 ? 'Publish your first listing' : 'No listings yet'}
+			description={availableProducts.length === 0
+				? 'Add products to your catalog first, then publish them to your web store and any connected channels.'
+				: 'Publish a catalog product — it goes live on your web store (' +
+					NATIVE_STORE.storefront +
+					') instantly. Connect TikTok, Facebook or Shopee later to reach more buyers.'}
 		>
 			{#snippet actions()}
-				<Button
-					color="primary"
-					size="sm"
-					icon="lucide:plus"
-					onclick={openCreate}
-					disabled={availableProducts.length === 0}
-				>
-					{availableProducts.length === 0 ? 'All products listed' : 'New listing'}
-				</Button>
+				{#if availableProducts.length === 0}
+					<Button color="primary" size="sm" icon="lucide:plus" href="/catalog"
+						>Add catalog product</Button
+					>
+				{:else}
+					<Button color="primary" size="sm" icon="lucide:plus" onclick={openCreate}
+						>New listing</Button
+					>
+					<Button
+						color="neutral"
+						variant="subtle"
+						size="sm"
+						icon="lucide:radio"
+						href="/marketplace/channels">Connect external channel</Button
+					>
+				{/if}
 			{/snippet}
 		</EmptyState>
 	{:else}
@@ -369,8 +372,13 @@
 											{l.data.sku}
 										</p>
 									{/if}
-									<!-- Channel chips -->
+									<!-- Destination chips: native web store is always present -->
 									<div class="mt-1.5 flex flex-wrap items-center gap-1">
+										<span
+											class="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-600 dark:text-emerald-400"
+										>
+											<Icon name={NATIVE_STORE.icon} class="size-2.5" />{NATIVE_STORE.label}
+										</span>
 										{#each l.data.channelIds as cid (cid)}
 											{@const conn = connections.find((c) => c.id === cid)}
 											{@const m = conn ? channelMeta(conn.data.type) : null}
@@ -381,9 +389,6 @@
 												{conn?.data.name ?? cid.slice(0, 6)}
 											</span>
 										{/each}
-										{#if l.data.channelIds.length === 0}
-											<span class="text-[9px] text-[var(--ui-text-dimmed)]">No channels</span>
-										{/if}
 									</div>
 								</div>
 							</div>
@@ -481,31 +486,74 @@
 			{/if}
 		</label>
 
-		<!-- Channels -->
-		<div>
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Publish to channels</span
+		<!-- Where this listing appears -->
+		<div class="space-y-2.5">
+			<span class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Where this listing appears</span
 			>
-			<div class="flex flex-wrap gap-1.5">
-				{#each connections as c (c.id)}
-					{@const m = channelMeta(c.data.type)}
-					<button
-						type="button"
-						onclick={() => toggleChannel(c.id)}
-						class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all {fChannelIds.includes(
-							c.id
-						)
-							? 'bg-primary-500/15 text-primary-600 ring-1 ring-primary-500/30 dark:text-primary-300'
-							: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
-					>
-						{#if fChannelIds.includes(c.id)}<Icon name="lucide:check" class="size-3" />{:else}<Icon
-								name={m.icon}
-								class="size-3"
-							/>{/if}
-						{c.data.name}
-					</button>
-				{/each}
+			<!-- Native web store: always on, locked (your storefront reads active listings) -->
+			<div
+				class="flex items-center gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3"
+			>
+				<div
+					class="grid size-9 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+				>
+					<Icon name={NATIVE_STORE.icon} class="size-4.5" />
+				</div>
+				<div class="min-w-0 flex-1">
+					<p class="text-[12.5px] font-bold">{NATIVE_STORE.label}</p>
+					<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+						Live on your storefront ({NATIVE_STORE.storefront}) — always on
+					</p>
+				</div>
+				<Badge color="success"><Icon name="lucide:check" class="size-3" />On</Badge>
 			</div>
+
+			<!-- Optional external distribution (not required) -->
+			{#if connections.length > 0}
+				<div class="pt-0.5">
+					<p class="mb-1.5 text-[11px] font-medium text-[var(--ui-text-dimmed)]">
+						Also distribute to external channels
+						<span class="text-[var(--ui-text-dimmed)]">(optional)</span>
+					</p>
+					<div class="flex flex-wrap gap-1.5">
+						{#each connections as c (c.id)}
+							{@const m = channelMeta(c.data.type)}
+							<button
+								type="button"
+								onclick={() => toggleChannel(c.id)}
+								class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all {fChannelIds.includes(
+									c.id
+								)
+									? 'bg-primary-500/15 text-primary-600 ring-1 ring-primary-500/30 dark:text-primary-300'
+									: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+							>
+								{#if fChannelIds.includes(c.id)}<Icon name="lucide:check" class="size-3" />{:else}<Icon
+										name={m.icon}
+										class="size-3"
+									/>{/if}
+								{c.data.name}
+							</button>
+						{/each}
+					</div>
+				</div>
+			{:else}
+				<a
+					href="/marketplace/channels"
+					class="inline-flex items-center gap-1 text-[11px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
+				>
+					<Icon name="lucide:plus" class="size-3" />Connect external channels (TikTok, Facebook, Shopee…)
+				</a>
+			{/if}
+
+			{#if fChannelIds.length > 0}
+				<p class="flex items-center gap-1 text-[10.5px] text-[var(--ui-text-dimmed)]">
+					<Icon name="lucide:send" class="size-3" />
+					Publishing to {NATIVE_STORE.label} + {fChannelIds.length} channel{fChannelIds.length === 1
+						? ''
+						: 's'}.
+				</p>
+			{/if}
 		</div>
 
 		<!-- Pricing -->

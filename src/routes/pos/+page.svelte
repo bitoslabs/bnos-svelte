@@ -25,9 +25,22 @@
 		type ModifierGroup,
 		type GloObject,
 		type Order,
+		type Customer,
+		type LoyaltyPoints,
 		type PaymentMethod
 	} from '$lib/domain';
-	import { cart, type OrderType, type CartModifier } from '$lib/pos/cart.svelte';
+	import { newRecordId } from '$lib/utils/record-id';
+	import CustomerPicker from '$lib/components/pos/CustomerPicker.svelte';
+	import { loadLoyaltySettings, type LoyaltySettings } from '$lib/settings/local';
+	import { pointsForSpend, maxRedeem, buildLoyaltyTx } from '$lib/pos/loyalty';
+	import { logActivity } from '$lib/audit.svelte';
+	import { permissions } from '$lib/permissions.svelte';
+	import {
+		cart,
+		type OrderType,
+		type CartModifier,
+		type CompletedSale
+	} from '$lib/pos/cart.svelte';
 	import PaymentSuccessHeader from '$lib/pos/PaymentSuccessHeader.svelte';
 	import {
 		isAutoApplicable,
@@ -45,6 +58,7 @@
 		type PromoData
 	} from '$lib/pos/promotions';
 	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
+	import { startBarcodeScanner } from '$lib/pos/barcode-scanner';
 	import { computeStock, availableFor, canSell } from '$lib/pos/stock';
 	import { printPosReceipt } from '$lib/pos/pos-receipt';
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
@@ -84,11 +98,13 @@
 	let generalSettings = $state<GeneralSettings>(loadGeneralSettings());
 	let hardwareSettings = $state<HardwareSettings>(loadHardwareSettings());
 	let receiptSettings = $state<ReceiptSettings>(loadReceiptSettings());
+	let loyaltySettings = $state<LoyaltySettings>(loadLoyaltySettings());
 
 	function refreshLocalSettings() {
 		generalSettings = loadGeneralSettings();
 		hardwareSettings = loadHardwareSettings();
 		receiptSettings = loadReceiptSettings(tenant.state.organizationName || 'BNOS');
+		loyaltySettings = loadLoyaltySettings();
 	}
 
 	onMount(() => {
@@ -107,7 +123,8 @@
 				TYPE.shift,
 				TYPE.order,
 				TYPE.promotion,
-				TYPE.refund
+				TYPE.refund,
+				TYPE.loyaltyPoints
 			],
 			{ scope: 'pos' }
 		);
@@ -162,6 +179,12 @@
 				cart.setPromotion(promoId);
 				autoAppliedId = null; // cashier chose this manually → no longer “auto”
 				toast.success('Promotion applied', promoName(d, currency));
+				void logActivity({
+					action: 'promotion',
+					resource: 'promotion',
+					resourceId: promoId,
+					summary: `Applied promotion ${promoName(d, currency)}`
+				});
 			}
 		} else {
 			// Manual removal → pause auto-apply for the rest of this sale so we don't
@@ -171,6 +194,11 @@
 			cart.setPromotion(null);
 			autoAppliedId = null;
 			toast.info('Promotion removed');
+			void logActivity({
+				action: 'promotion',
+				resource: 'promotion',
+				summary: 'Removed promotion'
+			});
 		}
 		promoOpen = false;
 	}
@@ -369,6 +397,16 @@
 	type SelProduct = { obj: GloObject<Product, typeof TYPE.product>; data: Product };
 	let sizeSel = $state<SelProduct | null>(null);
 	let modSel = $state<SelProduct | null>(null);
+	// Open state is tracked separately from the data so that closing the dialog
+	// (backdrop / X / Esc) reliably reopens it on the next tap. Binding
+	// `open={!!sizeSel}` one-way left the Dialog's internal open stuck `false`
+	// after a close because `sizeSel` was never cleared.
+	let sizeOpen = $state(false);
+	let modOpen = $state(false);
+	$effect(() => {
+		if (!sizeOpen) sizeSel = null;
+		if (!modOpen) modSel = null;
+	});
 	let chosenVariant = $state<string>('');
 	let chosenMods = $state<Record<string, string[]>>({});
 	let pendingNote = $state('');
@@ -388,12 +426,14 @@
 			sizeSel = { obj: p, data };
 			chosenVariant = '';
 			pendingNote = '';
+			sizeOpen = true;
 			return;
 		}
 		if (groupsFor(data).length) {
 			modSel = { obj: p, data };
 			chosenMods = {};
 			pendingNote = '';
+			modOpen = true;
 			return;
 		}
 		addPlain(p);
@@ -430,11 +470,12 @@
 		const obj = sizeSel.obj;
 		const variantId = v.id;
 		const variantName = v.name;
-		sizeSel = null;
+		sizeOpen = false;
 		if (groupsFor(obj.data).length) {
 			modSel = { obj, data: obj.data };
 			chosenMods = {};
 			pendingModVariant = { variantId, variantName, unitPrice: price };
+			modOpen = true;
 			return;
 		}
 		cart.add({ productId: obj.id, name: obj.data.name, unitPrice: price, variantId, variantName });
@@ -475,7 +516,7 @@
 		const ctx = pendingModVariant;
 		pendingModVariant = null;
 		const obj = modSel.obj;
-		modSel = null;
+		modOpen = false;
 		cart.add({
 			productId: obj.id,
 			name: obj.data.name,
@@ -501,6 +542,123 @@
 
 	// Grand total includes tip
 	const grandTotal = $derived(cart.totals.total + tipAmount);
+
+	// ── Loyalty ──
+	const customers = $derived(glo.all<Customer, typeof TYPE.customer>(TYPE.customer));
+	const cartCustomer = $derived(
+		cart.customerId ? (customers.find((c) => c.id === cart.customerId) ?? null) : null
+	);
+	const customerPoints = $derived(cartCustomer?.data.loyaltyPoints ?? 0);
+	// Largest redemption possible for this cart (capped at the subtotal).
+	const loyaltyRedeem = $derived(
+		loyaltySettings.enabled &&
+			loyaltySettings.redeemEnabled &&
+			cartCustomer &&
+			cart.discount.value <= 0
+			? maxRedeem(customerPoints, loyaltySettings.pointValue, cart.totals.subtotal)
+			: { credit: 0, points: 0, remainderPoints: 0 }
+	);
+	const loyaltyEarnPreview = $derived(
+		loyaltySettings.enabled && cartCustomer
+			? pointsForSpend(grandTotal, loyaltySettings.pointsPerCurrency)
+			: 0
+	);
+	let loyaltyRedeemOn = $state(false);
+
+	function toggleLoyaltyRedeem() {
+		if (!loyaltyRedeemOn) {
+			if (cart.totals.discountAmount > 0) {
+				toast.warning('Cannot combine loyalty with another discount');
+				return;
+			}
+			if (loyaltyRedeem.credit <= 0) {
+				toast.info('No points to redeem yet');
+				return;
+			}
+			cart.setDiscount({ type: 'fixed', value: loyaltyRedeem.credit });
+			loyaltyRedeemOn = true;
+		} else {
+			cart.setDiscount({ type: 'percent', value: 0 });
+			loyaltyRedeemOn = false;
+		}
+	}
+
+	// Award / deduct loyalty points after a completed sale.
+	async function processLoyalty(sale: CompletedSale) {
+		if (!loyaltySettings.enabled) return;
+		const custId = sale.customerId ?? cart.customerId;
+		if (!custId) return;
+		const cust = glo.get(TYPE.customer, custId) as
+			GloObject<Customer, typeof TYPE.customer> | undefined;
+		if (!cust) return;
+		const balanceBefore = cust.data.loyaltyPoints ?? 0;
+		const redeemed = loyaltyRedeemOn ? loyaltyRedeem.points : 0;
+		const earned = pointsForSpend(sale.totals.total, loyaltySettings.pointsPerCurrency);
+		if (redeemed === 0 && earned === 0) return;
+		const afterRedeem = Math.max(0, balanceBefore - redeemed);
+		const balanceAfter = afterRedeem + earned;
+		try {
+			await glo.upsert(
+				TYPE.customer,
+				{ ...cust.data, loyaltyPoints: balanceAfter },
+				{ id: cust.id }
+			);
+			if (redeemed > 0) {
+				await glo.upsert<LoyaltyPoints>(
+					TYPE.loyaltyPoints,
+					buildLoyaltyTx({
+						customerId: custId,
+						type: 'redeem',
+						points: redeemed,
+						balanceAfter: afterRedeem,
+						reason: 'Checkout redemption',
+						orderId: sale.number
+					}),
+					{ id: newRecordId('loyalty') }
+				);
+			}
+			if (earned > 0) {
+				await glo.upsert<LoyaltyPoints>(
+					TYPE.loyaltyPoints,
+					buildLoyaltyTx({
+						customerId: custId,
+						type: 'earn',
+						points: earned,
+						balanceAfter,
+						reason: 'Sale reward',
+						orderId: sale.number
+					}),
+					{ id: newRecordId('loyalty') }
+				);
+			}
+			loyaltyRedeemOn = false;
+			const net = earned - redeemed;
+			if (redeemed > 0) {
+				void logActivity({
+					action: 'loyalty_redeem',
+					resource: 'customer',
+					resourceId: custId,
+					summary: `Redeemed ${redeemed} pts (${cust.data.name ?? 'Customer'})`,
+					amount: loyaltyRedeem.credit,
+					currency
+				});
+			}
+			if (earned > 0) {
+				void logActivity({
+					action: 'loyalty_earn',
+					resource: 'customer',
+					resourceId: custId,
+					summary: `Awarded ${earned} pts (${cust.data.name ?? 'Customer'})`
+				});
+			}
+			toast.success(
+				net >= 0 ? `+${earned} points` : `−${redeemed} points`,
+				`${cust.data.name ?? 'Customer'} · balance ${balanceAfter}`
+			);
+		} catch (e) {
+			console.warn('[pos] loyalty update failed', e);
+		}
+	}
 	const change = $derived(Math.max(0, (typeof tendered === 'number' ? tendered : 0) - grandTotal));
 	const underPayment = $derived(
 		typeof tendered === 'number' && tendered > 0 && tendered < grandTotal
@@ -798,6 +956,7 @@
 				successTip = tipAmount;
 				successTendered = 0;
 				broadcastCheckoutSuccess(paidAmount, paidMethod);
+				await processLoyalty(sale);
 				toast.success('Payment received', `${formatMoney(paidAmount, currency)} · ${sale.number}`);
 				tendered = '';
 				tipAmount = 0;
@@ -837,6 +996,7 @@
 				successTip = tipAmount;
 				successTendered = typeof tendered === 'number' ? tendered : 0;
 				broadcastCheckoutSuccess(grandTotal, method);
+				await processLoyalty(sale);
 				toast.success('Sale complete', `${formatMoney(grandTotal, currency)} · ${sale.number}`);
 				tendered = '';
 				tipAmount = 0;
@@ -871,6 +1031,7 @@
 				successTip = tipAmount;
 				successTendered = splitPayments.reduce((s, p) => s + p.amount, 0);
 				broadcastCheckoutSuccess(grandTotal, splitPayments[0].method);
+				await processLoyalty(sale);
 				toast.success(
 					'Sale complete',
 					`${formatMoney(grandTotal, currency)} · ${sale.number} · ${splitPayments.length} payments`
@@ -940,12 +1101,18 @@
 	let discountOpen = $state(false);
 	let dType = $state<'percent' | 'fixed'>('percent');
 	let dValue = $state<number | ''>('');
+	const canDiscount = $derived(permissions.can('discounts', 'write'));
 	function applyDiscount() {
-		cart.setDiscount({
-			type: dType,
-			value: typeof dValue === 'number' ? dValue : Number(dValue) || 0
-		});
+		const value = typeof dValue === 'number' ? dValue : Number(dValue) || 0;
+		cart.setDiscount({ type: dType, value });
 		discountOpen = false;
+		if (value > 0) {
+			void logActivity({
+				action: 'discount',
+				resource: 'cart',
+				summary: `Manual ${dType} discount of ${dType === 'percent' ? value + '%' : formatMoney(value, currency)}`
+			});
+		}
 	}
 
 	// ── held orders + receipt modals ──
@@ -1236,6 +1403,125 @@
 
 	// ── E) More menu (header dropdown) ──
 
+	// ── E2) Keyboard shortcuts + HID barcode scanner ──
+	// True when any modal/dialog is open (suppresses shortcuts + scanning so they
+	// don't fight with typing inside a dialog). Popovers + the mobile cart panel
+	// are intentionally excluded (scanning while the cart is open is fine).
+	let shortcutsOpen = $state(false);
+	const anyDialogOpen = $derived(
+		!!sizeSel ||
+			!!modSel ||
+			discountOpen ||
+			promoOpen ||
+			customOpen ||
+			receiptOpen ||
+			payQrOpen ||
+			heldOpen ||
+			historyOpen ||
+			shiftModalOpen ||
+			noteOpen ||
+			orderContextOpen ||
+			shortcutsOpen
+	);
+
+	const POS_SHORTCUTS: { key: string; label: string; icon: string }[] = [
+		{ key: '/', label: 'Search products', icon: 'lucide:search' },
+		{ key: 'F2', label: 'New sale', icon: 'lucide:plus' },
+		{ key: 'F3', label: 'Custom item', icon: 'lucide:plus-circle' },
+		{ key: 'F4', label: 'Discount', icon: 'lucide:tag' },
+		{ key: 'F6', label: 'Held orders', icon: 'lucide:pause' },
+		{ key: 'F7', label: 'Last receipt', icon: 'lucide:receipt' },
+		{ key: 'F9', label: 'Charge', icon: 'lucide:zap' },
+		{ key: 'Esc', label: 'Close / clear', icon: 'lucide:x' }
+	];
+
+	function isTyping(): boolean {
+		const el = document.activeElement as HTMLElement | null;
+		return (
+			!!el &&
+			(el instanceof HTMLInputElement ||
+				el instanceof HTMLTextAreaElement ||
+				el instanceof HTMLSelectElement ||
+				el.isContentEditable)
+		);
+	}
+
+	function onKeydown(e: KeyboardEvent) {
+		// Escape: let an open Dialog close itself; otherwise blur/clear search.
+		if (e.key === 'Escape') {
+			if (anyDialogOpen) return;
+			const el = document.activeElement as HTMLElement | null;
+			if (el && isTyping()) el.blur();
+			else if (query) query = '';
+			return;
+		}
+		// '/' focuses search (only when idle).
+		if (e.key === '/' && !isTyping() && !anyDialogOpen) {
+			e.preventDefault();
+			document.getElementById('pos-search')?.focus();
+			return;
+		}
+		// Help
+		if (e.key === '?' && !isTyping() && !anyDialogOpen) {
+			e.preventDefault();
+			shortcutsOpen = true;
+			return;
+		}
+		if (isTyping() || anyDialogOpen || e.ctrlKey || e.metaKey || e.altKey) return;
+
+		switch (e.key) {
+			case 'F2':
+				e.preventDefault();
+				void startNewSale();
+				break;
+			case 'F3':
+				e.preventDefault();
+				openCustom();
+				break;
+			case 'F4':
+				e.preventDefault();
+				dType = cart.discount.type;
+				dValue = cart.discount.value || '';
+				discountOpen = true;
+				break;
+			case 'F6':
+				e.preventDefault();
+				heldOpen = true;
+				break;
+			case 'F7':
+				e.preventDefault();
+				if (cart.lastCompleted) receiptOpen = true;
+				break;
+			case 'F9':
+				e.preventDefault();
+				if (!cart.isEmpty) {
+					if (isQrMethod(method)) openQrCheckout();
+					else checkout();
+				}
+				break;
+		}
+	}
+
+	// HID barcode scanner → look up product by barcode/SKU and add to the cart.
+	function handleScan(code: string) {
+		const match = products.find((p) => p.data.barcode === code || p.data.sku === code);
+		if (query) query = ''; // clear any scanner text that landed in search
+		if (match) {
+			tapProduct(match); // opens variant/modifier picker if needed, else adds
+			toast.success('Scanned', (match.data.name as string) ?? code);
+		} else {
+			toast.warning('No product for barcode', code);
+		}
+	}
+
+	// Attach the scanner only when the hardware setting is on; re-evaluated if it
+	// changes. Gated by `anyDialogOpen` so scans don't interfere with dialog input.
+	$effect(() => {
+		if (!hardwareSettings.barcodeScanner) return;
+		const stop = startBarcodeScanner(handleScan, { enabled: () => !anyDialogOpen });
+		return stop;
+	});
+
 	// ── F) BroadcastChannel for customer display ──
 	let displayChannel: BroadcastChannel | null = null;
 	$effect(() => {
@@ -1307,6 +1593,7 @@
 </script>
 
 <svelte:head><title>BNOS · Point of Sale</title></svelte:head>
+<svelte:window onkeydown={onKeydown} />
 
 <div class="flex h-dvh min-h-0 flex-col overflow-hidden bg-[var(--ui-bg)]">
 	<header class="app-chrome border-b border-[var(--glass-border)] px-4 py-3 sm:px-5 lg:px-6">
@@ -1634,6 +1921,25 @@
 					Display
 				</a>
 
+				<!-- Scanner status + keyboard shortcuts -->
+				{#if hardwareSettings.barcodeScanner}
+					<span
+						title="Barcode scanner ready — scan to add items"
+						class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 text-[11.5px] font-semibold text-emerald-700 dark:text-emerald-300"
+					>
+						<Icon name="lucide:scan-barcode" class="size-3.5" />
+						<span class="hidden sm:inline">Scanner</span>
+					</span>
+				{/if}
+				<button
+					type="button"
+					onclick={() => (shortcutsOpen = true)}
+					title="Keyboard shortcuts (Shift+/)"
+					class="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--ui-border)] px-2 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+				>
+					<Icon name="lucide:keyboard" class="size-4" />
+				</button>
+
 				<!-- More options dropdown -->
 				<Menu id="pos-header-more" placement="bottom-end" width="md">
 					{#snippet trigger()}<Icon name="lucide:more-horizontal" class="size-4" />{/snippet}
@@ -1670,8 +1976,9 @@
 					<div class="flex flex-wrap items-center gap-2">
 						<Input
 							bind:value={query}
+							id="pos-search"
 							icon="lucide:search"
-							placeholder="Search products..."
+							placeholder="Search products…"
 							class="min-w-[12rem] flex-1"
 						/>
 						<Button
@@ -2104,12 +2411,55 @@
 							>
 						{/each}
 					</div>
-					<Input
-						bind:value={cart.customerName}
-						icon="lucide:user"
-						placeholder="Customer name (optional)"
-						class="w-full"
+					<CustomerPicker
+						selected={cartCustomer
+							? {
+									id: cartCustomer.id,
+									name: (cartCustomer.data.name as string) || cart.customerName || 'Customer',
+									segment: cartCustomer.data.segment,
+									points: customerPoints
+								}
+							: cart.customerName
+								? { id: '', name: cart.customerName }
+								: null}
+						{customers}
+						onPick={(id, name) => cart.setCustomer(name, id || undefined)}
+						onClear={() => cart.setCustomer('')}
 					/>
+					{#if loyaltySettings.enabled && cartCustomer}
+						<!-- Loyalty: earn preview + redeem toggle -->
+						<div
+							class="flex items-center justify-between rounded-lg bg-[var(--tone-warning-bg)] px-2.5 py-1.5"
+						>
+							<div
+								class="flex min-w-0 items-center gap-1.5 text-[11.5px] font-semibold text-[var(--tone-warning-text)]"
+							>
+								<Icon name="lucide:award" class="size-4 shrink-0" />
+								<span class="truncate">{formatInt(customerPoints)} pts</span>
+								{#if loyaltyEarnPreview > 0}
+									<span class="font-normal text-[var(--ui-text-muted)]"
+										>· earn ~{formatInt(loyaltyEarnPreview)}</span
+									>
+								{/if}
+							</div>
+							{#if loyaltyRedeem.credit > 0}
+								<button
+									type="button"
+									onclick={toggleLoyaltyRedeem}
+									class="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-[10.5px] font-bold transition-colors {loyaltyRedeemOn
+										? 'bg-[var(--tone-warning-text)] text-white'
+										: 'bg-[var(--tone-warning-text)]/15 text-[var(--tone-warning-text)] hover:bg-[var(--tone-warning-text)]/25'}"
+								>
+									<Icon
+										name={loyaltyRedeemOn ? 'lucide:check' : 'lucide:sparkles'}
+										class="size-3"
+									/>{loyaltyRedeemOn
+										? '−' + formatMoney(loyaltyRedeem.credit, currency)
+										: 'Use ' + formatInt(loyaltyRedeem.points) + ' pts'}
+								</button>
+							{/if}
+						</div>
+					{/if}
 					{#if cart.orderType === 'dine_in'}
 						<div class="grid grid-cols-2 gap-2">
 							<Input
@@ -2131,12 +2481,15 @@
 					{/if}
 					<button
 						type="button"
+						disabled={!canDiscount}
+						title={canDiscount ? 'Cart discount' : 'Requires discount permission (manager+)'}
 						onclick={() => {
+							if (!canDiscount) return;
 							dType = cart.discount.type;
 							dValue = cart.discount.value || '';
 							discountOpen = true;
 						}}
-						class="flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--ui-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
+						class="flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--ui-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						<span><Icon name="lucide:tag" class="mr-1 inline size-3.5" />Discount</span>
 						{#if cart.totals.discountAmount > 0}<span class="text-[var(--tone-success-text)]"
@@ -2575,7 +2928,7 @@
 {/snippet}
 
 <!-- Size / variant selector -->
-<Dialog open={!!sizeSel} title={sizeSel?.data.name ?? 'Select'} size="sm">
+<Dialog bind:open={sizeOpen} title={sizeSel?.data.name ?? 'Select'} size="sm">
 	{#if sizeSel}
 		<div class="space-y-2">
 			{#each variants(sizeSel.data) as v (v.id)}
@@ -2596,13 +2949,13 @@
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (sizeSel = null)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (sizeOpen = false)}>Cancel</Button>
 		<Button color="primary" icon="lucide:check" onclick={confirmVariant}>Add</Button>
 	{/snippet}
 </Dialog>
 
 <!-- Modifier selector -->
-<Dialog open={!!modSel} title={modSel?.data.name ?? 'Options'} size="md">
+<Dialog bind:open={modOpen} title={modSel?.data.name ?? 'Options'} size="md">
 	{#if modSel}
 		<div class="space-y-4">
 			{#each groupsFor(modSel.data) as g (g.name)}
@@ -2660,7 +3013,7 @@
 			color="neutral"
 			variant="ghost"
 			onclick={() => {
-				modSel = null;
+				modOpen = false;
 				pendingModVariant = null;
 			}}>Cancel</Button
 		>
@@ -3270,5 +3623,36 @@
 				Mark paid
 			{/if}</Button
 		>
+	{/snippet}
+</Dialog>
+
+<!-- Keyboard shortcuts help -->
+<Dialog bind:open={shortcutsOpen} title="Keyboard shortcuts" size="sm">
+	<div class="space-y-1.5">
+		{#each POS_SHORTCUTS as s (s.key)}
+			<div
+				class="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-[var(--ui-bg-accented)]"
+			>
+				<span class="flex items-center gap-2 text-[12.5px] font-medium">
+					<Icon name={s.icon} class="size-4 text-[var(--ui-text-dimmed)]" />
+					{s.label}
+				</span>
+				<kbd
+					class="rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--ui-text-muted)]"
+					>{s.key}</kbd
+				>
+			</div>
+		{/each}
+		{#if hardwareSettings.barcodeScanner}
+			<div
+				class="mt-2 flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-[11.5px] font-medium text-emerald-700 dark:text-emerald-300"
+			>
+				<Icon name="lucide:scan-barcode" class="size-4 shrink-0" />
+				Barcode scanner is on — scan any product barcode to add it instantly.
+			</div>
+		{/if}
+	</div>
+	{#snippet footer()}
+		<Button color="primary" block onclick={() => (shortcutsOpen = false)}>Got it</Button>
 	{/snippet}
 </Dialog>

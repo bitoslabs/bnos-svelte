@@ -132,19 +132,19 @@
 	</div>
 </div>
 
-{#if !hasChannels}
-	<!-- First-run: connect a channel -->
+{#if !hasChannels && listings.length === 0}
+	<!-- First-run: web-store-first. No external channel required to start selling. -->
 	<EmptyState
-		icon="lucide:plug-zap"
-		title="Connect your first sales channel"
-		description="Sync your catalog to TikTok, Facebook, Shopee, or your own website and start receiving unified orders."
+		icon="lucide:store"
+		title="Start selling on your web store"
+		description="Publish your first listing and it goes live on your storefront instantly — no external channel required. Connect TikTok, Facebook or Shopee later to reach more buyers."
 	>
 		{#snippet actions()}
-			<Button color="primary" icon="lucide:plus" href={resolve('/marketplace/channels')}
-				>Connect a channel</Button
+			<Button color="primary" icon="lucide:plus" href={resolve('/marketplace/listings')}
+				>Publish a listing</Button
 			>
-			<Button color="neutral" variant="subtle" icon="lucide:book-open" href={resolve('/marketplace/analytics')}
-				>Learn more</Button
+			<Button color="neutral" variant="subtle" icon="lucide:radio" href={resolve('/marketplace/channels')}
+				>Connect a channel</Button
 			>
 		{/snippet}
 	</EmptyState>

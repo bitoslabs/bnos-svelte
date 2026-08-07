@@ -66,6 +66,8 @@ export interface CompletedSale {
 	completedAt: string;
 	/** Customer name captured at checkout, if any. */
 	customerName?: string;
+	/** Customer id linked to the sale, if any (for loyalty / history). */
+	customerId?: string;
 	/** Cart-level discount applied (percent/fixed), if any. */
 	discount?: { type: 'percent' | 'fixed'; value: number };
 	/** Promotion/coupon snapshot captured at checkout, if any. Lets the receipt
@@ -476,6 +478,7 @@ class PosCart {
 			change,
 			completedAt,
 			customerName: this.customerName || undefined,
+			customerId: this.customerId ?? undefined,
 			discount:
 				this.discount.value > 0
 					? { type: this.discount.type, value: this.discount.value }

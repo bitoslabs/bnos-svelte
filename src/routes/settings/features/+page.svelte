@@ -1,10 +1,19 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
+	import SettingsSection from '$lib/components/ui/SettingsSection.svelte';
+	import SettingRow from '$lib/components/ui/SettingRow.svelte';
 	import { features, FEATURE_META, FEATURE_KEYS, type FeatureKey } from '$lib/features.svelte';
 	import { syncWorkspaceSettingsToOrganization } from '$nostr/workspace-settings';
+	import {
+		loadLoyaltySettings,
+		saveLoyaltySettings,
+		type LoyaltySettings
+	} from '$lib/settings/local';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { browser } from '$app/environment';
 
@@ -16,6 +25,19 @@
 		const next = features.toggle(k);
 		await syncWorkspaceSettingsToOrganization();
 		toast.success(`${next ? 'Enabled' : 'Disabled'} ${FEATURE_META[k].label}`);
+	}
+
+	// ── Loyalty config (earn/redeem rates) ──
+	let loyalty = $state<LoyaltySettings>(loadLoyaltySettings());
+	let loyaltyDirty = $state(false);
+	function setLoyalty(patch: Partial<LoyaltySettings>) {
+		loyalty = { ...loyalty, ...patch };
+		loyaltyDirty = true;
+	}
+	function saveLoyalty() {
+		saveLoyaltySettings(loyalty);
+		loyaltyDirty = false;
+		toast.success('Loyalty settings saved');
 	}
 </script>
 
@@ -55,6 +77,65 @@
 			</div>
 		{/each}
 	</section>
+
+	<!-- Loyalty program config -->
+	<SettingsSection
+		icon="lucide:award"
+		title="Loyalty program"
+		meta="Earn + redeem points at checkout"
+	>
+		<SettingRow
+			title="Enable loyalty"
+			description="Award points on every sale and let customers redeem them as credit."
+		>
+			<Switch checked={loyalty.enabled} onCheckedChange={(v) => setLoyalty({ enabled: v })} />
+		</SettingRow>
+		{#if loyalty.enabled}
+			<SettingRow
+				title="Earn rate"
+				description="Points earned per 1 unit of currency spent (e.g. 1 = 1 pt / $1)."
+			>
+				<Input
+					type="number"
+					min="0"
+					step="0.1"
+					value={loyalty.pointsPerCurrency}
+					oninput={(e) =>
+						setLoyalty({ pointsPerCurrency: Number((e.target as HTMLInputElement).value) })}
+					class="w-28"
+				/>
+			</SettingRow>
+			<SettingRow
+				title="Point value"
+				description="Currency value of one point when redeemed (0.01 → 100 pts = 1.00)."
+			>
+				<Input
+					type="number"
+					min="0"
+					step="0.001"
+					value={loyalty.pointValue}
+					oninput={(e) => setLoyalty({ pointValue: Number((e.target as HTMLInputElement).value) })}
+					class="w-28"
+				/>
+			</SettingRow>
+			<SettingRow
+				title="Allow redeem at checkout"
+				description="Let customers spend points as a credit."
+			>
+				<Switch
+					checked={loyalty.redeemEnabled}
+					onCheckedChange={(v) => setLoyalty({ redeemEnabled: v })}
+				/>
+			</SettingRow>
+			{#if loyaltyDirty}
+				<div class="flex justify-end px-5 pb-4">
+					<Button color="primary" size="sm" icon="lucide:save" onclick={saveLoyalty}
+						>Save loyalty</Button
+					>
+				</div>
+			{/if}
+		{/if}
+	</SettingsSection>
 
 	<div
 		class="flex items-center gap-3 rounded-xl border border-[var(--tone-warning-border)] bg-[var(--tone-warning-bg)] px-4 py-3"

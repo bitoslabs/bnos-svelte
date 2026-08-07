@@ -36,6 +36,7 @@ import {
 	type Payment,
 	type Refund
 } from '$lib/domain';
+import { logActivity } from '$lib/audit.svelte';
 import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
 
 /** Cash-event types that *add* bills to the drawer (vs. remove). */
@@ -352,6 +353,14 @@ class ShiftsStore {
 			{ id, scope: { locationId: branchId ?? undefined } }
 		);
 		toast.success('Shift opened', number);
+		void logActivity({
+			action: 'shift_open',
+			resource: 'shift',
+			resourceId: id,
+			summary: `Opened shift ${number}`,
+			amount: input.openingCash || 0,
+			currency: tenant.state.currency
+		});
 		return { id, number };
 	};
 
@@ -467,6 +476,15 @@ class ShiftsStore {
 			{ id: newRecordId('cash-event'), scope: { locationId: branchId ?? undefined } }
 		);
 		toast.success('Cash movement recorded', `${input.type.replace('_', ' ')}`);
+		void logActivity({
+			action: 'cash_event',
+			resource: 'shift',
+			resourceId: active?.id,
+			summary: `${input.type.replace('_', ' ')} of ${input.amount || 0}`,
+			amount: input.amount || 0,
+			currency: tenant.state.currency,
+			meta: { reason: input.reason }
+		});
 		return true;
 	};
 

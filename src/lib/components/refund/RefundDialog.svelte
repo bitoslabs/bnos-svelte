@@ -35,6 +35,7 @@
 		computeRefundTotal
 	} from '$lib/pos/refund';
 	import { printRefundReceipt } from '$lib/pos/print';
+	import { logActivity } from '$lib/audit.svelte';
 
 	type Props = {
 		open?: boolean;
@@ -143,6 +144,21 @@
 
 			// 1. Persist the refund record.
 			await glo.upsert<Refund>(TYPE.refund, refundRecord, { id: newRecordId('refund') });
+
+			// 1b. Audit log.
+			await logActivity({
+				action: 'refund',
+				resource: 'order',
+				resourceId: order.id,
+				summary: `Refunded ${formatMoney(refundTotal, currency)} via ${method}${isFull ? ' (full)' : ' (partial)'}`,
+				amount: refundTotal,
+				currency,
+				meta: {
+					reason,
+					lines: refundLines.length,
+					restocked: refundLines.filter((l) => restock[l.orderLineItemId ?? ''] ?? true).length
+				}
+			});
 
 			// 2. Update the order: status + cumulative refunded amount.
 			const newRefunded = Math.round((alreadyRefunded + refundTotal) * 100) / 100;

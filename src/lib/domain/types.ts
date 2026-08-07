@@ -352,6 +352,42 @@ export interface RefundLine {
 	unitRefund?: number;
 	totalRefund: number;
 }
+
+/** `activity` — audit-log entry (NIP-78). Records who did what, for loss
+ *  prevention + accountability (refunds, voids, discounts, cash events, …). */
+export type ActivityAction =
+	| 'refund'
+	| 'void'
+	| 'discount'
+	| 'promotion'
+	| 'loyalty_redeem'
+	| 'loyalty_earn'
+	| 'cash_event'
+	| 'shift_open'
+	| 'shift_close'
+	| 'delete'
+	| 'create'
+	| 'update'
+	| 'export'
+	| 'login';
+
+export interface Activity {
+	action: ActivityAction;
+	/** What was acted on: 'order' | 'product' | 'customer' | 'shift' | … */
+	resource: string;
+	resourceId?: string;
+	/** Human-readable summary, e.g. "Refunded $12.50 via cash". */
+	summary: string;
+	amount?: number;
+	currency?: string;
+	actorId?: string;
+	actorName?: string;
+	actorRole?: string;
+	branchId?: string;
+	at: string;
+	meta?: Record<string, unknown>;
+}
+
 /** `commerce.refund` — no canonical GLO data type yet; full bnos extension. */
 export interface Refund {
 	orderId?: string;

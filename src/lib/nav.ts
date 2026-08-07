@@ -50,6 +50,7 @@ export const routePermissions: Record<string, RoutePermission> = {
 	'/memberships': { resource: 'customers', action: 'read' },
 	'/restaurant': { resource: 'orders', action: 'read' },
 	'/reports': { resource: 'reports', action: 'read' },
+	'/activity': { resource: 'reports', action: 'read' },
 	'/expenses': { resource: 'accounting', action: 'read' },
 	'/staff': { resource: 'staff', action: 'read' },
 	'/marketplace': { resource: 'marketplace', action: 'read' },
@@ -93,7 +94,8 @@ export const navSections: NavSection[] = [
 			{ to: '/orders', icon: 'lucide:receipt-text', label: 'Orders', types: ['commerce.order'] },
 			{ to: '/customers', icon: 'lucide:users', label: 'Customers', types: ['crm.customer'] },
 			{ to: '/transactions', icon: 'lucide:arrow-left-right', label: 'Transactions' },
-			{ to: '/transactions/shifts', icon: 'lucide:lock-open', label: 'Shifts' }
+			{ to: '/transactions/shifts', icon: 'lucide:lock-open', label: 'Shifts' },
+			{ to: '/activity', icon: 'lucide:shield-check', label: 'Activity' }
 		]
 	},
 	{
