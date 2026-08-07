@@ -113,6 +113,9 @@
 			? generalSettings.defaultPayment
 			: 'cash';
 		splitMethod = method;
+		// Auto-focus the scan/search field when a scanner is enabled so the cashier
+		// can start scanning immediately without reaching for the mouse.
+		if (loadHardwareSettings().barcodeScanner) focusSearch();
 
 		dataSync.pageSync(
 			[
@@ -335,6 +338,64 @@
 	let offersOnly = $state(false);
 
 	let query = $state('');
+
+	// ── Scan-or-search ──
+	// The product search field doubles as a barcode scanner target: an exact
+	// barcode/SKU match is the "scan to add" target. Typing a code + Enter (or a
+	// USB scanner that types into the focused field + sends Enter) adds the
+	// product instantly. Scanners firing while the field isn't focused are still
+	// caught by the global HID capture (`barcode-scanner.ts`).
+	const scanMatch = $derived.by(() => {
+		const code = query.trim();
+		if (code.length < 2) return null;
+		return products.find((p) => p.data.barcode === code || p.data.sku === code) ?? null;
+	});
+
+	function focusSearch() {
+		requestAnimationFrame(() => document.getElementById('pos-search')?.focus());
+	}
+
+	function onSearchKeydown(e: KeyboardEvent) {
+		if (e.key !== 'Enter') return;
+		const match = scanMatch;
+		if (match) {
+			e.preventDefault();
+			query = '';
+			tapProduct(match); // opens variant/modifier picker if needed, else adds
+			toast.success('Added', (match.data.name as string) ?? 'Item');
+			focusSearch();
+		}
+	}
+
+	// ── Auto-add on exact code match after a brief typing pause ──
+	// Tier-3 of the scan UX: type a full barcode/SKU on the keyboard and pause
+	// (~600ms) → the product is added automatically, no Enter needed. Safe because
+	// it only fires on an EXACT match against a product's barcode/SKU field (never
+	// a name search). Enter still adds instantly; scanner bursts are caught
+	// globally. Re-checks the input before adding so it never double-adds with
+	// the Enter handler.
+	let scanDebounce: ReturnType<typeof setTimeout> | null = null;
+	$effect(() => {
+		const code = query.trim();
+		const match =
+			code.length >= 4
+				? (products.find((p) => p.data.barcode === code || p.data.sku === code) ?? null)
+				: null;
+		if (scanDebounce) clearTimeout(scanDebounce);
+		if (match) {
+			scanDebounce = setTimeout(() => {
+				if (query.trim() !== code) return; // input changed → abort
+				query = '';
+				tapProduct(match);
+				toast.success('Added', (match.data.name as string) ?? 'Item');
+				focusSearch();
+			}, 600);
+		}
+		return () => {
+			if (scanDebounce) clearTimeout(scanDebounce);
+		};
+	});
+
 	let activeCat = $state<string>('all');
 	const categories = $derived.by(() => {
 		const categories: string[] = [];
@@ -1977,10 +2038,26 @@
 						<Input
 							bind:value={query}
 							id="pos-search"
-							icon="lucide:search"
-							placeholder="Search products…"
+							icon={hardwareSettings.barcodeScanner ? 'lucide:scan-barcode' : 'lucide:search'}
+							placeholder={hardwareSettings.barcodeScanner
+								? 'Scan or search products…'
+								: 'Search products…'}
+							onkeydown={onSearchKeydown}
 							class="min-w-[12rem] flex-1"
-						/>
+						>
+							{#snippet trailing()}
+								{#if scanMatch}
+									<span
+										class="inline-flex items-center gap-1 rounded-md bg-[var(--tone-success-bg)] px-1.5 py-0.5 text-[10.5px] font-bold text-[var(--tone-success-text)]"
+										title="Exact code match — press Enter or pause to add"
+									>
+										<Icon name="lucide:corner-down-left" class="size-3" />Add
+									</span>
+								{:else if hardwareSettings.barcodeScanner}
+									<span class="text-[10px] font-semibold text-[var(--ui-text-dimmed)]">↵ add</span>
+								{/if}
+							{/snippet}
+						</Input>
 						<Button
 							color="neutral"
 							variant="soft"
