@@ -297,6 +297,8 @@ export interface OrderBnosExt {
 	/** Fiat-per-BTC rate used to derive `totalSats` (audit snapshot). */
 	btcRate?: number;
 	btcRateCurrency?: string;
+	/** Cumulative amount refunded against this order (tracks partial refunds). */
+	refundedAmount?: number;
 }
 
 /** Standardized order = canonical GLO order, with widened line + bdgo extras. */
@@ -364,6 +366,8 @@ export interface Refund {
 	approvedBy?: string;
 	completedAt?: string;
 	branchId?: string;
+	/** Shift the refund is attributed to (for drawer reconciliation). */
+	shiftId?: string;
 }
 
 // ════════════════════════════════════════════════════════════════════

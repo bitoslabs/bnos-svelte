@@ -15,15 +15,34 @@
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { formatMoney, formatInt, relativeTime, titleCase } from '$lib/utils/format';
 	import { newRecordId } from '$lib/utils/record-id';
-	import { TYPE, statusColor, type Order, type Payment, type GloObject } from '$lib/domain';
+	import {
+		TYPE,
+		statusColor,
+		type Order,
+		type Payment,
+		type Refund,
+		type GloObject
+	} from '$lib/domain';
 	import { sourceLabel, SHIPPING_STATUSES, shippingStatusLabel } from '$lib/domain/order-sources';
-	import { printReceiptForOrder, printPackingSlip, buildWhatsAppLink } from '$lib/pos/print';
+	import {
+		printReceiptForOrder,
+		printPackingSlip,
+		buildWhatsAppLink,
+		printRefundReceipt
+	} from '$lib/pos/print';
+	import RefundDialog from '$lib/components/refund/RefundDialog.svelte';
+	import {
+		orderRefundState,
+		isOrderRefundable,
+		refundReasonLabel,
+		refundReasonIcon
+	} from '$lib/pos/refund';
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
 
 	const id = $derived(page.params.id);
 
 	onMount(() => {
-		dataSync.pageSync([TYPE.order, TYPE.payment], { scope: 'order-detail' });
+		dataSync.pageSync([TYPE.order, TYPE.payment, TYPE.refund], { scope: 'order-detail' });
 	});
 
 	const order = $derived(
@@ -33,6 +52,16 @@
 		glo.all<Payment, typeof TYPE.payment>(TYPE.payment).filter((p) => p.data.orderId === id)
 	);
 	const currency = $derived(tenant.state.currency);
+
+	// ── Refunds for this order (reactive) ──
+	const orderRefunds = $derived(
+		glo.all<Refund, typeof TYPE.refund>(TYPE.refund).filter((r) => r.data.orderId === id)
+	);
+	const refundState = $derived(order ? orderRefundState(order, orderRefunds) : null);
+	const canRefund = $derived(
+		!!order && !!refundState && order.data.status !== 'cancelled' && isOrderRefundable(refundState)
+	);
+	let refundOpen = $state(false);
 
 	// Keep a BTC rate for the merchant currency loaded so the printed receipt's
 	// sats line works for orders that have no persisted snapshot.
@@ -359,6 +388,16 @@
 							{order.data.orderNumber ?? '#' + (id ?? '').slice(0, 8)}
 						</h1>
 						<Badge color={statusColor(order.data.status)}>{titleCase(order.data.status)}</Badge>
+						{#if refundState && refundState.refundedAmount > 0}
+							<Badge color={refundState.isFullyRefunded ? 'error' : 'warning'}>
+								<span class="inline-flex items-center gap-1">
+									<Icon name="lucide:undo-2" class="size-3" />
+									{refundState.isFullyRefunded
+										? 'Refunded'
+										: `Refunded ${formatMoney(refundState.refundedAmount, currency)}`}
+								</span>
+							</Badge>
+						{/if}
 						{#if orderType}
 							<Badge color={typeBadgeColor(orderType)}>
 								<span class="inline-flex items-center gap-1">
@@ -419,6 +458,15 @@
 					onclick={() => (rawOpen = true)}
 					title="View raw data"
 				></Button>
+				{#if canRefund}
+					<Button
+						color="error"
+						variant="subtle"
+						size="sm"
+						icon="lucide:undo-2"
+						onclick={() => (refundOpen = true)}>Refund</Button
+					>
+				{/if}
 				{#if order.data.status !== 'cancelled' && order.data.status !== 'completed'}
 					<Button color="error" variant="subtle" size="sm" icon="lucide:x" onclick={cancelOrder}
 						>Cancel</Button
@@ -429,6 +477,62 @@
 			</div>
 		</div>
 
+		<!-- ═══ Refunds ═══ -->
+		{#if refundState && refundState.refunds.length > 0}
+			<div class="surface-card overflow-hidden">
+				<div
+					class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-5 py-3"
+				>
+					<div class="flex items-center gap-2">
+						<Icon name="lucide:undo-2" class="size-4 text-[var(--tone-error-text)]" />
+						<h3 class="text-[14px] font-bold">Refunds</h3>
+						<Badge color="error">{formatMoney(refundState.refundedAmount, currency)}</Badge>
+					</div>
+					{#if refundState.refundableRemaining > 0.001}
+						<Button
+							color="error"
+							variant="subtle"
+							size="sm"
+							icon="lucide:undo-2"
+							onclick={() => (refundOpen = true)}>Refund more</Button
+						>
+					{/if}
+				</div>
+				<ul class="divide-y divide-[var(--ui-border-muted)]">
+					{#each refundState.refunds as r (r.id)}
+						<li class="flex items-center gap-3 px-5 py-2.5">
+							<div
+								class="grid size-8 place-items-center rounded-lg bg-[var(--tone-error-bg)] text-[var(--tone-error-text)]"
+							>
+								<Icon name={refundReasonIcon(r.data.reason)} class="size-4" />
+							</div>
+							<div class="min-w-0 flex-1">
+								<div class="text-[12.5px] font-semibold">
+									{formatMoney(r.data.totalAmount ?? 0, currency)} · {titleCase(
+										r.data.refundMethod ?? ''
+									)}
+								</div>
+								<div class="truncate text-[11px] text-[var(--ui-text-muted)]">
+									{refundReasonLabel(r.data.reason)} · {relativeTime(
+										r.data.completedAt ?? ''
+									)}{#if r.data.approvedBy}
+										· {r.data.approvedBy}{/if}
+								</div>
+							</div>
+							<button
+								type="button"
+								onclick={() => printRefundReceipt(order as any, r.data, { currency })}
+								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+								title="Print refund receipt"
+								aria-label="Print refund receipt"
+							>
+								<Icon name="lucide:printer" class="size-4" />
+							</button>
+						</li>
+					{/each}
+				</ul>
+			</div>
+		{/if}
 		<!-- ═══ Status Flow / Progress ═══ -->
 		{#if order.data.status !== 'cancelled' && currentIndex >= 0}
 			<div class="surface-card p-5">
@@ -1155,3 +1259,12 @@
 {/if}
 
 <RawDataDialog bind:open={rawOpen} data={order} title="Order Raw Data" />
+{#if order && refundState}
+	<RefundDialog
+		bind:open={refundOpen}
+		{order}
+		{currency}
+		alreadyRefunded={refundState.refundedAmount}
+		originalMethod={(payments[0]?.data.method as string) ?? 'cash'}
+	/>
+{/if}

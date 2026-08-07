@@ -8,7 +8,7 @@
  * `printPackingSlip` is a packer-facing document: items + quantities + ship-to
  * address, no prices — for "slip package send to customer" / fulfilment.
  */
-import type { Order } from '$lib/domain';
+import type { Order, Refund } from '$lib/domain';
 import { loadReceiptSettings } from '$lib/settings/local';
 import { formatMoney } from '$lib/utils/format';
 import { sourceLabel } from '$lib/domain/order-sources';
@@ -256,6 +256,78 @@ export function printPackingSlip(order: { data: Order }) {
 		<div class="dashed"></div>
 		<div class="center muted">Packed by: ____________ &nbsp;&nbsp; Checked: ____________</div>
 		</body></html>`
+	);
+	w.document.close();
+	w.focus();
+	w.print();
+}
+
+/** Print a refund / return receipt for an order. Mirrors the merchant's
+ *  Receipt settings (paper size, header/footer, toggles) for consistency. */
+export function printRefundReceipt(
+	order: { data: Order },
+	refund: Refund,
+	opts: { currency?: string; cashier?: string } = {}
+) {
+	const d = order.data as any;
+	const s = loadReceiptSettings();
+	const currency = opts.currency ?? refund.currency ?? d.currency ?? 'USD';
+	const width = s.paperSize === '58mm' ? 320 : 420;
+
+	const itemsHtml = (refund.items ?? [])
+		.map(
+			(l) =>
+				`<tr><td>${l.quantity}× ${esc(l.productName ?? 'Item')}</td><td class="right">${formatMoney(
+					l.totalRefund ?? 0,
+					currency
+				)}</td></tr>`
+		)
+		.join('');
+
+	const rows: string[] = [];
+	if (s.showLogo && s.logoUrl)
+		rows.push(
+			`<div class="center"><img src="${esc(s.logoUrl)}" style="max-height:48px;object-fit:contain"/></div>`
+		);
+	if (s.showStoreName) rows.push(`<h2>${esc(s.storeName || 'Store')}</h2>`);
+	rows.push('<div class="center"><strong>REFUND RECEIPT</strong></div>');
+	rows.push('<div class="dashed"></div>');
+	rows.push(
+		`<table><tr><td>Date</td><td class="right">${new Date(refund.completedAt ?? Date.now()).toLocaleString()}</td></tr></table>`
+	);
+	rows.push(
+		`<table><tr><td>Original order</td><td class="right">#${esc(orderNumber(d))}</td></tr></table>`
+	);
+	if (refund.reason)
+		rows.push(
+			`<table><tr><td>Reason</td><td class="right">${esc(refund.reason.replaceAll('_', ' '))}</td></tr></table>`
+		);
+	if (opts.cashier)
+		rows.push(
+			`<table><tr><td>Processed by</td><td class="right">${esc(opts.cashier)}</td></tr></table>`
+		);
+	rows.push('<div class="dashed"></div>');
+	rows.push(`<table>${itemsHtml}</table>`);
+	rows.push('<div class="dashed"></div>');
+	rows.push(
+		`<table><tr class="total"><td>REFUND TOTAL</td><td class="right">${formatMoney(
+			refund.totalAmount ?? 0,
+			currency
+		)}</td></tr></table>`
+	);
+	rows.push(
+		`<table><tr><td>Refund method</td><td class="right">${esc(refund.refundMethod ?? '—')}</td></tr></table>`
+	);
+	if (refund.note) rows.push(`<div class="center muted">${esc(refund.note)}</div>`);
+	rows.push('<div class="dashed"></div>');
+	if (s.footer) rows.push(`<div class="center muted">${esc(s.footer)}</div>`);
+
+	const w = openWindow(width);
+	if (!w) return;
+	w.document.write(
+		`<!doctype html><html><head><meta charset="utf-8"/><title>Refund ${esc(orderNumber(d))}</title><style>${BASE_STYLE}</style></head><body>${rows.join(
+			''
+		)}</body></html>`
 	);
 	w.document.close();
 	w.focus();

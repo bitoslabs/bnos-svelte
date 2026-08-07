@@ -106,7 +106,8 @@
 				TYPE.adjustment,
 				TYPE.shift,
 				TYPE.order,
-				TYPE.promotion
+				TYPE.promotion,
+				TYPE.refund
 			],
 			{ scope: 'pos' }
 		);

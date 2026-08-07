@@ -28,7 +28,14 @@ import { glo } from '$nostr/store.svelte';
 import { tenant } from '$nostr/tenant.svelte';
 import { session } from '$nostr/session.svelte';
 import { toast } from '$lib/stores/toast.svelte';
-import { TYPE, type Shift, type CashEvent, type Order, type Payment } from '$lib/domain';
+import {
+	TYPE,
+	type Shift,
+	type CashEvent,
+	type Order,
+	type Payment,
+	type Refund
+} from '$lib/domain';
 import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
 
 /** Cash-event types that *add* bills to the drawer (vs. remove). */
@@ -56,6 +63,8 @@ export interface ShiftSummary {
 	totalRefunds: number;
 	/** Monetary total of refunds. */
 	totalRefundAmount: number;
+	/** Cash refunded out of the drawer (reduces expected cash). */
+	cashRefunds: number;
 	/** Cash added via `cash_in` / `paid_in` events. */
 	totalCashIn: number;
 	/** Cash removed via `cash_out` / `paid_out` / `bank_deposit` events. */
@@ -74,6 +83,7 @@ const ZERO_SUMMARY: ShiftSummary = {
 	otherSales: 0,
 	totalRefunds: 0,
 	totalRefundAmount: 0,
+	cashRefunds: 0,
 	totalCashIn: 0,
 	totalCashOut: 0,
 	expectedCash: 0
@@ -85,6 +95,7 @@ const ZERO_SUMMARY: ShiftSummary = {
 type SummaryOrder = { data: { total?: number; status?: string } };
 type SummaryPayment = { data: { amount?: number; method?: string; status?: string } };
 type SummaryCashEvent = { data: { amount?: number; type: CashEvent['type'] } };
+type SummaryRefund = { data: { totalAmount?: number; refundMethod?: string; status?: string } };
 
 /**
  * Pure shift-summary computation: aggregates orders, tenders, cash flow and
@@ -96,20 +107,43 @@ export function computeShiftSummary(input: {
 	orders: SummaryOrder[];
 	payments: SummaryPayment[];
 	cashEvents: SummaryCashEvent[];
+	/** Refund records linked to the shift. When provided, refund totals are
+	 *  derived accurately from these (per method); otherwise we fall back to the
+	 *  order-status heuristic for backward compatibility. */
+	refunds?: SummaryRefund[];
 }): ShiftSummary {
 	const { openingCash } = input;
 	const totalOrders = input.orders.length;
 	const totalSales = input.orders.reduce((sum, o) => sum + (o.data.total ?? 0), 0);
-	const totalRefunds = input.orders.filter((o) =>
-		['refunded', 'partially_refunded', 'cancelled'].includes(o.data.status ?? '')
-	).length;
-	const totalRefundAmount = input.orders.reduce(
-		(sum, o) =>
-			['refunded', 'partially_refunded'].includes(o.data.status ?? '')
-				? sum + (o.data.total ?? 0)
-				: sum,
-		0
-	);
+
+	// Refunds: prefer accurate per-method totals from refund records; fall back to
+	// the legacy order-status estimate when no records are available.
+	let totalRefunds: number;
+	let totalRefundAmount: number;
+	let cashRefunds: number;
+	if (input.refunds && input.refunds.length) {
+		const completed = input.refunds.filter(
+			(r) => (r.data.status ?? 'completed') === 'completed' || r.data.status === 'approved'
+		);
+		totalRefunds = completed.length;
+		totalRefundAmount = completed.reduce((sum, r) => sum + (r.data.totalAmount ?? 0), 0);
+		cashRefunds = completed
+			.filter((r) => CASH_METHODS.has(r.data.refundMethod ?? 'cash'))
+			.reduce((sum, r) => sum + (r.data.totalAmount ?? 0), 0);
+	} else {
+		totalRefunds = input.orders.filter((o) =>
+			['refunded', 'partially_refunded', 'cancelled'].includes(o.data.status ?? '')
+		).length;
+		totalRefundAmount = input.orders.reduce(
+			(sum, o) =>
+				['refunded', 'partially_refunded'].includes(o.data.status ?? '')
+					? sum + (o.data.total ?? 0)
+					: sum,
+			0
+		);
+		// Legacy behaviour: assume all refunds came out of cash.
+		cashRefunds = totalRefundAmount;
+	}
 
 	let cashSales = 0;
 	let cardSales = 0;
@@ -136,7 +170,7 @@ export function computeShiftSummary(input: {
 	}
 
 	// Cash refunds reduce expected drawer cash; non-cash refunds don't.
-	const expectedCash = openingCash + cashSales + totalCashIn - totalCashOut - totalRefundAmount;
+	const expectedCash = openingCash + cashSales + totalCashIn - totalCashOut - cashRefunds;
 
 	return {
 		totalOrders,
@@ -148,6 +182,7 @@ export function computeShiftSummary(input: {
 		otherSales,
 		totalRefunds,
 		totalRefundAmount,
+		cashRefunds,
 		totalCashIn,
 		totalCashOut,
 		expectedCash
@@ -244,9 +279,20 @@ class ShiftsStore {
 		return payments.filter((p) => p.data.orderId && orderIds.has(p.data.orderId));
 	}
 
+	/** Refunds tied to a shift id (reactive). Refunds carry a `shiftId` when
+	 *  processed via POS; legacy ones join via their order's shift. */
+	refundsFor(shiftId?: string) {
+		if (!shiftId) return [];
+		const all = glo.all<Refund, typeof TYPE.refund>(TYPE.refund);
+		const direct = all.filter((r) => r.data.shiftId === shiftId);
+		if (direct.length) return direct;
+		const orderIds = new Set(this.ordersFor(shiftId).map((o) => o.id));
+		return all.filter((r) => r.data.orderId && orderIds.has(r.data.orderId));
+	}
+
 	/**
 	 * Compute a shift summary (orders, per-tender sales, cash in/out, expected
-	 * cash) from the linked orders + payments + cash events. Pure + reactive.
+	 * cash) from the linked orders + payments + cash events + refunds. Pure + reactive.
 	 */
 	summaryFor(shiftId?: string): ShiftSummary {
 		if (!shiftId) return { ...ZERO_SUMMARY };
@@ -255,7 +301,8 @@ class ShiftsStore {
 			openingCash: shift?.data.openingCash ?? 0,
 			orders: this.ordersFor(shiftId),
 			payments: this.paymentsFor(shiftId),
-			cashEvents: this.cashEventsFor(shiftId)
+			cashEvents: this.cashEventsFor(shiftId),
+			refunds: this.refundsFor(shiftId)
 		});
 	}
 
@@ -368,10 +415,7 @@ class ShiftsStore {
 	 * Only active shifts can be cancelled — a closed/force-closed shift was
 	 * already reconciled and must not be voided.
 	 */
-	cancelShift = async (input: {
-		branchId?: string | null;
-		reason?: string;
-	}): Promise<boolean> => {
+	cancelShift = async (input: { branchId?: string | null; reason?: string }): Promise<boolean> => {
 		const branchId = input.branchId ?? this.currentBranchId;
 		const active = this.activeShiftFor(branchId);
 		if (!active) {
