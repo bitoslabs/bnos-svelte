@@ -34,6 +34,7 @@
 		isPromotionEligible,
 		isPromoLive,
 		promoCoversProduct,
+		shouldAutoApply,
 		normalizeType,
 		promoValue,
 		promoName,
@@ -143,6 +144,10 @@
 	);
 
 	let promoOpen = $state(false);
+	// Pause auto-apply after a manual removal (cashier intent wins) + remember
+	// the id of the promo most recently auto-applied (drives the "Auto" tag).
+	let autoApplySuppressed = $state(false);
+	let autoAppliedId = $state<string | null>(null);
 
 	function applyPromotion(promoId: string | null) {
 		if (promoId) {
@@ -154,11 +159,16 @@
 				else if (kind === 'fixed') cart.setDiscount({ type: 'fixed', value: promoValue(d) });
 				// manual types (BOGO / bundle) → tag the order only, no auto discount
 				cart.setPromotion(promoId);
+				autoAppliedId = null; // cashier chose this manually → no longer “auto”
 				toast.success('Promotion applied', promoName(d, currency));
 			}
 		} else {
+			// Manual removal → pause auto-apply for the rest of this sale so we don't
+			// immediately re-apply (or swap in a different one) against the cashier's intent.
+			if (cart.appliedPromotionId) autoApplySuppressed = true;
 			cart.setDiscount({ type: 'percent', value: 0 });
 			cart.setPromotion(null);
+			autoAppliedId = null;
 			toast.info('Promotion removed');
 		}
 		promoOpen = false;
@@ -221,12 +231,52 @@
 		}
 	});
 
+	// Was the currently-applied promo applied automatically? (drives the “Auto” tag)
+	const isAutoApplied = $derived(
+		cart.appliedPromotionId !== null && cart.appliedPromotionId === autoAppliedId
+	);
+
+	// Auto-apply the best eligible offer when the cart qualifies — but only when:
+	//  • the merchant enabled it (General settings)
+	//  • no promo is applied yet
+	//  • the cashier hasn't set a manual discount (their intent wins)
+	//  • the offer wasn't dismissed this sale
+	// Picks the highest-saving qualifying offer; manual types never auto-apply.
+	$effect(() => {
+		if (!generalSettings.autoApplyPromotions) return;
+		if (autoApplySuppressed) return;
+		if (cart.appliedPromotionId || cart.isEmpty) return;
+		if (cart.discount.value > 0) return; // a manual discount is active
+		let best: { id: string; data: PromoData; savings: number } | null = null;
+		for (const promo of eligiblePromotions) {
+			if (!shouldAutoApply(promo.data)) continue;
+			const savings = promoSavings(promo.data, cart.totals.subtotal);
+			if (savings <= 0) continue;
+			if (!best || savings > best.savings) best = { id: promo.id, data: promo.data, savings };
+		}
+		if (best) {
+			const kind = normalizeType(best.data.type ?? best.data.discountType);
+			if (kind === 'percent') cart.setDiscount({ type: 'percent', value: promoValue(best.data) });
+			else if (kind === 'fixed') cart.setDiscount({ type: 'fixed', value: promoValue(best.data) });
+			cart.setPromotion(best.id);
+			autoAppliedId = best.id;
+		}
+	});
+
+	// Fresh sale (empty cart) → forget dismissal + auto-apply state.
+	$effect(() => {
+		if (cart.isEmpty) {
+			autoApplySuppressed = false;
+			autoAppliedId = null;
+		}
+	});
+
 	// Best live promotion per product — drives the "on offer" badge + effective
 	// (discounted) price on each product card. Ignores cart state so the badge is
 	// stable; the cart rail handles actual eligibility + apply.
 	type ProductPromo = { data: PromoData; savings: number; newPrice: number; label: string };
 	const productPromoMap = $derived.by(() => {
-		const map = new Map<string, ProductPromo>();
+		const map: Record<string, ProductPromo> = {};
 		if (allPromotions.length === 0) return map;
 		for (const prod of products) {
 			const price = prod.data.price ?? 0;
@@ -242,17 +292,17 @@
 				if (!best || savings > best.savings) best = { data: d, savings };
 			}
 			if (best) {
-				map.set(prod.id, {
+				map[prod.id] = {
 					data: best.data,
 					savings: best.savings,
 					newPrice: Math.max(0, price - best.savings),
 					label: promoValueLabel(best.data, currency)
-				});
+				};
 			}
 		}
 		return map;
 	});
-	const offersCount = $derived(productPromoMap.size);
+	const offersCount = $derived(Object.keys(productPromoMap).length);
 	let offersOnly = $state(false);
 
 	let query = $state('');
@@ -271,7 +321,7 @@
 			const q = query.trim().toLowerCase();
 			const matchesQuery = !q || (p.data.name ?? '').toLowerCase().includes(q);
 			const sellable = p.data.status !== 'inactive' && p.data.status !== 'archived';
-			const matchesOffers = !offersOnly || productPromoMap.has(p.id);
+			const matchesOffers = !offersOnly || !!productPromoMap[p.id];
 			return matchesCat && matchesQuery && sellable && matchesOffers;
 		})
 	);
@@ -1672,7 +1722,7 @@
 					</div>
 				</div>
 
-				<div class="min-h-0 pt-1 flex-1 overflow-y-auto px-4 pb-4 sm:px-5 sm:pb-5 lg:px-6 lg:pb-6">
+				<div class="min-h-0 flex-1 overflow-y-auto px-4 pt-1 pb-4 sm:px-5 sm:pb-5 lg:px-6 lg:pb-6">
 					{#if filtered.length === 0}
 						<EmptyState
 							icon="lucide:package"
@@ -1701,7 +1751,7 @@
 									p.data.inventory?.denySaleWhenOutOfStock &&
 									!p.data.inventory.allowBackorder &&
 									avail <= 0}
-								{@const promo = productPromoMap.get(p.id)}
+								{@const promo = productPromoMap[p.id]}
 								<button
 									type="button"
 									onclick={() => tapProduct(p)}
@@ -2109,8 +2159,16 @@
 										onclick={() => (promoOpen = true)}
 										class="min-w-0 flex-1 text-left"
 									>
-										<div class="truncate text-[12px] font-bold text-[var(--tone-success-text)]">
-											{promoName(pd, currency)}
+										<div class="flex min-w-0 items-center gap-1">
+											<span class="truncate text-[12px] font-bold text-[var(--tone-success-text)]"
+												>{promoName(pd, currency)}</span
+											>
+											{#if isAutoApplied}
+												<span
+													class="shrink-0 rounded bg-[var(--tone-success-text)]/15 px-1 py-0.5 text-[8.5px] font-bold text-[var(--tone-success-text)]"
+													>AUTO</span
+												>
+											{/if}
 										</div>
 										<div
 											class="truncate text-[10.5px] font-semibold text-[var(--tone-success-text)]/80"
@@ -2716,8 +2774,10 @@
 						<p class="truncate text-[13px] font-bold">{promoName(d, currency)}</p>
 						{#if applied}
 							<span
-								class="rounded-full bg-primary-500/15 px-1.5 py-0.5 text-[9.5px] font-bold text-primary-700 dark:text-primary-300"
-								>APPLIED</span
+								class="rounded-full px-1.5 py-0.5 text-[9.5px] font-bold {isAutoApplied
+									? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+									: 'bg-primary-500/15 text-primary-700 dark:text-primary-300'}"
+								>{isAutoApplied ? 'AUTO' : 'APPLIED'}</span
 							>
 						{/if}
 					</div>

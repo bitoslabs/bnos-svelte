@@ -4,6 +4,7 @@ import {
 	isPromoLive,
 	isPromotionEligible,
 	promoCoversProduct,
+	shouldAutoApply,
 	normalizeType,
 	promoIcon,
 	promoSavings,
@@ -57,6 +58,16 @@ describe('promotion engine', () => {
 	it('flags auto-applicable vs manual promotions', () => {
 		expect(isAutoApplicable({ type: 'percent' })).toBe(true);
 		expect(isAutoApplicable({ type: 'bogo' })).toBe(false);
+	});
+
+	it('reserves auto-apply for deterministic offers (excludes manual types)', () => {
+		expect(shouldAutoApply({ type: 'percent', value: 10 })).toBe(true);
+		expect(shouldAutoApply({ type: 'happy_hour', value: 20 })).toBe(true);
+		expect(shouldAutoApply({ type: 'flash_sale', value: 15 })).toBe(true);
+		expect(shouldAutoApply({ type: 'fixed', value: 5 })).toBe(true);
+		// manual / line-level offers are never auto-applied
+		expect(shouldAutoApply({ type: 'bogo' })).toBe(false);
+		expect(shouldAutoApply({ type: 'bundle' })).toBe(false);
 	});
 
 	describe('eligibility', () => {

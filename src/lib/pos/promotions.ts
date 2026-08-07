@@ -184,6 +184,21 @@ export function isAutoApplicable(d: PromoData): boolean {
 }
 
 /**
+ * Should this promotion be applied AUTOMATICALLY when the cart qualifies?
+ *
+ * Deterministic offers — time-windowed (happy hour / flash sale), cart-wide
+ * percent/fixed, targeted sale prices, spend-threshold — yes: the customer is
+ * entitled to them once conditions are met, so silently honoring them is both
+ * better service and (for advertised prices) often a legal requirement.
+ *
+ * Manual types (BOGO / bundle) and coupon-style codes are never auto-applied:
+ * they need line logic or a customer action, so they stay suggest-only.
+ */
+export function shouldAutoApply(d: PromoData): boolean {
+	return isAutoApplicable(d);
+}
+
+/**
  * "Live right now": active + within date/time window + usage not exhausted.
  * Ignores cart state (subtotal + targeting) so it can be used to decide whether
  * a promotion should be *advertised* on a product card regardless of the cart.

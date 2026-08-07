@@ -34,6 +34,9 @@ export interface GeneralSettings {
 	confirmClear: boolean;
 	compactMode: boolean;
 	language: string;
+	/** Auto-apply the best eligible promotion when the cart qualifies.
+	 *  Respects cashier overrides (manual discounts + dismissals). */
+	autoApplyPromotions: boolean;
 }
 
 export interface HardwareSettings {
@@ -75,7 +78,8 @@ export const defaultGeneralSettings: GeneralSettings = {
 	autoPrint: false,
 	confirmClear: true,
 	compactMode: false,
-	language: 'en'
+	language: 'en',
+	autoApplyPromotions: true
 };
 
 export const defaultHardwareSettings: HardwareSettings = {

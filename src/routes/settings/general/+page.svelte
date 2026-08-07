@@ -34,6 +34,7 @@
 	let autoPrint = $state(false);
 	let confirmClear = $state(true);
 	let compactMode = $state(false);
+	let autoApplyPromotions = $state(true);
 
 	// Snapshot of the last persisted state — used to detect unsaved changes.
 	let saved = $state<GeneralSettings | null>(null);
@@ -48,6 +49,7 @@
 		autoPrint = s.autoPrint;
 		confirmClear = s.confirmClear;
 		compactMode = s.compactMode;
+		autoApplyPromotions = s.autoApplyPromotions;
 		saved = { ...s };
 	});
 
@@ -59,7 +61,8 @@
 			paymentSound,
 			autoPrint,
 			confirmClear,
-			compactMode
+			compactMode,
+			autoApplyPromotions
 		};
 	}
 
@@ -83,6 +86,7 @@
 		autoPrint = saved.autoPrint;
 		confirmClear = saved.confirmClear;
 		compactMode = saved.compactMode;
+		autoApplyPromotions = saved.autoApplyPromotions;
 	}
 
 	async function resetAll() {
@@ -105,6 +109,7 @@
 		autoPrint = false;
 		confirmClear = true;
 		compactMode = false;
+		autoApplyPromotions = true;
 		saved = snapshot();
 		toast.info('Preferences reset');
 	}
@@ -252,6 +257,12 @@
 		</SettingRow>
 		<SettingRow title="Confirm before clearing cart" description="Show dialog to prevent accidents">
 			<Switch bind:checked={confirmClear} />
+		</SettingRow>
+		<SettingRow
+			title="Auto-apply promotions"
+			description="Apply the best eligible offer when the cart qualifies. Your manual discounts & dismissals are always respected."
+		>
+			<Switch bind:checked={autoApplyPromotions} />
 		</SettingRow>
 		<SettingRow title="Compact mode" description="Denser layout, more items visible">
 			<Switch bind:checked={compactMode} />
