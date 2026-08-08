@@ -86,10 +86,6 @@ export const en = {
 		thisMonth: 'This month',
 		// States
 		loading: 'Loading…',
-		searching: 'Searching…',
-		noResults: 'No results found',
-		comingSoon: 'Coming soon',
-		empty: 'Nothing here yet',
 		optional_field: 'optional',
 		tryDifferentSearch: 'Try a different search or filter.',
 		tryDifferentSearchShort: 'Try a different search.',
@@ -219,8 +215,6 @@ export const en = {
 		variance: 'Variance',
 		spend: 'Spend',
 		count: 'Count',
-		quantityOnHand: 'Qty on hand',
-		reorder: 'Reorder level',
 		cost: 'Cost',
 		margin: 'Margin',
 		// View modes
@@ -376,26 +370,10 @@ export const en = {
 		preferencesReset: 'Preferences reset',
 		deleted: 'Deleted',
 		created: 'Created',
-		copiedNpub: 'Public key copied',
-		error: 'Something went wrong',
-		errorOccurred: 'Something went wrong. Please try again.',
-		changesSaved: 'Changes saved',
-		nothingToSync: 'Everything is already up to date',
-		syncStarted: 'Syncing data…',
-		notSupported: 'Not supported on this device',
 		signedOut: 'Signed out',
-		orderPlaced: 'Order placed',
 		paymentReceived: 'Payment received',
 		refundProcessed: 'Refund processed',
-		addedToCart: 'Added to cart',
-		removedFromCart: 'Removed from cart',
-		cartCleared: 'Cart cleared',
-		requiredFields: 'Please fill in all required fields',
-		noChanges: 'No changes to save',
-		invalidInput: 'Invalid input',
-		savedToRelays: 'Saved and synced to relays',
 		connectionFailed: 'Connection failed',
-		reconnecting: 'Reconnecting…',
 		linkCopied: 'Link copied'
 	},
 	dialog: {
@@ -429,17 +407,11 @@ export const en = {
 	},
 	auth: {
 		privateKey: 'Private key (nsec…)',
-		signInToContinue: 'Sign in to continue to BNOS',
 		createAccount: 'Create account',
-		nip07: 'Continue with Nostr extension',
-		nsec: 'Continue with private key',
-		generateNew: 'Generate new identity',
 		extensionNotFound: 'No Nostr extension found',
 		invalidKey: 'Invalid key',
-		signingOut: 'Signing out…',
 		welcome: 'Welcome',
 		continueWithExtension: 'Use browser extension',
-		scanOrPaste: 'Scan or paste your nsec',
 		welcomeBack: 'Welcome back',
 		signInDesc: 'Sign in to BNOS with your Nostr identity',
 		connecting: 'Connecting…',
@@ -450,8 +422,6 @@ export const en = {
 		noExtension: 'No extension detected —',
 		installAlby: 'install Alby',
 		backUpSecretKey: 'Back up your secret key',
-		warningMsg:
-			'This is the only time we can show your nsec. Store it somewhere safe — it controls your account and cannot be recovered.',
 		publicKey: 'Public key (npub)',
 		secretKey: 'Secret key (nsec)',
 		savedKey: "I've saved my key somewhere safe. I understand it can't be reset.",
@@ -477,17 +447,14 @@ export const en = {
 		avgOrder: 'Avg. order',
 		recentOrders: 'Recent orders',
 		topProducts: 'Top products',
-		salesOverview: 'Sales overview',
 		paymentMethods: 'Payment methods',
 		orderTypes: 'Order types',
 		quickActions: 'Quick actions',
 		noOrdersYet: 'No orders yet',
 		noOrdersDesc: 'Start a sale from the POS to see orders appear here.',
-		viewReports: 'View reports',
 		totalCustomers: 'Customers',
 		totalProducts: 'Products',
 		hourly: 'Hourly',
-		noData: 'No data yet',
 		openPos: 'Open POS',
 		openThePos: 'Open the POS',
 		people: 'people',
@@ -504,7 +471,6 @@ export const en = {
 	pos: {
 		cart: 'Cart',
 		emptyCart: 'Cart is empty',
-		emptyCartDesc: 'Scan or tap products to start a sale.',
 		checkout: 'Checkout',
 		pay: 'Pay',
 		payment: 'Payment',
@@ -513,24 +479,18 @@ export const en = {
 		qrCode: 'QR Code',
 		lightning: 'Lightning',
 		walkIn: 'Walk-in customer',
-		selectCustomer: 'Select customer',
 		clearCart: 'Clear cart',
 		hold: 'Hold',
 		searchProducts: 'Search products…',
 		scanBarcode: 'Scan barcode',
 		exactMatch: 'Exact code match — press Enter or pause to add',
 		amountDue: 'Amount due',
-		amountPaid: 'Amount paid',
 		change: 'Change',
-		completeSale: 'Complete sale',
-		paymentFailed: 'Payment failed',
 		printReceipt: 'Print receipt',
-		sendReceipt: 'Send receipt',
 		cartDiscount: 'Cart discount',
 		lineNote: 'Line note',
 		confirmClearCart: 'Clear cart?',
 		confirmClearCartMsg: 'This removes every item from the current sale.',
-		applyPromotions: 'Apply promotions',
 		points: 'points',
 		redeemPoints: 'Redeem points',
 		customerDisplay: 'Customer Display',
@@ -563,9 +523,6 @@ export const en = {
 	},
 	customers: {
 		noCustomers: 'No customers yet',
-		noCustomersDesc: 'Add your first customer to track sales and loyalty.',
-		totalSpent: 'Total spent',
-		lastVisit: 'Last visit',
 		noMatching: 'No matching customers',
 		noCustomersDesc2: 'Add customers to attach them to orders and track loyalty.'
 	},
@@ -592,7 +549,6 @@ export const en = {
 		noSuppliers: 'No suppliers',
 		noPurchaseOrders: 'No purchase orders',
 		adjustStock: 'Adjust stock',
-		startStocktake: 'Start stocktake',
 		suppliers: 'Suppliers',
 		purchaseOrders: 'Purchase orders',
 		stocktake: 'Stocktake',
@@ -630,10 +586,7 @@ export const en = {
 	},
 	reports: {
 		sales: 'Sales',
-		byProduct: 'By product',
-		byCategory: 'By category',
 		byPayment: 'By payment method',
-		exportReport: 'Export report'
 	},
 	promotions: {
 		noPromotions: 'No promotions',
@@ -665,11 +618,9 @@ export const en = {
 	},
 	marketplace: {
 		noListings: 'No listings yet',
-		noListingsDesc: 'Publish your first listing and it goes live on your storefront instantly.',
 		noChannelOrders: 'No channel orders yet',
 		noChannelOrdersDesc: 'Channel orders awaiting shipment will appear here in a board.',
 		noReviews: 'No reviews yet',
-		noReviewsDesc: 'Customer reviews synced from your channels will appear here.',
 		noChannelOffers: 'No channel offers yet',
 		allChannelsConnected: 'All channels connected',
 		allChannelsConnectedDesc:
@@ -767,10 +718,8 @@ export const en = {
 		paymentMethodsDesc: 'Methods available at checkout',
 		printers: 'Printers',
 		printersDesc: 'Receipt & kitchen printer profiles — the single source of truth',
-		profileDesc: 'Public-facing identity, branding & contact for the active location',
 		receipt: 'Receipt',
 		receiptDesc: 'Layout, fields & print preview',
-		relaysDesc: 'Nostr relay servers used to sync your data',
 		store: 'Store',
 		storeDesc: 'Public-facing identity, branding & contact for the active location',
 		workspace: 'Workspace',
@@ -814,7 +763,6 @@ export const en = {
 		system: 'System',
 		accentColor: 'Accent color',
 		fontSize: 'Font size',
-		radius: 'Corner radius',
 		density: 'Density',
 		surface: 'Surface',
 		neutral: 'Neutral',
@@ -824,7 +772,6 @@ export const en = {
 		grpBilling: 'Billing',
 		grpSystem: 'System',
 		grpLegal: 'Legal',
-		planBilling: 'Plan & billing',
 		organizationHeading: 'Organization',
 		branchLabel: 'Branch',
 		businessModel: 'Business model',
@@ -837,7 +784,6 @@ export const en = {
 		noneSelected: 'None selected',
 		ok: 'OK',
 		off: 'off',
-		fullName: 'Full name',
 		// Identity (settings index)
 		showQr: 'Show QR',
 		nip07Extension: 'NIP-07 extension',
@@ -899,7 +845,6 @@ export const en = {
 		useAutoCode: 'Use auto code',
 		peripherals: 'Peripherals',
 		cashDrawer: 'Cash drawer',
-		cashDrawerAutoOpen: 'Auto-open on cash payment',
 		cashDrawerPerPrinter: 'Configured per printer in the Printers page',
 		cashDrawerTied: 'Auto-open on cash payment · tied to "{name}"',
 		addPrinterFirst: 'Add a printer first',
@@ -1151,7 +1096,6 @@ export const en = {
 		company: 'Company',
 		printersActive: '{active}/{total} active',
 		printersActiveTotal: '{active} active · {total} total',
-		enabledCount: '{enabled} active · {total} total',
 		receiptTel: 'Tel:',
 		receiptTaxIdLabel: 'Tax ID:',
 		receiptTotal: 'TOTAL',
@@ -1177,8 +1121,6 @@ export const en = {
 		catalog: 'Catalog',
 		branch: 'Branch',
 		identity: 'Identity',
-		letsGetStarted: "Let's get your store set up",
-		backUpKey: 'Back up your new key'
 	},
 	profile: {
 		nostrIdentity: 'Nostr identity',
@@ -1215,7 +1157,6 @@ export const en = {
 		copyNsec: 'Copy nsec',
 		hide: 'Hide',
 		reveal: 'Reveal',
-		noSecretKey: 'No secret key available',
 		noSecretKeyDesc: "Extension login doesn't expose the private key."
 	},
 	legal: {
@@ -1226,11 +1167,9 @@ export const en = {
 	},
 	notifications: {
 		noNotifications: 'No notifications',
-		markAllRead: 'Mark all read'
 	},
 	blocked: {
 		title: 'Account Restricted',
-		desc: 'Your access to this workspace has been suspended. Please contact an administrator.'
 	},
 	resolve: {
 		title: 'Resolving'
@@ -1240,8 +1179,6 @@ export const en = {
 	},
 	languages: {
 		en: 'English',
-		lo: 'ລາວ',
-		th: 'ไทย'
 	}
 } as const;
 
