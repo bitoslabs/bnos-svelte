@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -805,7 +806,7 @@
 					}
 				},
 				{
-					label: 'View raw',
+					label: t('common.viewRaw'),
 					icon: 'lucide:code',
 					onSelect: () => {
 						rawItem = glo.get(TYPE.product, p.id);
@@ -882,12 +883,12 @@
 	}
 </script>
 
-<svelte:head><title>BNOS · Catalog</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.products')}</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Catalog</h1>
+			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.products')}</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
 				Products, categories, units, modifiers & bundles
 			</p>
@@ -961,8 +962,8 @@
 		{#if prodCtrl.list.length === 0}
 			<EmptyState
 				icon="lucide:package"
-				title="No products"
-				description="Add your first product to start selling."
+				title={t('catalog.noProducts')}
+				description={t('catalog.noProductsDesc')}
 			>
 				{#snippet actions()}<Button
 						color="primary"
@@ -981,33 +982,33 @@
 									column="name"
 									active={prodCtrl.sortKey === 'name'}
 									direction={prodCtrl.sortDir}
-									applySort={prodCtrl.applySort}>Product</SortableTh
+									applySort={prodCtrl.applySort}>{t('common.product')}</SortableTh
 								>
 								<SortableTh
 									column="category"
 									active={prodCtrl.sortKey === 'category'}
 									direction={prodCtrl.sortDir}
-									applySort={prodCtrl.applySort}>Category</SortableTh
+									applySort={prodCtrl.applySort}>{t('common.category')}</SortableTh
 								>
 								<SortableTh
 									column="price"
 									active={prodCtrl.sortKey === 'price'}
 									direction={prodCtrl.sortDir}
 									align="right"
-									applySort={prodCtrl.applySort}>Price</SortableTh
+									applySort={prodCtrl.applySort}>{t('common.price')}</SortableTh
 								>
 								<SortableTh
 									column="promotion"
 									active={prodCtrl.sortKey === 'promotion'}
 									direction={prodCtrl.sortDir}
-									applySort={prodCtrl.applySort}>Promotion</SortableTh
+									applySort={prodCtrl.applySort}>{t('common.promotion')}</SortableTh
 								>
 								<SortableTh
 									column="status"
 									active={prodCtrl.sortKey === 'status'}
 									direction={prodCtrl.sortDir}
 									align="center"
-									applySort={prodCtrl.applySort}>Status</SortableTh
+									applySort={prodCtrl.applySort}>{t('common.status')}</SortableTh
 								>
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr></thead
@@ -1143,7 +1144,7 @@
 		{#if catCtrl.list.length === 0}
 			<EmptyState
 				icon="lucide:folder"
-				title="No categories"
+				title={t('catalog.noCategories')}
 				description="Group your products with categories."
 			>
 				{#snippet actions()}<Button
@@ -1162,14 +1163,14 @@
 								column="name"
 								active={catCtrl.sortKey === 'name'}
 								direction={catCtrl.sortDir}
-								applySort={catCtrl.applySort}>Category</SortableTh
+								applySort={catCtrl.applySort}>{t('common.category')}</SortableTh
 							>
 							<SortableTh
 								column="order"
 								active={catCtrl.sortKey === 'order'}
 								direction={catCtrl.sortDir}
 								align="right"
-								applySort={catCtrl.applySort}>Order</SortableTh
+								applySort={catCtrl.applySort}>{t('common.order')}</SortableTh
 							>
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
@@ -1215,7 +1216,7 @@
 		{#if unitCtrl.list.length === 0}
 			<EmptyState
 				icon="lucide:ruler"
-				title="No units"
+				title={t('catalog.noUnits')}
 				description="Define units of measure (kg, liter, piece…)."
 			>
 				{#snippet actions()}<Button
@@ -1234,15 +1235,15 @@
 								column="name"
 								active={unitCtrl.sortKey === 'name'}
 								direction={unitCtrl.sortDir}
-								applySort={unitCtrl.applySort}>Unit</SortableTh
+								applySort={unitCtrl.applySort}>{t('common.unit')}</SortableTh
 							>
 							<SortableTh
 								column="symbol"
 								active={unitCtrl.sortKey === 'symbol'}
 								direction={unitCtrl.sortDir}
-								applySort={unitCtrl.applySort}>Symbol</SortableTh
+								applySort={unitCtrl.applySort}>{t('common.symbol')}</SortableTh
 							>
-							<th class="px-5 py-2.5">Type</th>
+							<th class="px-5 py-2.5">{t('common.type')}</th>
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
 					>
@@ -1297,9 +1298,9 @@
 								column="name"
 								active={modCtrl.sortKey === 'name'}
 								direction={modCtrl.sortDir}
-								applySort={modCtrl.applySort}>Modifier group</SortableTh
+								applySort={modCtrl.applySort}>{t('common.modifierGroup')}</SortableTh
 							>
-							<th class="px-5 py-2.5">Options</th>
+							<th class="px-5 py-2.5">{t('common.options')}</th>
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
 					>
@@ -1352,12 +1353,12 @@
 					<table class="table-surface w-full text-left">
 						<thead
 							><tr>
-								<th class="px-5 py-2.5">Bundle</th>
+								<th class="px-5 py-2.5">{t('common.bundle')}</th>
 								<th class="px-5 py-2.5">Price Mode</th>
-								<th class="px-5 py-2.5 text-right">Price</th>
-								<th class="px-5 py-2.5 text-center">Groups</th>
-								<th class="px-5 py-2.5 text-center">Sort</th>
-								<th class="px-5 py-2.5 text-center">Status</th>
+								<th class="px-5 py-2.5 text-right">{t('common.price')}</th>
+								<th class="px-5 py-2.5 text-center">{t('common.groups')}</th>
+								<th class="px-5 py-2.5 text-center">{t('common.sort')}</th>
+								<th class="px-5 py-2.5 text-center">{t('common.status')}</th>
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr></thead
 						>
@@ -1450,12 +1451,12 @@
 <Dialog bind:open={bDlgOpen} title={bEditingId ? 'Edit bundle' : 'Add bundle'}>
 	<div class="space-y-3">
 		<label class="block"
-			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</span
+			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span
 			><Input bind:value={bName} icon="lucide:package-open" class="w-full" /></label
 		>
 		<label class="block"
 			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Description</span
+				>{t('common.description')}</span
 			><Input bind:value={bDesc} class="w-full" /></label
 		>
 		<MediaImageInput
@@ -1491,7 +1492,7 @@
 						class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {bPriceMode ===
 						'discounted'
 							? 'bg-[var(--ui-bg-elevated)]'
-							: 'text-[var(--ui-text-muted)]'}">Discount</button
+							: 'text-[var(--ui-text-muted)]'}">{t('common.discount')}</button
 					>
 				</div>
 			</div>
@@ -1627,7 +1628,7 @@
 		</div>
 	</div>
 	{#snippet footer()}<Button color="neutral" variant="ghost" onclick={() => (bDlgOpen = false)}
-			>Cancel</Button
+			>{t('common.cancel')}</Button
 		><Button color="primary" icon="lucide:check" onclick={saveBundle}
 			>{bEditingId ? 'Update' : 'Create'}</Button
 		>{/snippet}
@@ -1649,7 +1650,7 @@
 			<!-- Details -->
 			<div class="space-y-3">
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</span
+				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span
 				><Input bind:value={pName} icon="lucide:package" class="w-full" /></label
 			>
 
@@ -1669,7 +1670,7 @@
 				>
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Cost</span
+						>{t('common.cost')}</span
 					><Input
 						bind:value={pCostPrice}
 						type="number"
@@ -1699,7 +1700,7 @@
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Category</span
+						>{t('common.category')}</span
 					><Select
 						bind:value={pCat}
 						class="w-full"
@@ -1711,7 +1712,7 @@
 				>
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Unit</span
+						>{t('common.unit')}</span
 					><Select
 						bind:value={pUnitId}
 						class="w-full"
@@ -1730,7 +1731,7 @@
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>SKU</span
+						>{t('common.sku')}</span
 					><Input bind:value={pSku} icon="lucide:barcode" class="w-full" /></label
 				>
 				<label class="block"
@@ -1748,7 +1749,7 @@
 			<!-- Description -->
 			<label class="block"
 				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Description</span
+					>{t('common.description')}</span
 				><Input
 					bind:value={pDesc}
 					textarea
@@ -1811,7 +1812,7 @@
 									type="button"
 									class="text-[var(--tone-error-text)]"
 									onclick={() => removeVariant(i)}
-									aria-label="Remove"><Icon name="lucide:x" class="size-3.5" /></button
+									aria-label={t('common.remove')}><Icon name="lucide:x" class="size-3.5" /></button
 								>
 							</li>
 						{/each}
@@ -1885,12 +1886,12 @@
 	{:else if dlgKind === 'categories'}
 		<div class="space-y-3">
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</span
+				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span
 				><Input bind:value={cName} icon="lucide:folder" class="w-full" /></label
 			>
 			<label class="block"
 				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Description</span
+					>{t('common.description')}</span
 				><Input bind:value={cDesc} class="w-full" /></label
 			>
 			<div class="grid grid-cols-2 gap-3">
@@ -1918,7 +1919,7 @@
 				>
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Status</span
+						>{t('common.status')}</span
 					><Select
 						bind:value={cStatus}
 						class="w-full"
@@ -1935,17 +1936,17 @@
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Name</span
+						>{t('common.name')}</span
 					><Input bind:value={uName} placeholder="Kilogram" class="w-full" /></label
 				>
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Symbol</span
+						>{t('common.symbol')}</span
 					><Input bind:value={uSymbol} placeholder="kg" class="w-full" /></label
 				>
 			</div>
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Type</span
+				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.type')}</span
 				>
 				<Select
 					bind:value={uType}
@@ -2003,14 +2004,14 @@
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (dlgOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (dlgOpen = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" icon="lucide:check" onclick={save}
 			>{isEditing ? 'Update' : 'Save'}</Button
 		>
 	{/snippet}
 </Dialog>
 
-<RawDataDialog bind:open={rawOpen} data={rawItem} title="Product Raw Data" />
+<RawDataDialog bind:open={rawOpen} data={rawItem} title={t('common.productRawData')} />
 
 <ProductDetail bind:product={detailProduct} bind:open={detailOpen} />
 
@@ -2040,11 +2041,11 @@
 		</div>
 		<label class="block"
 			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Quantity</span
+				>{t('common.quantity')}</span
 			><Input bind:value={quickAdjustQty} type="number" min="1" class="w-full" /></label
 		>
 		<label class="block"
-			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Reason</span
+			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.reason')}</span
 			><Input
 				bind:value={quickAdjustReason}
 				placeholder="Manual adjustment"
@@ -2055,6 +2056,6 @@
 	{#snippet footer()}<Button
 			color="neutral"
 			variant="ghost"
-			onclick={() => (quickAdjustOpen = false)}>Cancel</Button
-		><Button color="primary" icon="lucide:check" onclick={saveQuickAdjust}>Save</Button>{/snippet}
+			onclick={() => (quickAdjustOpen = false)}>{t('common.cancel')}</Button
+		><Button color="primary" icon="lucide:check" onclick={saveQuickAdjust}>{t('common.save')}</Button>{/snippet}
 </Dialog>

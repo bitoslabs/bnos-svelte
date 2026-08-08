@@ -8,6 +8,7 @@
 	import Icon from './Icon.svelte';
 	import Button from './Button.svelte';
 	import { confirmStore, type ConfirmTone } from '$lib/stores/confirm.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	const toneStyles: Record<
 		ConfirmTone,
@@ -44,8 +45,8 @@
 	const style = $derived(toneStyles[tone]);
 	const icon = $derived(state.options.icon ?? style.icon);
 	const isDismiss = $derived(state.options.dismissOnly === true);
-	const confirmText = $derived(state.options.confirmText ?? (isDismiss ? 'OK' : 'Confirm'));
-	const cancelText = $derived(state.options.cancelText ?? 'Cancel');
+	const confirmText = $derived(state.options.confirmText ?? (isDismiss ? t('common.ok') : t('common.confirm')));
+	const cancelText = $derived(state.options.cancelText ?? t('common.cancel'));
 
 	function onKey(e: KeyboardEvent) {
 		if (!state.open) return;

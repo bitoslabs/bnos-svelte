@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
@@ -207,7 +208,7 @@
 	})());
 </script>
 
-<svelte:head><title>BNOS · Tables</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.tables')}</title></svelte:head>
 
 <!-- Click-away for status popover -->
 {#if openPopoverId}
@@ -295,26 +296,26 @@
 
 					<!-- Cards -->
 					<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-						{#each areaTables as t (t.id)}
+						{#each areaTables as tbl (tbl.id)}
 							<div
 								class="relative flex flex-col rounded-2xl border p-4 min-h-[160px] transition-all duration-200 cursor-pointer select-none
-								{openPopoverId === t.id ? 'z-30 ring-2 ring-primary-500 border-transparent scale-[1.02] shadow-lg' : 'hover:-translate-y-0.5 hover:shadow-md'}
-								{statusBg(t.status)}"
+								{openPopoverId === tbl.id ? 'z-30 ring-2 ring-primary-500 border-transparent scale-[1.02] shadow-lg' : 'hover:-translate-y-0.5 hover:shadow-md'}
+								{statusBg(tbl.status)}"
 								role="button"
 								tabindex="0"
-								onclick={() => (openPopoverId = openPopoverId === t.id ? null : t.id)}
-								onkeydown={(e) => e.key === 'Enter' && (openPopoverId = openPopoverId === t.id ? null : t.id)}
+								onclick={() => (openPopoverId = openPopoverId === tbl.id ? null : tbl.id)}
+								onkeydown={(e) => e.key === 'Enter' && (openPopoverId = openPopoverId === tbl.id ? null : tbl.id)}
 							>
 								<!-- Card top -->
 								<div class="mb-2 flex items-center justify-between">
-									<span class="font-display text-[15px] font-bold truncate">{t.name}</span>
+									<span class="font-display text-[15px] font-bold truncate">{tbl.name}</span>
 									<span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider
-										{t.status === 'available' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-										: t.status === 'occupied' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-										: t.status === 'reserved' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+										{tbl.status === 'available' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+										: tbl.status === 'occupied' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+										: tbl.status === 'reserved' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
 										: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'}">
-										<span class="size-1.5 rounded-full {statusDot(t.status)}"></span>
-										{t.status}
+										<span class="size-1.5 rounded-full {statusDot(tbl.status)}"></span>
+										{tbl.status}
 									</span>
 								</div>
 
@@ -322,20 +323,20 @@
 								<div class="flex flex-1 flex-col items-center justify-center py-2">
 									<div class="flex items-center gap-1.5 text-[var(--ui-text-muted)]">
 										<Icon name="lucide:users" class="size-4" />
-										<span class="text-[20px] font-bold tabular-nums text-[var(--ui-text)]">{t.seats}</span>
+										<span class="text-[20px] font-bold tabular-nums text-[var(--ui-text)]">{tbl.seats}</span>
 										<span class="text-[11px] font-medium">seats</span>
 									</div>
-									{#if t.status === 'occupied' && t.orderInfo}
+									{#if tbl.status === 'occupied' && tbl.orderInfo}
 										<div class="mt-2 rounded-md bg-[var(--ui-bg-elevated)]/80 px-2.5 py-1 text-center">
-											<div class="font-mono text-[11px] font-bold">{t.orderInfo.number}</div>
-											<div class="text-[11px] text-[var(--ui-text-muted)]">{formatMoney(t.orderInfo.total, currency)}</div>
+											<div class="font-mono text-[11px] font-bold">{tbl.orderInfo.number}</div>
+											<div class="text-[11px] text-[var(--ui-text-muted)]">{formatMoney(tbl.orderInfo.total, currency)}</div>
 										</div>
-									{:else if t.status === 'reserved'}
+									{:else if tbl.status === 'reserved'}
 										<div class="mt-2 text-center text-[11px] text-[var(--ui-text-muted)]">
 											<Icon name="lucide:clock" class="mr-1 inline size-3" />
 											Reserved
 										</div>
-									{:else if t.status === 'cleaning'}
+									{:else if tbl.status === 'cleaning'}
 										<div class="mt-2 text-center text-[11px] text-[var(--ui-text-muted)]">
 											<Icon name="lucide:sparkles" class="mr-1 inline size-3" />
 											Cleaning…
@@ -344,7 +345,7 @@
 								</div>
 
 								<!-- Status change popover -->
-								{#if openPopoverId === t.id}
+								{#if openPopoverId === tbl.id}
 									<div
 										class="absolute inset-x-0 bottom-full z-40 mb-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-2 shadow-xl"
 										role="menu"
@@ -355,16 +356,16 @@
 												<button
 													type="button"
 													class="grid size-6 place-items-center rounded text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-													title="Edit"
-													onclick={(e) => { e.stopPropagation(); openEdit(t); }}
+													title={t('common.edit')}
+													onclick={(e) => { e.stopPropagation(); openEdit(tbl); }}
 												>
 													<Icon name="lucide:pencil" class="size-3.5" />
 												</button>
 												<button
 													type="button"
 													class="grid size-6 place-items-center rounded text-[var(--tone-error-text)] hover:bg-[var(--tone-error-bg)]"
-													title="Delete"
-													onclick={(e) => { e.stopPropagation(); deleteTable(t.id); }}
+													title={t('common.delete')}
+													onclick={(e) => { e.stopPropagation(); deleteTable(tbl.id); }}
 												>
 													<Icon name="lucide:trash-2" class="size-3.5" />
 												</button>
@@ -375,8 +376,8 @@
 												<button
 													type="button"
 													class="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)]
-														{t.status === opt.value ? 'bg-[var(--ui-bg-accented)] text-[var(--ui-text)]' : 'text-[var(--ui-text-muted)]'}"
-													onclick={(e) => { e.stopPropagation(); setStatus(t.id, opt.value); }}
+														{tbl.status === opt.value ? 'bg-[var(--ui-bg-accented)] text-[var(--ui-text)]' : 'text-[var(--ui-text-muted)]'}"
+													onclick={(e) => { e.stopPropagation(); setStatus(tbl.id, opt.value); }}
 													role="menuitem"
 												>
 													<span class="size-2 rounded-full {statusDot(opt.value)}"></span>
@@ -399,7 +400,7 @@
 <Dialog bind:open={dialogOpen} title={editMode ? 'Edit table' : 'Add table'} size="md">
 	<div class="space-y-3">
 		<div>
-			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</label>
+			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</label>
 			<Input bind:value={formName} placeholder="e.g. T1, Patio A" />
 		</div>
 		<div class="grid grid-cols-2 gap-3">
@@ -413,7 +414,7 @@
 			</div>
 		</div>
 		<div>
-			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Status</label>
+			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.status')}</label>
 			<Select
 				value={formStatus}
 				options={STATUS_OPTIONS.map((s) => ({ value: s.value, label: s.label }))}
@@ -422,7 +423,7 @@
 		</div>
 	</div>
 	{#snippet footer()}
-		<Button variant="ghost" onclick={() => (dialogOpen = false)}>Cancel</Button>
+		<Button variant="ghost" onclick={() => (dialogOpen = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" onclick={saveTable}>{editMode ? 'Save' : 'Add table'}</Button>
 	{/snippet}
 </Dialog>

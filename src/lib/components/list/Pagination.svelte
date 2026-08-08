@@ -1,6 +1,7 @@
 <script lang="ts">
 	/** Sticky bottom pagination bar. Reads state from a createListControls() instance. */
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { cn } from '$lib/utils/cn';
 	import type { ListControls } from '$lib/utils/list.svelte';
 
@@ -79,7 +80,7 @@
 			<button
 				type="button"
 				class="grid size-8 place-items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:pointer-events-none disabled:opacity-40"
-				title="Previous"
+				title={t('common.previous')}
 				aria-label="Previous page"
 				disabled={controls.page <= 1}
 				onclick={() => controls.prevPage()}

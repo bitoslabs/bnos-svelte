@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -63,7 +64,7 @@
 		return [
 			[
 				{
-					label: 'View raw',
+					label: t('common.viewRaw'),
 					icon: 'lucide:code',
 					onSelect: () => {
 						rawItem = glo.get('commerce.order', row.id);
@@ -180,11 +181,11 @@
 	}
 </script>
 
-<svelte:head><title>BNOS · Transactions</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.transactions')}</title></svelte:head>
 
 <div class="space-y-4">
 	<div>
-		<h1 class="font-display text-xl font-bold tracking-tight">Transactions</h1>
+		<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.transactions')}</h1>
 		<p class="text-[12.5px] text-[var(--ui-text-muted)]">Sales ledger · kind 30200/30201</p>
 	</div>
 
@@ -337,8 +338,8 @@
 	{#if ledger.length === 0}
 		<EmptyState
 			icon="lucide:arrow-left-right"
-			title="No transactions yet"
-			description="Completed sales from the POS populate this ledger."
+			title={t('transactions.noTransactions')}
+			description={t('transactions.noTransactionsDesc')}
 		/>
 	{:else}
 		<div class="data-panel">
@@ -350,35 +351,35 @@
 								column="ref"
 								active={controls.sortKey === 'ref'}
 								direction={controls.sortDir}
-								applySort={controls.applySort}>Reference</SortableTh
+								applySort={controls.applySort}>{t('common.reference')}</SortableTh
 							>
 							<SortableTh
 								column="method"
 								active={controls.sortKey === 'method'}
 								direction={controls.sortDir}
-								applySort={controls.applySort}>Method</SortableTh
+								applySort={controls.applySort}>{t('common.method')}</SortableTh
 							>
 							<SortableTh
 								column="status"
 								active={controls.sortKey === 'status'}
 								direction={controls.sortDir}
-								applySort={controls.applySort}>Status</SortableTh
+								applySort={controls.applySort}>{t('common.status')}</SortableTh
 							>
 							<SortableTh
 								column="amount"
 								active={controls.sortKey === 'amount'}
 								direction={controls.sortDir}
 								align="right"
-								applySort={controls.applySort}>Amount</SortableTh
+								applySort={controls.applySort}>{t('common.amount')}</SortableTh
 							>
 							<SortableTh
 								column="date"
 								active={controls.sortKey === 'date'}
 								direction={controls.sortDir}
 								align="right"
-								applySort={controls.applySort}>Date</SortableTh
+								applySort={controls.applySort}>{t('common.date')}</SortableTh
 							>
-							<th class="px-3 py-2.5 text-right">Actions</th>
+							<th class="px-3 py-2.5 text-right">{t('common.actions')}</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
@@ -424,7 +425,7 @@
 	{/if}
 </div>
 
-<RawDataDialog bind:open={rawOpen} data={rawItem} title="Transaction Raw Data" />
+<RawDataDialog bind:open={rawOpen} data={rawItem} title={t('common.transactionRawData')} />
 
 <!-- Close Shift Dialog -->
 {#if closeShiftDlg}
@@ -465,7 +466,7 @@
 			</div>
 			<div class="mt-4 flex justify-end gap-2">
 				<Button color="neutral" variant="ghost" onclick={() => (closeShiftDlg = false)}
-					>Cancel</Button
+					>{t('common.cancel')}</Button
 				>
 				<Button color="error" icon="lucide:square" onclick={closeShift}>Close Shift</Button>
 			</div>

@@ -5,6 +5,7 @@
 	 * pages inject extra filter controls (status select, date range, …).
 	 */
 	import type { Snippet } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { cn } from '$lib/utils/cn';
 	import type { SortOption } from '$lib/utils/list.svelte';
@@ -104,7 +105,7 @@
 								? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
 								: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'
 						)}
-						title="Grid view"
+						title={t('common.gridView')}
 						onclick={() => setViewMode('grid')}
 					>
 						<Icon name="lucide:layout-grid" class="size-4" />
@@ -119,7 +120,7 @@
 								? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
 								: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'
 						)}
-						title="Table view"
+						title={t('common.tableView')}
 						onclick={() => setViewMode('table')}
 					>
 						<Icon name="lucide:table" class="size-4" />
@@ -134,7 +135,7 @@
 								? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
 								: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'
 						)}
-						title="List view"
+						title={t('common.listView')}
 						onclick={() => setViewMode('list')}
 					>
 						<Icon name="lucide:list" class="size-4" />

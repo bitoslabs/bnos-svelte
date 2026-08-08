@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -35,7 +36,7 @@
 	});
 </script>
 
-<svelte:head><title>Setup · Done</title></svelte:head>
+<svelte:head><title>{t('setup.title')} · {t('setup.done')}</title></svelte:head>
 
 <div class="flex flex-col items-center justify-center py-8 text-center">
 	<div

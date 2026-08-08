@@ -5,6 +5,7 @@
 	 * same object so the conversation stays with the review.
 	 */
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -84,12 +85,12 @@
 	}
 </script>
 
-<svelte:head><title>Marketplace · Reviews</title></svelte:head>
+<svelte:head><title>{t('nav.marketplace')} · {t('nav.reviews')}</title></svelte:head>
 
 <div class="space-y-5">
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
-			<h2 class="font-display text-lg font-bold tracking-tight">Reviews</h2>
+			<h2 class="font-display text-lg font-bold tracking-tight">{t('nav.reviews')}</h2>
 			<p class="text-[12px] text-[var(--ui-text-muted)]">{reviews.length} reviews · {pendingCount} need attention</p>
 		</div>
 	</div>
@@ -210,7 +211,7 @@
 </div>
 
 <!-- Reply modal -->
-<Dialog bind:open={replyOpen} title="Reply to review" size="md">
+<Dialog bind:open={replyOpen} title={t('common.replyToReview')} size="md">
 	{#if replyId}
 		{@const review = reviews.find((r) => r.id === replyId)?.data}
 		<div class="space-y-3">
@@ -230,7 +231,7 @@
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (replyOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (replyOpen = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" icon="lucide:send" disabled={!replyText.trim() || saving} onclick={saveReply}>{saving ? 'Posting…' : 'Post reply'}</Button>
 	{/snippet}
 </Dialog>

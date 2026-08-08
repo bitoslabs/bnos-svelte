@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -325,7 +326,7 @@
 					onSelect: () => (window.location.href = resolve(`/orders/${o.id}/edit`))
 				},
 				{
-					label: 'View raw',
+					label: t('common.viewRaw'),
 					icon: 'lucide:code',
 					onSelect: () => {
 						rawItem = glo.get('commerce.order', o.id);
@@ -379,13 +380,13 @@
 	);
 </script>
 
-<svelte:head><title>BNOS · Orders</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.orders')}</title></svelte:head>
 
 <div class="space-y-4">
 	<!-- header + actions -->
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Orders</h1>
+			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.orders')}</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
 				{formatInt(filteredByCriteria.length)} orders · {formatMoney(totalRevenue, currency)}
 			</p>
@@ -401,7 +402,7 @@
 			>
 				Export
 			</Button>
-			<Button color="primary" icon="lucide:plus" href="/orders/create">New Order</Button>
+			<Button color="primary" icon="lucide:plus" href="/orders/create">{t('common.new') + ' ' + t('common.order')}</Button>
 			<Button color="neutral" variant="subtle" size="sm" icon="lucide:scan-line" href="/pos"
 				>POS</Button
 			>
@@ -637,15 +638,15 @@
 	{#if filteredByCriteria.length === 0}
 		<EmptyState
 			icon="lucide:receipt-text"
-			title={hasActiveFilters ? 'No matching orders' : 'No orders yet'}
+			title={hasActiveFilters ? t('orders.noMatching') : t('orders.noOrders')}
 			description={hasActiveFilters
-				? 'Try a different search or filter.'
-				: 'Create an order or make a sale from the POS to get started.'}
+				? t('common.tryDifferentSearch')
+				: t('orders.createOrSell')}
 		>
 			{#snippet actions()}
 				{#if !hasActiveFilters}
 					<Button color="primary" size="sm" icon="lucide:plus" href="/orders/create"
-						>Create Order</Button
+						>{t('orders.createOrder')}</Button
 					>
 				{:else}
 					<Button
@@ -653,7 +654,7 @@
 						variant="subtle"
 						size="sm"
 						icon="lucide:rotate-ccw"
-						onclick={resetFilters}>Reset filters</Button
+						onclick={resetFilters}>{t('common.resetFilters')}</Button
 					>
 				{/if}
 			{/snippet}
@@ -726,50 +727,50 @@
 								column="number"
 								active={controls.sortKey === 'number'}
 								direction={controls.sortDir}
-								applySort={controls.applySort}>Order</SortableTh
+								applySort={controls.applySort}>{t('common.order')}</SortableTh
 							>
 							<th
 								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-								>Type</th
+								>{t('common.type')}</th
 							>
 							<th
 								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-								>Source</th
+								>{t('common.source')}</th
 							>
 							<th
 								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-								>Customer</th
+								>{t('common.customer')}</th
 							>
 							<SortableTh
 								column="status"
 								active={controls.sortKey === 'status'}
 								direction={controls.sortDir}
-								applySort={controls.applySort}>Status</SortableTh
+								applySort={controls.applySort}>{t('common.status')}</SortableTh
 							>
 							<SortableTh
 								column="items"
 								active={controls.sortKey === 'items'}
 								direction={controls.sortDir}
 								align="right"
-								applySort={controls.applySort}>Items</SortableTh
+								applySort={controls.applySort}>{t('common.items')}</SortableTh
 							>
 							<SortableTh
 								column="total"
 								active={controls.sortKey === 'total'}
 								direction={controls.sortDir}
 								align="right"
-								applySort={controls.applySort}>Total</SortableTh
+								applySort={controls.applySort}>{t('common.total')}</SortableTh
 							>
 							<th
 								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-								>Method</th
+								>{t('common.method')}</th
 							>
 							<SortableTh
 								column="date"
 								active={controls.sortKey === 'date'}
 								direction={controls.sortDir}
 								align="right"
-								applySort={controls.applySort}>Date</SortableTh
+								applySort={controls.applySort}>{t('common.date')}</SortableTh
 							>
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr>
@@ -887,7 +888,7 @@
 												<h4
 													class="mb-2 text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
 												>
-													Items
+													{t('common.items')}
 												</h4>
 												{#if data?.lines?.length}
 													<div
@@ -898,10 +899,10 @@
 																class="bg-[var(--ui-bg-accented)]/50 text-[10.5px] tracking-wider text-[var(--ui-text-dimmed)] uppercase"
 															>
 																<tr>
-																	<th class="px-3 py-1.5 font-semibold">Item</th>
-																	<th class="px-3 py-1.5 text-right font-semibold">Qty</th>
-																	<th class="px-3 py-1.5 text-right font-semibold">Price</th>
-																	<th class="px-3 py-1.5 text-right font-semibold">Total</th>
+																	<th class="px-3 py-1.5 font-semibold">{t('common.item')}</th>
+																	<th class="px-3 py-1.5 text-right font-semibold">{t('common.qty')}</th>
+																	<th class="px-3 py-1.5 text-right font-semibold">{t('common.price')}</th>
+																	<th class="px-3 py-1.5 text-right font-semibold">{t('common.total')}</th>
 																</tr>
 															</thead>
 															<tbody class="divide-y divide-[var(--ui-border-muted)]">
@@ -949,7 +950,7 @@
 													<h4
 														class="mb-1.5 text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
 													>
-														Customer
+														{t('common.customer')}
 													</h4>
 													<div
 														class="rounded-lg border border-[var(--ui-border-muted)] p-2.5 text-[12px]"
@@ -1016,7 +1017,7 @@
 													<h4
 														class="mb-1.5 text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
 													>
-														Actions
+														{t('common.actions')}
 													</h4>
 													<div class="flex flex-wrap gap-1.5">
 														<Button
@@ -1050,7 +1051,7 @@
 															color="neutral"
 															variant="subtle"
 															icon="lucide:printer"
-															onclick={() => printOrder(o)}>Print</Button
+															onclick={() => printOrder(o)}>{t('common.print')}</Button
 														>
 														<Button
 															size="sm"
@@ -1075,4 +1076,4 @@
 	{/if}
 </div>
 
-<RawDataDialog bind:open={rawOpen} data={rawItem} title="Order Raw Data" />
+<RawDataDialog bind:open={rawOpen} data={rawItem} title={t('orders.rawData')} />

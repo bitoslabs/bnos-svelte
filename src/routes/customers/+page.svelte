@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -175,7 +176,7 @@
 					onSelect: () => openEdit(c)
 				},
 				{
-					label: 'View raw',
+					label: t('common.viewRaw'),
 					icon: 'lucide:code',
 					onSelect: () => {
 						rawItem = glo.get('crm.customer', c.id);
@@ -205,17 +206,17 @@
 	const currency = $derived(tenant.state.currency);
 </script>
 
-<svelte:head><title>BNOS · Customers</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.customers')}</title></svelte:head>
 
 <div class="space-y-5">
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Customers</h1>
+			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.customers')}</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
 				{formatInt(customers.length)} total · {formatInt(controls.list.length)} showing · kind 30300
 			</p>
 		</div>
-		<Button color="primary" icon="lucide:user-plus" onclick={openCreate}>Add customer</Button>
+		<Button color="primary" icon="lucide:user-plus" onclick={openCreate}>{t('common.add') + ' ' + t('common.customer')}</Button>
 	</div>
 
 	<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -253,15 +254,15 @@
 	{#if controls.list.length === 0}
 		<EmptyState
 			icon="lucide:users"
-			title={controls.search ? 'No matching customers' : 'No customers yet'}
+			title={controls.search ? t('customers.noMatching') : t('customers.noCustomers')}
 			description={controls.search
-				? 'Try a different search.'
-				: 'Add customers to attach them to orders and track loyalty.'}
+				? t('common.tryDifferentSearchShort')
+				: t('customers.noCustomersDesc2')}
 		>
 			{#snippet actions()}
 				{#if !controls.search}
 					<Button color="primary" size="sm" icon="lucide:user-plus" onclick={openCreate}
-						>Add customer</Button
+						>{t('common.add') + ' ' + t('common.customer')}</Button
 					>
 				{/if}
 			{/snippet}
@@ -316,38 +317,38 @@
 								column="name"
 								active={controls.sortKey === 'name'}
 								direction={controls.sortDir}
-								applySort={controls.applySort}>Name</SortableTh
+								applySort={controls.applySort}>{t('common.name')}</SortableTh
 							>
 							<SortableTh
 								column="phone"
 								active={controls.sortKey === 'phone'}
 								direction={controls.sortDir}
-								applySort={controls.applySort}>Phone</SortableTh
+								applySort={controls.applySort}>{t('common.phone')}</SortableTh
 							>
 							<SortableTh
 								column="email"
 								active={controls.sortKey === 'email'}
 								direction={controls.sortDir}
-								applySort={controls.applySort}>Email</SortableTh
+								applySort={controls.applySort}>{t('common.email')}</SortableTh
 							>
 							<SortableTh
 								column="segment"
 								active={controls.sortKey === 'segment'}
 								direction={controls.sortDir}
-								applySort={controls.applySort}>Segment</SortableTh
+								applySort={controls.applySort}>{t('common.segment')}</SortableTh
 							>
 							<SortableTh
 								column="totalSpend"
 								active={controls.sortKey === 'totalSpend'}
 								direction={controls.sortDir}
 								applySort={controls.applySort}
-								align="right">Spend</SortableTh
+								align="right">{t('common.spend')}</SortableTh
 							>
 							<SortableTh
 								column="status"
 								active={controls.sortKey === 'status'}
 								direction={controls.sortDir}
-								applySort={controls.applySort}>Status</SortableTh
+								applySort={controls.applySort}>{t('common.status')}</SortableTh
 							>
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr>
@@ -407,20 +408,20 @@
 </div>
 
 <!-- Create Dialog -->
-<Dialog bind:open title="Add customer" size="lg">
+<Dialog bind:open title={t('common.add') + ' ' + t('common.customer')} size="lg">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span>
 			<Input bind:value={name} icon="lucide:user" placeholder="Jane Doe" class="w-full" />
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.phone')}</span
 				>
 				<Input bind:value={phone} icon="lucide:phone" placeholder="+856 …" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Email</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.email')}</span
 				>
 				<Input
 					bind:value={email}
@@ -431,7 +432,7 @@
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Address</span
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.address')}</span
 			>
 			<Input
 				bind:value={address}
@@ -449,13 +450,13 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Segment</span
+					>{t('common.segment')}</span
 				>
 				<Select bind:value={segment} options={SEGMENTS} class="w-full" />
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Notes</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.notes')}</span>
 			<Input
 				bind:value={notes}
 				textarea
@@ -465,8 +466,8 @@
 		</label>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (open = false)}>Cancel</Button>
-		<Button color="primary" icon="lucide:check" onclick={save}>Save</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (open = false)}>{t('common.cancel')}</Button>
+		<Button color="primary" icon="lucide:check" onclick={save}>{t('common.save')}</Button>
 	{/snippet}
 </Dialog>
 
@@ -474,23 +475,23 @@
 <Dialog bind:open={editOpen} title="Edit customer" size="lg">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span>
 			<Input bind:value={editName} icon="lucide:user" class="w-full" />
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.phone')}</span
 				>
 				<Input bind:value={editPhone} icon="lucide:phone" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Email</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.email')}</span
 				>
 				<Input bind:value={editEmail} icon="lucide:at-sign" class="w-full" />
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Address</span
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.address')}</span
 			>
 			<Input bind:value={editAddress} icon="lucide:map-pin" class="w-full" />
 		</label>
@@ -503,13 +504,13 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Segment</span
+					>{t('common.segment')}</span
 				>
 				<Select bind:value={editSegment} options={SEGMENTS} class="w-full" />
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Status</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.status')}</span>
 			<Select
 				bind:value={editStatus}
 				options={[
@@ -520,12 +521,12 @@
 			/>
 		</label>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Notes</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.notes')}</span>
 			<Input bind:value={editNotes} textarea class="w-full" />
 		</label>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (editOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (editOpen = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" icon="lucide:check" onclick={saveEdit}>Save changes</Button>
 	{/snippet}
 </Dialog>

@@ -6,6 +6,7 @@
 	import { permissions } from '$lib/permissions.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { cn } from '$lib/utils/cn';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	/**
 	 * Settings navigation, responsive:
@@ -16,52 +17,171 @@
 	 */
 	let { class: cls }: { class?: string } = $props();
 
-	const groups: { label: string; items: { to: string; icon: string; label: string }[] }[] = [
+	const groups: {
+		label: string;
+		labelKey: string;
+		items: { to: string; icon: string; label: string; labelKey: string }[];
+	}[] = [
 		{
 			label: 'Account',
-			items: [{ to: '/settings/profile', icon: 'lucide:user', label: 'Profile' }]
+			labelKey: 'settings.grpAccount',
+			items: [
+				{
+					to: '/settings/profile',
+					icon: 'lucide:user',
+					label: t('settings.profile'),
+					labelKey: 'settings.profile'
+				}
+			]
 		},
 		{
 			label: 'Store',
+			labelKey: 'settings.grpStore',
 			items: [
-				{ to: '/settings/organization', icon: 'lucide:building-2', label: 'Workspace' },
-				{ to: '/settings/store', icon: 'lucide:store', label: 'Store profile' },
-				{ to: '/settings/general', icon: 'lucide:sliders-horizontal', label: 'General' },
-				{ to: '/settings/features', icon: 'lucide:layout-grid', label: 'Features' },
-				{ to: '/settings/payment-methods', icon: 'lucide:credit-card', label: 'Payment methods' },
-				{ to: '/settings/receipt', icon: 'lucide:receipt-text', label: 'Receipt' },
-				{ to: '/settings/media', icon: 'lucide:image-up', label: 'Media & uploads' },
-				{ to: '/settings/bitcoin', icon: 'lucide:bitcoin', label: 'Bitcoin' },
-				{ to: '/settings/pay-qr', icon: 'lucide:qr-code', label: 'Pay QR' }
+				{
+					to: '/settings/organization',
+					icon: 'lucide:building-2',
+					label: t('settings.workspace'),
+					labelKey: 'settings.workspace'
+				},
+				{
+					to: '/settings/store',
+					icon: 'lucide:store',
+					label: t('settings.store'),
+					labelKey: 'settings.store'
+				},
+				{
+					to: '/settings/general',
+					icon: 'lucide:sliders-horizontal',
+					label: t('settings.general'),
+					labelKey: 'settings.general'
+				},
+				{
+					to: '/settings/features',
+					icon: 'lucide:layout-grid',
+					label: t('settings.features'),
+					labelKey: 'settings.features'
+				},
+				{
+					to: '/settings/payment-methods',
+					icon: 'lucide:credit-card',
+					label: t('settings.paymentMethods'),
+					labelKey: 'settings.paymentMethods'
+				},
+				{
+					to: '/settings/receipt',
+					icon: 'lucide:receipt-text',
+					label: t('settings.receipt'),
+					labelKey: 'settings.receipt'
+				},
+				{
+					to: '/settings/media',
+					icon: 'lucide:image-up',
+					label: t('settings.media'),
+					labelKey: 'settings.media'
+				},
+				{
+					to: '/settings/bitcoin',
+					icon: 'lucide:bitcoin',
+					label: t('settings.bitcoin'),
+					labelKey: 'settings.bitcoin'
+				},
+				{
+					to: '/settings/pay-qr',
+					icon: 'lucide:qr-code',
+					label: t('settings.payQr'),
+					labelKey: 'settings.payQr'
+				}
 			]
 		},
 		{
 			label: 'Hardware',
+			labelKey: 'settings.grpHardware',
 			items: [
-				{ to: '/settings/hardware', icon: 'lucide:cpu', label: 'Hardware' },
-				{ to: '/settings/printers', icon: 'lucide:printer', label: 'Printers' }
+				{
+					to: '/settings/hardware',
+					icon: 'lucide:cpu',
+					label: t('settings.hardware'),
+					labelKey: 'settings.hardware'
+				},
+				{
+					to: '/settings/printers',
+					icon: 'lucide:printer',
+					label: t('settings.printers'),
+					labelKey: 'settings.printers'
+				}
 			]
 		},
 		{
 			label: 'Billing',
-			items: [{ to: '/settings/billing', icon: 'lucide:credit-card', label: 'Plan & billing' }]
+			labelKey: 'settings.grpBilling',
+			items: [
+				{
+					to: '/settings/billing',
+					icon: 'lucide:credit-card',
+					label: t('settings.billing'),
+					labelKey: 'settings.billing'
+				}
+			]
 		},
 		{
 			label: 'System',
+			labelKey: 'settings.grpSystem',
 			items: [
-				{ to: '/settings/notifications', icon: 'lucide:bell', label: 'Notifications' },
-				{ to: '/settings/relays', icon: 'lucide:radio', label: 'Relays' },
-				{ to: '/settings/appearance', icon: 'lucide:palette', label: 'Appearance' },
-				{ to: '/settings/data', icon: 'lucide:database', label: 'Data' },
-				{ to: '/settings/about', icon: 'lucide:info', label: 'About' }
+				{
+					to: '/settings/notifications',
+					icon: 'lucide:bell',
+					label: t('settings.notifications'),
+					labelKey: 'settings.notifications'
+				},
+				{
+					to: '/settings/relays',
+					icon: 'lucide:radio',
+					label: t('settings.relays'),
+					labelKey: 'settings.relays'
+				},
+				{
+					to: '/settings/appearance',
+					icon: 'lucide:palette',
+					label: t('settings.appearance'),
+					labelKey: 'settings.appearance'
+				},
+				{
+					to: '/settings/data',
+					icon: 'lucide:database',
+					label: t('settings.data'),
+					labelKey: 'settings.data'
+				},
+				{
+					to: '/settings/about',
+					icon: 'lucide:info',
+					label: t('settings.about'),
+					labelKey: 'settings.about'
+				}
 			]
 		},
 		{
 			label: 'Legal',
+			labelKey: 'settings.grpLegal',
 			items: [
-				{ to: '/legal/privacy', icon: 'lucide:shield-check', label: 'Privacy Policy' },
-				{ to: '/legal/terms', icon: 'lucide:file-text', label: 'Terms of Service' },
-				{ to: '/legal/license', icon: 'lucide:scale', label: 'License' }
+				{
+					to: '/legal/privacy',
+					icon: 'lucide:shield-check',
+					label: t('legal.privacy'),
+					labelKey: 'legal.privacy'
+				},
+				{
+					to: '/legal/terms',
+					icon: 'lucide:file-text',
+					label: t('legal.terms'),
+					labelKey: 'legal.terms'
+				},
+				{
+					to: '/legal/license',
+					icon: 'lucide:scale',
+					label: t('legal.license'),
+					labelKey: 'legal.license'
+				}
 			]
 		}
 	];
@@ -91,7 +211,7 @@
 			<div
 				class="settings-nav-label px-1 pb-1.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase lg:px-3 lg:text-[10px] lg:tracking-[0.16em]"
 			>
-				{g.label}
+				{g.labelKey ? t(g.labelKey) : g.label}
 			</div>
 			<ul
 				class="settings-nav-list divide-y divide-[var(--ui-border-muted)] overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] lg:divide-y-0 lg:rounded-none lg:border-0 lg:bg-transparent"
@@ -115,7 +235,7 @@
 										: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'
 								)}
 							/>
-							<span class="flex-1 truncate">{it.label}</span>
+							<span class="flex-1 truncate">{it.labelKey ? t(it.labelKey) : it.label}</span>
 							<Icon
 								name="lucide:chevron-right"
 								class="size-4 shrink-0 text-[var(--ui-text-dimmed)] lg:hidden"

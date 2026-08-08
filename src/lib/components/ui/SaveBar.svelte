@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import Button from './Button.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	/**
 	 * Floating "unsaved changes" action bar. Slides up from the bottom whenever
@@ -11,7 +12,7 @@
 	let {
 		visible,
 		saving = false,
-		label = 'Unsaved changes',
+		label = '',
 		onsave,
 		ondiscard
 	}: {
@@ -34,13 +35,17 @@
 				></span>
 				<span class="relative inline-flex size-2 rounded-full bg-amber-500"></span>
 			</span>
-			<span class="text-[13px] font-semibold text-[var(--ui-text)]">{label}</span>
+			<span class="text-[13px] font-semibold text-[var(--ui-text)]"
+				>{label || t('common.unsavedChanges')}</span
+			>
 			<div class="ml-auto flex items-center gap-1.5">
 				{#if ondiscard}
-					<Button variant="ghost" color="neutral" size="sm" onclick={ondiscard}>Discard</Button>
+					<Button variant="ghost" color="neutral" size="sm" onclick={ondiscard}
+						>{t('common.discard')}</Button
+					>
 				{/if}
 				<Button color="primary" size="sm" icon="lucide:check" onclick={onsave} disabled={saving}>
-					{saving ? 'Saving…' : 'Save changes'}
+					{saving ? t('common.saving') : t('common.saveChanges')}
 				</Button>
 			</div>
 		</div>

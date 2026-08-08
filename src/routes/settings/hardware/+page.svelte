@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -66,7 +67,7 @@
 			scaleConnected
 		});
 		syncWorkspaceSettingsToOrganization();
-		toast.success('Hardware settings saved');
+		toast.success(t('settings.toastHardwareSaved'));
 	}
 
 	// ── Printer summary (read-only here; managed in Printers) ──
@@ -105,22 +106,22 @@
 	const activeType = $derived(toLegacyPrinterType(activePrinter));
 </script>
 
-<svelte:head><title>Hardware · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.hardware')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
 	<PageHeader
 		icon="lucide:cpu"
-		title="Hardware"
-		description="Printers, cash drawer, scanners, and peripherals"
+		title={t('settings.hardware')}
+		description={t('settings.hardwareDesc')}
 	/>
 
 	<!-- Printer summary (single source of truth lives in /settings/printers) -->
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:printer" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Receipt printers</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.receiptPrinters')}</h2>
 			<span class="ml-auto text-[11px] text-[var(--ui-text-dimmed)]"
-				>{printers.filter((p) => p.enabled).length}/{printers.length} active</span
+				>{t('settings.printersActive', { active: printers.filter((p) => p.enabled).length, total: printers.length })}</span
 			>
 		</div>
 
@@ -133,7 +134,7 @@
 				<div class="min-w-0 flex-1">
 					<div class="flex items-center gap-2">
 						<p class="truncate text-[13px] font-semibold">{activePrinter.name}</p>
-						<Badge color="primary">Default</Badge>
+						<Badge color="primary">{t('settings.defaultPrinter')}</Badge>
 					</div>
 					<p class="mt-0.5 text-[10.5px] text-[var(--ui-text-dimmed)]">
 						{meta.label} · {activePrinter.paperSize}
@@ -147,15 +148,15 @@
 					variant="subtle"
 					size="sm"
 					icon="lucide:plug-zap"
-					onclick={testDefaultPrinter}>Test</Button
+					onclick={testDefaultPrinter}>{t('common.testConnection')}</Button
 				>
 			</div>
 		{:else}
 			<div class="px-5 py-3">
 				<EmptyState
 					icon="lucide:printer"
-					title="No default printer"
-					description="Printer connection, paper size and cut options are managed in the Printers page — one place, no conflicts."
+					title={t('settings.noDefaultPrinter')}
+					description={t('settings.printerNote')}
 				/>
 			</div>
 		{/if}
@@ -165,7 +166,7 @@
 				<span
 					class="inline-flex items-center gap-1 rounded-md bg-[var(--ui-bg-accented)] px-2 py-1 font-semibold text-[var(--ui-text-dimmed)]"
 				>
-					<Icon name="lucide:route" class="size-3" />Routing:
+					<Icon name="lucide:route" class="size-3" />{t('settings.routing')}:
 					{activeType === 'none' ? 'off' : activeType}</span
 				>
 				<span
@@ -179,7 +180,7 @@
 				variant="ghost"
 				color="neutral"
 				size="sm"
-				icon="lucide:arrow-up-right">Manage printers</Button
+				icon="lucide:arrow-up-right">{t('settings.managePrinters')}</Button
 			>
 		</div>
 	</section>
@@ -187,12 +188,12 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:laptop-minimal" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Terminal identity</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.terminalIdentity')}</h2>
 		</div>
 		<div class="grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Device code (optional)</span
+					>{t('settings.deviceCodeOptional')}</span
 				>
 				<Input
 					bind:value={deviceCode}
@@ -204,13 +205,13 @@
 					}}
 				/>
 				<p class="mt-1.5 text-[11px] text-[var(--ui-text-dimmed)]">
-					Used in order/shift/expense numbers. Leave empty to use the auto-generated device code.
+					{t('settings.deviceCodeHint')}
 				</p>
 			</label>
 			<div
 				class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-4 py-3 text-[12px]"
 			>
-				<div class="font-semibold text-[var(--ui-text-muted)]">Active code</div>
+				<div class="font-semibold text-[var(--ui-text-muted)]">{t('settings.activeCode')}</div>
 				<div class="mt-1 font-mono text-[14px] font-bold">{activeDeviceCode}</div>
 			</div>
 		</div>
@@ -228,7 +229,7 @@
 					save();
 				}}
 			>
-				Use auto code
+				{t('settings.useAutoCode')}
 			</Button>
 		</div>
 	</section>
@@ -237,7 +238,7 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:cpu" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Peripherals</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.peripherals')}</h2>
 		</div>
 
 		<!-- Cash drawer now follows the default printer to avoid a second source of truth -->
@@ -249,13 +250,11 @@
 					<Icon name="lucide:archive" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">Cash drawer</label>
+					<label class="text-[13px] font-semibold">{t('settings.cashDrawer')}</label>
 					<p class="text-[11px] text-[var(--ui-text-dimmed)]">
-						{#if activePrinter}
-							Auto-open on cash payment · tied to "{activePrinter.name}"
-						{:else}
-							Configured per printer in the Printers page
-						{/if}
+						{activePrinter
+							? t('settings.cashDrawerTied', { name: activePrinter.name })
+							: t('settings.cashDrawerPerPrinter')}
 					</p>
 				</div>
 			</div>
@@ -270,8 +269,8 @@
 					<Icon name="lucide:scan-barcode" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">Barcode scanner</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">USB or Bluetooth HID scanner</p>
+					<label class="text-[13px] font-semibold">{t('settings.barcodeScanner')}</label>
+					<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.barcodeScannerDesc')}</p>
 				</div>
 			</div>
 			<Switch bind:checked={barcodeScanner} onCheckedChange={save} />
@@ -284,8 +283,10 @@
 					<Icon name="lucide:monitor" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">Customer display</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">Second screen for customer view</p>
+					<label class="text-[13px] font-semibold">{t('settings.customerDisplay')}</label>
+					<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+						{t('settings.customerDisplayDesc')}
+					</p>
 				</div>
 			</div>
 			<Switch bind:checked={customerDisplay} onCheckedChange={save} />
@@ -298,8 +299,8 @@
 					<Icon name="lucide:scale" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">Weighing scale</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">Connect to a compatible scale</p>
+					<label class="text-[13px] font-semibold">{t('settings.weighingScale')}</label>
+					<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.weighingScaleDesc')}</p>
 				</div>
 			</div>
 			<Switch bind:checked={scaleConnected} onCheckedChange={save} />
@@ -307,6 +308,6 @@
 	</section>
 
 	<div class="flex justify-end">
-		<Button color="primary" icon="lucide:check" onclick={save}>Save changes</Button>
+		<Button color="primary" icon="lucide:check" onclick={save}>{t('common.saveChanges')}</Button>
 	</div>
 </div>

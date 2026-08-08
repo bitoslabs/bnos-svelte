@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -269,11 +270,11 @@
 		if (!order) return;
 		if (
 			!(await confirm({
-				title: 'Cancel this order?',
-				message: 'The order will be marked as cancelled.',
+				title: t('common.cancelThisOrder'),
+				message: t('common.orderCancelledMsg'),
 				tone: 'warning',
 				icon: 'lucide:ban',
-				confirmText: 'Cancel order'
+				confirmText: t('common.confirmCancelOrder')
 			}))
 		)
 			return;
@@ -293,8 +294,8 @@
 		if (!order) return;
 		if (
 			!(await confirm({
-				title: 'Delete this order?',
-				message: 'This permanently removes the order record. This cannot be undone.',
+				title: t('common.deleteThisOrder'),
+				message: t('common.orderPermanentMsg'),
 				tone: 'danger',
 				confirmText: 'Delete'
 			}))
@@ -372,7 +373,7 @@
 {#if !order}
 	<EmptyState
 		icon="lucide:receipt-text"
-		title="Order not found"
+		title={t('orders.notFound')}
 		description="This order may have been deleted or hasn't synced yet."
 	>
 		{#snippet actions()}<Button
@@ -436,14 +437,14 @@
 					variant="subtle"
 					size="sm"
 					icon="lucide:pencil"
-					href="/orders/{id}/edit">Edit</Button
+					href="/orders/{id}/edit">{t('common.edit')}</Button
 				>
 				<Button
 					color="neutral"
 					variant="subtle"
 					size="sm"
 					icon="lucide:printer"
-					onclick={printReceipt}>Print</Button
+					onclick={printReceipt}>{t('common.print')}</Button
 				>
 				<Button
 					color="neutral"
@@ -460,7 +461,7 @@
 						class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--ui-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:border-[var(--ui-text-dimmed)]"
 					>
 						<Icon name="lucide:share-2" class="size-3.5" />
-						Share
+						{t('common.share')}
 					</a>
 				{/if}
 				<Button
@@ -469,7 +470,7 @@
 					size="sm"
 					icon="lucide:code"
 					onclick={() => (rawOpen = true)}
-					title="View raw data"
+					title={t('common.viewRaw')}
 				></Button>
 				{#if canRefund}
 					<Button
@@ -490,7 +491,7 @@
 						icon={canVoid ? 'lucide:x' : 'lucide:lock'}
 						disabled={!canVoid}
 						title={canVoid ? 'Cancel order' : 'Requires delete permission (manager+)'}
-						onclick={() => canVoid && cancelOrder()}>Cancel</Button
+						onclick={() => canVoid && cancelOrder()}>{t('common.cancel')}</Button
 					>
 				{/if}
 				<Button color="error" variant="ghost" size="sm" icon="lucide:trash-2" onclick={deleteOrder}
@@ -544,8 +545,8 @@
 								type="button"
 								onclick={() => printRefundReceipt(order as any, r.data, { currency })}
 								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-								title="Print refund receipt"
-								aria-label="Print refund receipt"
+								title={t('common.printRefundReceipt')}
+								aria-label={t('common.printRefundReceipt')}
 							>
 								<Icon name="lucide:printer" class="size-4" />
 							</button>
@@ -628,7 +629,7 @@
 							class="rounded-lg border border-red-300 px-2.5 py-1 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-500/10"
 							onclick={() => updateStatus('cancelled')}
 						>
-							Cancel
+							{t('common.cancel')}
 						</button>
 					</div>
 				{/if}
@@ -654,7 +655,7 @@
 					<div class="flex items-center justify-between px-5 py-3">
 						<div class="flex items-center gap-2">
 							<Icon name="lucide:shopping-cart" class="size-4 text-primary-500" />
-							<h2 class="font-display text-[14px] font-semibold">Items</h2>
+							<h2 class="font-display text-[14px] font-semibold">{t('common.items')}</h2>
 							<span
 								class="inline-flex items-center justify-center rounded-md bg-[var(--ui-bg-muted)] px-1.5 py-0.5 text-[10px] font-bold"
 							>
@@ -665,10 +666,10 @@
 					<table class="w-full text-left text-[13px]">
 						<thead>
 							<tr>
-								<th class="px-5 py-2.5">Item</th>
-								<th class="px-5 py-2.5 text-center">Qty</th>
-								<th class="px-5 py-2.5 text-right">Price</th>
-								<th class="px-5 py-2.5 text-right">Total</th>
+								<th class="px-5 py-2.5">{t('common.item')}</th>
+								<th class="px-5 py-2.5 text-center">{t('common.qty')}</th>
+								<th class="px-5 py-2.5 text-right">{t('common.price')}</th>
+								<th class="px-5 py-2.5 text-right">{t('common.total')}</th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-[var(--ui-border-muted)]">
@@ -728,7 +729,7 @@
 									<Icon name="lucide:phone" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 									<div>
 										<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-											Phone
+											{t('common.phone')}
 										</p>
 										<p class="font-medium">{shipping.phone}</p>
 									</div>
@@ -742,7 +743,7 @@
 									/>
 									<div>
 										<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-											Address
+											{t('common.address')}
 										</p>
 										<p class="font-medium">
 											{shipping.address}{#if shipping.city}, {shipping.city}{/if}
@@ -755,7 +756,7 @@
 									<Icon name="lucide:truck" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 									<div>
 										<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-											Provider
+											{t('common.provider')}
 										</p>
 										<p class="font-medium">{shipping.deliveryProvider}</p>
 									</div>
@@ -833,7 +834,7 @@
 								</label>
 								<label class="block">
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-										>Provider</span
+										>{t('common.provider')}</span
 									>
 									<Input
 										bind:value={trackProvider}
@@ -851,7 +852,7 @@
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 										>Driver name</span
 									>
-									<Input bind:value={trackDriver} placeholder="Driver / courier" class="w-full" />
+									<Input bind:value={trackDriver} placeholder={t('common.driverCourier')} class="w-full" />
 								</label>
 								<label class="block sm:col-span-2">
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
@@ -887,7 +888,7 @@
 									<Icon name="lucide:user" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 									<div>
 										<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-											Name
+											{t('common.name')}
 										</p>
 										<p class="font-medium">{pickup.pickupName}</p>
 									</div>
@@ -898,7 +899,7 @@
 									<Icon name="lucide:phone" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 									<div>
 										<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-											Phone
+											{t('common.phone')}
 										</p>
 										<p class="font-medium">{pickup.phone}</p>
 									</div>
@@ -938,7 +939,7 @@
 					<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
 						<div class="flex items-center gap-2 px-5 py-3">
 							<Icon name="lucide:file-text" class="size-4 text-primary-500" />
-							<h2 class="font-display text-[14px] font-semibold">Notes</h2>
+							<h2 class="font-display text-[14px] font-semibold">{t('common.notes')}</h2>
 						</div>
 						<div class="px-5 py-3">
 							<p class="text-[13px] whitespace-pre-wrap text-[var(--ui-text-muted)]">
@@ -986,7 +987,7 @@
 					</div>
 					<div class="space-y-2 px-5 py-4 text-[13px]">
 						<div class="flex justify-between">
-							<span class="text-[var(--ui-text-muted)]">Subtotal</span><span class="tabular-nums"
+							<span class="text-[var(--ui-text-muted)]">{t('common.subtotal')}</span><span class="tabular-nums"
 								>{formatMoney((order.data as any).subtotal ?? 0, currency)}</span
 							>
 						</div>
@@ -1047,7 +1048,7 @@
 						{/if}
 						{#if order.data.taxAmount}
 							<div class="flex justify-between">
-								<span class="text-[var(--ui-text-muted)]">Tax</span><span class="tabular-nums"
+								<span class="text-[var(--ui-text-muted)]">{t('common.tax')}</span><span class="tabular-nums"
 									>{formatMoney((order.data.taxAmount as number | undefined) ?? 0, currency)}</span
 								>
 							</div>
@@ -1062,7 +1063,7 @@
 						<div
 							class="flex justify-between border-t border-[var(--ui-border-muted)] pt-2 font-display text-[15px] font-bold"
 						>
-							<span>Total</span><span class="tabular-nums"
+							<span>{t('common.total')}</span><span class="tabular-nums"
 								>{formatMoney(totalAmount, currency)}</span
 							>
 						</div>
@@ -1142,7 +1143,7 @@
 									min="0"
 									step="0.01"
 									class="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5 text-right text-[13px] focus:outline-none"
-									placeholder="Amount"
+									placeholder={t('common.amount')}
 								/>
 								<div class="flex gap-2">
 									<Button
@@ -1150,9 +1151,9 @@
 										color="neutral"
 										variant="ghost"
 										block
-										onclick={() => (showAddPayment = false)}>Cancel</Button
+										onclick={() => (showAddPayment = false)}>{t('common.cancel')}</Button
 									>
-									<Button size="sm" color="primary" block onclick={addPayment}>Add</Button>
+									<Button size="sm" color="primary" block onclick={addPayment}>{t('common.add')}</Button>
 								</div>
 							</div>
 						{:else}
@@ -1185,7 +1186,7 @@
 								<Icon name="lucide:user" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 								<div>
 									<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-										Customer
+										{t('common.customer')}
 									</p>
 									<p class="font-medium">{customerDisplayName}</p>
 								</div>
@@ -1196,7 +1197,7 @@
 								<Icon name="lucide:coffee" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 								<div>
 									<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-										Table
+										{t('common.table')}
 									</p>
 									<p class="font-medium">{tableId}</p>
 								</div>
@@ -1218,7 +1219,7 @@
 								<Icon name="lucide:globe" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 								<div>
 									<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-										Source
+										{t('common.source')}
 									</p>
 									<p class="font-medium">{sourceLabel(orderSource)}</p>
 								</div>
@@ -1279,7 +1280,7 @@
 	</div>
 {/if}
 
-<RawDataDialog bind:open={rawOpen} data={order} title="Order Raw Data" />
+<RawDataDialog bind:open={rawOpen} data={order} title={t('orders.rawData')} />
 {#if order && refundState}
 	<RefundDialog
 		bind:open={refundOpen}

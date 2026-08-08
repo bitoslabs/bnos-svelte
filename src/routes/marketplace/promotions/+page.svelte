@@ -6,6 +6,7 @@
 	 * promotions manager for complex campaigns.
 	 */
 	import { resolve } from '$app/paths';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -93,12 +94,12 @@
 	}
 </script>
 
-<svelte:head><title>Marketplace · Promotions</title></svelte:head>
+<svelte:head><title>{t('nav.marketplace')} · {t('nav.promotions')}</title></svelte:head>
 
 <div class="space-y-5">
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
-			<h2 class="font-display text-lg font-bold tracking-tight">Promotions</h2>
+			<h2 class="font-display text-lg font-bold tracking-tight">{t('nav.promotions')}</h2>
 			<p class="text-[12px] text-[var(--ui-text-muted)]">Coupon codes & offers for your channels</p>
 		</div>
 		<div class="flex items-center gap-2">
@@ -195,10 +196,10 @@
 <Dialog bind:open={couponOpen} title="New coupon" size="md">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Code</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.code')}</span>
 			<div class="flex gap-2">
 				<Input bind:value={cCode} placeholder="SUMMER20" class="flex-1 font-mono uppercase" />
-				<Button color="neutral" variant="subtle" size="md" icon="lucide:dice-5" onclick={genCode}>Generate</Button>
+				<Button color="neutral" variant="subtle" size="md" icon="lucide:dice-5" onclick={genCode}>{t('common.generate')}</Button>
 			</div>
 		</label>
 		<div>
@@ -234,7 +235,7 @@
 		</div>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (couponOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (couponOpen = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" icon="lucide:check" disabled={!cCode.trim() || saving} onclick={saveCoupon}>{saving ? 'Creating…' : 'Create coupon'}</Button>
 	{/snippet}
 </Dialog>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
@@ -37,7 +38,7 @@
 		a.download = `bdgo-os-backup-${new Date().toISOString().slice(0, 10)}.json`;
 		a.click();
 		URL.revokeObjectURL(url);
-		toast.success('Backup exported');
+		toast.success(t('settings.toastBackupExported'));
 	}
 
 	// Import / restore from JSON backup
@@ -111,12 +112,11 @@
 		if (!browser) return;
 		if (
 			!(await confirm({
-				title: 'Wipe all local data?',
-				message:
-					'Every record on this device will be erased and you will be signed out. This cannot be undone.',
+				title: t('common.wipeDataTitle'),
+				message: t('settings.wipeMsg'),
 				tone: 'danger',
 				icon: 'lucide:database-zap',
-				confirmText: 'Wipe & sign out'
+				confirmText: t('common.confirmWipeSignout')
 			}))
 		)
 			return;
@@ -158,23 +158,29 @@
 	});
 </script>
 
-<svelte:head><title>Data · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.data')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
-	<PageHeader icon="lucide:database" title="Data" description="Local storage, records & backup" />
+	<PageHeader
+		icon="lucide:database"
+		title={t('settings.data')}
+		description={t('settings.dataDesc')}
+	/>
 
 	<!-- Storage usage -->
 	<section class="surface-card p-5">
 		<div class="mb-4 flex items-center gap-3">
 			<Icon name="lucide:hard-drive" class="size-5 text-primary-500" />
 			<div>
-				<h2 class="font-display text-[15px] font-semibold tracking-tight">Storage usage</h2>
-				<p class="text-[12px] text-[var(--ui-text-muted)]">Approximate local storage consumed</p>
+				<h2 class="font-display text-[15px] font-semibold tracking-tight">
+					{t('settings.storageUsage')}
+				</h2>
+				<p class="text-[12px] text-[var(--ui-text-muted)]">{t('settings.storageUsageDesc')}</p>
 			</div>
 		</div>
 		<div class="flex items-baseline gap-2">
 			<span class="font-display text-2xl font-bold tabular-nums">{storageKb}</span>
-			<span class="text-[13px] text-[var(--ui-text-muted)]">KB used</span>
+			<span class="text-[13px] text-[var(--ui-text-muted)]">{t('settings.kbUsed')}</span>
 		</div>
 		<div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--ui-bg-accented)]">
 			<div
@@ -183,9 +189,7 @@
 			></div>
 		</div>
 		<p class="mt-1.5 text-[11px] text-[var(--ui-text-dimmed)]">
-			{storageKb < 50
-				? 'Lightweight — mostly metadata and cached records.'
-				: 'Includes cached product, order, and CRM data.'}
+			{storageKb < 50 ? t('settings.storageLight') : t('settings.storageHeavy')}
 		</p>
 	</section>
 
@@ -194,8 +198,10 @@
 		<div class="mb-4 flex items-center gap-3">
 			<Icon name="lucide:database" class="size-5 text-primary-500" />
 			<div>
-				<h2 class="font-display text-[15px] font-semibold tracking-tight">Local records</h2>
-				<p class="text-[12px] text-[var(--ui-text-muted)]">Cached GLO objects on this device</p>
+				<h2 class="font-display text-[15px] font-semibold tracking-tight">
+					{t('settings.localRecords')}
+				</h2>
+				<p class="text-[12px] text-[var(--ui-text-muted)]">{t('settings.localRecordsDesc')}</p>
 			</div>
 		</div>
 		<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -213,18 +219,20 @@
 		<div class="mb-3 flex items-center gap-3">
 			<Icon name="lucide:download" class="size-5 text-primary-500" />
 			<div>
-				<h2 class="font-display text-[15px] font-semibold tracking-tight">Backup &amp; restore</h2>
+				<h2 class="font-display text-[15px] font-semibold tracking-tight">
+					{t('settings.backupRestore')}
+				</h2>
 				<p class="text-[12px] text-[var(--ui-text-muted)]">
-					Export a JSON snapshot or restore from a backup file
+					{t('settings.backupRestoreDesc')}
 				</p>
 			</div>
 		</div>
 		<div class="flex flex-wrap gap-2">
 			<Button color="neutral" variant="subtle" icon="lucide:download" onclick={exportData}
-				>Export backup</Button
+				>{t('settings.exportBackup')}</Button
 			>
 			<Button color="neutral" variant="subtle" icon="lucide:upload" onclick={triggerImport}
-				>Import / restore</Button
+				>{t('settings.importRestore')}</Button
 			>
 			<input
 				bind:this={importInput}
@@ -241,12 +249,14 @@
 		<div class="mb-3 flex items-center gap-3">
 			<Icon name="lucide:triangle-alert" class="size-5 text-[var(--tone-error-text)]" />
 			<div>
-				<h2 class="font-display text-[15px] font-semibold tracking-tight">Danger zone</h2>
-				<p class="text-[12px] text-[var(--ui-text-muted)]">Wipe all local records and sign out</p>
+				<h2 class="font-display text-[15px] font-semibold tracking-tight">
+					{t('settings.dangerZone')}
+				</h2>
+				<p class="text-[12px] text-[var(--ui-text-muted)]">{t('settings.wipeLocalDataDesc')}</p>
 			</div>
 		</div>
 		<Button color="error" variant="subtle" icon="lucide:trash-2" onclick={wipeData}
-			>Wipe local data</Button
+			>{t('settings.wipeLocalData')}</Button
 		>
 	</section>
 </div>

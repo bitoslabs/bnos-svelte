@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -58,10 +59,7 @@
 				// can actually decrypt the now-encrypted records (kind 30512 grant).
 				if (canDistributeKey()) await reShareKey(false);
 			} catch (e) {
-				toast.error(
-					'Could not enable encryption',
-					e instanceof Error ? e.message : undefined
-				);
+				toast.error('Could not enable encryption', e instanceof Error ? e.message : undefined);
 				return;
 			}
 		} else {
@@ -93,17 +91,25 @@
 	// owned by the Workspace page to avoid duplicate editors fighting over the
 	// same `tenant` fields. They are shown read-only here.
 	const orgRows = $derived([
-		{ label: 'Name', value: tenant.state.organizationName || '—', icon: 'lucide:building-2' },
-		{ label: 'Code', value: tenant.state.organizationCode || '—', icon: 'lucide:hash' },
-		{ label: 'Branch', value: tenant.state.locationName || '—', icon: 'lucide:map-pin' },
-		{ label: 'Currency', value: tenant.state.currency || '—', icon: 'lucide:coins' },
 		{
-			label: 'Business model',
+			label: t('common.name'),
+			value: tenant.state.organizationName || '—',
+			icon: 'lucide:building-2'
+		},
+		{ label: t('common.code'), value: tenant.state.organizationCode || '—', icon: 'lucide:hash' },
+		{
+			label: t('settings.branchLabel'),
+			value: tenant.state.locationName || '—',
+			icon: 'lucide:map-pin'
+		},
+		{ label: t('common.currency'), value: tenant.state.currency || '—', icon: 'lucide:coins' },
+		{
+			label: t('settings.businessModel'),
 			value: titleCase(tenant.state.businessModel.replace(/_/g, ' ')) || '—',
 			icon: 'lucide:layers'
 		},
 		{
-			label: 'Business type',
+			label: t('settings.businessType'),
 			value: titleCase(tenant.state.businessType) || '—',
 			icon: 'lucide:tag'
 		}
@@ -119,13 +125,13 @@
 	}
 </script>
 
-<svelte:head><title>BNOS · Settings</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('common.settings')}</title></svelte:head>
 
 <div class="settings-home settings-home-stack">
 	<PageHeader
 		icon="lucide:settings"
-		title="Settings"
-		description="Organization overview & Nostr identity"
+		title={t('common.settings')}
+		description={t('settings.organizationDesc')}
 	/>
 
 	<!-- Mobile: in-page navigation list (desktop uses the sticky sidebar) -->
@@ -135,7 +141,7 @@
 	<section class="settings-home-card surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="settings-home-card-header flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:building-2" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Organization</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.organizationHeading')}</h2>
 			<span class="ml-auto text-[10px] font-medium text-[var(--ui-text-dimmed)]"
 				>GLO · kind 30078</span
 			>
@@ -160,12 +166,14 @@
 		<div class="settings-home-card-footer flex flex-wrap items-center gap-2 px-5 py-3">
 			{#if tenant.restaurantEnabled}
 				<Badge color="info"
-					><Icon name="lucide:utensils" class="mr-1 size-3" />Restaurant module on</Badge
+					><Icon name="lucide:utensils" class="mr-1 size-3" />{t(
+						'settings.restaurantModuleOn'
+					)}</Badge
 				>
 			{/if}
 			{#if tenant.isMultiLocation}
 				<Badge color="neutral"
-					><Icon name="lucide:git-branch" class="mr-1 size-3" />Multi-location</Badge
+					><Icon name="lucide:git-branch" class="mr-1 size-3" />{t('settings.multiLocation')}</Badge
 				>
 			{/if}
 			<div class="ml-auto">
@@ -175,7 +183,7 @@
 					size="sm"
 					icon="lucide:arrow-up-right"
 				>
-					Manage in Workspace
+					{t('settings.manageInWorkspace')}
 				</Button>
 			</div>
 		</div>
@@ -186,19 +194,21 @@
 		<div class="settings-home-panel-header mb-4 flex items-center gap-3">
 			<Icon name="lucide:fingerprint" class="size-5 text-primary-500" />
 			<div class="min-w-0 flex-1">
-				<h2 class="font-display text-[15px] font-semibold tracking-tight">Nostr identity</h2>
-				<p class="text-[12px] text-[var(--ui-text-muted)]">The key that signs every record</p>
+				<h2 class="font-display text-[15px] font-semibold tracking-tight">
+					{t('profile.nostrIdentity')}
+				</h2>
+				<p class="text-[12px] text-[var(--ui-text-muted)]">{t('profile.identitySigns')}</p>
 			</div>
 			<Menu
 				id="settings-identity"
-				label="Identity actions"
+				label={t('settings.identityActions')}
 				triggerClass="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 				triggerActiveClass="bg-[var(--ui-bg-accented)] text-[var(--ui-text)]"
 			>
 				{#snippet trigger()}<Icon name="lucide:ellipsis-vertical" class="size-4" />{/snippet}
-				<MenuItem icon="lucide:copy" onclick={copyNpub}>Copy npub</MenuItem>
+				<MenuItem icon="lucide:copy" onclick={copyNpub}>{t('settings.copyNpub')}</MenuItem>
 				<MenuItem icon="lucide:qr-code" onclick={() => (qrOpen = true)}
-					>Show QR</MenuItem
+					>{t('settings.showQr')}</MenuItem
 				>
 				<MenuDivider />
 				<MenuItem
@@ -209,7 +219,7 @@
 						tenant.reset();
 						glo.clearAll();
 						await goto(resolve('/login'), { replaceState: true });
-					}}>Sign out</MenuItem
+					}}>{t('common.signOut')}</MenuItem
 				>
 			</Menu>
 		</div>
@@ -221,10 +231,12 @@
 					{truncateNpub(session.npub ?? '', 18, 10)}
 				</div>
 				<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
-					{session.loginMethod === 'extension' ? 'NIP-07 extension' : 'Private key'}
+					{session.loginMethod === 'extension'
+						? t('settings.nip07Extension')
+						: t('settings.privateKey')}
 				</div>
 			</div>
-			<Badge color="success"><span class="live-dot"></span> active</Badge>
+			<Badge color="success"><span class="live-dot"></span> {t('common.active')}</Badge>
 		</div>
 	</section>
 
@@ -237,16 +249,16 @@
 			/>
 			<div class="min-w-0 flex-1">
 				<h2 class="font-display text-[15px] font-semibold tracking-tight">
-					Payload encryption
+					{t('settings.payloadEncryption')}
 				</h2>
 				<p class="text-[12px] text-[var(--ui-text-muted)]">
-					Encrypt records on the wire (AES-256-GCM via NIP-44 org key grants)
+					{t('settings.payloadEncryptionDesc')}
 				</p>
 			</div>
 			{#if encryptionOn}
-				<Badge color="success"><span class="live-dot"></span> ON</Badge>
+				<Badge color="success"><span class="live-dot"></span> {t('settings.active')}</Badge>
 			{:else}
-				<Badge color="warning">off</Badge>
+				<Badge color="warning">{t('settings.off')}</Badge>
 			{/if}
 		</div>
 		<div
@@ -254,11 +266,9 @@
 		>
 			<div class="flex items-center justify-between gap-3">
 				<div class="min-w-0">
-					<p class="font-semibold">Sync encryption</p>
+					<p class="font-semibold">{t('settings.syncEncryption')}</p>
 					<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
-						{encryptionOn
-							? 'Orders, payments, customers, shifts & staff are encrypted before publishing to relays.'
-							: 'New records publish in plaintext. Turn on to protect customer & financial data.'}
+						{encryptionOn ? t('settings.syncEncryptionOn') : t('settings.syncEncryptionOff')}
 					</p>
 				</div>
 				<button
@@ -273,7 +283,8 @@
 					<span
 						class="inline-block size-4.5 translate-x-0.5 rounded-full bg-white transition-transform {encryptionOn
 							? 'translate-x-5'
-							: ''}"></span>
+							: ''}"
+					></span>
 				</button>
 			</div>
 			<div class="mt-3 flex flex-wrap items-center gap-2 text-[10.5px]">
@@ -283,7 +294,11 @@
 						: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-dimmed)]'}"
 				>
 					<Icon name="lucide:key-round" class="size-3" />
-					{cipherActive() ? 'Org key active' : keyReady ? 'Key ready (toggle on)' : 'No org key yet'}
+					{cipherActive()
+						? t('settings.orgKeyActive')
+						: keyReady
+							? t('settings.keyReadyToggle')
+							: t('settings.noOrgKey')}
 				</span>
 				<span
 					class="inline-flex items-center gap-1 rounded-md bg-[var(--ui-bg-accented)] px-2 py-0.5 font-semibold text-[var(--ui-text-dimmed)]"
@@ -299,30 +314,39 @@
 
 			<!-- Staff key-distribution status + re-share (owner/admin only) -->
 			{#if canDistributeKey()}
-				<div class="mt-3 flex flex-col gap-2 rounded-lg border border-[var(--ui-border)] p-3 sm:flex-row sm:items-center sm:justify-between">
+				<div
+					class="mt-3 flex flex-col gap-2 rounded-lg border border-[var(--ui-border)] p-3 sm:flex-row sm:items-center sm:justify-between"
+				>
 					<div class="min-w-0">
 						<p class="text-[12px] font-semibold">
 							{#if encryptionOn}
-								Key shared with {staffEligible} staff device{staffEligible === 1 ? '' : 's'}
+								{t('settings.keyShared', { n: staffEligible })}
 							{:else}
-								{staffEligible} staff can be granted access
+								{t('settings.staffCanBeGranted', { n: staffEligible })}
 							{/if}
 						</p>
 						<p class="mt-0.5 text-[10.5px] text-[var(--ui-text-dimmed)]">
 							{#if !encryptionOn}
-								Turn encryption on, then each staff device syncs the key on next login.
+								{t('settings.encryptionOnTurnOn')}
 							{:else if staffEligible === 0}
-								No staff with a pubkey yet — grants are sent when you add staff.
+								{t('settings.encryptionNoStaff')}
 							{:else}
-								Re-share after rotating the key or adding a new staff member.
+								{t('settings.encryptionReShare')}
 							{/if}
 						</p>
 					</div>
-					<Button color="primary" variant="subtle" size="sm" icon="lucide:share-2"
+					<Button
+						color="primary"
+						variant="subtle"
+						size="sm"
+						icon="lucide:share-2"
 						disabled={!keyDistributionActive() || granting || staffEligible === 0}
 						onclick={() => reShareKey()}
 					>
-						{#if granting}<Icon name="lucide:loader-circle" class="size-3.5 animate-spin" />…{:else}Re-share key{/if}
+						{#if granting}<Icon
+								name="lucide:loader-circle"
+								class="size-3.5 animate-spin"
+							/>…{:else}{t('settings.reShareKey')}{/if}
 					</Button>
 				</div>
 			{/if}
@@ -331,7 +355,7 @@
 </div>
 
 <!-- Nostr identity QR -->
-<Dialog bind:open={qrOpen} title="Nostr identity" size="sm">
+<Dialog bind:open={qrOpen} title={t('profile.nostrIdentity')} size="sm">
 	<div class="flex flex-col items-center gap-4 py-1">
 		<QrCode value={session.npub ?? ''} size={220} badge="store" />
 		<div class="text-center">
@@ -339,18 +363,16 @@
 				{truncateNpub(session.npub ?? '', 24, 12)}
 			</p>
 			<p class="mt-1 text-[11px] text-[var(--ui-text-dimmed)]">
-				Scan to follow / verify this Nostr identity
+				{t('settings.scanToVerify')}
 			</p>
 		</div>
-		<Button
-			color="neutral"
-			variant="subtle"
-			size="sm"
-			icon="lucide:copy"
-			onclick={copyNpub}>Copy npub</Button
+		<Button color="neutral" variant="subtle" size="sm" icon="lucide:copy" onclick={copyNpub}
+			>{t('settings.copyNpub')}</Button
 		>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (qrOpen = false)}>Close</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (qrOpen = false)}
+			>{t('common.close')}</Button
+		>
 	{/snippet}
 </Dialog>

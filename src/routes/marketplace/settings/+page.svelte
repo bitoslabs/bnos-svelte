@@ -5,6 +5,7 @@
 	 * blob (offline-first), with a sticky SaveBar.
 	 */
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -90,7 +91,7 @@
 	}
 </script>
 
-<svelte:head><title>Marketplace · Settings</title></svelte:head>
+<svelte:head><title>{t('nav.marketplace')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
 	<div>
@@ -99,7 +100,7 @@
 	</div>
 
 	<!-- Storefront -->
-	<SettingsSection title="Storefront" description="How your marketplace store appears to buyers" icon="lucide:store">
+	<SettingsSection title={t('marketplace.storefront')} description="How your marketplace store appears to buyers" icon="lucide:store">
 		<div class="space-y-4 px-5 py-4">
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 				<label class="block">
@@ -123,11 +124,11 @@
 	</SettingsSection>
 
 	<!-- Fulfillment -->
-	<SettingsSection title="Fulfillment" description="Default shipping & handling" icon="lucide:truck">
-		<SettingRow title="Auto-fulfill on ship" description="Mark orders complete once a tracking number is added">
+	<SettingsSection title="Fulfillment" description={t('marketplace.defaultShipping')} icon="lucide:truck">
+		<SettingRow title="Auto-fulfill on ship" description={t('marketplace.autoFulfillDesc')}>
 			<Switch bind:checked={s.autoFulfill} onCheckedChange={touch} />
 		</SettingRow>
-		<SettingRow title="Default handling time" description="Promised dispatch time shown on listings">
+		<SettingRow title="Default handling time" description={t('marketplace.flagThresholdDesc')}>
 			<div class="flex items-center gap-2">
 				<Input bind:value={s.handlingTimeDays} type="number" min="0" max="30" oninput={touch} class="w-20 text-center" />
 				<span class="text-[11.5px] text-[var(--ui-text-muted)]">days</span>
@@ -136,22 +137,22 @@
 		<div class="space-y-3 px-5 py-4">
 			<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Shipping origin</span>
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-				<Input bind:value={s.originCity} oninput={touch} placeholder="City" class="w-full" />
-				<Input bind:value={s.originZip} oninput={touch} placeholder="ZIP / Postal" class="w-full" />
+				<Input bind:value={s.originCity} oninput={touch} placeholder={t('common.city')} class="w-full" />
+				<Input bind:value={s.originZip} oninput={touch} placeholder={t('common.zipPostal')} class="w-full" />
 				<Input bind:value={s.originCountry} oninput={touch} placeholder="Country" class="w-full" />
 			</div>
 		</div>
 	</SettingsSection>
 
 	<!-- Sync -->
-	<SettingsSection title="Sync" description="How channels exchange data" icon="lucide:refresh-cw">
-		<SettingRow title="Sync inventory" description="Push stock changes to all channels">
+	<SettingsSection title={t('common.sync')} description="How channels exchange data" icon="lucide:refresh-cw">
+		<SettingRow title={t('common.syncInventory')} description={t('marketplace.pushStock')}>
 			<Switch bind:checked={s.syncInventory} onCheckedChange={touch} />
 		</SettingRow>
-		<SettingRow title="Sync orders" description="Pull incoming channel orders automatically">
+		<SettingRow title={t('common.syncOrders')} description={t('marketplace.pullOrders')}>
 			<Switch bind:checked={s.syncOrders} onCheckedChange={touch} />
 		</SettingRow>
-		<SettingRow title="Sync interval" description="Background sync frequency">
+		<SettingRow title={t('common.syncInterval')} description="Background sync frequency">
 			<Select
 				bind:value={s.syncIntervalMins}
 				onchange={touch}
@@ -167,8 +168,8 @@
 	</SettingsSection>
 
 	<!-- Reviews -->
-	<SettingsSection title="Reviews" description="Reputation & moderation" icon="lucide:star">
-		<SettingRow title="Flag threshold" description="Auto-flag reviews at or below this rating">
+	<SettingsSection title={t('nav.reviews')} description={t('marketplace.reputation')} icon="lucide:star">
+		<SettingRow title="Flag threshold" description={t('marketplace.flagThresholdDesc')}>
 			<div class="flex items-center gap-2">
 				<Input bind:value={s.flagRatingThreshold} type="number" min="1" max="5" oninput={touch} class="w-20 text-center" />
 				<span class="text-[11.5px] text-[var(--ui-text-muted)]">★ & below</span>

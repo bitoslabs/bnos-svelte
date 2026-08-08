@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
@@ -69,7 +70,7 @@
 				prefs
 			})
 		);
-		toast.success('Notification settings saved');
+		toast.success(t('settings.toastNotificationsSaved'));
 	}
 
 	function togglePref(k: NType) {
@@ -89,7 +90,7 @@
 				{
 					key: 'order_new',
 					icon: 'lucide:cart-plus',
-					label: 'New order',
+					label: t('common.new') + ' ' + t('common.order'),
 					desc: 'When a new order is placed'
 				},
 				{
@@ -197,20 +198,20 @@
 	}
 </script>
 
-<svelte:head><title>Notifications · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.notifications')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
 	<PageHeader
 		icon="lucide:bell"
-		title="Notifications"
-		description="Alert preferences for events on this device"
+		title={t('settings.notifications')}
+		description={t('settings.notificationsDesc')}
 	/>
 
 	<!-- Quick alerts -->
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:bell" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">General alerts</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.generalAlerts')}</h2>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div class="flex items-start gap-3">
@@ -220,8 +221,10 @@
 					<Icon name="lucide:music" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">Notification sound</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">Play sound on new events</p>
+					<label class="text-[13px] font-semibold">{t('settings.notificationSound')}</label>
+					<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+						{t('settings.notificationSoundDesc')}
+					</p>
 				</div>
 			</div>
 			<Switch bind:checked={notifySound} onCheckedChange={save} />
@@ -234,8 +237,8 @@
 					<Icon name="lucide:circle-check" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">Order complete</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">Notify when orders are completed</p>
+					<label class="text-[13px] font-semibold">{t('settings.orderComplete')}</label>
+					<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.orderCompleteDesc')}</p>
 				</div>
 			</div>
 			<Switch bind:checked={notifyOrderComplete} onCheckedChange={save} />
@@ -248,8 +251,8 @@
 					<Icon name="lucide:box" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">Low stock alerts</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">Warn when products run low</p>
+					<label class="text-[13px] font-semibold">{t('settings.lowStockAlerts')}</label>
+					<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.lowStockAlertsDesc')}</p>
 				</div>
 			</div>
 			<Switch bind:checked={notifyLowStock} onCheckedChange={save} />
@@ -262,8 +265,8 @@
 					<Icon name="lucide:chart-pie" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">Daily summary</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">End-of-day sales digest</p>
+					<label class="text-[13px] font-semibold">{t('settings.dailySummary')}</label>
+					<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.dailySummaryDesc')}</p>
 				</div>
 			</div>
 			<Switch bind:checked={notifyDailySummary} onCheckedChange={save} />

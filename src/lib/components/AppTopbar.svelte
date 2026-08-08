@@ -4,12 +4,14 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
 	import AppearanceControls from '$lib/components/AppearanceControls.svelte';
+	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import { command } from '$lib/stores/command.svelte';
-	import { findNavItem, navSections } from '$lib/nav';
+	import { findNavItem, navSections, navSectionLabel } from '$lib/nav';
 	import { relays } from '$nostr/relay.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { profile } from '$nostr/profile.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	let { onmenutoggle }: { onmenutoggle?: () => void } = $props();
 
@@ -21,7 +23,7 @@
 		const section = navSections.find((s) =>
 			s.items.some((i) => i.to === item.to || i.children?.some((c) => c.to === item.to))
 		);
-		return section?.label ?? '';
+		return section ? navSectionLabel(section) : '';
 	});
 
 	// Popovers
@@ -35,10 +37,10 @@
 
 	const syncState = $derived(dataSync.status);
 	const syncLabel = $derived.by(() => {
-		if (syncState === 'syncing') return 'Syncing all data...';
-		if (syncState === 'done') return 'All data synced';
-		if (syncState === 'failed') return 'Sync failed';
-		return 'Sync all data';
+		if (syncState === 'syncing') return t('topbar.syncingAllData');
+		if (syncState === 'done') return t('common.allDataSynced');
+		if (syncState === 'failed') return t('common.syncFailed');
+		return t('common.syncAll');
 	});
 	const syncIcon = $derived.by(() => {
 		if (syncState === 'syncing') return 'lucide:loader-circle';
@@ -66,7 +68,7 @@
 		type="button"
 		class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] lg:hidden"
 		onclick={() => onmenutoggle?.()}
-		aria-label="Open menu"
+		aria-label={t('topbar.openMenu')}
 	>
 		<Icon name="lucide:menu" class="size-5" />
 	</button>
@@ -76,7 +78,7 @@
 		<h1
 			class="truncate font-display text-[16px] font-semibold tracking-tight text-[var(--ui-text-highlighted)]"
 		>
-			{current?.label ?? 'BNOS'}
+			{current ? (current.labelKey ? t(current.labelKey) : current.label) : t('common.appName')}
 		</h1>
 		{#if sectionLabel && sectionLabel !== (current?.label ?? '')}
 			<p class="hidden truncate text-[11.5px] text-[var(--ui-text-dimmed)] sm:block">
@@ -90,11 +92,11 @@
 		type="button"
 		onclick={() => command.show()}
 		class="hidden h-9 items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2.5 text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] sm:flex"
-		aria-label="Search"
-		title="Search & commands (⌘K)"
+		aria-label={t('common.search')}
+		title={t('topbar.searchCommands')}
 	>
 		<Icon name="lucide:search" class="size-4" />
-		<span class="text-[12.5px] font-medium">Search…</span>
+		<span class="text-[12.5px] font-medium">{t('topbar.searchPlaceholder')}</span>
 		<kbd
 			class="ml-1 rounded border border-[var(--ui-border-muted)] bg-[var(--ui-bg)] px-1.5 py-0.5 text-[10px] font-bold"
 			>⌘K</kbd
@@ -104,8 +106,8 @@
 		type="button"
 		onclick={() => command.show()}
 		class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] sm:hidden"
-		aria-label="Search"
-		title="Search & commands"
+		aria-label={t('common.search')}
+		title={t('topbar.searchCommands')}
 	>
 		<Icon name="lucide:search" class="size-[18px]" />
 	</button>
@@ -114,8 +116,8 @@
 	<a
 		href={resolve('/notifications')}
 		class="relative grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-		aria-label="Notifications"
-		title="Notifications"
+		aria-label={t('settings.notifications')}
+		title={t('settings.notifications')}
 	>
 		<Icon name="lucide:bell" class="size-[18px]" />
 	</a>
@@ -139,7 +141,7 @@
 					<span class="relative inline-flex size-2 rounded-full bg-amber-500"></span>
 				{/if}
 			</span>
-			<span class="hidden md:inline">{relays.online ? 'Online' : 'Offline'}</span>
+			<span class="hidden md:inline">{relays.online ? t('common.online') : t('common.offline')}</span>
 		{/snippet}
 		{#snippet content()}
 			<div class="w-72 space-y-3 p-1">
@@ -155,12 +157,12 @@
 								<span class="relative inline-flex size-2.5 rounded-full bg-amber-500"></span>
 							{/if}
 						</span>
-						<span class="text-[13px] font-semibold">{relays.online ? 'Connected' : 'Offline'}</span>
+						<span class="text-[13px] font-semibold">{relays.online ? t('common.connected') : t('common.offline')}</span>
 					</div>
 					<a
 						href={resolve('/settings/relays')}
 						class="text-[11.5px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
-						>Manage</a
+						>{t('common.manage')}</a
 					>
 				</div>
 
@@ -200,14 +202,14 @@
 									? 'text-emerald-600 dark:text-emerald-400'
 									: 'text-[var(--ui-text-dimmed)]'}"
 							>
-								{active ? 'Live' : 'Idle'}
+								{active ? t('common.live') : t('common.idle')}
 							</span>
 						</div>
 					{/each}
 				</div>
 
 				<p class="text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
-					{relays.activeRelays.length} of {relays.relays.length} relays active
+					{t('topbar.relaysActive', { active: relays.activeRelays.length, total: relays.relays.length })}
 				</p>
 
 				<button
@@ -263,6 +265,15 @@
 				<!-- Appearance controls -->
 				<AppearanceControls class="px-3.5 py-3.5" />
 
+				<!-- Language -->
+				<div class="px-3.5 pb-3">
+					<div class="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+						<Icon name="lucide:languages" class="size-3.5" />
+						{t('settings.language')}
+					</div>
+					<LanguageSwitcher />
+				</div>
+
 				<!-- Quick action widgets -->
 				<div class="grid grid-cols-2 gap-1.5 px-3.5 pb-3">
 					<button
@@ -272,16 +283,16 @@
 						}}
 						disabled={syncState === 'syncing'}
 						class="flex flex-col items-center gap-1 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] py-2.5 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:opacity-60"
-						title="Sync data"
+						title={t('topbar.syncData')}
 					>
 						<Icon name={syncIcon} class={syncIconClass} />
-						<span class="text-[10px] font-semibold">Sync</span>
+						<span class="text-[10px] font-semibold">{t('common.sync')}</span>
 					</button>
 					<a
 						href={resolve('/settings/relays')}
 						onclick={() => (quickOpen = false)}
 						class="flex flex-col items-center gap-1 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] py-2.5 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-						title="Manage relays"
+						title={t('topbar.manageRelays')}
 					>
 						<span class="relative flex size-4 items-center justify-center">
 							{#if relays.online}
@@ -290,7 +301,7 @@
 							{/if}
 							<Icon name="lucide:radio" class="size-4" />
 						</span>
-						<span class="text-[10px] font-semibold">Relays</span>
+						<span class="text-[10px] font-semibold">{t('topbar.relays')}</span>
 					</a>
 				</div>
 
@@ -302,7 +313,7 @@
 						class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 					>
 						<Icon name="lucide:settings" class="size-4" />
-						All Settings
+						{t('topbar.allSettings')}
 						<Icon
 							name="lucide:chevron-right"
 							class="ml-auto size-3.5 text-[var(--ui-text-dimmed)]"
@@ -314,7 +325,7 @@
 						class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 					>
 						<Icon name="lucide:palette" class="size-4" />
-						Appearance
+						{t('settings.appearance')}
 						<Icon
 							name="lucide:chevron-right"
 							class="ml-auto size-3.5 text-[var(--ui-text-dimmed)]"
@@ -326,7 +337,7 @@
 						class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 					>
 						<Icon name="lucide:info" class="size-4" />
-						About BNOS
+						{t('topbar.aboutBnos')}
 						<Icon
 							name="lucide:chevron-right"
 							class="ml-auto size-3.5 text-[var(--ui-text-dimmed)]"

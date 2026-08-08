@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { fade, scale } from 'svelte/transition';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import QrCode from '$lib/components/ui/QrCode.svelte';
@@ -161,7 +162,7 @@
 	const hasActiveCart = $derived(cartItems.length > 0);
 </script>
 
-<svelte:head><title>Customer Display · BNOS</title></svelte:head>
+<svelte:head><title>{t('pos.customerDisplay')} · {t('common.appName')}</title></svelte:head>
 
 <div
 	class="flex h-screen w-screen flex-col overflow-hidden bg-[#0B0E14] font-sans text-white select-none"
@@ -203,7 +204,7 @@
 						class="size-7"
 					/>
 				</div>
-				<p class="font-display text-2xl font-black text-white">Scan to pay</p>
+				<p class="font-display text-2xl font-black text-white">{t('common.scanToPay')}</p>
 				<p class="mt-1 text-sm text-gray-500 capitalize">{payQr.kind}</p>
 			</div>
 
@@ -284,7 +285,7 @@
 			<!-- Total -->
 			<div class="mt-6 border-t border-white/10 pt-6">
 				<div class="flex items-center justify-between">
-					<span class="font-display text-xl font-bold text-gray-400">Total</span>
+					<span class="font-display text-xl font-bold text-gray-400">{t('common.total')}</span>
 					<span class="font-display text-5xl font-black text-white tabular-nums">
 						{formatMoney(cartTotal, currency)}
 					</span>

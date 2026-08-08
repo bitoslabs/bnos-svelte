@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { glo } from '$nostr/store.svelte';
@@ -34,7 +35,7 @@
 	}
 </script>
 
-<svelte:head><title>Setup · Catalog</title></svelte:head>
+<svelte:head><title>{t('setup.title')} · {t('setup.catalog')}</title></svelte:head>
 
 <div class="space-y-5">
 	<div>

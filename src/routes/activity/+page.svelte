@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
@@ -52,7 +53,7 @@
 		{ value: 'refund', label: 'Refunds' },
 		{ value: 'void', label: 'Voids' },
 		{ value: 'discount', label: 'Discounts' },
-		{ value: 'promotion', label: 'Promotions' },
+		{ value: 'promotion', label: t('nav.promotions') },
 		{ value: 'loyalty_redeem', label: 'Loyalty' },
 		{ value: 'cash_event', label: 'Cash' },
 		{ value: 'shift_open', label: 'Shifts' }
@@ -106,13 +107,13 @@
 	}
 </script>
 
-<svelte:head><title>Activity · BNOS</title></svelte:head>
+<svelte:head><title>{t('nav.activity')} · {t('common.appName')}</title></svelte:head>
 
 <div class="space-y-5">
 	<PageHeader
 		icon="lucide:shield-check"
-		title="Activity"
-		description="Who did what — refunds, voids, discounts, cash & shift events"
+		title={t('nav.activity')}
+		description={t('activity.noActivityDesc')}
 	/>
 
 	<!-- Filters -->

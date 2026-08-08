@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -45,44 +46,44 @@
 	}
 </script>
 
-<svelte:head><title>Media · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.media')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
 	<PageHeader
 		icon="lucide:image-up"
-		title="Media & uploads"
-		description="Where product images, logos & avatars are hosted"
+		title={t('settings.media')}
+		description={t('settings.mediaDesc')}
 	/>
 
 	<!-- Default provider -->
 	<SettingsSection
-		title="Default provider"
+		title={t('settings.defaultProvider')}
 		icon="lucide:cloud-upload"
-		description="Used by every upload in the app unless you pick another one inline."
+		description={t('settings.mediaDefaultDesc')}
 	>
 		<div class="grid grid-cols-1 gap-2 p-5 sm:grid-cols-3">
 			<button
 				type="button"
 				onclick={() => media.setDefaultProvider('none')}
-				class="rounded-xl border p-3 text-left transition-colors {media.state
-					.defaultProvider === 'none'
+				class="rounded-xl border p-3 text-left transition-colors {media.state.defaultProvider ===
+				'none'
 					? 'border-primary-500 bg-primary-500/10'
 					: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
 			>
 				<div class="flex items-center gap-2">
 					<Icon name="lucide:server" class="size-4 text-[var(--ui-text-muted)]" />
-					<span class="text-[13px] font-bold">Server fallback</span>
+					<span class="text-[13px] font-bold">{t('settings.serverFallbackProvider')}</span>
 				</div>
 				<p class="mt-1 text-[11px] text-[var(--ui-text-muted)]">
-					Use the BNOS server (Cloudinary proxy)
+					{t('settings.serverFallbackProviderDesc')}
 				</p>
 			</button>
 			{#each MEDIA_PROVIDERS as p (p.id)}
 				<button
 					type="button"
 					onclick={() => media.setDefaultProvider(p.id)}
-					class="rounded-xl border p-3 text-left transition-colors {media.state
-						.defaultProvider === p.id
+					class="rounded-xl border p-3 text-left transition-colors {media.state.defaultProvider ===
+					p.id
 						? 'border-primary-500 bg-primary-500/10'
 						: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
 				>
@@ -90,9 +91,9 @@
 						<Icon name={p.icon} class="size-4" />
 						<span class="text-[13px] font-bold">{p.label}</span>
 						{#if media.isConfigured(p.id)}
-							<Badge color="success" class="ml-auto">ready</Badge>
+							<Badge color="success" class="ml-auto">{t('settings.ready')}</Badge>
 						{:else}
-							<Badge color="warning" class="ml-auto">setup</Badge>
+							<Badge color="warning" class="ml-auto">{t('settings.setup')}</Badge>
 						{/if}
 					</div>
 					<p class="mt-1 text-[11px] text-[var(--ui-text-muted)]">{p.description}</p>
@@ -100,43 +101,47 @@
 			{/each}
 		</div>
 
-		<SettingRow
-			title="Server fallback status"
-			description="When no personal provider is selected, uploads go here."
-		>
+		<SettingRow title={t('common.serverFallback')} description={t('settings.mediaFallbackDesc')}>
 			{#if serverEnabled === null}
-				<Badge color="neutral"><Icon name="lucide:loader-circle" class="mr-1 size-3 animate-spin" />Checking…</Badge>
+				<Badge color="neutral"
+					><Icon name="lucide:loader-circle" class="mr-1 size-3 animate-spin" />{t(
+						'settings.checking'
+					)}</Badge
+				>
 			{:else if serverEnabled}
-				<Badge color="success"><Icon name="lucide:check" class="mr-1 size-3" />Available</Badge>
+				<Badge color="success"
+					><Icon name="lucide:check" class="mr-1 size-3" />{t('settings.available')}</Badge
+				>
 			{:else}
-				<Badge color="warning"><Icon name="lucide:triangle-alert" class="mr-1 size-3" />Not configured</Badge>
+				<Badge color="warning"
+					><Icon name="lucide:triangle-alert" class="mr-1 size-3" />{t(
+						'settings.notConfiguredShort'
+					)}</Badge
+				>
 			{/if}
 		</SettingRow>
 	</SettingsSection>
 
 	<!-- Cloudinary -->
-	<SettingsSection
-		title="Cloudinary"
-		icon="lucide:cloud-sun"
-	>
+	<SettingsSection title={t('settings.cloudinary')} icon="lucide:cloud-sun">
 		{#snippet actions()}
 			{#if media.isConfigured('cloudinary')}
 				{#if media.state.cloudinary.apiKey?.trim() && media.state.cloudinary.apiSecret?.trim()}
-					<Badge color="primary">signed</Badge>
-				{:else}<Badge color="success">connected</Badge>{/if}
+					<Badge color="primary">{t('settings.signed')}</Badge>
+				{:else}<Badge color="success">{t('settings.connected')}</Badge>{/if}
 			{/if}
 		{/snippet}
 
 		<div class="space-y-4 p-5">
 			<p class="text-[12px] text-[var(--ui-text-muted)]">
 				Two options: (1) an <strong>unsigned upload preset</strong> (safest — no secret in the
-				browser), or (2) your <strong>API key + API secret</strong> for signed uploads with full
-				control. The secret is stored only on this device.
+				browser), or (2) your <strong>API key + API secret</strong> for signed uploads with full control.
+				The secret is stored only on this device.
 			</p>
 			<div class="grid gap-4 sm:grid-cols-2">
 				<label class="block">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Cloud name</span
+						>{t('settings.cloudName')}</span
 					>
 					<Input
 						value={media.state.cloudinary.cloudName}
@@ -148,7 +153,7 @@
 				</label>
 				<label class="block">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Upload preset (optional)</span
+						>{t('settings.uploadPreset')}</span
 					>
 					<Input
 						value={media.state.cloudinary.uploadPreset ?? ''}
@@ -160,7 +165,7 @@
 				</label>
 				<label class="block">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>API key (optional)</span
+						>{t('settings.apiKey')}</span
 					>
 					<Input
 						value={media.state.cloudinary.apiKey ?? ''}
@@ -175,7 +180,7 @@
 					<span
 						class="mb-1.5 flex items-center justify-between text-[12px] font-semibold text-[var(--ui-text-muted)]"
 					>
-						<span>API secret (optional)</span>
+						<span>{t('settings.apiSecret')}</span>
 						<button
 							type="button"
 							onclick={() => (revealCldSecret = !revealCldSecret)}
@@ -197,7 +202,7 @@
 				</label>
 				<label class="block sm:col-span-2">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Folder (optional)</span
+						>{t('settings.folder')}</span
 					>
 					<Input
 						value={media.state.cloudinary.folder ?? ''}
@@ -212,11 +217,9 @@
 				<Button
 					color="primary"
 					variant="subtle"
-					icon={testingProvider === 'cloudinary'
-						? 'lucide:loader-circle'
-						: 'lucide:upload-cloud'}
+					icon={testingProvider === 'cloudinary' ? 'lucide:loader-circle' : 'lucide:upload-cloud'}
 					onclick={() => testUpload('cloudinary')}
-					disabled={!!testingProvider}>Test upload</Button
+					disabled={!!testingProvider}>{t('settings.testUpload')}</Button
 				>
 				<Button
 					color="neutral"
@@ -228,27 +231,27 @@
 							apiKey: '',
 							apiSecret: '',
 							folder: ''
-						})}>Clear</Button
+						})}>{t('settings.clear')}</Button
 				>
 			</div>
 		</div>
 	</SettingsSection>
 
 	<!-- S3 / R2 -->
-	<SettingsSection title="S3 / R2 / B2" icon="lucide:database">
+	<SettingsSection title={t('settings.s3r2b2')} icon="lucide:database">
 		{#snippet actions()}
-			{#if media.isConfigured('s3')}<Badge color="success">connected</Badge>{/if}
+			{#if media.isConfigured('s3')}<Badge color="success">{t('settings.connected')}</Badge>{/if}
 		{/snippet}
 
 		<div class="space-y-4 p-5">
 			<p class="text-[12px] text-[var(--ui-text-muted)]">
-				Works with AWS S3 and S3-compatible storage. Enable CORS on the bucket to allow PUT
-				requests from this site. The secret key is stored locally on this device.
+				Works with AWS S3 and S3-compatible storage. Enable CORS on the bucket to allow PUT requests
+				from this site. The secret key is stored locally on this device.
 			</p>
 			<div class="grid gap-4 sm:grid-cols-2">
 				<label class="block">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Bucket</span
+						>{t('settings.bucket')}</span
 					>
 					<Input
 						value={media.state.s3.bucket}
@@ -260,7 +263,7 @@
 				</label>
 				<label class="block">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Region</span
+						>{t('settings.region')}</span
 					>
 					<Input
 						value={media.state.s3.region}
@@ -272,7 +275,7 @@
 				</label>
 				<label class="block sm:col-span-2">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Endpoint (optional — R2 / MinIO)</span
+						>{t('settings.endpoint')}</span
 					>
 					<Input
 						value={media.state.s3.endpoint ?? ''}
@@ -285,7 +288,7 @@
 				</label>
 				<label class="block">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Access key</span
+						>{t('settings.accessKey')}</span
 					>
 					<Input
 						value={media.state.s3.accessKey}
@@ -300,7 +303,7 @@
 					<span
 						class="mb-1.5 flex items-center justify-between text-[12px] font-semibold text-[var(--ui-text-muted)]"
 					>
-						<span>Secret key</span>
+						<span>{t('settings.secretKey')}</span>
 						<button
 							type="button"
 							onclick={() => (revealS3Secret = !revealS3Secret)}
@@ -322,7 +325,7 @@
 				</label>
 				<label class="block sm:col-span-2">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Public URL base (optional — CDN)</span
+						>{t('settings.publicUrlBase')}</span
 					>
 					<Input
 						value={media.state.s3.publicUrlBase ?? ''}
@@ -335,7 +338,7 @@
 				</label>
 				<label class="block sm:col-span-2">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Folder prefix (optional)</span
+						>{t('settings.folderPrefix')}</span
 					>
 					<Input
 						value={media.state.s3.folder ?? ''}
@@ -352,7 +355,7 @@
 					variant="subtle"
 					icon={testingProvider === 's3' ? 'lucide:loader-circle' : 'lucide:upload-cloud'}
 					onclick={() => testUpload('s3')}
-					disabled={!!testingProvider}>Test upload</Button
+					disabled={!!testingProvider}>{t('settings.testUpload')}</Button
 				>
 				<Button
 					color="neutral"
@@ -366,17 +369,17 @@
 							secretKey: '',
 							publicUrlBase: '',
 							folder: ''
-						})}>Clear</Button
+						})}>{t('settings.clear')}</Button
 				>
 			</div>
 		</div>
 	</SettingsSection>
 
 	<!-- Danger zone -->
-	<SettingsSection danger title="Erase credentials" icon="lucide:shield-alert">
+	<SettingsSection danger title={t('common.eraseCredentials')} icon="lucide:shield-alert">
 		<div class="flex items-center justify-between gap-4 p-5">
 			<p class="text-[12px] text-[var(--ui-text-muted)]">
-				Removes all provider credentials from this device. Uploaded files stay where they are.
+				{t('settings.eraseCredentialsDesc')}
 			</p>
 			<Button
 				color="error"
@@ -384,8 +387,8 @@
 				icon="lucide:trash-2"
 				onclick={() => {
 					media.reset();
-					toast.success('Media settings cleared');
-				}}>Erase all</Button
+					toast.success(t('settings.toastMediaCleared'));
+				}}>{t('settings.eraseAll')}</Button
 			>
 		</div>
 	</SettingsSection>

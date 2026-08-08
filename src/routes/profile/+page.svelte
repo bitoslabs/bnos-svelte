@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -22,7 +23,7 @@ import { glo } from '$nostr/store.svelte';
 	}
 </script>
 
-<svelte:head><title>BNOS · Profile</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('common.profile')}</title></svelte:head>
 
 <div class="mx-auto max-w-2xl space-y-5">
 	<div class="surface-card flex flex-col items-center gap-3 p-8 text-center">
@@ -35,11 +36,11 @@ import { glo } from '$nostr/store.svelte';
 		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:building-2" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">Organization</span><span class="ml-auto font-semibold">{tenant.state.organizationName || '—'}</span></div>
 		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:map-pin" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">Branch</span><span class="ml-auto font-semibold">{tenant.state.locationName || 'Main'}</span></div>
 		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:store" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">Business</span><span class="ml-auto font-semibold capitalize">{tenant.state.businessType}</span></div>
-		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:radio" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">Relays</span><span class="ml-auto font-semibold">{relays.activeRelays.length} active / {relays.relays.length} configured</span></div>
+		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:radio" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">{t('settings.relays')}</span><span class="ml-auto font-semibold">{relays.activeRelays.length} active / {relays.relays.length} configured</span></div>
 	</div>
 
 	<div class="grid grid-cols-2 gap-3">
 		<Button color="neutral" variant="subtle" icon="lucide:sliders-horizontal" href="/settings">Settings</Button>
-		<Button color="error" variant="subtle" icon="lucide:log-out" onclick={signOut}>Sign out</Button>
+		<Button color="error" variant="subtle" icon="lucide:log-out" onclick={signOut}>{t('common.signOut')}</Button>
 	</div>
 </div>

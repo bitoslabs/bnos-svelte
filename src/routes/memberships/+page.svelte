@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -270,12 +271,12 @@
 		mode === 'gym' ? 'info' : mode === 'hybrid' ? 'warning' : 'primary';
 </script>
 
-<svelte:head><title>BNOS · Memberships</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.memberships')}</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Memberships</h1>
+			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.memberships')}</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
 				Tiers, subscriptions & check-ins · kinds 30311–30315
 			</p>
@@ -389,30 +390,30 @@
 									column="name"
 									active={planCtrl.sortKey === 'name'}
 									direction={planCtrl.sortDir}
-									applySort={planCtrl.applySort}>Plan</SortableTh
+									applySort={planCtrl.applySort}>{t('common.plan')}</SortableTh
 								>
 								<SortableTh
 									column="price"
 									active={planCtrl.sortKey === 'price'}
 									direction={planCtrl.sortDir}
 									align="right"
-									applySort={planCtrl.applySort}>Price</SortableTh
+									applySort={planCtrl.applySort}>{t('common.price')}</SortableTh
 								>
 								<th
 									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Period</th
+									>{t('common.period')}</th
 								>
 								<th
 									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Duration</th
+									>{t('common.duration')}</th
 								>
 								<th
 									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Mode</th
+									>{t('common.mode')}</th
 								>
 								<th
 									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Status</th
+									>{t('common.status')}</th
 								>
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr>
@@ -703,25 +704,25 @@
 									column="customer"
 									active={subCtrl.sortKey === 'customer'}
 									direction={subCtrl.sortDir}
-									applySort={subCtrl.applySort}>Customer</SortableTh
+									applySort={subCtrl.applySort}>{t('common.customer')}</SortableTh
 								>
 								<th
 									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Plan</th
+									>{t('common.plan')}</th
 								>
 								<SortableTh
 									column="status"
 									active={subCtrl.sortKey === 'status'}
 									direction={subCtrl.sortDir}
-									applySort={subCtrl.applySort}>Status</SortableTh
+									applySort={subCtrl.applySort}>{t('common.status')}</SortableTh
 								>
 								<th
 									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Ends</th
+									>{t('common.ends')}</th
 								>
 								<th
 									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Actions</th
+									>{t('common.actions')}</th
 								>
 							</tr>
 						</thead>
@@ -842,18 +843,18 @@
 							<tr>
 								<th
 									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Customer</th
+									>{t('common.customer')}</th
 								>
 								<th
 									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Result</th
+									>{t('common.result')}</th
 								>
 								<SortableTh
 									column="date"
 									active={ciCtrl.sortKey === 'date'}
 									direction={ciCtrl.sortDir}
 									align="right"
-									applySort={ciCtrl.applySort}>When</SortableTh
+									applySort={ciCtrl.applySort}>{t('common.when')}</SortableTh
 								>
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr>
@@ -935,7 +936,7 @@
 			{#if mDescription !== undefined}
 				<label class="block">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Description</span
+						>{t('common.description')}</span
 					>
 					<Input
 						textarea
@@ -949,7 +950,7 @@
 
 			<!-- Mode selector -->
 			<div>
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Mode</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.mode')}</span>
 				<div class="grid grid-cols-3 gap-2">
 					{#each [{ v: 'normal', l: 'Normal', i: 'lucide:star' }, { v: 'gym', l: 'Gym', i: 'lucide:dumbbell' }, { v: 'hybrid', l: 'Hybrid', i: 'lucide:layers' }] as m (m.v)}
 						<button
@@ -975,7 +976,7 @@
 				>
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Period</span
+						>{t('common.period')}</span
 					><Select
 						bind:value={mPeriod}
 						options={[
@@ -1052,11 +1053,11 @@
 		<div class="space-y-3">
 			<label class="block"
 				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Customer</span
+					>{t('common.customer')}</span
 				><Input bind:value={subCust} class="w-full" /></label
 			>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Plan</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.plan')}</span>
 				<Input bind:value={subPlan} list="planslist" class="w-full" />
 				<datalist id="planslist"
 					>{#each plans as p (p.id)}<option value={p.data.name}></option>{/each}</datalist
@@ -1065,7 +1066,7 @@
 			{#if isEditing}
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Status</span
+						>{t('common.status')}</span
 					><Select
 						bind:value={subStatus}
 						options={[
@@ -1095,12 +1096,12 @@
 		<div class="space-y-3">
 			<label class="block"
 				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Customer</span
+					>{t('common.customer')}</span
 				><Input bind:value={ciCust} class="w-full" /></label
 			>
 			<label class="block"
 				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Result</span
+					>{t('common.result')}</span
 				><Select
 					bind:value={ciResult}
 					options={[
@@ -1119,10 +1120,10 @@
 			onclick={() => {
 				open = false;
 				editingId = null;
-			}}>Cancel</Button
+			}}>{t('common.cancel')}</Button
 		><Button color="primary" icon="lucide:check" onclick={save}
 			>{isEditing ? 'Update' : 'Save'}</Button
 		>{/snippet}
 </Dialog>
 
-<RawDataDialog bind:open={rawOpen} data={rawItem} title="Membership Raw Data" />
+<RawDataDialog bind:open={rawOpen} data={rawItem} title={t('common.membershipRawData')} />

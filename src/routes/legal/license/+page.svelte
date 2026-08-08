@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { site } from '$lib/site';
@@ -20,7 +21,7 @@
 	];
 </script>
 
-<svelte:head><title>Open-source License · {site.name}</title></svelte:head>
+<svelte:head><title>{t('legal.license')} · {site.name}</title></svelte:head>
 
 <div class="prose prose-sm max-w-none dark:prose-invert
 	prose-headings:font-display prose-headings:tracking-tight

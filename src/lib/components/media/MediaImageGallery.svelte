@@ -11,6 +11,7 @@
 	 *   • reorder (promote to cover / move), remove, clear-all
 	 */
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import { media } from '$lib/media/media.svelte';
@@ -205,7 +206,7 @@
 				}}
 			/>
 			<Button type="button" color="neutral" variant="subtle" size="md" icon="lucide:plus" onclick={addUrl} disabled={disabled || !urlInput.trim()}>
-				Add
+				{t('common.add')}
 			</Button>
 		</div>
 	{/if}
@@ -230,7 +231,7 @@
 					<div class="absolute inset-0 flex items-end justify-center gap-1 bg-gradient-to-t from-black/70 via-black/0 to-black/0 opacity-0 transition-opacity group-hover:opacity-100">
 						<div class="mb-1.5 flex items-center gap-0.5">
 							{#if i > 0}
-								<button type="button" title="Set as cover" onclick={() => promote(i)} class="grid size-6 place-items-center rounded-md bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/40">
+								<button type="button" title={t('common.setAsCover')} onclick={() => promote(i)} class="grid size-6 place-items-center rounded-md bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/40">
 									<Icon name="lucide:star" class="size-3" />
 								</button>
 								<button type="button" title="Move left" onclick={() => move(i, -1)} class="grid size-6 place-items-center rounded-md bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/40">
@@ -242,7 +243,7 @@
 									<Icon name="lucide:chevron-right" class="size-3" />
 								</button>
 							{/if}
-							<button type="button" title="Remove" onclick={() => removeAt(i)} class="grid size-6 place-items-center rounded-md bg-red-500/80 text-white backdrop-blur-sm transition-colors hover:bg-red-500">
+							<button type="button" title={t('common.remove')} onclick={() => removeAt(i)} class="grid size-6 place-items-center rounded-md bg-red-500/80 text-white backdrop-blur-sm transition-colors hover:bg-red-500">
 								<Icon name="lucide:trash-2" class="size-3" />
 							</button>
 						</div>

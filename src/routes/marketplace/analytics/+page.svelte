@@ -5,6 +5,7 @@
 	 * shared dashboard metrics engine (no chart library added).
 	 */
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { formatMoney, formatInt, titleCase } from '$lib/utils/format';
@@ -86,7 +87,7 @@
 	const isEmpty = $derived(mpRows.length === 0 && listings.length === 0);
 </script>
 
-<svelte:head><title>Marketplace · Analytics</title></svelte:head>
+<svelte:head><title>{t('nav.marketplace')} · {t('nav.analytics')}</title></svelte:head>
 
 <div class="space-y-5">
 	<div>

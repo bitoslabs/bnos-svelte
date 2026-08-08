@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -56,7 +57,7 @@
 	function handleBack() { goto('/setup/branch'); }
 </script>
 
-<svelte:head><title>Setup · POS</title></svelte:head>
+<svelte:head><title>{t('setup.title')} · {t('setup.pos')}</title></svelte:head>
 
 <div class="space-y-6">
 	<div>
@@ -68,7 +69,7 @@
 
 	<!-- Receipt Settings -->
 	<div class="space-y-4">
-		<h3 class="text-[12px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">Receipt</h3>
+		<h3 class="text-[12px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">{t('settings.receipt')}</h3>
 		<label class="block">
 			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Store name on receipt</span>
 			<Input bind:value={receiptStoreName} icon="lucide:store" placeholder="My Store" class="w-full" />
@@ -96,7 +97,7 @@
 				<div class="flex justify-between"><span>Item 2</span><span>$0.00</span></div>
 			</div>
 			<hr class="my-2 border-dashed border-[var(--ui-border)]" />
-			<div class="flex justify-between font-bold"><span>Total</span><span>$0.00</span></div>
+			<div class="flex justify-between font-bold"><span>{t('common.total')}</span><span>$0.00</span></div>
 			<hr class="my-2 border-dashed border-[var(--ui-border)]" />
 			{#if receiptFooter}<p class="text-[var(--ui-text-dimmed)]">{receiptFooter}</p>{/if}
 		</div>
@@ -142,6 +143,6 @@
 
 	<div class="flex justify-between">
 		<Button color="neutral" variant="ghost" icon="lucide:arrow-left" onclick={handleBack}>Back</Button>
-		<Button color="primary" icon="lucide:arrow-right" onclick={handleContinue}>Continue</Button>
+		<Button color="primary" icon="lucide:arrow-right" onclick={handleContinue}>{t('common.continue')}</Button>
 	</div>
 </div>

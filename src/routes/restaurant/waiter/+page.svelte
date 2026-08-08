@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
@@ -135,7 +136,7 @@
 	})());
 </script>
 
-<svelte:head><title>BNOS · Waiter</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.waiter')}</title></svelte:head>
 
 <div class="space-y-4">
 	<!-- Header -->
@@ -272,7 +273,7 @@
 	{:else if viewMode === 'waiters'}
 		<!-- Waiter group view -->
 		{#if wg.length === 0 || (wg.length === 1 && wg[0][0] === 'Unassigned')}
-			<EmptyState icon="lucide:user-cog" title="No waiter assignments" description="Assign waiters to orders from the Orders view." />
+			<EmptyState icon="lucide:user-cog" title={t('restaurant.noWaiterAssignments')} description="Assign waiters to orders from the Orders view." />
 		{:else}
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				{#each wg as [waiterName, orders] (waiterName)}

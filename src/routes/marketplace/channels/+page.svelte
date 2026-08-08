@@ -4,6 +4,7 @@
 	 * Gallery of connectable platforms + connected channels with sync control.
 	 */
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
@@ -117,7 +118,7 @@
 	let confirmRemoveId = $state<string | null>(null);
 </script>
 
-<svelte:head><title>Marketplace · Channels</title></svelte:head>
+<svelte:head><title>{t('nav.marketplace')} · {t('nav.salesChannels')}</title></svelte:head>
 
 <div class="space-y-6">
 <!-- Connected channels -->
@@ -177,7 +178,7 @@
 							color="neutral"
 							variant="ghost"
 							icon="lucide:refresh-cw"
-							title="Sync now"
+							title={t('common.syncNow')}
 							onclick={() => syncNow(c.id, c.data)}
 						/>
 						<Button
@@ -193,7 +194,7 @@
 							color="neutral"
 							variant="ghost"
 							icon="lucide:trash-2"
-							title="Remove"
+							title={t('common.remove')}
 							onclick={() => (confirmRemoveId = c.id)}
 						/>
 					</div>
@@ -280,7 +281,7 @@
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (connectType = null)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (connectType = null)}>{t('common.cancel')}</Button>
 		<Button color="primary" icon="lucide:plug-zap" disabled={!cName.trim() || connecting} onclick={saveConnection}>
 			{connecting ? 'Connecting…' : 'Connect'}
 		</Button>
@@ -295,7 +296,7 @@
 			tabindex="-1"
 			class="fixed inset-0 bg-black/45 backdrop-blur-[2px]"
 			onclick={() => (confirmRemoveId = null)}
-			aria-label="Cancel"
+			aria-label={t('common.cancel')}
 		></button>
 		<div class="animate-rise relative w-full max-w-sm rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-5 shadow-2xl">
 			<div class="flex items-center gap-3">
@@ -308,8 +309,8 @@
 				</div>
 			</div>
 			<div class="mt-4 flex justify-end gap-2">
-				<Button color="neutral" variant="ghost" size="sm" onclick={() => (confirmRemoveId = null)}>Cancel</Button>
-				<Button color="error" size="sm" icon="lucide:trash-2" onclick={() => { if (confirmRemoveId) removeChannel(confirmRemoveId); confirmRemoveId = null; }}>Remove</Button>
+				<Button color="neutral" variant="ghost" size="sm" onclick={() => (confirmRemoveId = null)}>{t('common.cancel')}</Button>
+				<Button color="error" size="sm" icon="lucide:trash-2" onclick={() => { if (confirmRemoveId) removeChannel(confirmRemoveId); confirmRemoveId = null; }}>{t('common.remove')}</Button>
 			</div>
 		</div>
 	</div>

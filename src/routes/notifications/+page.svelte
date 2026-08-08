@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { onMount } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -17,13 +18,13 @@
 	const toneText: Record<string, string> = { info: 'tone-text-info', success: 'tone-text-success', warning: 'tone-text-warning', error: 'tone-text-error' };
 </script>
 
-<svelte:head><title>BNOS · Notifications</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('settings.notifications')}</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">
-		<div><h1 class="font-display text-xl font-bold tracking-tight">Notifications</h1><p class="text-[12.5px] text-[var(--ui-text-muted)]">{items.length} on this device</p></div>
+		<div><h1 class="font-display text-xl font-bold tracking-tight">{t('settings.notifications')}</h1><p class="text-[12.5px] text-[var(--ui-text-muted)]">{items.length} on this device</p></div>
 		<div class="flex gap-2">
-			<Button color="neutral" variant="ghost" size="sm" icon="lucide:bell-plus" onclick={() => push({ title: 'New order', description: 'Order #ORD-1024 received', icon: 'lucide:receipt-text', color: 'success' })}>Seed</Button>
+			<Button color="neutral" variant="ghost" size="sm" icon="lucide:bell-plus" onclick={() => push({ title: t('common.new') + ' ' + t('common.order'), description: 'Order #ORD-1024 received', icon: 'lucide:receipt-text', color: 'success' })}>Seed</Button>
 			<Button color="neutral" variant="ghost" size="sm" icon="lucide:trash-2" onclick={clearAll} disabled={!items.length}>Clear</Button>
 		</div>
 	</div>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import {
@@ -17,32 +18,32 @@
 	onMount(() => preferences.load());
 
 	const modes = [
-		{ key: 'light', label: 'Light', icon: 'lucide:sun' },
-		{ key: 'dark', label: 'Dark', icon: 'lucide:moon' },
-		{ key: 'system', label: 'System', icon: 'lucide:monitor' }
+		{ key: 'light', label: t('settings.light'), icon: 'lucide:sun' },
+		{ key: 'dark', label: t('settings.dark'), icon: 'lucide:moon' },
+		{ key: 'system', label: t('settings.system'), icon: 'lucide:monitor' }
 	] as const;
 
 	const densityDescriptions: Record<(typeof densityOptions)[number]['key'], string> = {
-		normal: 'Comfortable spacing',
-		compact: 'More content on screen'
+		normal: t('settings.densityNormal'),
+		compact: t('settings.densityCompact')
 	};
 </script>
 
-<svelte:head><title>Appearance · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.appearance')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
 	<PageHeader
 		icon="lucide:palette"
-		title="Appearance"
-		description="Customize how BNOS looks across your devices"
+		title={t('settings.appearance')}
+		description={t('settings.appearanceDesc')}
 	/>
 
 	<!-- Color mode — visual cards -->
 	<section class="surface-card p-5">
 		<div class="mb-4">
-			<h3 class="font-display text-[14px] font-bold">Color mode</h3>
+			<h3 class="font-display text-[14px] font-bold">{t('settings.colorMode')}</h3>
 			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
-				Choose light, dark or follow your system
+				{t('settings.colorModeDesc')}
 			</p>
 		</div>
 		<div class="grid grid-cols-3 gap-3">
@@ -88,9 +89,9 @@
 	<!-- Accent — round swatches with check -->
 	<section class="surface-card p-5">
 		<div class="mb-4">
-			<h3 class="font-display text-[14px] font-bold">Accent color</h3>
+			<h3 class="font-display text-[14px] font-bold">{t('settings.accentColor')}</h3>
 			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
-				The primary brand color used throughout the app
+				{t('settings.accentColorDesc')}
 			</p>
 		</div>
 		<div class="flex flex-wrap gap-3">
@@ -118,9 +119,9 @@
 	<!-- Neutral palette — swatches -->
 	<section class="surface-card p-5">
 		<div class="mb-4">
-			<h3 class="font-display text-[14px] font-bold">Neutral palette</h3>
+			<h3 class="font-display text-[14px] font-bold">{t('settings.neutralPalette')}</h3>
 			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
-				Base gray used for text &amp; borders
+				{t('settings.neutralPaletteDesc')}
 			</p>
 		</div>
 		<div class="flex flex-wrap gap-3">
@@ -142,9 +143,9 @@
 	<!-- Density — visual cards -->
 	<section class="surface-card p-5">
 		<div class="mb-4">
-			<h3 class="font-display text-[14px] font-bold">Density</h3>
+			<h3 class="font-display text-[14px] font-bold">{t('settings.density')}</h3>
 			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
-				How tightly content is packed on screen
+				{t('settings.densityDesc')}
 			</p>
 		</div>
 		<div class="grid grid-cols-2 gap-3">
@@ -185,11 +186,13 @@
 	<!-- Surface & tint -->
 	<section class="surface-card p-5">
 		<div class="mb-4">
-			<h3 class="font-display text-[14px] font-bold">Surface</h3>
-			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">Card &amp; window treatment</p>
+			<h3 class="font-display text-[14px] font-bold">{t('settings.surface')}</h3>
+			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">{t('settings.surfaceCard')}</p>
 		</div>
 		<div class="mb-4">
-			<div class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">Style</div>
+			<div class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">
+				{t('settings.style')}
+			</div>
 			<div class="flex flex-wrap gap-2">
 				{#each surfaceOptions as s (s.key)}
 					{@const active = preferences.state.surface === s.key}
@@ -205,7 +208,9 @@
 			</div>
 		</div>
 		<div>
-			<div class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">Tint</div>
+			<div class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">
+				{t('settings.tint')}
+			</div>
 			<div class="flex flex-wrap gap-2">
 				{#each surfaceTintOptions as st (st.key)}
 					{@const active = preferences.state.surfaceTint === st.key}
@@ -225,10 +230,12 @@
 	<!-- Typography & shape -->
 	<section class="surface-card p-5">
 		<div class="mb-4">
-			<h3 class="font-display text-[14px] font-bold">Typography &amp; shape</h3>
+			<h3 class="font-display text-[14px] font-bold">{t('settings.typographyShape')}</h3>
 		</div>
 		<div class="mb-4">
-			<div class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">Font size</div>
+			<div class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">
+				{t('settings.fontSize')}
+			</div>
 			<div class="flex flex-wrap gap-2">
 				{#each fontSizeOptions as f (f.key)}
 					{@const active = preferences.state.fontSize === f.key}
@@ -244,7 +251,9 @@
 			</div>
 		</div>
 		<div>
-			<div class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">Corner radius</div>
+			<div class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">
+				{t('settings.cornerRadius')}
+			</div>
 			<div class="flex flex-wrap gap-2">
 				{#each radiusOptions as r (r.key)}
 					{@const active = preferences.state.radius === r.key}

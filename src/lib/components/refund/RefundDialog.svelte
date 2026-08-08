@@ -12,6 +12,7 @@
 	 *   4. nets against the active shift (cash refunds reduce expected drawer)
 	 */
 	import Dialog from '$lib/components/ui/Dialog.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -124,7 +125,7 @@
 			message: `Via ${method}. ${isFull ? 'This is a FULL refund and marks the order refunded.' : 'This is a partial refund.'} It nets against the current shift and cannot be undone.`,
 			tone: 'danger',
 			icon: refundReasonIcon(reason),
-			confirmText: 'Process refund'
+			confirmText: t('common.confirmProcessRefund')
 		});
 		if (!strong) return;
 
@@ -213,12 +214,12 @@
 	}
 </script>
 
-<Dialog bind:open title="Refund order" size="md">
+<Dialog bind:open title={t('orders.refundOrder')} size="md">
 	<div class="space-y-3">
 		<!-- Summary header -->
 		<div class="flex items-center justify-between rounded-xl bg-[var(--ui-bg-muted)] px-3.5 py-2.5">
 			<div>
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Order</div>
+				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('common.order')}</div>
 				<div class="font-mono text-[13px] font-bold">
 					{order.data.orderNumber ?? order.id.slice(0, 8)}
 				</div>
@@ -256,7 +257,7 @@
 			<div
 				class="flex items-center justify-between px-1 text-[10px] font-bold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
 			>
-				<span>Items</span>
+				<span>{t('common.items')}</span>
 				<span>Restock</span>
 			</div>
 			{#each lines as l (l.id)}
@@ -295,7 +296,7 @@
 							onclick={() => setQty(l.id, qty - 1, l.quantity)}
 							disabled={fullRefund || !selected}
 							class="grid size-6 place-items-center rounded-md border border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] disabled:opacity-40"
-							aria-label="Decrease"
+							aria-label={t('common.decrease')}
 						>
 							<Icon name="lucide:minus" class="size-3" />
 						</button>
@@ -305,7 +306,7 @@
 							onclick={() => setQty(l.id, qty + 1, l.quantity)}
 							disabled={fullRefund || qty >= l.quantity}
 							class="grid size-6 place-items-center rounded-md border border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] disabled:opacity-40"
-							aria-label="Increase"
+							aria-label={t('common.increase')}
 						>
 							<Icon name="lucide:plus" class="size-3" />
 						</button>
@@ -347,7 +348,7 @@
 				</select>
 			</label>
 			<label class="block">
-				<span class="mb-1 block text-[11px] font-semibold text-[var(--ui-text-muted)]">Reason</span>
+				<span class="mb-1 block text-[11px] font-semibold text-[var(--ui-text-muted)]">{t('common.reason')}</span>
 				<select
 					bind:value={reason}
 					class="h-9.5 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-2.5 text-[13px]"
@@ -385,7 +386,7 @@
 					−{formatMoney(refundTotal, currency)}
 				</div>
 			</div>
-			<Button color="neutral" variant="ghost" onclick={() => (open = false)}>Cancel</Button>
+			<Button color="neutral" variant="ghost" onclick={() => (open = false)}>{t('common.cancel')}</Button>
 			<Button
 				color="error"
 				variant="solid"

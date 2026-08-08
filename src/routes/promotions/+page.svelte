@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -473,13 +474,13 @@
 	];
 </script>
 
-<svelte:head><title>BNOS · Promotions</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.promotions')}</title></svelte:head>
 
 <div class="space-y-5">
 	<!-- Header -->
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Promotions</h1>
+			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.promotions')}</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
 				Discount campaigns, coupons & BOGO offers
 			</p>
@@ -491,18 +492,18 @@
 
 	<!-- Tabs -->
 	<div class="segmented inline-flex w-fit gap-1 p-1">
-		{#each [{ id: 'promotions' as Tab, label: 'Promotions', icon: 'lucide:megaphone', n: promos.length }, { id: 'coupons' as Tab, label: 'Coupons', icon: 'lucide:ticket', n: coupons.length }] as t (t.id)}
+		{#each [{ id: 'promotions' as Tab, label: t('nav.promotions'), icon: 'lucide:megaphone', n: promos.length }, { id: 'coupons' as Tab, label: 'Coupons', icon: 'lucide:ticket', n: coupons.length }] as seg (seg.id)}
 			<button
 				type="button"
-				onclick={() => (tab = t.id)}
+				onclick={() => (tab = seg.id)}
 				class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {tab ===
-				t.id
+				seg.id
 					? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
 					: 'text-[var(--ui-text-muted)]'}"
 			>
-				<Icon name={t.icon} class="size-3.5" />
-				{t.label}
-				<span class="rounded bg-[var(--ui-bg-accented)] px-1.5 text-[10px] tabular-nums">{t.n}</span
+				<Icon name={seg.icon} class="size-3.5" />
+				{seg.label}
+				<span class="rounded bg-[var(--ui-bg-accented)] px-1.5 text-[10px] tabular-nums">{seg.n}</span
 				>
 			</button>
 		{/each}
@@ -513,7 +514,7 @@
 		<!-- Stats -->
 		<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
 			<div class="surface-card p-4">
-				<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">Total</p>
+				<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">{t('common.total')}</p>
 				<p class="mt-1 text-2xl font-black tabular-nums">{promos.length}</p>
 			</div>
 			<div class="surface-card p-4">
@@ -599,7 +600,7 @@
 						'list'
 							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
 							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
-						title="List view"><Icon name="lucide:list" class="size-4" /></button
+						title={t('common.listView')}><Icon name="lucide:list" class="size-4" /></button
 					>
 					<button
 						type="button"
@@ -608,7 +609,7 @@
 						'grid'
 							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
 							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
-						title="Grid view"><Icon name="lucide:layout-grid" class="size-4" /></button
+						title={t('common.gridView')}><Icon name="lucide:layout-grid" class="size-4" /></button
 					>
 					<button
 						type="button"
@@ -617,7 +618,7 @@
 						'table'
 							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
 							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
-						title="Table view"><Icon name="lucide:table" class="size-4" /></button
+						title={t('common.tableView')}><Icon name="lucide:table" class="size-4" /></button
 					>
 				</div>
 			</div>
@@ -627,15 +628,15 @@
 		{#if filteredPromos.length === 0}
 			<EmptyState
 				icon="lucide:megaphone"
-				title="No promotions"
-				description="Create your first promotion to get started."
+				title={t('promotions.noPromotions')}
+				description={t('promotions.noPromotionsDesc')}
 			>
 				{#snippet actions()}
 					<Button
 						color="primary"
 						size="sm"
 						icon="lucide:plus"
-						onclick={() => openCreate('promotions')}>New promotion</Button
+						onclick={() => openCreate('promotions')}>{t('common.new')}</Button>
 					>
 				{/snippet}
 			</EmptyState>
@@ -673,7 +674,7 @@
 							{#if p.data.maxUsage && p.data.maxUsage > 0}
 								<span>{p.data.currentUsage ?? 0}/{p.data.maxUsage} uses</span>
 							{:else}
-								<span>Unlimited</span>
+								<span>{t('common.unlimited')}</span>
 							{/if}
 							{#if p.data.validFrom || p.data.validUntil}
 								<span>
@@ -707,19 +708,19 @@
 									rawOpen = true;
 								}}
 								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-								title="View raw"><Icon name="lucide:code" class="size-4" /></button
+								title={t('common.viewRaw')}><Icon name="lucide:code" class="size-4" /></button
 							>
 							<button
 								type="button"
 								onclick={() => openEditPromo(p.id, p.data)}
 								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
-								title="Edit"><Icon name="lucide:pencil" class="size-4" /></button
+								title={t('common.edit')}><Icon name="lucide:pencil" class="size-4" /></button
 							>
 							<button
 								type="button"
 								onclick={() => confirmDelete(p.id)}
 								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
-								title="Delete"><Icon name="lucide:trash-2" class="size-4" /></button
+								title={t('common.delete')}><Icon name="lucide:trash-2" class="size-4" /></button
 							>
 						</div>
 					</div>
@@ -736,32 +737,32 @@
 									column="name"
 									active={pCtrl.sortKey === 'name'}
 									direction={pCtrl.sortDir}
-									applySort={pCtrl.applySort}>Promotion</SortableTh
+									applySort={pCtrl.applySort}>{t('common.promotion')}</SortableTh
 								>
 								<th
 									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Type</th
+									>{t('common.type')}</th
 								>
 								<SortableTh
 									column="value"
 									active={pCtrl.sortKey === 'value'}
 									direction={pCtrl.sortDir}
 									align="right"
-									applySort={pCtrl.applySort}>Value</SortableTh
+									applySort={pCtrl.applySort}>{t('common.value')}</SortableTh
 								>
 								<SortableTh
 									column="status"
 									active={pCtrl.sortKey === 'status'}
 									direction={pCtrl.sortDir}
-									applySort={pCtrl.applySort}>Status</SortableTh
+									applySort={pCtrl.applySort}>{t('common.status')}</SortableTh
 								>
 								<th
 									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Usage</th
+									>{t('common.usage')}</th
 								>
 								<th
 									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Validity</th
+									>{t('common.validity')}</th
 								>
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr>
@@ -831,19 +832,19 @@
 													rawOpen = true;
 												}}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-												title="View raw"><Icon name="lucide:code" class="size-4" /></button
+												title={t('common.viewRaw')}><Icon name="lucide:code" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => openEditPromo(p.id, p.data)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
-												title="Edit"><Icon name="lucide:pencil" class="size-4" /></button
+												title={t('common.edit')}><Icon name="lucide:pencil" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => confirmDelete(p.id)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
-												title="Delete"><Icon name="lucide:trash-2" class="size-4" /></button
+												title={t('common.delete')}><Icon name="lucide:trash-2" class="size-4" /></button
 											>
 										</div>
 									</td>
@@ -982,7 +983,7 @@
 											rawOpen = true;
 										}}
 										class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-										title="View raw"
+										title={t('common.viewRaw')}
 									>
 										<Icon name="lucide:code" class="size-4" />
 									</button>
@@ -990,7 +991,7 @@
 										type="button"
 										onclick={() => openEditPromo(p.id, p.data)}
 										class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
-										title="Edit"
+										title={t('common.edit')}
 									>
 										<Icon name="lucide:pencil" class="size-4" />
 									</button>
@@ -998,7 +999,7 @@
 										type="button"
 										onclick={() => confirmDelete(p.id)}
 										class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
-										title="Delete"
+										title={t('common.delete')}
 									>
 										<Icon name="lucide:trash-2" class="size-4" />
 									</button>
@@ -1054,22 +1055,22 @@
 									column="code"
 									active={cCtrl.sortKey === 'code'}
 									direction={cCtrl.sortDir}
-									applySort={cCtrl.applySort}>Code</SortableTh
+									applySort={cCtrl.applySort}>{t('common.code')}</SortableTh
 								>
 								<th
 									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Type</th
+									>{t('common.type')}</th
 								>
 								<th
 									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Value</th
+									>{t('common.value')}</th
 								>
 								<SortableTh
 									column="uses"
 									active={cCtrl.sortKey === 'uses'}
 									direction={cCtrl.sortDir}
 									align="right"
-									applySort={cCtrl.applySort}>Uses</SortableTh
+									applySort={cCtrl.applySort}>{t('common.usage')}</SortableTh
 								>
 								<th
 									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
@@ -1079,7 +1080,7 @@
 									column="status"
 									active={cCtrl.sortKey === 'status'}
 									direction={cCtrl.sortDir}
-									applySort={cCtrl.applySort}>Status</SortableTh
+									applySort={cCtrl.applySort}>{t('common.status')}</SortableTh
 								>
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr>
@@ -1108,19 +1109,19 @@
 													rawOpen = true;
 												}}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-												title="View raw"><Icon name="lucide:code" class="size-4" /></button
+												title={t('common.viewRaw')}><Icon name="lucide:code" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => openEditCoupon(c.id, c.data)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
-												title="Edit"><Icon name="lucide:pencil" class="size-4" /></button
+												title={t('common.edit')}><Icon name="lucide:pencil" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => confirmDelete(c.id)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
-												title="Delete"><Icon name="lucide:trash-2" class="size-4" /></button
+												title={t('common.delete')}><Icon name="lucide:trash-2" class="size-4" /></button
 											>
 										</div>
 									</td>
@@ -1165,7 +1166,7 @@
 									rawOpen = true;
 								}}
 								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-								title="View raw"
+								title={t('common.viewRaw')}
 							>
 								<Icon name="lucide:code" class="size-4" />
 							</button>
@@ -1173,7 +1174,7 @@
 								type="button"
 								onclick={() => openEditCoupon(c.id, c.data)}
 								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
-								title="Edit"
+								title={t('common.edit')}
 							>
 								<Icon name="lucide:pencil" class="size-4" />
 							</button>
@@ -1181,7 +1182,7 @@
 								type="button"
 								onclick={() => confirmDelete(c.id)}
 								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
-								title="Delete"
+								title={t('common.delete')}
 							>
 								<Icon name="lucide:trash-2" class="size-4" />
 							</button>
@@ -1210,13 +1211,13 @@
 		<!-- ── Coupon form ── -->
 		<div class="space-y-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Code</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.code')}</span>
 				<Input bind:value={cCode} placeholder="SUMMER20" class="w-full font-mono uppercase" />
 			</label>
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Type</span
+						>{t('common.type')}</span
 					>
 					<Select
 						bind:value={cType}
@@ -1251,7 +1252,7 @@
 			</div>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Description</span
+					>{t('common.description')}</span
 				>
 				<Input bind:value={cDesc} class="w-full" />
 			</label>
@@ -1274,7 +1275,7 @@
 				</label>
 				<label class="block">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Description</span
+						>{t('common.description')}</span
 					>
 					<Input
 						bind:value={fDescription}
@@ -1286,7 +1287,7 @@
 				</label>
 				<div>
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Type</span
+						>{t('common.type')}</span
 					>
 					<div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
 						{#each PROMO_TYPES as pt (pt.value)}
@@ -1311,7 +1312,7 @@
 				<div
 					class="flex items-center gap-2 text-[12px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
 				>
-					<Icon name="lucide:percent" class="size-3.5" /> Discount
+					<Icon name="lucide:percent" class="size-3.5" /> {t('common.discount')}
 				</div>
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 					<label class="block">
@@ -1447,7 +1448,7 @@
 						bind:value={fMaxUsage}
 						type="number"
 						min="0"
-						placeholder="Unlimited"
+						placeholder={t('common.unlimited')}
 						class="w-full"
 					/>
 				</label>
@@ -1559,7 +1560,7 @@
 	{/if}
 
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (modalOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (modalOpen = false)}>{t('common.cancel')}</Button>
 		{#if tab === 'coupons'}
 			<Button color="primary" icon="lucide:check" onclick={saveCoupon}
 				>{editingId ? 'Update' : 'Create'}</Button
@@ -1598,14 +1599,14 @@
 			</div>
 			<div class="mt-4 flex justify-end gap-2">
 				<Button color="neutral" variant="ghost" size="sm" onclick={() => (confirmDeleteId = null)}
-					>Cancel</Button
+					>{t('common.cancel')}</Button
 				>
 				<Button color="error" variant="solid" size="sm" icon="lucide:trash-2" onclick={doDelete}
-					>Delete</Button
+					>{t('common.delete')}</Button
 				>
 			</div>
 		</div>
 	</div>
 {/if}
 
-<RawDataDialog bind:open={rawOpen} data={rawItem} title="Promotion / Coupon Raw Data" />
+<RawDataDialog bind:open={rawOpen} data={rawItem} title={t('common.promotionRawData')} />

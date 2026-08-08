@@ -16,6 +16,7 @@
 	 * system so this drops into any settings/form context.
 	 */
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import { media } from '$lib/media/media.svelte';
@@ -189,7 +190,7 @@
 						disabled={disabled}
 						onclick={() => (value = '')}
 					>
-						Remove
+						{t('common.remove')}
 					</Button>
 				{/if}
 				{#if hint}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -24,7 +25,7 @@
 
 	const rows = $derived([
 		{
-			label: 'Nostr identity',
+			label: t('profile.nostrIdentity'),
 			value: truncateNpub(session.npub ?? '', 14, 8),
 			icon: 'lucide:fingerprint'
 		},
@@ -44,7 +45,7 @@
 			icon: 'lucide:percent'
 		},
 		{
-			label: 'Relays',
+			label: t('settings.relays'),
 			value: `${relays.activeRelays.length} active / ${relays.relays.length} configured`,
 			icon: 'lucide:radio'
 		},
@@ -119,7 +120,7 @@
 	}
 </script>
 
-<svelte:head><title>Setup · Review</title></svelte:head>
+<svelte:head><title>{t('setup.title')} · {t('setup.review')}</title></svelte:head>
 
 <div class="space-y-5">
 	<div>

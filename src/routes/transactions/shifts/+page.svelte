@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -151,7 +152,7 @@
 		const groups: RowAction[][] = [
 			[
 				{
-					label: 'View raw',
+					label: t('common.viewRaw'),
 					icon: 'lucide:code',
 					onSelect: () => {
 						rawItem = glo.get(TYPE.shift, s.id);
@@ -180,7 +181,7 @@
 		return [
 			[
 				{
-					label: 'View raw',
+					label: t('common.viewRaw'),
 					icon: 'lucide:code',
 					onSelect: () => {
 						rawItem = glo.get(TYPE.cashEvent, e.id);
@@ -192,7 +193,7 @@
 	}
 </script>
 
-<svelte:head><title>BNOS · Shifts</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.shifts')}</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-start justify-between gap-3">
@@ -325,7 +326,7 @@
 					type="number"
 					icon="lucide:banknote"
 					min="0"
-					placeholder="Amount"
+					placeholder={t('common.amount')}
 					class="w-full"
 				/>
 			</div>
@@ -349,7 +350,7 @@
 			<div class="min-w-[10rem] flex-1">
 				<Input bind:value={cashReason} placeholder="Reason (optional)" class="w-full" />
 			</div>
-			<Button color="neutral" variant="subtle" icon="lucide:plus" onclick={addCashEvent}>Add</Button
+			<Button color="neutral" variant="subtle" icon="lucide:plus" onclick={addCashEvent}>{t('common.add')}</Button
 			>
 		</div>
 	{/if}
@@ -371,11 +372,11 @@
 			<table class="table-surface w-full text-left">
 				<thead>
 					<tr>
-						<th class="px-5 py-2.5">Type</th>
-						<th class="px-5 py-2.5">Reason</th>
-						<th class="px-5 py-2.5 text-right">Amount</th>
-						<th class="px-5 py-2.5 text-right">When</th>
-						<th class="px-3 py-2.5 text-right">Actions</th>
+						<th class="px-5 py-2.5">{t('common.type')}</th>
+						<th class="px-5 py-2.5">{t('common.reason')}</th>
+						<th class="px-5 py-2.5 text-right">{t('common.amount')}</th>
+						<th class="px-5 py-2.5 text-right">{t('common.when')}</th>
+						<th class="px-3 py-2.5 text-right">{t('common.actions')}</th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
@@ -419,13 +420,13 @@
 			<table class="table-surface w-full text-left">
 				<thead>
 					<tr>
-						<th class="px-5 py-2.5">Shift</th>
-						<th class="px-5 py-2.5">Status</th>
-						<th class="px-5 py-2.5 text-right">Opening</th>
-						<th class="px-5 py-2.5 text-right">Sales</th>
-						<th class="px-5 py-2.5 text-right">Variance</th>
-						<th class="px-5 py-2.5 text-right">Closed</th>
-						<th class="px-3 py-2.5 text-right">Actions</th>
+						<th class="px-5 py-2.5">{t('common.shift')}</th>
+						<th class="px-5 py-2.5">{t('common.status')}</th>
+						<th class="px-5 py-2.5 text-right">{t('common.opening')}</th>
+						<th class="px-5 py-2.5 text-right">{t('common.sales')}</th>
+						<th class="px-5 py-2.5 text-right">{t('common.variance')}</th>
+						<th class="px-5 py-2.5 text-right">{t('common.closed')}</th>
+						<th class="px-3 py-2.5 text-right">{t('common.actions')}</th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
@@ -508,7 +509,7 @@
 			</label>
 			{#if summary}
 				<div class="mt-2 flex items-center justify-between text-[12.5px]">
-					<span class="text-[var(--ui-text-muted)]">Variance</span>
+					<span class="text-[var(--ui-text-muted)]">{t('common.variance')}</span>
 					<span
 						class="font-bold tabular-nums {variance >= 0
 							? 'text-[var(--tone-success-text)]'
@@ -529,7 +530,7 @@
 				/>
 			</label>
 			<div class="mt-4 flex items-center justify-end gap-2">
-				<Button variant="ghost" color="neutral" onclick={() => (closing = false)}>Cancel</Button>
+				<Button variant="ghost" color="neutral" onclick={() => (closing = false)}>{t('common.cancel')}</Button>
 				<Button variant="ghost" color="neutral" onclick={() => closeShiftAction(true)}>
 					Force close
 				</Button>
@@ -576,7 +577,7 @@
 	</div>
 {/if}
 
-<RawDataDialog bind:open={rawOpen} data={rawItem} title="Shift Raw Data" />
+<RawDataDialog bind:open={rawOpen} data={rawItem} title={t('common.shiftRawData')} />
 
 {#snippet statBox(label: string, value: string, icon: string)}
 	<div

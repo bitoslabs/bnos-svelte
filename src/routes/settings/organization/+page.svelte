@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -176,7 +177,7 @@
 		switchBranchId = '';
 		await persist();
 		syncTenant();
-		toast.success('Company switched');
+		toast.success(t('settings.toastCompanySwitched'));
 	}
 
 	async function handleSwitchBranch() {
@@ -184,7 +185,7 @@
 		activeBranchId = switchBranchId;
 		await persist();
 		syncTenant();
-		toast.success('Branch switched');
+		toast.success(t('settings.toastBranchSwitched'));
 	}
 
 	function syncTenant() {
@@ -257,15 +258,15 @@
 			if (idx >= 0) {
 				companies[idx] = { ...companies[idx], ...companyForm };
 			}
-			toast.success('Company updated');
+			toast.success(t('settings.toastCompanyUpdated'));
 		} else {
 			// Check duplicate
 			if (companies.some((c) => c.code === companyForm.code)) {
-				toast.error('Code already used');
+				toast.error(t('settings.toastCodeUsed'));
 				return;
 			}
 			companies = [...companies, { id: crypto.randomUUID(), ...companyForm }];
-			toast.success('Company created');
+			toast.success(t('settings.toastCompanyCreated'));
 		}
 
 		// Auto-activate first company
@@ -282,11 +283,11 @@
 		if (!browser) return;
 		if (
 			!(await confirm({
-				title: 'Delete company?',
-				message: 'This will also remove all associated branches.',
+				title: t('common.deleteCompany'),
+				message: t('common.companyRemoveBranchesMsg'),
 				detail: id,
 				tone: 'danger',
-				confirmText: 'Delete'
+				confirmText: t('common.delete')
 			}))
 		)
 			return;
@@ -298,7 +299,7 @@
 		}
 		await persist();
 		syncTenant();
-		toast.success('Company deleted');
+		toast.success(t('settings.toastCompanyDeleted'));
 	}
 
 	// Auto-generate code from name for new companies
@@ -352,11 +353,11 @@
 				};
 				savedBranchId = branches[idx].id;
 			}
-			toast.success('Branch updated');
+			toast.success(t('settings.toastBranchUpdated'));
 		} else {
 			const code = branchForm.code || branchCodeFromName(branchForm.name);
 			if (branches.some((b) => b.code === code && b.storeId === branchFormCompanyId)) {
-				toast.error('Branch code already used in this company');
+				toast.error(t('settings.toastBranchCodeUsed'));
 				return;
 			}
 			savedBranchId = `${branchFormCompanyId}-${code}-${Date.now()}`;
@@ -373,7 +374,7 @@
 					status: branchForm.status
 				}
 			];
-			toast.success('Branch created');
+			toast.success(t('settings.toastBranchCreated'));
 		}
 
 		if (savedBranchId && branchFormCompanyId === activeCompanyId) {
@@ -404,11 +405,11 @@
 		if (!browser) return;
 		if (
 			!(await confirm({
-				title: 'Delete branch?',
-				message: 'This branch and its settings will be removed.',
+				title: t('common.deleteBranch'),
+				message: t('common.branchRemovedMsg'),
 				detail: label,
 				tone: 'danger',
-				confirmText: 'Delete'
+				confirmText: t('common.delete')
 			}))
 		)
 			return;
@@ -419,18 +420,18 @@
 		}
 		await persist();
 		syncTenant();
-		toast.success('Branch deleted');
+		toast.success(t('settings.toastBranchDeleted'));
 	}
 
 	async function resetAll() {
 		if (!browser) return;
 		if (
 			!(await confirm({
-				title: 'Reset organization settings?',
-				message: 'This removes all companies and branches and restores defaults.',
+				title: t('common.resetOrgSettings'),
+				message: t('common.removeAllCompaniesMsg'),
 				tone: 'danger',
 				icon: 'lucide:rotate-ccw',
-				confirmText: 'Reset all'
+				confirmText: t('settings.resetAll')
 			}))
 		)
 			return;
@@ -446,30 +447,30 @@
 		activeBranchId = '';
 		switchCompanyId = '';
 		switchBranchId = '';
-		toast.info('Organization settings reset');
+		toast.info(t('settings.toastOrgReset'));
 	}
 </script>
 
-<svelte:head><title>Workspace · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.workspace')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
 	<PageHeader
 		icon="lucide:building-2"
-		title="Workspace"
-		description="Manage workspace structure, active branch, and business configuration in one place"
+		title={t('settings.workspace')}
+		description={t('settings.workspaceDesc')}
 	/>
 
 	<!-- Active Context Card -->
 	<section id="workspace-context" class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:badge-check" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Active context</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.activeContext')}</h2>
 		</div>
 		<div class="grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-3">
 			<!-- Active Company -->
 			<div class="space-y-1">
 				<p class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-					Company
+					{t('settings.company')}
 				</p>
 				{#if activeCompanyId}
 					<div class="flex items-center gap-2">
@@ -484,14 +485,16 @@
 						</div>
 					</div>
 				{:else}
-					<p class="text-[12px] text-[var(--ui-text-dimmed)] italic">None selected</p>
+					<p class="text-[12px] text-[var(--ui-text-dimmed)] italic">
+						{t('settings.noneSelected')}
+					</p>
 				{/if}
 			</div>
 
 			<!-- Active Branch -->
 			<div class="space-y-1">
 				<p class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-					Branch
+					{t('settings.branchLabel')}
 				</p>
 				{#if activeBranchId}
 					<div class="flex items-center gap-2">
@@ -506,19 +509,21 @@
 						</div>
 					</div>
 				{:else}
-					<p class="text-[12px] text-[var(--ui-text-dimmed)] italic">None selected</p>
+					<p class="text-[12px] text-[var(--ui-text-dimmed)] italic">
+						{t('settings.noneSelected')}
+					</p>
 				{/if}
 			</div>
 
 			<!-- Quick Switch -->
 			<div class="space-y-1">
 				<p class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-					Quick switch
+					{t('settings.quickSwitch')}
 				</p>
 				<Select
 					bind:value={switchCompanyId}
 					options={[
-						{ value: '', label: 'Select company…' },
+						{ value: '', label: t('settings.selectCompany') },
 						...companies.map((c) => ({ value: c.id, label: c.name }))
 					]}
 					size="sm"
@@ -529,7 +534,7 @@
 					<Select
 						bind:value={switchBranchId}
 						options={[
-							{ value: '', label: 'Select branch…' },
+							{ value: '', label: t('settings.selectBranch') },
 							...filteredSwitchBranches.map((b) => ({
 								value: b.id,
 								label: `${b.name} (${b.code})`
@@ -550,19 +555,19 @@
 			<div class="flex items-center gap-2">
 				<Icon name="lucide:building-2" class="size-4 text-primary-500" />
 				<h2 class="font-display text-[14px] font-semibold">
-					Companies <span class="text-[10px] font-normal text-[var(--ui-text-dimmed)]"
+					{t('settings.companies')} <span class="text-[10px] font-normal text-[var(--ui-text-dimmed)]"
 						>({companyCount})</span
 					>
 				</h2>
 			</div>
 			<Button variant="subtle" size="sm" icon="lucide:plus" onclick={() => openCompanyModal()}>
-				Add company
+				{t('settings.addCompany')}
 			</Button>
 		</div>
 
 		{#if companies.length === 0}
 			<div class="p-6">
-				<EmptyState icon="lucide:building-2" title="No companies yet">
+				<EmptyState icon="lucide:building-2" title={t('settings.noCompanies')}>
 					{#snippet actions()}
 						<Button
 							variant="subtle"
@@ -570,7 +575,7 @@
 							icon="lucide:plus"
 							onclick={() => openCompanyModal()}
 						>
-							Add first company
+							{t('settings.addFirstCompany')}
 						</Button>
 					{/snippet}
 				</EmptyState>
@@ -601,7 +606,7 @@
 									<span class="text-[10px] text-[var(--ui-text-dimmed)]">•</span>
 									<span class="text-[10px] text-[var(--ui-text-muted)]">{company.currency}</span>
 									{#if activeCompanyId === company.id}
-										<Badge color="success">Active</Badge>
+										<Badge color="success">{t('settings.active')}</Badge>
 									{/if}
 								</div>
 							</div>
@@ -629,7 +634,7 @@
 							<p
 								class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
 							>
-								Branches <span class="font-normal"
+								{t('settings.branchesSection')} <span class="font-normal"
 									>({getBranchesForCompany(company.id).length})</span
 								>
 							</p>
@@ -639,7 +644,7 @@
 								onclick={() => openBranchModal(company.id)}
 							>
 								<Icon name="lucide:plus" class="size-[10px]" />
-								Add branch
+								{t('settings.addBranch')}
 							</button>
 						</div>
 						{#each getBranchesForCompany(company.id) as branch (branch.id)}
@@ -660,7 +665,7 @@
 										>{branch.status}</Badge
 									>
 									{#if activeBranchId === branch.id}
-										<Badge color="info">Active</Badge>
+										<Badge color="info">{t('settings.active')}</Badge>
 									{/if}
 								</div>
 								<div
@@ -685,7 +690,7 @@
 						{/each}
 						{#if getBranchesForCompany(company.id).length === 0}
 							<p class="px-2.5 py-1.5 text-[11px] text-[var(--ui-text-dimmed)] italic">
-								No branches
+								{t('settings.noBranches')}
 							</p>
 						{/if}
 					</div>
@@ -699,13 +704,15 @@
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:triangle-alert" class="size-4 text-[var(--tone-error-text)]" />
 			<h2 class="font-display text-[14px] font-semibold text-[var(--tone-error-text)]">
-				Danger zone
+				{t('settings.dangerZone')}
 			</h2>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
-				<label class="text-[13px] font-semibold">Reset organization</label>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">Remove all companies and branches</p>
+				<label class="text-[13px] font-semibold">{t('settings.resetOrganization')}</label>
+				<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+					{t('settings.resetOrganizationDesc')}
+				</p>
 			</div>
 			<Button color="error" variant="subtle" size="sm" icon="lucide:rotate-ccw" onclick={resetAll}>
 				Reset
@@ -717,20 +724,20 @@
 <!-- Company Add/Edit Dialog -->
 <Dialog
 	bind:open={companyModalOpen}
-	title={editingCompanyCode ? 'Edit company' : 'Add company'}
+	title={editingCompanyCode ? t('settings.editCompany') : t('settings.addCompany')}
 	size="md"
 >
 	<div class="space-y-4">
 		<div>
 			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
-				Company name <span class="text-[var(--tone-error-text)]">*</span>
+				{t('settings.companyName')} <span class="text-[var(--tone-error-text)]">*</span>
 			</label>
 			<Input bind:value={companyForm.name} placeholder="e.g. My Coffee Shop" class="w-full" />
 		</div>
 
 		<div>
 			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
-				Company code
+				{t('settings.companyCode')}
 			</label>
 			<Input
 				bind:value={companyForm.code}
@@ -739,15 +746,13 @@
 				disabled={!!editingCompanyCode}
 			/>
 			<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
-				{editingCompanyCode
-					? 'Read-only'
-					: 'Auto-generated from name · lowercase letters, numbers, hyphens'}
+				{editingCompanyCode ? t('settings.readOnly') : t('settings.autoFromName')}
 			</p>
 		</div>
 
 		<div>
 			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Business model</label
+				>{t('settings.businessModel')}</label
 			>
 			<div class="flex flex-wrap gap-2">
 				{#each businessModels as model (model.value)}
@@ -767,7 +772,7 @@
 
 		<div>
 			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Business type</label
+				>{t('settings.businessType')}</label
 			>
 			<div class="flex flex-wrap gap-2">
 				{#each businessTypes as type (type.value)}
@@ -788,18 +793,18 @@
 		<div class="grid grid-cols-2 gap-4">
 			<div>
 				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Currency</label
+					>{t('common.currency')}</label
 				>
 				<Select bind:value={companyForm.currency} options={currencyOptions} class="w-full" />
 			</div>
 			<div>
 				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Tax rate</label
+					>{t('settings.taxRate')}</label
 				>
 				<div class="flex flex-col gap-2">
 					<label class="flex items-center gap-2">
 						<Switch bind:checked={companyForm.enableTax} />
-						<span class="text-[13px]">Enable</span>
+						<span class="text-[13px]">{t('common.enable')}</span>
 					</label>
 					<div
 						class="flex items-center gap-2"
@@ -823,7 +828,9 @@
 						class:!pointer-events-none={!companyForm.enableTax}
 					>
 						<Switch bind:checked={companyForm.taxIncluded} />
-						<span class="text-[12px] text-[var(--ui-text-muted)]">Tax included in shelf price</span>
+						<span class="text-[12px] text-[var(--ui-text-muted)]"
+							>{t('settings.taxIncludedInShelf')}</span
+						>
 					</label>
 				</div>
 			</div>
@@ -831,7 +838,7 @@
 	</div>
 	{#snippet footer()}
 		<Button variant="ghost" color="neutral" onclick={() => (companyModalOpen = false)}
-			>Cancel</Button
+			>{t('common.cancel')}</Button
 		>
 		<Button
 			color="primary"
@@ -839,7 +846,7 @@
 			disabled={!companyForm.name.trim()}
 			onclick={handleSaveCompany}
 		>
-			{editingCompanyCode ? 'Update' : 'Create'}
+			{editingCompanyCode ? t('common.update') : t('common.create')}
 		</Button>
 	{/snippet}
 </Dialog>
@@ -847,20 +854,20 @@
 <!-- Branch Add/Edit Dialog -->
 <Dialog
 	bind:open={branchModalOpen}
-	title={editingBranchId ? 'Edit branch' : 'Add branch'}
+	title={editingBranchId ? t('settings.editBranch') : t('settings.addBranch')}
 	size="md"
 >
 	<div class="space-y-4">
 		<div>
 			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
-				Branch name <span class="text-[var(--tone-error-text)]">*</span>
+				{t('settings.branchName')} <span class="text-[var(--tone-error-text)]">*</span>
 			</label>
 			<Input bind:value={branchForm.name} placeholder="e.g. Downtown Branch" class="w-full" />
 		</div>
 
 		<div>
 			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Branch code</label
+				>{t('settings.branchCode')}</label
 			>
 			<Input
 				bind:value={branchForm.code}
@@ -869,13 +876,13 @@
 				disabled={!!editingBranchId}
 			/>
 			<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
-				{editingBranchId ? 'Read-only' : 'Auto-generated from name'}
+				{editingBranchId ? t('settings.readOnly') : t('settings.autoFromNameShort')}
 			</p>
 		</div>
 
 		<div>
 			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Address</label
+				>{t('common.address')}</label
 			>
 			<Input bind:value={branchForm.address} placeholder="123 Main St…" class="w-full" />
 		</div>
@@ -883,13 +890,13 @@
 		<div class="grid grid-cols-2 gap-4">
 			<div>
 				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Phone</label
+					>{t('common.phone')}</label
 				>
 				<Input bind:value={branchForm.phone} placeholder="(555) 123-4567" class="w-full" />
 			</div>
 			<div>
 				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Email</label
+					>{t('common.email')}</label
 				>
 				<Input bind:value={branchForm.email} placeholder="branch@store.com" class="w-full" />
 			</div>
@@ -897,7 +904,7 @@
 
 		<div>
 			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Status</label
+				>{t('common.status')}</label
 			>
 			<div class="flex gap-2">
 				<button
@@ -908,7 +915,7 @@
 						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)]'}"
 					onclick={() => (branchForm.status = 'active')}
 				>
-					Active
+					{t('settings.active')}
 				</button>
 				<button
 					type="button"
@@ -918,13 +925,14 @@
 						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)]'}"
 					onclick={() => (branchForm.status = 'inactive')}
 				>
-					Inactive
+					{t('settings.inactive')}
 				</button>
 			</div>
 		</div>
 	</div>
 	{#snippet footer()}
-		<Button variant="ghost" color="neutral" onclick={() => (branchModalOpen = false)}>Cancel</Button
+		<Button variant="ghost" color="neutral" onclick={() => (branchModalOpen = false)}
+			>{t('common.cancel')}</Button
 		>
 		<Button
 			color="primary"
@@ -932,7 +940,7 @@
 			disabled={!branchForm.name.trim()}
 			onclick={handleSaveBranch}
 		>
-			{editingBranchId ? 'Update' : 'Create'}
+			{editingBranchId ? t('common.update') : t('common.create')}
 		</Button>
 	{/snippet}
 </Dialog>

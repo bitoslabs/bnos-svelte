@@ -1,11 +1,12 @@
 <script lang="ts">
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { session } from '$nostr/session.svelte';
 
 	// identity is established at /login; this step confirms + explains.
 </script>
 
-<svelte:head><title>Setup · Identity</title></svelte:head>
+<svelte:head><title>{t('setup.title')} · {t('setup.identity')}</title></svelte:head>
 
 <div class="space-y-5">
 	<div>

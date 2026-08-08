@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { glo } from '$nostr/store.svelte';
@@ -354,13 +355,13 @@
 	let showCustom = $derived(rangePreset === 'custom');
 </script>
 
-<svelte:head><title>BNOS · Reports</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.reports')}</title></svelte:head>
 
 <div class="space-y-5">
 	<!-- Header -->
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Reports</h1>
+			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.reports')}</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
 				Derived live from signed order records
 			</p>
@@ -643,8 +644,8 @@
 						<thead>
 							<tr class="border-b border-[var(--ui-border)] text-[11.5px] uppercase tracking-wide text-[var(--ui-text-dimmed)]">
 								<th class="py-2 pr-3 font-semibold">#</th>
-								<th class="py-2 pr-3 font-semibold">Product</th>
-								<th class="py-2 pr-3 text-right font-semibold">Qty</th>
+								<th class="py-2 pr-3 font-semibold">{t('common.product')}</th>
+								<th class="py-2 pr-3 text-right font-semibold">{t('common.qty')}</th>
 								<th class="py-2 pr-3 text-right font-semibold">Revenue</th>
 								<th class="py-2 text-right font-semibold">% Rev</th>
 							</tr>

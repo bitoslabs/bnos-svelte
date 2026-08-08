@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { site } from '$lib/site';
@@ -21,7 +22,7 @@
 	const updated = 'August 5, 2025';
 </script>
 
-<svelte:head><title>Legal · {site.name}</title></svelte:head>
+<svelte:head><title>{t('legal.title')} · {site.name}</title></svelte:head>
 
 <div class="mx-auto w-full max-w-5xl space-y-6 px-5 pt-6 pb-24 lg:pb-12 min-h-dvh lg:pt-10">
 	<header class="space-y-2">

@@ -4,7 +4,7 @@
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
-	import { findNavItem, navSections, permissionForNavItem, permissionForPath, type NavItem } from '$lib/nav';
+	import { findNavItem, navSections, navSectionLabel, navLabel, permissionForNavItem, permissionForPath, type NavItem } from '$lib/nav';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { session } from '$nostr/session.svelte';
 	import { profile } from '$nostr/profile.svelte';
@@ -13,6 +13,7 @@
 	import { permissions } from '$lib/permissions.svelte';
 	import { sidebarState, loadCollapsed, toggleCollapsed } from '$lib/sidebar-state.svelte';
 	import { features } from '$lib/features.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	let { onnavigate }: { onnavigate?: () => void } = $props();
 
@@ -126,7 +127,7 @@
 						<span
 							class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-text-muted)]"
 						>
-							{session.loginMethod === 'extension' ? 'NIP-07 extension' : 'Private key'}
+							{session.loginMethod === 'extension' ? t('sidebar.nip07Extension') : t('sidebar.privateKey')}
 						</span>
 					</div>
 				</div>
@@ -138,7 +139,7 @@
 					class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 				>
 					<Icon name="lucide:sliders-horizontal" class="size-4 text-[var(--ui-text-dimmed)]" />
-					Settings
+					{t('common.settings')}
 				</a>
 			{/if}
 			<a
@@ -147,7 +148,7 @@
 				class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 			>
 				<Icon name="lucide:user-circle" class="size-4 text-[var(--ui-text-dimmed)]" />
-				Profile
+				{t('common.profile')}
 			</a>
 			<button
 				type="button"
@@ -155,15 +156,15 @@
 				class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-[var(--tone-error-text)] transition-colors hover:bg-[var(--tone-error-bg)]"
 			>
 				<Icon name="lucide:log-out" class="size-4" />
-				Sign out
+				{t('common.signOut')}
 			</button>
 		</div>
 	{/snippet}
 	<!-- Brand -->
 	<a
 		href={resolve('/')}
-		aria-label="Go to BNOS dashboard"
-		title={sidebarState.collapsed ? 'BNOS Dashboard' : undefined}
+		aria-label={t('sidebar.goDashboard')}
+		title={sidebarState.collapsed ? t('sidebar.bnosDashboard') : undefined}
 		class="app-sidebar-brand flex h-16 items-center {sidebarState.collapsed ? 'justify-center px-0' : 'gap-3 px-5'} border-b border-[var(--glass-border)] transition-all hover:bg-[var(--ui-bg-accented)]"
 		onclick={() => onnavigate?.()}
 	>
@@ -177,7 +178,7 @@
 			<div class="leading-tight">
 				<div class="font-display text-[17px] font-bold tracking-tight">BNOS</div>
 				<div class="text-[10px] font-semibold tracking-[0.18em] text-[var(--ui-text-dimmed)] uppercase">
-					Open-source POS
+					{t('common.tagline')}
 				</div>
 			</div>
 		{/if}
@@ -192,7 +193,7 @@
 					<div
 						class="app-nav-section-label px-3 pb-1.5 text-[10px] font-semibold tracking-[0.16em] text-[var(--ui-text-dimmed)] uppercase"
 					>
-						{section.label}
+						{navSectionLabel(section)}
 					</div>
 				{/if}
 				{#each section.items as item (item.to)}
@@ -209,7 +210,7 @@
 							>
 							<a
 								href={resolvedHref(item.to)}
-								title={item.label}
+								title={navLabel(item)}
 								class="sidebar-nav-parent-link flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors {groupActive
 									? 'text-[var(--ui-text)]'
 									: 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
@@ -221,12 +222,12 @@
 										? 'text-primary-500'
 										: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'}"
 								/>
-								<span class="truncate">{item.label}</span>
+								<span class="truncate">{navLabel(item)}</span>
 							</a>
 							<button
 								type="button"
 								onclick={() => toggleGroup(item.to)}
-								aria-label={groupExpanded ? 'Collapse' : 'Expand'}
+								aria-label={groupExpanded ? t('sidebar.collapse') : t('sidebar.expand')}
 								class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 							>
 								<Icon
@@ -243,7 +244,7 @@
 										{@const childActive = isActive(child)}
 										<a
 											href={resolvedHref(child.to)}
-											title={child.label}
+											title={navLabel(child)}
 											class="sidebar-nav-child nav-active group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors {childActive
 												? 'is-active-surface text-[var(--ui-text)]'
 												: 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
@@ -255,7 +256,7 @@
 													? 'text-primary-500'
 													: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'}"
 											/>
-											<span class="truncate">{child.label}</span>
+											<span class="truncate">{navLabel(child)}</span>
 										</a>
 									{/each}
 								</div>
@@ -264,7 +265,7 @@
 					{:else}
 						<a
 							href={resolvedHref(item.to)}
-							title={sidebarState.collapsed ? item.label : undefined}
+							title={sidebarState.collapsed ? navLabel(item) : undefined}
 							class="app-nav-item nav-active group mb-0.5 flex items-center {sidebarState.collapsed ? 'justify-center px-0' : 'gap-3 px-3'} rounded-lg py-2 text-[13.5px] font-medium transition-colors {active
 								? 'nav-active-on is-active-surface'
 								: 'soft-hover text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
@@ -277,7 +278,7 @@
 									: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'}"
 							/>
 							{#if !sidebarState.collapsed}
-								<span class="truncate">{item.label}</span>
+								<span class="truncate">{navLabel(item)}</span>
 							{/if}
 						</a>
 					{/if}
@@ -302,7 +303,7 @@
 				<span class="min-w-0 flex-1">
 					<span class="block truncate text-[12.5px] font-semibold">{tenant.state.organizationName}</span>
 					<span class="block truncate text-[11px] text-[var(--ui-text-dimmed)]">
-						{tenant.state.currency} · {tenant.state.locationName ?? 'Main'}
+						{tenant.state.currency} · {tenant.state.locationName ?? t('sidebar.main')}
 					</span>
 				</span>
 			{/if}
@@ -314,8 +315,8 @@
 		<button
 			type="button"
 			onclick={toggleCollapsed}
-			title={sidebarState.collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-			aria-label={sidebarState.collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+			title={sidebarState.collapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')}
+			aria-label={sidebarState.collapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')}
 			class="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 		>
 			<Icon name={sidebarState.collapsed ? 'lucide:chevrons-right' : 'lucide:chevrons-left'} class="size-4" />

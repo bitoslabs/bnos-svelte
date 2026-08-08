@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -132,7 +133,7 @@
 	}
 </script>
 
-<svelte:head><title>Resolving · BNOS</title></svelte:head>
+<svelte:head><title>{t('resolve.title')} · {t('common.appName')}</title></svelte:head>
 
 <div class="flex min-h-screen items-center justify-center px-4">
 	<div class="w-full max-w-md space-y-6">

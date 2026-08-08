@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -122,7 +123,7 @@
 		}
 
 		activeCompanyName = storeName;
-		toast.success('Store profile saved');
+		toast.success(t('settings.toastStoreSaved'));
 	}
 
 	// Store logo uploads are handled by <MediaImageInput>.
@@ -137,25 +138,25 @@
 	);
 </script>
 
-<svelte:head><title>Store profile · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.store')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
 	<PageHeader
 		icon="lucide:store"
-		title="Store profile"
-		description="Public-facing identity, branding & contact for the active location"
+		title={t('settings.store')}
+		description={t('settings.storeDesc')}
 	/>
 
 	<!-- Active context -->
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:navigation" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Editing</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.editing')}</h2>
 		</div>
 		<div class="grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-2">
 			<div class="space-y-1">
 				<p class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-					Company
+					{t('settings.company')}
 				</p>
 				{#if hasActiveCompany}
 					<div class="flex items-center gap-2">
@@ -164,15 +165,19 @@
 						>
 							{activeCompanyName?.charAt(0)?.toUpperCase() || '?'}
 						</div>
-						<p class="truncate text-[13px] font-bold">{activeCompanyName || 'Unnamed'}</p>
+						<p class="truncate text-[13px] font-bold">
+							{activeCompanyName || t('settings.noneSelected')}
+						</p>
 					</div>
 				{:else}
-					<p class="text-[12px] text-[var(--ui-text-dimmed)] italic">No active company</p>
+					<p class="text-[12px] text-[var(--ui-text-dimmed)] italic">
+						{t('settings.noActiveCompany')}
+					</p>
 				{/if}
 			</div>
 			<div class="space-y-1">
 				<p class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-					Branch
+					{t('settings.branchLabel')}
 				</p>
 				{#if hasActiveBranch}
 					<div class="flex items-center gap-2">
@@ -180,18 +185,20 @@
 						<p class="truncate text-[13px] font-bold">{activeBranchName}</p>
 					</div>
 				{:else}
-					<p class="text-[12px] text-[var(--ui-text-dimmed)] italic">No active branch</p>
+					<p class="text-[12px] text-[var(--ui-text-dimmed)] italic">
+						{t('settings.noActiveBranch')}
+					</p>
 				{/if}
 			</div>
 		</div>
 		{#if !hasActiveCompany}
 			<div class="flex items-center justify-between gap-4 px-5 py-3">
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">Set up a company and branch first.</p>
+				<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.setUpCompanyFirst')}</p>
 				<Button
 					href="/settings/organization"
 					variant="subtle"
 					size="sm"
-					icon="lucide:arrow-up-right">Open Workspace</Button
+					icon="lucide:arrow-up-right">{t('settings.openWorkspace')}</Button
 				>
 			</div>
 		{/if}
@@ -201,14 +208,14 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:image" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Store logo</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.storeLogo')}</h2>
 		</div>
 		<div class="px-5 py-5">
 			<MediaImageInput
 				bind:value={storeLogo}
 				purpose="logo"
 				label=""
-				hint="PNG, JPG or SVG · recommended 256×256"
+				hint={t('settings.storeLogoHint')}
 				size={96}
 			/>
 		</div>
@@ -218,13 +225,14 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:shop" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Identity</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.identitySection')}</h2>
 		</div>
 		<div class="px-5 py-4">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
-					Store name {#if hasActiveCompany}<span class="font-normal text-[var(--ui-text-dimmed)]"
-							>· active company</span
+					{t('settings.storeNameLabel')}
+					{#if hasActiveCompany}<span class="font-normal text-[var(--ui-text-dimmed)]"
+							>{t('settings.activeCompanySuffix')}</span
 						>{/if}
 				</span>
 				<Input
@@ -236,14 +244,14 @@
 			</label>
 			{#if !hasActiveCompany}
 				<p class="mt-1.5 text-[10px] text-[var(--ui-text-dimmed)]">
-					Name comes from the active company — create one in Workspace.
+					{t('settings.storeNameFromCompany')}
 				</p>
 			{/if}
 		</div>
 		<div class="px-5 py-4">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Website</span
+					>{t('common.website')}</span
 				>
 				<Input
 					bind:value={storeWebsite}
@@ -259,17 +267,17 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:map-pin" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Location contact</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.locationContact')}</h2>
 			{#if hasActiveBranch}<Badge color="info">{activeBranchName}</Badge>{/if}
 		</div>
 		<div class="px-5 py-4">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Address</span
+					>{t('common.address')}</span
 				>
 				<Input
 					bind:value={storeAddress}
-					placeholder="Street, city, country"
+					placeholder={t('settings.streetCityCountry')}
 					icon="lucide:map-pin"
 					class="w-full"
 					disabled={!hasActiveBranch}
@@ -280,7 +288,7 @@
 			<div class="px-5 py-4">
 				<label class="block">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Phone</span
+						>{t('common.phone')}</span
 					>
 					<Input
 						bind:value={storePhone}
@@ -294,7 +302,7 @@
 			<div class="px-5 py-4">
 				<label class="block">
 					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Email</span
+						>{t('common.email')}</span
 					>
 					<Input
 						bind:value={storeEmail}
@@ -308,7 +316,7 @@
 		</div>
 		{#if !hasActiveBranch}
 			<p class="px-5 pb-4 text-[10px] text-[var(--ui-text-dimmed)]">
-				Contact belongs to the active branch — select one in Workspace.
+				{t('settings.contactFromBranch')}
 			</p>
 		{/if}
 	</section>
@@ -317,7 +325,7 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:eye" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Preview</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.preview')}</h2>
 		</div>
 		<div class="px-5 py-4">
 			<div
@@ -333,7 +341,9 @@
 						{initials}
 					</div>{/if}
 				<div class="min-w-0">
-					<p class="truncate font-display text-[15px] font-bold">{storeName || 'My Store'}</p>
+					<p class="truncate font-display text-[15px] font-bold">
+						{storeName || t('settings.storeNameLabel')}
+					</p>
 					{#if storeAddress}<p class="truncate text-[11px] text-[var(--ui-text-muted)]">
 							{storeAddress}
 						</p>{/if}
@@ -352,6 +362,6 @@
 	</section>
 
 	<div class="flex justify-end">
-		<Button color="primary" icon="lucide:check" onclick={save}>Save changes</Button>
+		<Button color="primary" icon="lucide:check" onclick={save}>{t('common.saveChanges')}</Button>
 	</div>
 </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -59,8 +60,18 @@
 	let previewAmount = $state(100);
 
 	const providerOptions = [
-		{ id: 'lnaddress', label: 'Lightning Address (recommended)', icon: 'lucide:at-sign', desc: 'user@domain.com · no node needed' },
-		{ id: 'nwc', label: 'NWC (Nostr Wallet Connect)', icon: 'lucide:link', desc: 'NWC relay URL · your own wallet' },
+		{
+			id: 'lnaddress',
+			label: 'Lightning Address (recommended)',
+			icon: 'lucide:at-sign',
+			desc: 'user@domain.com · no node needed'
+		},
+		{
+			id: 'nwc',
+			label: 'NWC (Nostr Wallet Connect)',
+			icon: 'lucide:link',
+			desc: 'NWC relay URL · your own wallet'
+		},
 		{ id: 'lnd', label: 'LND (REST)', icon: 'lucide:server', desc: 'Self-hosted Lightning node' },
 		{ id: 'phoenixd', label: 'PhoenixD', icon: 'lucide:flame', desc: 'Self-hosted Lightning' },
 		{ id: 'alby', label: 'Alby', icon: 'lucide:zap', desc: 'Alby API / OAuth' },
@@ -259,18 +270,18 @@
 				currency
 			})
 		);
-		toast.success('Bitcoin settings saved');
+		toast.success(t('settings.toastBitcoinSaved'));
 	}
 
 	async function resetAll() {
 		if (!browser) return;
 		if (
 			!(await confirm({
-				title: 'Reset Bitcoin settings?',
-				message: 'All Bitcoin settings (node, rates, network) will return to defaults.',
+				title: t('common.resetBitcoin'),
+				message: t('common.bitcoinResetMsg'),
 				tone: 'danger',
 				icon: 'lucide:rotate-ccw',
-				confirmText: 'Reset all'
+				confirmText: t('settings.resetAll')
 			}))
 		)
 			return;
@@ -302,14 +313,14 @@
 	}
 </script>
 
-<svelte:head><title>Bitcoin · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.bitcoin')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
 	<PageHeader
 		icon="lucide:bitcoin"
 		accent="amber"
-		title="Bitcoin"
-		description="Lightning, exchange rate, and payment settings"
+		title={t('settings.bitcoin')}
+		description={t('settings.bitcoinDesc')}
 	/>
 
 	<!-- ═══ Exchange Rate ═══ -->
@@ -317,7 +328,7 @@
 		<div class="flex items-center justify-between px-5 py-3">
 			<div class="flex items-center gap-2">
 				<Icon name="lucide:trending-up" class="size-4 text-primary-500" />
-				<h2 class="font-display text-[14px] font-semibold">Exchange rate</h2>
+				<h2 class="font-display text-[14px] font-semibold">{t('settings.exchangeRate')}</h2>
 			</div>
 			<div class="flex items-center gap-2">
 				{#if cacheAgeLabel}
@@ -343,7 +354,9 @@
 					</p>
 				</div>
 				<div class="text-right">
-					<p class="text-[10px] font-bold text-[var(--ui-text-dimmed)] uppercase">Source</p>
+					<p class="text-[10px] font-bold text-[var(--ui-text-dimmed)] uppercase">
+						{t('common.source')}
+					</p>
 					<p
 						class="text-[13px] font-bold {rateSource === 'auto'
 							? 'text-emerald-500'
@@ -367,7 +380,7 @@
 		<div class="px-5 py-4">
 			<label
 				class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-				>Rate source</label
+				>{t('settings.rateSource')}</label
 			>
 			<div class="grid grid-cols-2 gap-2">
 				<button
@@ -398,7 +411,7 @@
 				<div class="mt-3">
 					<label
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>Manual BTC/USD rate</label
+						>{t('settings.manualRate')}</label
 					>
 					<Input bind:value={manualRate} type="number" placeholder="100000" class="w-full" />
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
@@ -414,7 +427,7 @@
 		<div class="flex items-center justify-between px-5 py-3">
 			<div class="flex items-center gap-2">
 				<Icon name="lucide:zap" class="size-4 text-amber-500" />
-				<h2 class="font-display text-[14px] font-semibold">Lightning backend</h2>
+				<h2 class="font-display text-[14px] font-semibold">{t('settings.lightningBackend')}</h2>
 			</div>
 			{#if nodeStatus === 'connected'}
 				<span
@@ -444,7 +457,7 @@
 		<div class="px-5 py-4">
 			<label
 				class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-				>Select provider</label
+				>{t('settings.selectProvider')}</label
 			>
 			<div class="space-y-2">
 				{#each providerOptions as opt (opt.id)}
@@ -489,7 +502,7 @@
 				<div>
 					<label
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>LND REST URL</label
+						>{t('settings.lndRestUrl')}</label
 					>
 					<Input bind:value={lndUrl} placeholder="https://127.0.0.1:8080" class="w-full" />
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
@@ -499,7 +512,7 @@
 				<div>
 					<label
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>Macaroon (hex)</label
+						>{t('settings.macaroonHex')}</label
 					>
 					<Input bind:value={lndMacaroon} type="password" placeholder="020105…" class="w-full" />
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
@@ -512,7 +525,7 @@
 				<div>
 					<label
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>PhoenixD URL</label
+						>{t('settings.phoenixdUrl')}</label
 					>
 					<Input bind:value={phoenixdUrl} placeholder="http://127.0.0.1:9740" class="w-full" />
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Phoenix daemon API endpoint</p>
@@ -520,7 +533,7 @@
 				<div>
 					<label
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>Password</label
+						>{t('common.password' , undefined)}</label
 					>
 					<Input bind:value={phoenixdPass} type="password" placeholder="••••••••" class="w-full" />
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Phoenix daemon HTTP password</p>
@@ -530,7 +543,7 @@
 			<div class="px-5 py-4">
 				<label
 					class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-					>Alby API key</label
+					>{t('settings.albyApiKey')}</label
 				>
 				<Input bind:value={albyApiKey} type="password" placeholder="alby-api-key" class="w-full" />
 				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
@@ -541,7 +554,7 @@
 			<div class="px-5 py-4">
 				<label
 					class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-					>NWC relay URL</label
+					>{t('settings.nwcRelayUrl')}</label
 				>
 				<Input bind:value={nwcUrl} placeholder="nostr+walletconnect://…" class="w-full" />
 				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
@@ -553,7 +566,7 @@
 				<div>
 					<label
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>Lightning address</label
+						>{t('settings.lightningAddressHeading')}</label
 					>
 					<div class="flex gap-2">
 						<Input bind:value={lightningAddress} placeholder="store@bitdigo.com" class="flex-1" />
@@ -569,16 +582,24 @@
 					</div>
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
 						Get one free at
-						<a href="https://getalby.com" target="_blank" rel="noopener"
-							class="font-semibold text-primary-600 hover:underline dark:text-primary-400">getalby.com</a
+						<a
+							href="https://getalby.com"
+							target="_blank"
+							rel="noopener"
+							class="font-semibold text-primary-600 hover:underline dark:text-primary-400"
+							>getalby.com</a
 						>, walletofsatoshi.com, or use your own node's address. At checkout the POS fetches a
 						real amount-locked BOLT11 invoice via LNURL-pay.
 					</p>
 				</div>
-				{#if lightningAddress && (lightningAddress.includes('@') || lightningAddress.toLowerCase().startsWith('lnurl'))}
-					<div class="rounded-lg bg-amber-500/5 p-2.5 text-[10.5px] text-amber-700 dark:text-amber-300">
-						<Icon name="lucide:shield-check" class="-mt-0.5 mr-1 inline size-3" />Single source of truth —
-						this address also powers the POS Lightning checkout & Pay QR preview.
+				{#if lightningAddress && (lightningAddress.includes('@') || lightningAddress
+							.toLowerCase()
+							.startsWith('lnurl'))}
+					<div
+						class="rounded-lg bg-amber-500/5 p-2.5 text-[10.5px] text-amber-700 dark:text-amber-300"
+					>
+						<Icon name="lucide:shield-check" class="-mt-0.5 mr-1 inline size-3" />Single source of
+						truth — this address also powers the POS Lightning checkout & Pay QR preview.
 					</div>
 				{/if}
 			</div>
@@ -587,7 +608,7 @@
 				<div>
 					<label
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>Blink API key</label
+						>{t('settings.blinkApiKey')}</label
 					>
 					<div class="flex gap-2">
 						<Input
@@ -611,11 +632,11 @@
 				<div>
 					<label
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>Wallet ID</label
+						>{t('settings.walletId')}</label
 					>
 					<Input
 						bind:value={blinkWalletId}
-						placeholder="Auto-discovered on test, or enter manually"
+						placeholder={t('settings.autoDiscover')}
 						class="w-full"
 					/>
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
@@ -627,7 +648,7 @@
 			<div class="px-5 py-4">
 				<label
 					class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-					>Strike API key</label
+					>{t('settings.strikeApiKey')}</label
 				>
 				<Input
 					bind:value={strikeApiKey}
@@ -666,7 +687,8 @@
 					{testStatus === 'loading' ? 'Testing…' : 'Test connection'}
 				</Button>
 				<p class="mt-1 text-[9.5px] text-[var(--ui-text-dimmed)]">
-					<Icon name="lucide:info" class="-mt-0.5 mr-0.5 inline size-3" />Verifies config fields are present. Live node / invoice calls run in the POS checkout flow.
+					<Icon name="lucide:info" class="-mt-0.5 mr-0.5 inline size-3" />Verifies config fields are
+					present. Live node / invoice calls run in the POS checkout flow.
 				</p>
 			</div>
 		{/if}
@@ -698,7 +720,7 @@
 		<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 			<div class="flex items-center gap-2 px-5 py-3">
 				<Icon name="lucide:qr-code" class="size-4 text-amber-500" />
-				<h2 class="font-display text-[14px] font-semibold">Lightning receive QR</h2>
+				<h2 class="font-display text-[14px] font-semibold">{t('settings.lightningReceiveQr')}</h2>
 			</div>
 			<div class="flex flex-col items-center gap-3 px-5 py-6 sm:flex-row sm:items-start sm:gap-6">
 				<div class="rounded-2xl border border-[var(--ui-border)] bg-white p-3 shadow-sm">
@@ -727,18 +749,18 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:settings-2" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Payment settings</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.paymentSettings')}</h2>
 		</div>
 		<div class="grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-2">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Default memo</span
+					>{t('settings.defaultMemo')}</span
 				>
-				<Input bind:value={defaultMemo} placeholder="Payment" class="w-full" />
+				<Input bind:value={defaultMemo} placeholder={t('pos.payment')} class="w-full" />
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Default expiry (seconds)</span
+					>{t('settings.defaultExpiry')}</span
 				>
 				<Input bind:value={defaultExpiry} type="number" placeholder="3600" class="w-full" />
 			</label>
@@ -746,13 +768,23 @@
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 					>Min amount ({currency})</span
 				>
-				<Input bind:value={minAmount} type="number" placeholder="0 = no limit" class="w-full" />
+				<Input
+					bind:value={minAmount}
+					type="number"
+					placeholder={t('settings.noLimit')}
+					class="w-full"
+				/>
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 					>Max amount ({currency})</span
 				>
-				<Input bind:value={maxAmount} type="number" placeholder="0 = no limit" class="w-full" />
+				<Input
+					bind:value={maxAmount}
+					type="number"
+					placeholder={t('settings.noLimit')}
+					class="w-full"
+				/>
 			</label>
 		</div>
 	</section>
@@ -761,13 +793,13 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:receipt" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Receipt</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.receipt')}</h2>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
-				<label class="text-[13px] font-semibold">Show sats on receipt</label>
+				<label class="text-[13px] font-semibold">{t('settings.showSatsOnReceipt')}</label>
 				<p class="text-[11px] text-[var(--ui-text-dimmed)]">
-					Display satoshi amounts alongside fiat
+					{t('settings.showSatsOnReceiptDesc')}
 				</p>
 			</div>
 			<Switch bind:checked={receiptShowSats} />
@@ -778,7 +810,7 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:calculator" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Conversion preview</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.conversionPreview')}</h2>
 		</div>
 		<div class="px-5 py-4">
 			<div class="flex items-end gap-3">
@@ -816,13 +848,15 @@
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:triangle-alert" class="size-4 text-[var(--tone-error-text)]" />
 			<h2 class="font-display text-[14px] font-semibold text-[var(--tone-error-text)]">
-				Danger zone
+				{t('settings.dangerZone')}
 			</h2>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
 				<label class="text-[13px] font-semibold">Reset bitcoin settings</label>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">Restore Bitcoin settings to defaults</p>
+				<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+					{t('settings.resetBitcoinSettingsDesc')}
+				</p>
 			</div>
 			<Button color="error" variant="subtle" size="sm" icon="lucide:rotate-ccw" onclick={resetAll}
 				>Reset</Button
@@ -831,6 +865,6 @@
 	</section>
 
 	<div class="flex justify-end">
-		<Button color="primary" icon="lucide:check" onclick={save}>Save changes</Button>
+		<Button color="primary" icon="lucide:check" onclick={save}>{t('common.saveChanges')}</Button>
 	</div>
 </div>

@@ -15,6 +15,7 @@
 	import type { CompletedSale } from '$lib/pos/cart.svelte';
 	import { formatMoney, formatInt } from '$lib/utils/format';
 	import { methodMetaFor } from '$lib/pos/payment-methods';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	type Props = {
 		sale: CompletedSale;
@@ -71,7 +72,7 @@
 		<button
 			type="button"
 			onclick={onClose}
-			aria-label="Close"
+			aria-label={t('common.close')}
 			class="absolute -top-1.5 right-0 grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 		>
 			<Icon name="lucide:x" class="size-4" />
@@ -110,7 +111,7 @@
 	</div>
 
 	<h2 class="ps-fade-up mt-3 font-display text-xl font-black tracking-tight text-[var(--ui-text)]">
-		Payment received
+		{t('pos.paymentReceived')}
 	</h2>
 	<p class="ps-fade-up mt-0.5 font-mono text-[12px] font-semibold text-[var(--ui-text-dimmed)]">
 		{sale.number}
@@ -146,7 +147,7 @@
 			class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[var(--ui-text-muted)]"
 		>
 			<Icon name="lucide:hash" class="size-3.5" />
-			{formatInt(count)} item{count !== 1 ? 's' : ''}
+			{t('pos.itemsCount', { count })}
 		</span>
 	</div>
 
@@ -154,7 +155,7 @@
 		<div
 			class="ps-fade-up ps-fade-up-3 mt-1.5 text-[11.5px] font-medium text-[var(--ui-text-muted)]"
 		>
-			Includes {formatMoney(tip, currency)} tip
+			{t('pos.includesTip', { amount: formatMoney(tip, currency) })}
 		</div>
 	{/if}
 
@@ -166,7 +167,7 @@
 			<span
 				class="text-[10.5px] font-bold tracking-[0.12em] text-[var(--tone-success-text)] uppercase"
 			>
-				Change due
+				{t('pos.changeDue')}
 			</span>
 			<span class="font-display text-xl font-black text-[var(--tone-success-text)] tabular-nums">
 				{formatMoney(sale.change, currency)}
@@ -174,8 +175,8 @@
 		</div>
 		{#if hasTendered}
 			<div class="mt-1 flex items-center justify-between text-[11px] text-[var(--ui-text-muted)]">
-				<span>Tendered <span class="tabular-nums">{formatMoney(tendered, currency)}</span></span>
-				<span>Total <span class="tabular-nums">{formatMoney(finalTotal, currency)}</span></span>
+				<span>{t('pos.tendered')} <span class="tabular-nums">{formatMoney(tendered, currency)}</span></span>
+				<span>{t('common.total')} <span class="tabular-nums">{formatMoney(finalTotal, currency)}</span></span>
 			</div>
 		{/if}
 	{/if}

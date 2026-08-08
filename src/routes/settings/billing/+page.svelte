@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -491,14 +492,14 @@
 	const displayPlans = PLAN_ORDER.slice(0, 4);
 </script>
 
-<svelte:head><title>Billing · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.billing')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
 	<!-- Header -->
 	<PageHeader
 		icon="lucide:credit-card"
-		title="Billing"
-		description="Manage your subscription, plan, and payment history"
+		title={t('settings.billing')}
+		description={t('settings.billingDesc')}
 	>
 		{#snippet actions()}
 			{#if subscription}
@@ -553,7 +554,7 @@
 			<div>
 				<h3 class="mb-3 flex items-center gap-2 font-display text-[15px] font-semibold">
 					<Icon name="lucide:layout-grid" class="size-4 text-primary-500" />
-					Explore plans
+					{t('settings.explorePlans')}
 				</h3>
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
 					{#each displayPlans as code (code)}
@@ -668,7 +669,7 @@
 									>{formatPlanPrice(planCode)}</span
 								>
 								{#if currentPlan.price > 0}
-									<p class="mt-0.5 text-xs font-bold text-white/65">/ month</p>
+									<p class="mt-0.5 text-xs font-bold text-white/65">{t('settings.perMonth')}</p>
 								{/if}
 							</div>
 						</div>
@@ -701,7 +702,7 @@
 				<section class="surface-card overflow-hidden">
 					<div class="flex items-center gap-2 border-b border-[var(--ui-border-muted)] px-5 py-3">
 						<Icon name="lucide:bar-chart-3" class="size-4 text-primary-500" />
-						<h2 class="font-display text-[14px] font-semibold">Usage</h2>
+						<h2 class="font-display text-[14px] font-semibold">{t('common.usage')}</h2>
 					</div>
 					<div class="p-4 sm:p-5">
 						<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -751,7 +752,7 @@
 											<div
 												class="mt-1.5 flex items-center justify-between text-xs font-bold text-emerald-500"
 											>
-												<span>Unlimited</span>
+												<span>{t('common.unlimited')}</span>
 												<Icon name="lucide:infinity" class="size-4" />
 											</div>
 										</div>
@@ -769,7 +770,7 @@
 				<section class="surface-card overflow-hidden">
 					<div class="flex items-center gap-2 border-b border-[var(--ui-border-muted)] px-5 py-3">
 						<Icon name="lucide:settings" class="size-4 text-primary-500" />
-						<h2 class="font-display text-[14px] font-semibold">Subscription</h2>
+						<h2 class="font-display text-[14px] font-semibold">{t('settings.subscription')}</h2>
 					</div>
 					<div class="space-y-3 p-4">
 						{#if isGrace}
@@ -796,7 +797,7 @@
 									onclick={() => {
 										selectedPlan = null;
 										showUpgradeModal = true;
-									}}>Upgrade</Button
+									}}>{t('settings.upgrade')}</Button
 								>
 							{/if}
 							{#if canDowngrade}
@@ -808,7 +809,7 @@
 									onclick={() => {
 										selectedPlan = null;
 										showDowngradeModal = true;
-									}}>Downgrade</Button
+									}}>{t('settings.downgrade')}</Button
 								>
 							{/if}
 							{#if canCancel}
@@ -820,7 +821,7 @@
 									icon="lucide:trash-2"
 									onclick={() => {
 										showCancelModal = true;
-									}}>Cancel subscription</Button
+									}}>{t('settings.cancelSubscriptionAction')}</Button
 								>
 							{/if}
 						</div>
@@ -843,7 +844,7 @@
 							</div>
 							<h3 class="flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
 								<Icon name="lucide:triangle-alert" class="size-4 text-orange-500" />
-								Outstanding invoices
+								{t('settings.outstandingInvoices')}
 							</h3>
 						</div>
 						<div class="space-y-2 p-4">
@@ -864,7 +865,7 @@
 											color="primary"
 											variant="subtle"
 											icon="lucide:send"
-											onclick={() => openPayModal(inv)}>Pay now</Button
+											onclick={() => openPayModal(inv)}>{t('settings.payNow')}</Button
 										>
 									</div>
 								</div>
@@ -878,7 +879,7 @@
 					<section class="surface-card overflow-hidden">
 						<div class="flex items-center gap-2 border-b border-[var(--ui-border-muted)] px-5 py-3">
 							<Icon name="lucide:history" class="size-4 text-primary-500" />
-							<h2 class="font-display text-[14px] font-semibold">Payment history</h2>
+							<h2 class="font-display text-[14px] font-semibold">{t('settings.paymentHistory')}</h2>
 						</div>
 						<div class="p-4 sm:p-5">
 							<div
@@ -917,7 +918,7 @@
 	<section class="surface-card overflow-hidden">
 		<div class="flex items-center gap-2 border-b border-[var(--ui-border-muted)] px-5 py-3">
 			<Icon name="lucide:table" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Plan comparison</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.planComparison')}</h2>
 		</div>
 		<div class="-mx-3 overflow-x-auto p-3 sm:mx-0 sm:p-4">
 			<div
@@ -930,7 +931,7 @@
 				>
 					<div class="p-3">
 						<span class="text-xs font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-							>Feature</span
+							>{t('settings.feature')}</span
 						>
 					</div>
 					{#each displayPlans as code (code)}
@@ -943,7 +944,7 @@
 							{#if code === planCode && subscription}
 								<span
 									class="absolute -top-0.5 rounded-b-md bg-primary-500 px-2 py-0.5 text-xs font-bold tracking-wider text-white uppercase"
-									>Current</span
+									>{t('settings.current')}</span
 								>
 							{/if}
 							<span
@@ -1007,7 +1008,7 @@
 </div>
 
 <!-- ════════ Upgrade Modal ════════ -->
-<Dialog bind:open={showUpgradeModal} title="Upgrade plan" size="md">
+<Dialog bind:open={showUpgradeModal} title={t('common.upgradePlan')} size="md">
 	<div class="space-y-3">
 		<div class="rounded-xl border border-primary-500/10 bg-primary-500/5 p-3">
 			<p class="text-xs leading-relaxed font-medium text-primary-600 dark:text-primary-400">
@@ -1040,7 +1041,7 @@
 						<div class="text-right">
 							<p class="text-sm font-bold text-primary-500">{formatPlanPrice(code)}</p>
 							{#if plan.price > 0}
-								<p class="text-xs text-[var(--ui-text-dimmed)]">/ month</p>
+								<p class="text-xs text-[var(--ui-text-dimmed)]">{t('settings.perMonth')}</p>
 							{/if}
 						</div>
 					</div>
@@ -1074,7 +1075,7 @@
 			onclick={() => {
 				showUpgradeModal = false;
 				selectedPlan = null;
-			}}>Cancel</Button
+			}}>{t('common.cancel')}</Button
 		>
 		<Button
 			color="primary"
@@ -1088,7 +1089,7 @@
 </Dialog>
 
 <!-- ════════ Downgrade Modal ════════ -->
-<Dialog bind:open={showDowngradeModal} title="Downgrade plan" size="md">
+<Dialog bind:open={showDowngradeModal} title={t('settings.downgradePlan')} size="md">
 	<div class="space-y-3">
 		<div
 			class="flex items-start gap-2.5 rounded-xl border border-amber-200/40 bg-amber-50 p-3.5 dark:bg-amber-950/20"
@@ -1134,7 +1135,7 @@
 			onclick={() => {
 				showDowngradeModal = false;
 				selectedPlan = null;
-			}}>Cancel</Button
+			}}>{t('common.cancel')}</Button
 		>
 		<Button
 			color="neutral"
@@ -1148,7 +1149,7 @@
 </Dialog>
 
 <!-- ════════ Cancel Modal ════════ -->
-<Dialog bind:open={showCancelModal} title="Cancel subscription" size="sm">
+<Dialog bind:open={showCancelModal} title={t('settings.cancelSubscription')} size="sm">
 	<div class="space-y-3">
 		<div class="flex items-center gap-2">
 			<div class="grid size-8 shrink-0 place-items-center rounded-lg bg-red-100 dark:bg-red-950/30">
@@ -1194,7 +1195,7 @@
 </Dialog>
 
 <!-- ════════ Pay Invoice Modal ════════ -->
-<Dialog bind:open={showPayModal} title="Pay invoice" size="md">
+<Dialog bind:open={showPayModal} title={t('common.payInvoice')} size="md">
 	{#if payingInvoice}
 		<div class="space-y-4">
 			<!-- Invoice summary -->
@@ -1240,7 +1241,8 @@
 									variant="subtle"
 									block
 									icon="lucide:copy"
-									onclick={() => copyText(activeLightningInvoice!, 'Invoice')}>Copy</Button
+									onclick={() => copyText(activeLightningInvoice!, 'Invoice')}
+									>{t('common.copy')}</Button
 								>
 								<Button
 									size="sm"
@@ -1297,7 +1299,7 @@
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={closePayModal}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={closePayModal}>{t('common.cancel')}</Button>
 		{#if !activeLightningInvoice}
 			<Button color="primary" disabled={!selectedMethod || payLoading} onclick={processPayment}>
 				{payLoading ? 'Processing…' : 'Confirm payment'}

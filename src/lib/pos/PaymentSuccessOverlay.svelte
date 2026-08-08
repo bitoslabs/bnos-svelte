@@ -79,6 +79,7 @@
 	import type { CompletedSale } from '$lib/pos/cart.svelte';
 	import { formatMoney, formatInt } from '$lib/utils/format';
 	import { methodMetaFor, type MethodMeta } from '$lib/pos/payment-methods';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	type Props = {
 		sale: CompletedSale;
@@ -181,7 +182,7 @@
 	onclick={isLight ? dismiss : undefined}
 	role="status"
 	aria-live="polite"
-	aria-label="Payment received"
+	aria-label={t('pos.paymentReceived')}
 	in:fade={{ duration: 120 }}
 	out:fade={{ duration: 200 }}
 >
@@ -343,8 +344,8 @@
 							? 'border-[var(--tone-success-text)]/15 text-[var(--ui-text-muted)]'
 							: 'border-emerald-400/15 text-white/55'}"
 					>
-						<span>Tendered</span><span class="tabular-nums">{formatMoney(tendered, currency)}</span>
-						<span>Total</span><span class="tabular-nums">{formatMoney(finalTotal, currency)}</span>
+						<span>{t('pos.tendered')}</span><span class="tabular-nums">{formatMoney(tendered, currency)}</span>
+						<span>{t('common.total')}</span><span class="tabular-nums">{formatMoney(finalTotal, currency)}</span>
 					</div>
 				{/if}
 			</div>

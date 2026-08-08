@@ -28,6 +28,8 @@
 	import { dataSync } from '$nostr/sync.svelte';
 	import { setMode, userPrefersMode } from 'mode-watcher';
 	import { formatMoney } from '$lib/utils/format';
+	import { t } from '$lib/i18n/i18n.svelte';
+	import { navLabel, navSectionLabel } from '$lib/nav';
 
 	type CmdTone = 'nav' | 'action' | 'data';
 	interface Cmd {
@@ -59,7 +61,7 @@
 	function toCmd(item: NavItem, group: string): Cmd {
 		return {
 			id: 'nav:' + item.to,
-			label: item.label,
+			label: navLabel(item),
 			icon: item.icon,
 			group,
 			tone: 'nav',
@@ -75,8 +77,8 @@
 					.filter(canSeeNav)
 					.flatMap((item) =>
 						item.children
-							? item.children.filter(canSeeNav).map((c) => toCmd(c, section.label))
-							: [toCmd(item, section.label)]
+							? item.children.filter(canSeeNav).map((c) => toCmd(c, navSectionLabel(section)))
+							: [toCmd(item, navSectionLabel(section))]
 					)
 			)
 	);
@@ -85,45 +87,45 @@
 	const actionCmds = $derived<Cmd[]>([
 		{
 			id: 'act:pos',
-			label: 'Start a new sale',
+			label: t('command.startNewSale'),
 			icon: 'lucide:scan-line',
-			group: 'Actions',
+			group: t('common.actions'),
 			tone: 'action',
 			keywords: 'pos checkout cart terminal',
 			run: () => goto(resolve('/pos'))
 		},
 		{
 			id: 'act:sync',
-			label: 'Sync all data',
+			label: t('common.syncAll'),
 			icon: 'lucide:refresh-cw',
-			group: 'Actions',
+			group: t('common.actions'),
 			tone: 'action',
 			keywords: 'refresh update online relay',
 			run: () => void dataSync.manualSync()
 		},
 		{
 			id: 'act:theme',
-			label: 'Toggle dark mode',
+			label: t('command.toggleDarkMode'),
 			icon: 'lucide:sun-moon',
-			group: 'Actions',
+			group: t('common.actions'),
 			tone: 'action',
 			keywords: 'theme light dark appearance color',
 			run: () => setMode(userPrefersMode.current === 'dark' ? 'light' : 'dark')
 		},
 		{
 			id: 'act:relays',
-			label: 'Manage relays',
+			label: t('topbar.manageRelays'),
 			icon: 'lucide:radio',
-			group: 'Actions',
+			group: t('common.actions'),
 			tone: 'action',
 			keywords: 'network connection sync nostr',
 			run: () => goto(resolve('/settings/relays'))
 		},
 		{
 			id: 'act:settings',
-			label: 'Open settings',
+			label: t('command.openSettings'),
 			icon: 'lucide:settings',
-			group: 'Actions',
+			group: t('common.actions'),
 			tone: 'action',
 			keywords: 'preferences config',
 			run: () => goto(resolve('/settings'))
@@ -170,7 +172,7 @@
 						id: 'order:' + o.id,
 						label: `Order ${num}`,
 						icon: 'lucide:receipt-text',
-						group: 'Orders',
+						group: t('nav.orders'),
 						tone: 'data',
 						keywords: kw,
 						trailing: formatMoney(d.total ?? 0, d.currency ?? currency),
@@ -195,7 +197,7 @@
 						id: 'product:' + p.id,
 						label: name,
 						icon: 'lucide:package',
-						group: 'Products',
+						group: t('nav.products'),
 						tone: 'data',
 						keywords: sku,
 						trailing: d.price != null ? formatMoney(d.price, d.currency ?? currency) : undefined,
@@ -221,7 +223,7 @@
 						id: 'customer:' + c.id,
 						label: name,
 						icon: 'lucide:user',
-						group: 'Customers',
+						group: t('nav.customers'),
 						tone: 'data',
 						keywords: `${phone} ${email}`,
 						trailing: phone || email || undefined,
@@ -266,7 +268,7 @@
 		return recents
 			.map((id) => byId.get(id))
 			.filter((c): c is Cmd => !!c)
-			.map((c) => ({ ...c, group: 'Recent' }))
+			.map((c) => ({ ...c, group: t('command.groupRecent') }))
 			.slice(0, 3);
 	});
 
@@ -358,7 +360,7 @@
 		<button
 			type="button"
 			tabindex="-1"
-			aria-label="Close command palette"
+			aria-label={t('command.closePalette')}
 			class="animate-fade fixed inset-0 bg-black/50 backdrop-blur-[2px]"
 			onclick={() => command.hide()}
 		></button>
@@ -367,7 +369,7 @@
 			class="relative w-full max-w-xl overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] shadow-2xl shadow-black/25"
 			role="dialog"
 			aria-modal="true"
-			aria-label="Command palette"
+			aria-label={t('command.title')}
 		>
 			<!-- Search field -->
 			<div class="flex items-center gap-2.5 border-b border-[var(--ui-border-muted)] px-4">
@@ -379,7 +381,7 @@
 					bind:this={inputEl}
 					bind:value={query}
 					onkeydown={onKey}
-					placeholder="Search orders, products, customers…"
+					placeholder={t('command.placeholder')}
 					class="h-12 flex-1 bg-transparent text-[14px] font-medium text-[var(--ui-text-highlighted)] outline-none placeholder:font-normal placeholder:text-[var(--ui-text-dimmed)]"
 					autocomplete="off"
 					spellcheck="false"
@@ -394,7 +396,7 @@
 			<div class="max-h-[55vh] overflow-y-auto p-1.5">
 				{#if results.length === 0}
 					<div class="px-3 py-10 text-center text-[13px] text-[var(--ui-text-dimmed)]">
-						No matches for <span class="font-semibold text-[var(--ui-text-muted)]">"{query}"</span>
+						{t('command.noMatches')} <span class="font-semibold text-[var(--ui-text-muted)]">"{query}"</span>
 					</div>
 				{:else}
 					{#each results as c, i (c.id)}

@@ -9,6 +9,7 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { preferences } from '$lib/theme/preferences.svelte';
 	import { features } from '$lib/features.svelte';
+	import { i18n, t } from '$lib/i18n/i18n.svelte';
 	import { media } from '$lib/media/media.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { relays } from '$nostr/relay.svelte';
@@ -60,6 +61,7 @@
 		session.load();
 		tenant.load();
 		profile.load();
+		i18n.init();
 		if (session.isAuthenticated) void warmRelays();
 	});
 
@@ -246,9 +248,9 @@
 				</div>
 			</div>
 			<div class="text-center">
-				<p class="font-display text-[15px] font-bold">Checking workspace</p>
+				<p class="font-display text-[15px] font-bold">{t('layout.checkingWorkspace')}</p>
 				<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
-					Restoring your active workspace and branch…
+					{t('layout.checkingWorkspaceDesc')}
 				</p>
 			</div>
 		</div>

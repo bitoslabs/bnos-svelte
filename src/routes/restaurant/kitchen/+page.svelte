@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
@@ -157,7 +158,7 @@
 		: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
 </script>
 
-<svelte:head><title>BNOS · Kitchen</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.kitchen')}</title></svelte:head>
 
 <div class="flex h-full flex-col space-y-3">
 	<!-- Header -->
@@ -174,7 +175,7 @@
 	</div>
 
 	{#if tickets.length === 0}
-		<EmptyState icon="lucide:chef-hat" title="No active tickets" description="Order tickets appear here for prep as they come in from the POS." />
+		<EmptyState icon="lucide:chef-hat" title="No active tickets" description={t('restaurant.kitchenDesc')} />
 	{:else}
 		<!-- Kanban board -->
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

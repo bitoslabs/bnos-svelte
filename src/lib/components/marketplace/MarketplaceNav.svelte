@@ -6,6 +6,7 @@
 	 * `segmented` control but spans the module.
 	 */
 	import { resolve } from '$app/paths';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -18,8 +19,8 @@
 		{ to: '/marketplace/channels', icon: 'lucide:radio', label: 'Channels' },
 		{ to: '/marketplace/orders', icon: 'lucide:shopping-bag', label: 'Orders', countKey: 'orders' },
 		{ to: '/marketplace/shipping', icon: 'lucide:truck', label: 'Shipping', countKey: 'shipping' },
-		{ to: '/marketplace/promotions', icon: 'lucide:megaphone', label: 'Promotions' },
-		{ to: '/marketplace/reviews', icon: 'lucide:star', label: 'Reviews', countKey: 'reviews' },
+		{ to: '/marketplace/promotions', icon: 'lucide:megaphone', label: t('nav.promotions') },
+		{ to: '/marketplace/reviews', icon: 'lucide:star', label: t('nav.reviews'), countKey: 'reviews' },
 		{ to: '/marketplace/analytics', icon: 'lucide:chart-column', label: 'Analytics' },
 		{ to: '/marketplace/settings', icon: 'lucide:settings', label: 'Settings' }
 	];

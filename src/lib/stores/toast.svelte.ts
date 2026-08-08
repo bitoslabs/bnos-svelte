@@ -3,6 +3,8 @@
  * Rendered by <Toaster /> (mounted in +layout.svelte).
  */
 import { browser } from '$app/environment';
+import { i18n } from '$lib/i18n/i18n.svelte';
+import { resolve as resolveMsg, messages, DEFAULT_LOCALE, type DeepDict } from '$lib/i18n/messages';
 
 export type ToastColor = 'success' | 'info' | 'warning' | 'error' | 'neutral';
 export interface ToastItem {
@@ -53,6 +55,19 @@ class ToastStore {
 			clearTimeout(timer);
 			this.timers.delete(id);
 		}
+	};
+
+	/** Resolve a toast text field at render time. Accepts either a raw string
+	 *  (shown as-is) or an i18n key such as `toast.saved` (translated using the
+	 *  current locale). Reactive: re-renders when the language changes. */
+	renderText = (value: string): string => {
+		const locale = i18n.locale;
+		return resolveMsg(
+			messages[locale] as unknown as DeepDict,
+			value,
+			undefined,
+			messages[DEFAULT_LOCALE] as unknown as DeepDict
+		);
 	};
 
 	private restartTimer = (id: number) => {

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -1027,7 +1028,7 @@
 				if (generalSettings.autoPrint && hardwareSettings.printerType !== 'none') printReceipt();
 			}
 		} catch (e) {
-			toast.error('Checkout failed', e instanceof Error ? e.message : undefined);
+			toast.error(t('pos.checkoutFailed'), e instanceof Error ? e.message : undefined);
 		} finally {
 			processing = false;
 			payQrLoading = false;
@@ -1240,11 +1241,11 @@
 		if (
 			generalSettings.confirmClear &&
 			!(await confirm({
-				title: 'Clear cart?',
-				message: 'This removes every item from the current sale.',
+				title: t('pos.confirmClearCart'),
+				message: t('pos.confirmClearCartMsg'),
 				tone: 'danger',
 				icon: 'lucide:cart-x',
-				confirmText: 'Clear cart'
+				confirmText: t('pos.clearCart')
 			}))
 		)
 			return;
@@ -1486,11 +1487,11 @@
 	);
 
 	const POS_SHORTCUTS: { key: string; label: string; icon: string }[] = [
-		{ key: '/', label: 'Search products', icon: 'lucide:search' },
-		{ key: 'F2', label: 'New sale', icon: 'lucide:plus' },
+		{ key: '/', label: t('pos.searchProducts'), icon: 'lucide:search' },
+		{ key: 'F2', label: t('common.new') + ' ' + t('common.sale'), icon: 'lucide:plus' },
 		{ key: 'F3', label: 'Custom item', icon: 'lucide:plus-circle' },
 		{ key: 'F4', label: 'Discount', icon: 'lucide:tag' },
-		{ key: 'F6', label: 'Held orders', icon: 'lucide:pause' },
+		{ key: 'F6', label: t('orders.heldOrders'), icon: 'lucide:pause' },
 		{ key: 'F7', label: 'Last receipt', icon: 'lucide:receipt' },
 		{ key: 'F9', label: 'Charge', icon: 'lucide:zap' },
 		{ key: 'Esc', label: 'Close / clear', icon: 'lucide:x' }
@@ -1653,7 +1654,7 @@
 	}
 </script>
 
-<svelte:head><title>BNOS · Point of Sale</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.pos')}</title></svelte:head>
 <svelte:window onkeydown={onKeydown} />
 
 <div class="flex h-dvh min-h-0 flex-col overflow-hidden bg-[var(--ui-bg)]">
@@ -1669,7 +1670,7 @@
 				</a>
 				<div class="min-w-0">
 					<div class="flex items-center gap-2">
-						<h1 class="font-display text-lg font-bold tracking-tight sm:text-xl">POS Terminal</h1>
+						<h1 class="font-display text-lg font-bold tracking-tight sm:text-xl">{t('pos.terminal')}</h1>
 						<Badge color={cart.isEmpty ? 'neutral' : 'primary'}>
 							{cart.isEmpty ? 'Ready' : `${cart.itemCount} items`}
 						</Badge>
@@ -1841,7 +1842,7 @@
 									>
 										<Icon name="lucide:lock" class="size-5" />
 									</div>
-									<div class="text-[13px] font-bold">No active shift</div>
+									<div class="text-[13px] font-bold">{t('pos.noActiveShift')}</div>
 									<p class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">
 										Open a shift to start processing sales and track the drawer.
 									</p>
@@ -1947,7 +1948,7 @@
 					icon="lucide:badge-plus"
 					disabled={cart.isEmpty}
 					onclick={startNewSale}
-					title="Start new sale"
+					title={t('common.new') + ' ' + t('common.sale')}
 				>
 					New sale
 				</Button>
@@ -1966,7 +1967,7 @@
 						type="button"
 						onclick={() => (heldOpen = true)}
 						class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--ui-border)] px-2.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-						title="Held orders"
+						title={t('orders.heldOrders')}
 					>
 						<Icon name="lucide:pause" class="size-3.5" />
 						{formatInt(cart.held.length)}
@@ -1975,7 +1976,7 @@
 				<a
 					href={resolve('/pos/customer-display')}
 					target="_blank"
-					title="Open customer display"
+					title={t('pos.customerDisplay')}
 					class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
 				>
 					<Icon name="lucide:monitor" class="size-3.5" />
@@ -2040,8 +2041,8 @@
 							id="pos-search"
 							icon={hardwareSettings.barcodeScanner ? 'lucide:scan-barcode' : 'lucide:search'}
 							placeholder={hardwareSettings.barcodeScanner
-								? 'Scan or search products…'
-								: 'Search products…'}
+								? t('pos.searchScan')
+								: t('pos.searchProducts')+'…'}
 							onkeydown={onSearchKeydown}
 							class="min-w-[12rem] flex-1"
 						>
@@ -2051,7 +2052,7 @@
 										class="inline-flex items-center gap-1 rounded-md bg-[var(--tone-success-bg)] px-1.5 py-0.5 text-[10.5px] font-bold text-[var(--tone-success-text)]"
 										title="Exact code match — press Enter or pause to add"
 									>
-										<Icon name="lucide:corner-down-left" class="size-3" />Add
+										<Icon name="lucide:corner-down-left" class="size-3" />{t('common.add')}
 									</span>
 								{:else if hardwareSettings.barcodeScanner}
 									<span class="text-[10px] font-semibold text-[var(--ui-text-dimmed)]">↵ add</span>
@@ -2251,7 +2252,7 @@
 							<Icon name="lucide:shopping-cart" class="size-7" />
 						</div>
 						<div>
-							<p class="text-[13.5px] font-bold text-[var(--ui-text)]">Cart is empty</p>
+							<p class="text-[13.5px] font-bold text-[var(--ui-text)]">{t('pos.emptyCart')}</p>
 							<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
 								Tap a product to start a new sale.
 							</p>
@@ -2287,7 +2288,7 @@
 				>
 					<Icon name="lucide:lock" class="size-6" />
 				</div>
-				<h3 class="font-display text-lg font-bold">No active shift</h3>
+				<h3 class="font-display text-lg font-bold">{t('pos.noActiveShift')}</h3>
 				<p class="mt-1 text-[12.5px] text-[var(--ui-text-muted)]">
 					Open a shift to start processing sales.
 				</p>
@@ -2354,7 +2355,7 @@
 					type="button"
 					onclick={() => (cartOpen = false)}
 					class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-					aria-label="Close"
+					aria-label={t('common.close')}
 				>
 					<Icon name="lucide:x" class="size-4" />
 				</button>
@@ -2410,7 +2411,7 @@
 								type="button"
 								onclick={() => cart.dec(line.key)}
 								class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-								aria-label="Decrease"><Icon name="lucide:minus" class="size-3.5" /></button
+								aria-label={t('common.decrease')}><Icon name="lucide:minus" class="size-3.5" /></button
 							>
 							<span class="w-6 text-center text-[13px] font-semibold tabular-nums"
 								>{line.quantity}</span
@@ -2419,7 +2420,7 @@
 								type="button"
 								onclick={() => cart.inc(line.key)}
 								class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-								aria-label="Increase"><Icon name="lucide:plus" class="size-3.5" /></button
+								aria-label={t('common.increase')}><Icon name="lucide:plus" class="size-3.5" /></button
 							>
 						</div>
 						<div class="flex items-center gap-1">
@@ -2430,7 +2431,7 @@
 								type="button"
 								onclick={() => cart.remove(line.key)}
 								class="grid size-6 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
-								aria-label="Remove"><Icon name="lucide:x" class="size-3.5" /></button
+								aria-label={t('common.remove')}><Icon name="lucide:x" class="size-3.5" /></button
 							>
 							<Menu
 								id={`cart-line-${line.key}`}
@@ -2542,7 +2543,7 @@
 							<Input
 								bind:value={cart.tableId}
 								icon="lucide:layout-grid"
-								placeholder="Table"
+								placeholder={t('common.table')}
 								class="w-full"
 							/>
 							<Input
@@ -2568,7 +2569,7 @@
 						}}
 						class="flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--ui-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-50"
 					>
-						<span><Icon name="lucide:tag" class="mr-1 inline size-3.5" />Discount</span>
+						<span><Icon name="lucide:tag" class="mr-1 inline size-3.5" />{t('common.discount')}</span>
 						{#if cart.totals.discountAmount > 0}<span class="text-[var(--tone-success-text)]"
 								>−{formatMoney(cart.totals.discountAmount, currency)}</span
 							>{:else}<span class="text-[var(--ui-text-dimmed)]">None</span>{/if}
@@ -2679,13 +2680,13 @@
 		<!-- totals -->
 		<div class="space-y-1.5 border-t border-[var(--ui-border-muted)] pt-3 text-[13px]">
 			<div class="flex justify-between text-[var(--ui-text-muted)]">
-				<span>Subtotal</span><span class="tabular-nums"
+				<span>{t('common.subtotal')}</span><span class="tabular-nums"
 					>{formatMoney(cart.totals.subtotal, currency)}</span
 				>
 			</div>
 			{#if cart.totals.discountAmount > 0}
 				<div class="flex justify-between text-[var(--tone-success-text)]">
-					<span>Discount</span><span class="tabular-nums"
+					<span>{t('common.discount')}</span><span class="tabular-nums"
 						>−{formatMoney(cart.totals.discountAmount, currency)}</span
 					>
 				</div>
@@ -2698,7 +2699,7 @@
 				><span class="tabular-nums">{formatMoney(cart.totals.tax, currency)}</span>
 			</div>
 			<div class="flex justify-between pt-1 font-display text-[17px] font-bold">
-				<span>Total</span><span class="text-primary-600 tabular-nums dark:text-primary-400"
+				<span>{t('common.total')}</span><span class="text-primary-600 tabular-nums dark:text-primary-400"
 					>{formatMoney(cart.totals.total, currency)}</span
 				>
 			</div>
@@ -2817,7 +2818,7 @@
 						min="0"
 						step="0.01"
 						icon="lucide:banknote"
-						placeholder="Amount"
+						placeholder={t('common.amount')}
 						class="flex-1"
 					/>
 					<button
@@ -2833,14 +2834,14 @@
 						variant="subtle"
 						size="sm"
 						icon="lucide:plus"
-						onclick={addSplitPayment}>Add</Button
+						onclick={addSplitPayment}>{t('common.add')}</Button
 					>
 				</div>
 			{/if}
 
 			<!-- Complete split checkout -->
 			<div class="grid grid-cols-2 gap-2">
-				<Button color="neutral" variant="subtle" icon="lucide:x" onclick={resetSplit}>Cancel</Button
+				<Button color="neutral" variant="subtle" icon="lucide:x" onclick={resetSplit}>{t('common.cancel')}</Button
 				>
 				<Button
 					color="primary"
@@ -2971,7 +2972,7 @@
 						type="button"
 						onclick={() => (tendered = grandTotal)}
 						class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2.5 py-1.5 text-[10.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
-						title="Set exact amount">Exact</button
+						title={t('common.setExactAmount')}>Exact</button
 					>
 				</div>
 			{/if}
@@ -2982,7 +2983,7 @@
 					variant="subtle"
 					icon="lucide:pause"
 					disabled={processing}
-					onclick={() => cart.hold()}>Hold</Button
+					onclick={() => cart.hold()}>{t('pos.hold')}</Button
 				>
 				<Button
 					color="primary"
@@ -3026,8 +3027,8 @@
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (sizeOpen = false)}>Cancel</Button>
-		<Button color="primary" icon="lucide:check" onclick={confirmVariant}>Add</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (sizeOpen = false)}>{t('common.cancel')}</Button>
+		<Button color="primary" icon="lucide:check" onclick={confirmVariant}>{t('common.add')}</Button>
 	{/snippet}
 </Dialog>
 
@@ -3092,7 +3093,7 @@
 			onclick={() => {
 				modOpen = false;
 				pendingModVariant = null;
-			}}>Cancel</Button
+			}}>{t('common.cancel')}</Button
 		>
 		<Button color="primary" icon="lucide:check" onclick={confirmModifiers}>Add to sale</Button>
 	{/snippet}
@@ -3102,8 +3103,8 @@
 <Dialog bind:open={noteOpen} title="Line note" size="sm">
 	<Input bind:value={noteText} placeholder="e.g. extra hot, no onions" class="w-full" />
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (noteOpen = false)}>Cancel</Button>
-		<Button color="primary" icon="lucide:check" onclick={saveNote}>Save</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (noteOpen = false)}>{t('common.cancel')}</Button>
+		<Button color="primary" icon="lucide:check" onclick={saveNote}>{t('common.save')}</Button>
 	{/snippet}
 </Dialog>
 
@@ -3154,13 +3155,13 @@
 		{/if}
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (discountOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (discountOpen = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" icon="lucide:check" onclick={applyDiscount}>Apply</Button>
 	{/snippet}
 </Dialog>
 
 <!-- Promotion picker -->
-<Dialog bind:open={promoOpen} title="Promotions" size="md">
+<Dialog bind:open={promoOpen} title={t('nav.promotions')} size="md">
 	<div class="space-y-2">
 		{#if cart.appliedPromotionId}
 			<button
@@ -3239,23 +3240,23 @@
 				No active promotions. Create some in
 				<a
 					class="font-semibold text-primary-600 hover:underline dark:text-primary-400"
-					href={resolve('/promotions')}>Promotions</a
+					href={resolve('/promotions')}>{t('nav.promotions')}</a
 				>.
 			</p>
 		{/if}
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (promoOpen = false)}>Close</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (promoOpen = false)}>{t('common.close')}</Button>
 	{/snippet}
 </Dialog>
 
 <!-- Held orders -->
-<Dialog bind:open={heldOpen} title="Held orders" size="md">
+<Dialog bind:open={heldOpen} title={t('orders.heldOrders')} size="md">
 	{#if cart.held.length === 0}
 		<EmptyState
 			icon="lucide:pause"
 			title="No held orders"
-			description="Park a sale with Hold to finish it later."
+			description={t('orders.parkSale')}
 		/>
 	{:else}
 		<ul class="divide-y divide-[var(--ui-border-muted)]">
@@ -3273,7 +3274,7 @@
 							{h.orderType.replace('_', '-')} · {formatInt(h.items.length)} items
 						</div>
 						<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
-							{h.customerName ?? 'Walk-in'} · {formatMoney(heldTotal, currency)}
+							{h.customerName ?? t('pos.walkIn')} · {formatMoney(heldTotal, currency)}
 						</div>
 					</div>
 					<div class="flex gap-1.5">
@@ -3293,7 +3294,7 @@
 							variant="ghost"
 							icon="lucide:trash-2"
 							onclick={() => cart.deleteHeld(h.id)}
-							aria-label="Delete"
+							aria-label={t('common.delete')}
 						/>
 					</div>
 				</li>
@@ -3333,7 +3334,7 @@
 		</ul>
 		<dl class="mt-2 space-y-1 border-t border-[var(--ui-border-muted)] pt-2 text-[12px]">
 			<div class="flex justify-between text-[var(--ui-text-muted)]">
-				<span>Subtotal</span><span class="tabular-nums"
+				<span>{t('common.subtotal')}</span><span class="tabular-nums"
 					>{formatMoney(s.totals.subtotal, currency)}</span
 				>
 			</div>
@@ -3352,7 +3353,7 @@
 				</div>
 			{/if}
 			<div class="flex justify-between text-[var(--ui-text-muted)]">
-				<span>Tax</span><span class="tabular-nums">{formatMoney(s.totals.tax, currency)}</span>
+				<span>{t('common.tax')}</span><span class="tabular-nums">{formatMoney(s.totals.tax, currency)}</span>
 			</div>
 			{#if s.totalSats}
 				<div
@@ -3368,9 +3369,9 @@
 	{#snippet footer()}
 		<div class="flex gap-2">
 			<Button color="neutral" variant="subtle" icon="lucide:printer" onclick={printReceipt}
-				>Print</Button
+				>{t('common.print')}</Button
 			>
-			<Button color="primary" block onclick={() => (receiptOpen = false)}>New sale</Button>
+			<Button color="primary" block onclick={() => (receiptOpen = false)}>{t('common.new') + ' ' + t('common.sale')}</Button>
 		</div>
 	{/snippet}
 </Dialog>
@@ -3391,7 +3392,7 @@
 		</label>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Price</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.price')}</span
 				>
 				<Input
 					bind:value={customPrice}
@@ -3405,7 +3406,7 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Quantity</span
+					>{t('common.quantity')}</span
 				>
 				<Input
 					bind:value={customQty}
@@ -3419,7 +3420,7 @@
 		</div>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (customOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (customOpen = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" icon="lucide:plus" onclick={addCustomItem}>Add to sale</Button>
 	{/snippet}
 </Dialog>
@@ -3460,7 +3461,7 @@
 				class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2.5 text-[12.5px] text-[var(--ui-text-muted)]"
 			>
 				<Icon name="lucide:info" class="mr-1 inline size-3.5" />
-				No active shift. Open one to start processing sales.
+				{t('pos.noActiveShift')}.
 			</div>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
@@ -3480,12 +3481,12 @@
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 					>Cashier name (optional)</span
 				>
-				<Input bind:value={shiftStaffName} icon="lucide:user" placeholder="Name" class="w-full" />
+				<Input bind:value={shiftStaffName} icon="lucide:user" placeholder={t('common.name')} class="w-full" />
 			</label>
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (shiftModalOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (shiftModalOpen = false)}>{t('common.cancel')}</Button>
 		{#if openShift}
 			<Button color="neutral" icon="lucide:lock" onclick={closeShift}>Close shift</Button>
 		{:else}
@@ -3495,7 +3496,7 @@
 </Dialog>
 
 <!-- History Quick Access Modal -->
-<Dialog bind:open={historyOpen} title="Recent orders" size="md">
+<Dialog bind:open={historyOpen} title={t('dashboard.recentOrders')} size="md">
 	{#if recentOrders.length === 0}
 		<EmptyState
 			icon="lucide:receipt"
@@ -3549,7 +3550,7 @@
 </Dialog>
 
 <!-- Payment QR checkout (QR / Lightning / bank methods) -->
-<Dialog bind:open={payQrOpen} title="Scan to pay" size="md">
+<Dialog bind:open={payQrOpen} title={t('common.scanToPay')} size="md">
 	{#if payQrResult}
 		<div class="flex flex-col items-center gap-4 py-2">
 			<div class="flex items-center gap-2">
@@ -3689,7 +3690,7 @@
 	{/if}
 	{#snippet footer()}
 		<Button color="neutral" variant="subtle" icon="lucide:x" onclick={closeQrCheckout}
-			>Cancel</Button
+			>{t('common.cancel')}</Button
 		>
 		<Button
 			color="primary"

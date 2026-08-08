@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Slideover from '$lib/components/ui/Slideover.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import StockBadge from '$lib/components/ui/StockBadge.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -74,7 +75,7 @@
 	}
 </script>
 
-<Slideover bind:open title="Product detail" subtitle={d?.name ? String(d.name) : undefined} width="w-[30rem]">
+<Slideover bind:open title={t('common.productDetail')} subtitle={d?.name ? String(d.name) : undefined} width="w-[30rem]">
 	{#if d}
 		<!-- Tabs -->
 		<div class="segmented inline-flex w-fit gap-1 p-1 mx-5 mt-4">
@@ -157,11 +158,11 @@
 				<!-- Price section -->
 				<div class="grid grid-cols-3 gap-3 rounded-lg bg-[var(--ui-bg-accented)] p-3">
 					<div>
-						<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">Price</p>
+						<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">{t('common.price')}</p>
 						<p class="font-bold tabular-nums">{formatMoney(Number(d.price ?? 0), (d.currency as string) ?? currency)}</p>
 					</div>
 					<div>
-						<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">Cost</p>
+						<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">{t('common.cost')}</p>
 						<p class="font-semibold tabular-nums">{d.costPrice != null ? formatMoney(Number(d.costPrice), (d.currency as string) ?? currency) : '—'}</p>
 					</div>
 					<div>
@@ -181,16 +182,16 @@
 				<!-- Details grid -->
 				<div class="grid grid-cols-2 gap-x-4 gap-y-3 text-[12.5px]">
 					{#if d.sku}
-						<div><span class="text-[var(--ui-text-dimmed)]">SKU</span><p class="font-mono font-semibold">{d.sku}</p></div>
+						<div><span class="text-[var(--ui-text-dimmed)]">{t('common.sku')}</span><p class="font-mono font-semibold">{d.sku}</p></div>
 					{/if}
 					{#if d.barcode}
 						<div><span class="text-[var(--ui-text-dimmed)]">Barcode</span><p class="font-mono font-semibold">{d.barcode}</p></div>
 					{/if}
 					{#if d.categoryId}
-						<div><span class="text-[var(--ui-text-dimmed)]">Category</span><p class="font-semibold">{catName(String(d.categoryId))}</p></div>
+						<div><span class="text-[var(--ui-text-dimmed)]">{t('common.category')}</span><p class="font-semibold">{catName(String(d.categoryId))}</p></div>
 					{/if}
 					{#if d.unitId}
-						<div><span class="text-[var(--ui-text-dimmed)]">Unit</span><p class="font-semibold">{unitName(String(d.unitId))}</p></div>
+						<div><span class="text-[var(--ui-text-dimmed)]">{t('common.unit')}</span><p class="font-semibold">{unitName(String(d.unitId))}</p></div>
 					{/if}
 					{#if d.prepTime != null}
 						<div><span class="text-[var(--ui-text-dimmed)]">Prep time</span><p class="font-semibold">{d.prepTime} min</p></div>
@@ -215,7 +216,7 @@
 				<!-- Description -->
 				{#if d.description}
 					<div>
-						<span class="text-[11px] font-semibold text-[var(--ui-text-muted)]">Description</span>
+						<span class="text-[11px] font-semibold text-[var(--ui-text-muted)]">{t('common.description')}</span>
 						<p class="mt-1 text-[12.5px] leading-relaxed text-[var(--ui-text)]">{d.description}</p>
 					</div>
 				{/if}

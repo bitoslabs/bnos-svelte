@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -119,8 +120,8 @@
 				onclick={manualResolve}
 				disabled={resolvingWorkspace}
 				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:opacity-50"
-				aria-label="Resolve workspace"
-				title="Resolve workspace"
+				aria-label={t('common.resolveWorkspace')}
+				title={t('common.resolveWorkspace')}
 			>
 				<Icon name={resolvingWorkspace ? 'lucide:loader' : 'lucide:refresh-cw'} class="size-[18px] {resolvingWorkspace ? 'animate-spin' : ''}" />
 			</button>
@@ -130,8 +131,8 @@
 				type="button"
 				onclick={() => setMode(mode.current === 'dark' ? 'light' : 'dark')}
 				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-				aria-label="Toggle theme"
-				title="Toggle theme"
+				aria-label={t('common.toggleTheme')}
+				title={t('common.toggleTheme')}
 			>
 				<Icon name={mode.current === 'dark' ? 'lucide:sun' : 'lucide:moon'} class="size-[18px]" />
 			</button>
@@ -153,8 +154,8 @@
 				type="button"
 				onclick={signOut}
 				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
-				aria-label="Sign out"
-				title="Sign out"
+				aria-label={t('common.signOut')}
+				title={t('common.signOut')}
 			>
 				<Icon name="lucide:log-out" class="size-[18px]" />
 			</button>

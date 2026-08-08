@@ -5,6 +5,7 @@
 	 * optional per-channel pricing and live publish status.
 	 */
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -251,7 +252,7 @@
 	}
 </script>
 
-<svelte:head><title>Marketplace · Listings</title></svelte:head>
+<svelte:head><title>{t('nav.marketplace')} · {t('nav.listings')}</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">
@@ -316,7 +317,7 @@
 				<p class="mt-0.5 text-xl font-black text-amber-500 tabular-nums">{lowStockCount}</p>
 			</div>
 			<div class="metric-card p-3.5">
-				<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">Views</p>
+				<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">{t('common.views')}</p>
 				<p class="mt-0.5 text-xl font-black tabular-nums">{formatInt(totalViews)}</p>
 			</div>
 		</div>
@@ -368,7 +369,7 @@
 					'list'
 						? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
 						: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
-					title="List view"><Icon name="lucide:list" class="size-4" /></button
+					title={t('common.listView')}><Icon name="lucide:list" class="size-4" /></button
 				>
 				<button
 					type="button"
@@ -377,7 +378,7 @@
 					'grid'
 						? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
 						: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
-					title="Grid view"><Icon name="lucide:layout-grid" class="size-4" /></button
+					title={t('common.gridView')}><Icon name="lucide:layout-grid" class="size-4" /></button
 				>
 				<button
 					type="button"
@@ -386,7 +387,7 @@
 					'table'
 						? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
 						: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
-					title="Table view"><Icon name="lucide:table" class="size-4" /></button
+					title={t('common.tableView')}><Icon name="lucide:table" class="size-4" /></button
 				>
 			</div>
 		</div>
@@ -402,36 +403,36 @@
 									column="name"
 									active={controls.sortKey === 'name'}
 									direction={controls.sortDir}
-									applySort={controls.applySort}>Product</SortableTh
+									applySort={controls.applySort}>{t('common.product')}</SortableTh
 								>
 								<SortableTh
 									column="price"
 									active={controls.sortKey === 'price'}
 									direction={controls.sortDir}
 									align="right"
-									applySort={controls.applySort}>Price</SortableTh
+									applySort={controls.applySort}>{t('common.price')}</SortableTh
 								>
 								<SortableTh
 									column="stock"
 									active={controls.sortKey === 'stock'}
 									direction={controls.sortDir}
 									align="right"
-									applySort={controls.applySort}>Stock</SortableTh
+									applySort={controls.applySort}>{t('common.stock')}</SortableTh
 								>
 								<th
 									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Status</th
+									>{t('common.status')}</th
 								>
 								<th
 									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-									>Channels</th
+									>{t('common.channel')}</th
 								>
 								<SortableTh
 									column="views"
 									active={controls.sortKey === 'views'}
 									direction={controls.sortDir}
 									align="right"
-									applySort={controls.applySort}>Views</SortableTh
+									applySort={controls.applySort}>{t('common.views')}</SortableTh
 								>
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr>
@@ -537,19 +538,19 @@
 												type="button"
 												onclick={() => viewRaw(l.id)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-												title="View raw"><Icon name="lucide:code" class="size-4" /></button
+												title={t('common.viewRaw')}><Icon name="lucide:code" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => openEdit(l.id, l.data)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
-												title="Edit"><Icon name="lucide:pencil" class="size-4" /></button
+												title={t('common.edit')}><Icon name="lucide:pencil" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => (confirmDeleteId = l.id)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
-												title="Delete"><Icon name="lucide:trash-2" class="size-4" /></button
+												title={t('common.delete')}><Icon name="lucide:trash-2" class="size-4" /></button
 											>
 										</div>
 									</td>
@@ -663,19 +664,19 @@
 								type="button"
 								onclick={() => viewRaw(l.id)}
 								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-								title="View raw"><Icon name="lucide:code" class="size-4" /></button
+								title={t('common.viewRaw')}><Icon name="lucide:code" class="size-4" /></button
 							>
 							<button
 								type="button"
 								onclick={() => openEdit(l.id, l.data)}
 								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
-								title="Edit"><Icon name="lucide:pencil" class="size-4" /></button
+								title={t('common.edit')}><Icon name="lucide:pencil" class="size-4" /></button
 							>
 							<button
 								type="button"
 								onclick={() => (confirmDeleteId = l.id)}
 								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
-								title="Delete"><Icon name="lucide:trash-2" class="size-4" /></button
+								title={t('common.delete')}><Icon name="lucide:trash-2" class="size-4" /></button
 							>
 						</div>
 					</div>
@@ -754,7 +755,7 @@
 												color="neutral"
 												variant="ghost"
 												icon="lucide:pause"
-												title="Pause"
+												title={t('common.pause')}
 												onclick={() => quickStatus(l.id, l.data, 'paused')}
 											/>
 										{:else}
@@ -772,7 +773,7 @@
 											color="neutral"
 											variant="ghost"
 											icon="lucide:code"
-											title="View raw"
+											title={t('common.viewRaw')}
 											onclick={() => viewRaw(l.id)}
 										/>
 										<Button
@@ -780,7 +781,7 @@
 											color="neutral"
 											variant="ghost"
 											icon="lucide:pencil"
-											title="Edit"
+											title={t('common.edit')}
 											onclick={() => openEdit(l.id, l.data)}
 										/>
 										<Button
@@ -788,7 +789,7 @@
 											color="neutral"
 											variant="ghost"
 											icon="lucide:trash-2"
-											title="Delete"
+											title={t('common.delete')}
 											onclick={() => (confirmDeleteId = l.id)}
 										/>
 									</div>
@@ -946,7 +947,7 @@
 
 		<!-- Status -->
 		<div>
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Status</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.status')}</span>
 			<div class="flex flex-wrap gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
 				{#each LISTING_STATUSES as s (s.value)}
 					<button
@@ -965,7 +966,7 @@
 
 		<label class="block">
 			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Description</span
+				>{t('common.description')}</span
 			>
 			<Input
 				bind:value={fDescription}
@@ -978,7 +979,7 @@
 	</div>
 
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (modalOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (modalOpen = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" icon="lucide:check" disabled={!canSave || saving} onclick={save}
 			>{saving ? 'Saving…' : editingId ? 'Update' : 'Publish'}</Button
 		>
@@ -996,7 +997,7 @@
 			tabindex="-1"
 			class="fixed inset-0 bg-black/45 backdrop-blur-[2px]"
 			onclick={() => (confirmDeleteId = null)}
-			aria-label="Cancel"
+			aria-label={t('common.cancel')}
 		></button>
 		<div
 			class="animate-rise relative w-full max-w-sm rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-5 shadow-2xl"
@@ -1014,9 +1015,9 @@
 			</div>
 			<div class="mt-4 flex justify-end gap-2">
 				<Button color="neutral" variant="ghost" size="sm" onclick={() => (confirmDeleteId = null)}
-					>Cancel</Button
+					>{t('common.cancel')}</Button
 				>
-				<Button color="error" size="sm" icon="lucide:trash-2" onclick={doDelete}>Delete</Button>
+				<Button color="error" size="sm" icon="lucide:trash-2" onclick={doDelete}>{t('common.delete')}</Button>
 			</div>
 		</div>
 	</div>

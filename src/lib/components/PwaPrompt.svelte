@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	let updateAvailable = $state(false);
 	let offlineReady = $state(false);
@@ -56,15 +57,15 @@
 {#if updateAvailable}
 	<div class="fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] px-4 py-3 shadow-lg">
 		<div class="text-sm">
-			<div class="font-medium">Update available</div>
-			<div class="text-[var(--text-muted)]">A new version is ready.</div>
+			<div class="font-medium">{t('pwa.updateAvailable')}</div>
+			<div class="text-[var(--text-muted)]">{t('pwa.updateReady')}</div>
 		</div>
 		<button
 			type="button"
 			class="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"
 			onclick={applyUpdate}
 		>
-			Update
+			{t('common.update')}
 		</button>
 		<button type="button" class="text-[var(--text-muted)] hover:text-[var(--text)]" onclick={dismiss}>
 			✕
@@ -75,15 +76,15 @@
 {#if canInstall}
 	<div class="fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] px-4 py-3 shadow-lg">
 		<div class="text-sm">
-			<div class="font-medium">Install app</div>
-			<div class="text-[var(--text-muted)]">Add BNOS to your home screen.</div>
+			<div class="font-medium">{t('pwa.installApp')}</div>
+			<div class="text-[var(--text-muted)]">{t('pwa.installDesc')}</div>
 		</div>
 		<button
 			type="button"
 			class="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"
 			onclick={applyUpdate}
 		>
-			Install
+			{t('pwa.install')}
 		</button>
 		<button type="button" class="text-[var(--text-muted)] hover:text-[var(--text)]" onclick={dismissInstall}>
 			✕
@@ -95,6 +96,6 @@
 	<div
 		class="fixed bottom-4 right-4 z-50 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] px-4 py-3 text-sm shadow-lg"
 	>
-		✅ App ready to work offline
+		✅ {t('pwa.offlineReady')}
 	</div>
 {/if}

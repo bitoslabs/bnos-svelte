@@ -19,6 +19,7 @@
 		MarketplaceProduct
 	} from '$lib/domain';
 	import type { DashboardOrder } from '$lib/dashboard/metrics';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	let { children } = $props();
 
@@ -83,10 +84,9 @@
 		>
 			<Icon name="lucide:globe" class="size-8" />
 		</div>
-		<h1 class="mt-5 font-display text-2xl font-bold tracking-tight">Marketplace</h1>
+		<h1 class="mt-5 font-display text-2xl font-bold tracking-tight">{t('nav.marketplace')}</h1>
 		<p class="mx-auto mt-2 max-w-md text-[13.5px] leading-relaxed text-[var(--ui-text-muted)]">
-			Sell across TikTok, Facebook, Shopee, your own website and more — unified listings,
-			synchronized inventory, and one fulfillment board for every channel.
+			{t('marketplace.intro')}
 		</p>
 		<div class="mt-6 flex items-center justify-center gap-2">
 			<Button
@@ -97,10 +97,10 @@
 					await syncWorkspaceSettingsToOrganization();
 				}}
 			>
-				Enable Marketplace
+				{t('marketplace.enable')}
 			</Button>
 			<Button color="neutral" variant="subtle" icon="lucide:settings" href={resolve('/settings/features')}>
-				Module settings
+				{t('marketplace.moduleSettings')}
 			</Button>
 		</div>
 	</div>
@@ -115,9 +115,9 @@
 					<Icon name="lucide:globe" class="size-5" />
 				</div>
 				<div>
-					<h1 class="font-display text-xl font-bold tracking-tight">Marketplace</h1>
+					<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.marketplace')}</h1>
 					<p class="text-[12px] text-[var(--ui-text-muted)]">
-						{connections.length} channels · {listings.length} listings
+						{t('marketplace.channelSummary', { channels: connections.length, listings: listings.length })}
 					</p>
 				</div>
 			</div>

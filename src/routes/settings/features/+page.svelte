@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -37,23 +38,23 @@
 	function saveLoyalty() {
 		saveLoyaltySettings(loyalty);
 		loyaltyDirty = false;
-		toast.success('Loyalty settings saved');
+		toast.success(t('settings.toastLoyaltySaved'));
 	}
 </script>
 
-<svelte:head><title>Features · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.features')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
 	<PageHeader
 		icon="lucide:layout-grid"
-		title="Features"
-		description="Enable or disable modules for this workspace"
+		title={t('settings.features')}
+		description={t('settings.featuresDesc')}
 	/>
 
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:layout-grid" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Modules</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.modules')}</h2>
 		</div>
 		{#each FEATURE_KEYS as key (key)}
 			{@const f = FEATURE_META[key]}
@@ -81,20 +82,14 @@
 	<!-- Loyalty program config -->
 	<SettingsSection
 		icon="lucide:award"
-		title="Loyalty program"
-		meta="Earn + redeem points at checkout"
+		title={t('settings.loyaltyProgram')}
+		meta={t('settings.loyaltyEarnRedeem')}
 	>
-		<SettingRow
-			title="Enable loyalty"
-			description="Award points on every sale and let customers redeem them as credit."
-		>
+		<SettingRow title={t('settings.enableLoyalty')} description={t('settings.loyaltyDesc')}>
 			<Switch checked={loyalty.enabled} onCheckedChange={(v) => setLoyalty({ enabled: v })} />
 		</SettingRow>
 		{#if loyalty.enabled}
-			<SettingRow
-				title="Earn rate"
-				description="Points earned per 1 unit of currency spent (e.g. 1 = 1 pt / $1)."
-			>
+			<SettingRow title={t('settings.earnRate')} description={t('settings.earnRateDesc')}>
 				<Input
 					type="number"
 					min="0"
@@ -105,10 +100,7 @@
 					class="w-28"
 				/>
 			</SettingRow>
-			<SettingRow
-				title="Point value"
-				description="Currency value of one point when redeemed (0.01 → 100 pts = 1.00)."
-			>
+			<SettingRow title={t('common.pointValue')} description={t('settings.pointValueDesc')}>
 				<Input
 					type="number"
 					min="0"
@@ -118,10 +110,7 @@
 					class="w-28"
 				/>
 			</SettingRow>
-			<SettingRow
-				title="Allow redeem at checkout"
-				description="Let customers spend points as a credit."
-			>
+			<SettingRow title={t('settings.allowRedeem')} description={t('settings.loyaltyRedeemDesc')}>
 				<Switch
 					checked={loyalty.redeemEnabled}
 					onCheckedChange={(v) => setLoyalty({ redeemEnabled: v })}
@@ -130,7 +119,7 @@
 			{#if loyaltyDirty}
 				<div class="flex justify-end px-5 pb-4">
 					<Button color="primary" size="sm" icon="lucide:save" onclick={saveLoyalty}
-						>Save loyalty</Button
+						>{t('settings.saveLoyalty')}</Button
 					>
 				</div>
 			{/if}
@@ -142,7 +131,7 @@
 	>
 		<Icon name="lucide:info" class="size-4 shrink-0 text-[var(--tone-warning-text)]" />
 		<p class="text-[11px] text-[var(--tone-warning-text)]">
-			Feature toggles affect navigation and available routes. Changes apply immediately.
+			{t('settings.featureTogglesNote')}
 		</p>
 	</div>
 </div>

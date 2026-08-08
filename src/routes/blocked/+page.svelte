@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { session } from '$nostr/session.svelte';
@@ -14,7 +15,7 @@ import { glo } from '$nostr/store.svelte';
 	}
 </script>
 
-<svelte:head><title>BNOS · Account Restricted</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('blocked.title')}</title></svelte:head>
 
 <div class="flex min-h-screen items-center justify-center px-4">
 	<div class="w-full max-w-md space-y-6 text-center">

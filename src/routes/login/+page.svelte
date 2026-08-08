@@ -15,6 +15,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { setMode, mode } from 'mode-watcher';
 	import { site } from '$lib/site';
+	import { t, i18n } from '$lib/i18n/i18n.svelte';
 
 	let nsec = $state('');
 	let showKey = $state(false);
@@ -35,6 +36,7 @@
 		tenant.load();
 		relays.load();
 		hasExtension = hasNip07Extension();
+		i18n.init();
 		if (session.isAuthenticated) {
 			routeAfterLogin();
 		}
@@ -48,10 +50,10 @@
 		loadingExt = true;
 		try {
 			await session.loginWithExtension();
-			toast.success('Signed in', 'Connected via Nostr extension.');
+			toast.success(t('common.signIn'), t('auth.connectingExt'));
 			routeAfterLogin();
 		} catch (e) {
-			toast.error('Extension sign-in failed', e instanceof Error ? e.message : undefined);
+			toast.error(t('auth.extensionNotFound'), e instanceof Error ? e.message : undefined);
 		} finally {
 			loadingExt = false;
 		}
@@ -61,11 +63,11 @@
 		loading = true;
 		try {
 			session.loginWithNsec(nsec.trim());
-			toast.success('Signed in', 'Nostr identity loaded.');
+			toast.success(t('common.signIn'), t('auth.signInNostr'));
 			nsec = '';
 			routeAfterLogin();
 		} catch (e) {
-			toast.error('Invalid private key', 'Enter a valid nsec… or hex private key.');
+			toast.error(t('auth.invalidKey'), t('auth.invalidKeyMsg'));
 		} finally {
 			loading = false;
 		}
@@ -76,7 +78,7 @@
 			generated = session.generateAccount();
 			backedUp = false;
 			view = 'create';
-			toast.success('New identity generated', 'Back up your key below.');
+			toast.success(t('auth.createAccount'), t('auth.newIdentityGen'));
 		} catch (e) {
 			toast.error('Could not generate account', e instanceof Error ? e.message : undefined);
 		}
@@ -97,7 +99,7 @@
 	function confirmCreate() {
 		if (!generated) return;
 		session.loginWithNsec(generated.nsec);
-		toast.success('Welcome to BNOS', 'Your new Nostr identity is ready.');
+		toast.success(t('auth.welcome'), t('auth.newIdentityReady'));
 		generated = null;
 		view = 'login';
 		routeAfterLogin();
@@ -118,8 +120,8 @@
 			type="button"
 			onclick={() => setMode(mode.current === 'dark' ? 'light' : 'dark')}
 			class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-			aria-label="Toggle theme"
-			title="Toggle theme"
+			aria-label={t('common.toggleTheme')}
+			title={t('common.toggleTheme')}
 		>
 			<Icon name={mode.current === 'dark' ? 'lucide:sun' : 'lucide:moon'} class="size-[18px]" />
 		</button>
@@ -134,7 +136,7 @@
 					<div class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-3.5 py-2.5">
 						<div class="flex items-center gap-2">
 							<Icon name="lucide:radio" class="size-4 text-primary-500" />
-							<span class="text-[12.5px] font-bold">Relay configuration</span>
+							<span class="text-[12.5px] font-bold">{t('auth.relayConfig')}</span>
 						</div>
 						<span class="rounded-full bg-[var(--ui-bg-accented)] px-2 py-0.5 text-[10px] font-bold text-[var(--ui-text-muted)]">
 							{relays.relays.length} relay{relays.relays.length === 1 ? '' : 's'}
@@ -156,8 +158,8 @@
 			>
 				<Icon name="lucide:zap" class="size-7 text-white" />
 			</div>
-			<h1 class="font-display text-2xl font-bold tracking-tight">Welcome back</h1>
-			<p class="mt-1.5 text-sm text-[var(--ui-text-muted)]">Sign in to BNOS with your Nostr identity</p>
+			<h1 class="font-display text-2xl font-bold tracking-tight">{t('auth.welcomeBack')}</h1>
+			<p class="mt-1.5 text-sm text-[var(--ui-text-muted)]">{t('auth.signInDesc')}</p>
 		</div>
 
 		<!-- Card -->
@@ -169,18 +171,18 @@
 						<Button color="primary" block size="lg" disabled={loadingExt || !hasExtension} onclick={handleExtension}>
 							{#if loadingExt}
 								<Icon name="lucide:loader-circle" class="size-4 animate-spin" />
-								Connecting…
+								{t('auth.connecting')}
 							{:else}
 								<Icon name="lucide:puzzle" class="size-4" />
-								Continue with extension
+								{t('auth.continueWithExtension')}
 							{/if}
 						</Button>
 						{#if !hasExtension}
 							<p class="flex items-center justify-center gap-1.5 text-center text-xs text-[var(--tone-warning-text)]">
 								<Icon name="lucide:info" class="size-3.5 shrink-0" />
-								No extension detected —
+								{t('auth.noExtension')}
 								<a href="https://getalby.com" target="_blank" rel="noopener" class="font-semibold underline">
-									install Alby</a
+									{t('auth.installAlby')}</a
 								>
 							</p>
 						{/if}
@@ -189,7 +191,7 @@
 					<div class="flex items-center gap-3">
 						<div class="h-px flex-1 bg-[var(--ui-border)]"></div>
 						<span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-text-dimmed)]">
-							or
+							{t('auth.or')}
 						</span>
 						<div class="h-px flex-1 bg-[var(--ui-border)]"></div>
 					</div>
@@ -198,7 +200,7 @@
 					<form class="space-y-3" onsubmit={(e) => (e.preventDefault(), handleNsec())}>
 						<label class="block">
 							<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-								>Private key (nsec)</span
+								>{t('auth.privateKey')}</span
 							>
 							<Input
 								bind:value={nsec}
@@ -226,19 +228,19 @@
 							{:else}
 								<Icon name="lucide:log-in" class="size-4" />
 							{/if}
-							Sign in with private key
+							{t('auth.signInWithKey')}
 						</Button>
 					</form>
 				</div>
 
-				<!-- New to Nostr → Create account -->
+				<!-- New to Nostr → {t('auth.createAccount')} -->
 				<div
 					class="flex items-center justify-between gap-3 border-t border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-6 py-4 sm:px-7"
 				>
 					<div class="min-w-0">
-						<p class="text-[12.5px] font-semibold text-[var(--ui-text)]">New to Nostr?</p>
+						<p class="text-[12.5px] font-semibold text-[var(--ui-text)]">{t('auth.newToNostr')}</p>
 						<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-muted)]">
-							Generate a fresh identity in one tap.
+							{t('auth.generateFresh')}
 						</p>
 					</div>
 					<Button color="primary" variant="soft" size="sm" icon="lucide:user-plus" onclick={handleCreate}>
@@ -255,7 +257,7 @@
 							<Icon name="lucide:triangle-alert" class="size-5" />
 						</div>
 						<div>
-							<h2 class="font-display text-[15px] font-semibold tracking-tight">Back up your secret key</h2>
+							<h2 class="font-display text-[15px] font-semibold tracking-tight">{t('auth.backUpSecretKey')}</h2>
 							<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
 								This is the <strong>only</strong> time we can show your <code>nsec</code>. Store it somewhere safe — it
 								controls your account and cannot be recovered.
@@ -264,12 +266,12 @@
 					</div>
 
 					<label class="block">
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Public key (npub)</span>
+						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('auth.publicKey')}</span>
 						<Input value={generated?.npub ?? ''} icon="lucide:user" readonly class="w-full font-mono text-[11.5px]" />
 					</label>
 
 					<label class="block">
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Secret key (nsec)</span>
+						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('auth.secretKey')}</span>
 						<Input
 							value={generated?.nsec ?? ''}
 							icon="lucide:key-round"
@@ -283,7 +285,7 @@
 									class="inline-flex items-center gap-1 rounded-md bg-primary-500/10 px-2 py-1 text-[11px] font-semibold text-primary-600 hover:bg-primary-500/15 dark:text-primary-400"
 								>
 									<Icon name={copied ? 'lucide:check' : 'lucide:clipboard-copy'} class="size-3.5" />
-									{copied ? 'Copied' : 'Copy'}
+									{copied ? t('common.copied') : t('common.copy')}
 								</button>
 							{/snippet}
 						</Input>
@@ -291,38 +293,38 @@
 
 					<Checkbox
 						bind:checked={backedUp}
-						label="I've saved my key somewhere safe. I understand it can't be reset."
+						label={t('auth.savedKey')}
 					/>
 
 					<Button color="primary" block size="lg" disabled={!backedUp} onclick={confirmCreate}>
 						<Icon name="lucide:rocket" class="size-4" />
-						Continue to setup
+						{t('auth.continueSetup')}
 					</Button>
 					<button
 						type="button"
 						onclick={() => (view = 'login')}
 						class="w-full text-center text-[12px] font-semibold text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
 					>
-						← Back to sign in
+						← {t('auth.backToSignIn')}
 					</button>
 				</div>
 			{/if}
 		</div>
 
 		<p class="mt-6 text-center text-[11.5px] text-[var(--ui-text-dimmed)]">
-			Your key never leaves this device. Records are signed locally and published to Nostr relays.
+			{t('auth.keyNeverLeaves')}
 		</p>
 
 		<!-- Footer links: legal + open source -->
 		<div class="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px]">
-			<a href={resolve('/legal/privacy')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">Privacy</a>
+			<a href={resolve('/legal/privacy')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">{t('legal.privacy')}</a>
 			<span class="text-[var(--ui-text-dimmed)]">·</span>
-			<a href={resolve('/legal/terms')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">Terms</a>
+			<a href={resolve('/legal/terms')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">{t('legal.terms')}</a>
 			<span class="text-[var(--ui-text-dimmed)]">·</span>
-			<a href={resolve('/legal/license')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">License</a>
+			<a href={resolve('/legal/license')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">{t('legal.license')}</a>
 			<span class="text-[var(--ui-text-dimmed)]">·</span>
 			<a href={site.source.url} target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">
-				<Icon name="lucide:github" class="size-3" />Source
+				<Icon name="lucide:github" class="size-3" />{t('common.source')}
 			</a>
 			<span class="text-[var(--ui-text-dimmed)]">·</span>
 			<a href={site.website.url} target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">

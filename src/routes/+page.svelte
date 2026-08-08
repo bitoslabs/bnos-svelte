@@ -23,8 +23,16 @@
 		type DashboardOrder
 	} from '$lib/dashboard/metrics';
 	import type { GloProduct, GloCustomer } from '@bitos/bnos-core/glo';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	let clock = $state('');
+
+	const greet = $derived.by(() => {
+		const h = new Date().getHours();
+		if (h < 12) return t('dashboard.goodMorning');
+		if (h < 17) return t('dashboard.goodAfternoon');
+		return t('dashboard.goodEvening');
+	});
 
 	function hasDashboardCache() {
 		return (
@@ -119,52 +127,52 @@
 		{
 			to: resolve('/pos'),
 			icon: 'lucide:scan-line',
-			label: 'New sale',
-			desc: 'Open the POS',
+			label: t('common.new') + ' ' + t('common.sale'),
+			desc: t('dashboard.openThePos'),
 			color: 'text-primary-500',
 			bg: 'bg-primary-500/10'
 		},
 		{
 			to: resolve('/orders'),
 			icon: 'lucide:receipt-text',
-			label: 'Orders',
-			desc: `${m.allTimeCount} total`,
+			label: t('dashboard.orders'),
+			desc: `${m.allTimeCount}`,
 			color: 'text-blue-500',
 			bg: 'bg-blue-500/10'
 		},
 		{
 			to: resolve('/catalog'),
 			icon: 'lucide:package',
-			label: 'Catalog',
-			desc: `${productCount} products`,
+			label: t('nav.catalog'),
+			desc: `${productCount} ${t('dashboard.totalProducts').toLowerCase()}`,
 			color: 'text-orange-500',
 			bg: 'bg-orange-500/10'
 		},
 		{
 			to: resolve('/customers'),
 			icon: 'lucide:users',
-			label: 'Customers',
-			desc: `${customerCount} people`,
+			label: t('dashboard.totalCustomers'),
+			desc: `${customerCount} ${t('dashboard.people')}`,
 			color: 'text-emerald-500',
 			bg: 'bg-emerald-500/10'
 		}
 	]);
 </script>
 
-<svelte:head><title>BNOS · Dashboard</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.dashboard')}</title></svelte:head>
 
 <div class="dashboard-page dashboard-stack pt-1 pb-12">
 	<!-- Welcome header -->
 	<header class="dashboard-header flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<p class="text-[12px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-				{greeting()}
+				{greet}
 			</p>
 			<h1 class="font-display text-2xl font-bold tracking-tight">
-				{tenant.state.organizationName || 'Your store'}
+				{tenant.state.organizationName || t('dashboard.yourStore')}
 			</h1>
 			<p class="mt-0.5 text-[12.5px] text-[var(--ui-text-muted)]">
-				{session.shortNpub ?? 'Nostr identity'} · {tenant.state.currency}
+				{session.shortNpub ?? t('profile.nostrIdentity')} · {tenant.state.currency}
 			</p>
 		</div>
 		<div
@@ -197,11 +205,11 @@
 	<div class="dashboard-grid grid grid-cols-1 xl:grid-cols-12">
 		<!-- LEFT COLUMN -->
 		<div class="dashboard-column flex flex-col xl:col-span-5">
-			<!-- Today's sales -->
+			<!-- {t('dashboard.todaysSales')} -->
 			<div class="dashboard-card accent-bar surface-card" style="--accent: var(--ui-color-primary-500);">
 				<div class="flex items-start justify-between">
 					<div>
-						<div class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Today's sales</div>
+						<div class="text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('dashboard.todaysSales')}</div>
 						<div class="mt-1 font-display text-3xl font-bold tracking-tight tabular-nums">
 							{formatMoney(m.todaysTotal, currency)}
 						</div>
@@ -223,13 +231,13 @@
 				</div>
 				<div class="mt-4 grid grid-cols-2 gap-3">
 					<div class="dashboard-stat rounded-lg bg-[var(--ui-bg-muted)]">
-						<div class="text-[11px] text-[var(--ui-text-dimmed)]">Orders</div>
+						<div class="text-[11px] text-[var(--ui-text-dimmed)]">{t('dashboard.orders')}</div>
 						<div class="font-display text-lg font-bold tabular-nums">
 							{formatInt(m.todaysCount)}
 						</div>
 					</div>
 					<div class="dashboard-stat rounded-lg bg-[var(--ui-bg-muted)]">
-						<div class="text-[11px] text-[var(--ui-text-dimmed)]">Avg. order</div>
+						<div class="text-[11px] text-[var(--ui-text-dimmed)]">{t('dashboard.avgOrder')}</div>
 						<div class="font-display text-lg font-bold tabular-nums">
 							{formatMoney(m.avgOrder, currency)}
 						</div>
@@ -237,11 +245,11 @@
 				</div>
 			</div>
 
-			<!-- Hourly sales -->
+			<!-- {t('dashboard.hourlySales')} -->
 			<div class="dashboard-card surface-card">
 				<div class="mb-4 flex items-center justify-between">
-					<h3 class="font-display text-[15px] font-semibold tracking-tight">Hourly sales</h3>
-					<span class="text-[11px] text-[var(--ui-text-dimmed)]">today</span>
+					<h3 class="font-display text-[15px] font-semibold tracking-tight">{t('dashboard.hourlySales')}</h3>
+					<span class="text-[11px] text-[var(--ui-text-dimmed)]">{t('common.today')}</span>
 				</div>
 				{#if hourly.length}
 					<div class="flex h-32 items-end justify-between gap-1">
@@ -262,14 +270,14 @@
 					</div>
 				{:else}
 					<p class="py-8 text-center text-[12.5px] text-[var(--ui-text-dimmed)]">
-						No sales yet today.
+						{t('dashboard.noSalesToday')}
 					</p>
 				{/if}
 			</div>
 
 			<!-- Payment breakdown -->
 			<div class="dashboard-card surface-card">
-				<h3 class="mb-3 font-display text-[15px] font-semibold tracking-tight">Payment methods</h3>
+				<h3 class="mb-3 font-display text-[15px] font-semibold tracking-tight">{t('dashboard.paymentMethods')}</h3>
 				{#if payments.length}
 					<div class="space-y-2.5">
 						{#each payments as p (p.key)}
@@ -298,14 +306,14 @@
 					</div>
 				{:else}
 					<p class="py-4 text-center text-[12.5px] text-[var(--ui-text-dimmed)]">
-						No payments today.
+						{t('dashboard.noPaymentsToday')}
 					</p>
 				{/if}
 			</div>
 
-			<!-- Order types + top products -->
+			<!-- {t('dashboard.orderTypes')} + top products -->
 			<div class="dashboard-card surface-card">
-				<h3 class="mb-3 font-display text-[15px] font-semibold tracking-tight">Order types</h3>
+				<h3 class="mb-3 font-display text-[15px] font-semibold tracking-tight">{t('dashboard.orderTypes')}</h3>
 				{#if segments.length}
 					<div class="mb-4 flex flex-wrap gap-2">
 						{#each segments as s (s.key)}
@@ -319,11 +327,11 @@
 						{/each}
 					</div>
 				{:else}
-					<p class="mb-4 text-[12.5px] text-[var(--ui-text-dimmed)]">No orders today.</p>
+					<p class="mb-4 text-[12.5px] text-[var(--ui-text-dimmed)]">{t('dashboard.noOrdersToday')}</p>
 				{/if}
 
 				<div class="border-t border-[var(--ui-border-muted)] pt-3">
-					<h4 class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">Top products</h4>
+					<h4 class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('dashboard.topProducts')}</h4>
 					{#if products.length}
 						<ol class="space-y-1.5">
 							{#each products as p, i (p.name)}
@@ -340,7 +348,7 @@
 							{/each}
 						</ol>
 					{:else}
-						<p class="text-[12px] text-[var(--ui-text-dimmed)]">No product sales yet.</p>
+						<p class="text-[12px] text-[var(--ui-text-dimmed)]">{t('dashboard.noProductSales')}</p>
 					{/if}
 				</div>
 			</div>
@@ -351,32 +359,32 @@
 			<!-- Metrics row -->
 			<div class="dashboard-metrics grid grid-cols-3">
 				<div class="metric-card dashboard-metric-card">
-					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Today</div>
+					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('common.today')}</div>
 					<div class="mt-1 font-display text-lg font-bold tabular-nums">
 						{formatMoney(m.todaysTotal, currency)}
 					</div>
-					<div class="text-[11px] text-[var(--ui-text-muted)]">{m.todaysCount} orders</div>
+					<div class="text-[11px] text-[var(--ui-text-muted)]">{m.todaysCount} {t('dashboard.orders')}</div>
 				</div>
 				<div class="metric-card dashboard-metric-card">
-					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">This week</div>
+					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('common.thisWeek')}</div>
 					<div class="mt-1 font-display text-lg font-bold tabular-nums">
 						{formatMoney(m.weekTotal, currency)}
 					</div>
-					<div class="text-[11px] text-[var(--ui-text-muted)]">{m.weekCount} orders</div>
+					<div class="text-[11px] text-[var(--ui-text-muted)]">{m.weekCount} {t('dashboard.orders')}</div>
 				</div>
 				<div class="metric-card dashboard-metric-card">
-					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">This month</div>
+					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('common.thisMonth')}</div>
 					<div class="mt-1 font-display text-lg font-bold tabular-nums">
 						{formatMoney(m.monthTotal, currency)}
 					</div>
-					<div class="text-[11px] text-[var(--ui-text-muted)]">{m.monthCount} orders</div>
+					<div class="text-[11px] text-[var(--ui-text-muted)]">{m.monthCount} {t('dashboard.orders')}</div>
 				</div>
 			</div>
 
 			<!-- Sales chart (7 days) -->
 			<div class="dashboard-card surface-card">
 				<div class="mb-4 flex items-center justify-between">
-					<h3 class="font-display text-[15px] font-semibold tracking-tight">Sales · last 7 days</h3>
+					<h3 class="font-display text-[15px] font-semibold tracking-tight">{t('dashboard.salesLast7')}</h3>
 					<span
 						class="font-display text-base font-bold text-primary-600 tabular-nums dark:text-primary-400"
 					>
@@ -408,28 +416,28 @@
 				</div>
 			</div>
 
-			<!-- Recent orders -->
+			<!-- {t('dashboard.recentOrders')} -->
 			<div class="surface-card overflow-hidden">
 				<div
 					class="dashboard-card-header flex items-center justify-between border-b border-[var(--ui-border-muted)]"
 				>
-					<h3 class="font-display text-[15px] font-semibold tracking-tight">Recent orders</h3>
+					<h3 class="font-display text-[15px] font-semibold tracking-tight">{t('dashboard.recentOrders')}</h3>
 					<a
 						href={resolve('/orders')}
 						class="text-[12.5px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
-						>View all</a
+						>{t('common.viewAll')}</a
 					>
 				</div>
 				{#if recent.length === 0}
 					<div class="dashboard-card-body">
 						<EmptyState
 							icon="lucide:receipt-text"
-							title="No orders yet"
-							description="Start a sale from the POS to see orders appear here, signed and synced over Nostr."
+							title={t('dashboard.noOrdersYet')}
+							description={t('dashboard.noOrdersDesc')}
 						>
 							{#snippet actions()}
 								<Button color="primary" size="sm" icon="lucide:scan-line" href={resolve('/pos')}
-									>Open POS</Button
+									>{t('dashboard.openPos')}</Button
 								>
 							{/snippet}
 						</EmptyState>
@@ -452,7 +460,7 @@
 											<Badge color={statusColor(o.status)}>{o.status}</Badge>
 									</div>
 										<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
-											{o.items} item{o.items !== 1 ? 's' : ''} · {relativeTime(o.atMs)}
+											{o.items} {o.items !== 1 ? t('dashboard.items') : t('dashboard.item')} · {relativeTime(o.atMs)}
 										</p>
 									</div>
 									<div class="text-right">

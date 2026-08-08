@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -216,13 +217,13 @@
 	const activeCount = $derived(printers.filter((p) => p.enabled).length);
 </script>
 
-<svelte:head><title>Printers · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.printers')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
 	<PageHeader
 		icon="lucide:printer"
-		title="Printers"
-		description="Receipt & kitchen printer profiles — the single source of truth"
+		title={t('settings.printers')}
+		description={t('settings.printersDesc')}
 	>
 		{#snippet actions()}
 			<Button
@@ -230,29 +231,33 @@
 				variant="subtle"
 				icon="lucide:plug-zap"
 				onclick={testAll}
-				disabled={printers.length === 0}>Test all</Button
+				disabled={printers.length === 0}>{t('settings.testAll')}</Button
 			>
-			<Button color="primary" icon="lucide:plus" onclick={openAdd}>Add printer</Button>
+			<Button color="primary" icon="lucide:plus" onclick={openAdd}
+				>{t('settings.addPrinter')}</Button
+			>
 		{/snippet}
 	</PageHeader>
 
 	{#if printers.length === 0}
 		<EmptyState
 			icon="lucide:printer"
-			title="No printers configured"
-			description="Add a printer profile to start printing receipts, kitchen tickets, and reports. Printers configured here are used everywhere — the POS, orders, and the Hardware page."
+			title={t('settings.noPrinters')}
+			description={t('settings.addPrinterDesc')}
 		>
 			{#snippet actions()}
-				<Button color="primary" icon="lucide:plus" onclick={openAdd}>Add printer</Button>
+				<Button color="primary" icon="lucide:plus" onclick={openAdd}
+					>{t('settings.addPrinter')}</Button
+				>
 			{/snippet}
 		</EmptyState>
 	{:else}
 		<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 			<div class="flex items-center gap-2 px-5 py-3">
 				<Icon name="lucide:printer" class="size-4 text-primary-500" />
-				<h2 class="font-display text-[14px] font-semibold">Printer profiles</h2>
+				<h2 class="font-display text-[14px] font-semibold">{t('settings.printerProfiles')}</h2>
 				<span class="ml-auto text-[11px] text-[var(--ui-text-dimmed)]"
-					>{activeCount} active · {printers.length} total</span
+					>{t('settings.printersActiveTotal', { active: activeCount, total: printers.length })}</span
 				>
 			</div>
 
@@ -270,15 +275,15 @@
 						<div class="flex flex-wrap items-center gap-2">
 							<p class="truncate text-[13px] font-semibold">{printer.name}</p>
 							{#if printer.isDefault}
-								<Badge color="primary">Default</Badge>
+								<Badge color="primary">{t('settings.defaultPrinter')}</Badge>
 							{/if}
 							{#if printer.enabled}
 								<Badge color="success"
-									><span class="size-1.5 rounded-full bg-emerald-500" />Active</Badge
+									><span class="size-1.5 rounded-full bg-emerald-500" />{t('settings.active')}</Badge
 								>
 							{:else}
 								<Badge color="neutral"
-									><span class="size-1.5 rounded-full bg-[var(--ui-text-dimmed)]" />Off</Badge
+									><span class="size-1.5 rounded-full bg-[var(--ui-text-dimmed)]" />{t('settings.off')}</Badge
 								>
 							{/if}
 							{#if !complete}
@@ -343,7 +348,7 @@
 							icon="lucide:plug-zap"
 							onclick={() => runTest(printer)}
 							disabled={!printer.enabled || st?.state === 'testing'}
-							title="Test connection"
+							title={t('common.testConnection')}
 						/>
 						<Button
 							size="icon-sm"
@@ -351,7 +356,7 @@
 							color="neutral"
 							icon="lucide:pencil"
 							onclick={() => openEdit(printer)}
-							title="Edit"
+							title={t('common.edit')}
 						/>
 						<Button
 							size="icon-sm"
@@ -359,7 +364,7 @@
 							color="error"
 							icon="lucide:trash-2"
 							onclick={() => confirmDelete(i)}
-							title="Delete"
+							title={t('common.delete')}
 						/>
 						<div class="ml-1">
 							<Switch checked={printer.enabled} onCheckedChange={() => toggleEnabled(i)} />
@@ -371,12 +376,16 @@
 	{/if}
 
 	<!-- Add / Edit Dialog -->
-	<Dialog bind:open={showForm} title={isEditing ? 'Edit printer' : 'Add printer'} size="lg">
+	<Dialog
+		bind:open={showForm}
+		title={isEditing ? t('settings.editPrinter') : t('settings.addPrinter')}
+		size="lg"
+	>
 		<div class="space-y-5">
 			<!-- Identity -->
 			<div class="space-y-3">
 				<p class="text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-					Identity
+					{t('settings.identity')}
 				</p>
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 					<label class="block">
@@ -385,7 +394,7 @@
 						>
 						<Input
 							bind:value={form.name}
-							placeholder="Kitchen printer"
+							placeholder={t('settings.kitchenPrinter')}
 							class="w-full"
 							oninput={onNameInput}
 						/>
@@ -419,7 +428,7 @@
 			<!-- Connection -->
 			<div class="space-y-3">
 				<p class="text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-					Connection
+					{t('settings.connection')}
 				</p>
 				<div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
 					{#each CONNECTION_OPTIONS as ct (ct.id)}
@@ -458,7 +467,7 @@
 					<div class="grid grid-cols-2 gap-3">
 						<label class="block">
 							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-								>IP address</span
+								>{t('settings.ipAddress')}</span
 							>
 							<Input bind:value={form.ip} placeholder="192.168.1.100" class="w-full" />
 							{#if errors.ip}<p class="mt-1 text-[10.5px] font-medium text-red-500">
@@ -467,7 +476,7 @@
 						</label>
 						<label class="block">
 							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-								>Port</span
+								>{t('settings.port')}</span
 							>
 							<Input bind:value={form.port} placeholder="9100" class="w-full" inputmode="numeric" />
 							{#if errors.port}<p class="mt-1 text-[10.5px] font-medium text-red-500">
@@ -499,19 +508,19 @@
 						{#if form.connectionType === 'webhook'}
 							<label class="block">
 								<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
-									Authorization token (optional)
+									{t('settings.authToken')}
 								</span>
 								<Input
 									bind:value={form.authToken}
 									type="password"
-									placeholder="Bearer token or secret"
+									placeholder={t('settings.bearerToken')}
 									class="w-full"
 								/>
 							</label>
 						{/if}
 						<div>
 							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-								>Payload format</span
+								>{t('settings.payloadFormat')}</span
 							>
 							<div class="flex gap-2">
 								{#each ['raw', 'json'] as fmt (fmt)}
@@ -534,7 +543,7 @@
 				{#if form.connectionType === 'bluetooth'}
 					<label class="block">
 						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>MAC address</span
+							>{t('settings.macAddress')}</span
 						>
 						<Input bind:value={form.macAddress} placeholder="00:1A:7D:DA:71:13" class="w-full" />
 						{#if errors.macAddress}
@@ -572,13 +581,13 @@
 			<!-- Print options -->
 			<div class="space-y-3">
 				<p class="text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-					Print options
+					{t('settings.printOptions')}
 				</p>
 
 				<div class="grid grid-cols-2 gap-3">
 					<div>
 						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>Paper size</span
+							>{t('settings.paperSize')}</span
 						>
 						<div class="flex gap-2">
 							{#each paperSizes as ps (ps.id)}
@@ -598,7 +607,7 @@
 
 					<label class="block">
 						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>Copies</span
+							>{t('settings.copies')}</span
 						>
 						<Input
 							bind:value={form.copies}
@@ -614,7 +623,7 @@
 				<div class="grid grid-cols-2 gap-3">
 					<label class="block">
 						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>Characters per line</span
+							>{t('settings.charsPerLine')}</span
 						>
 						<Input
 							bind:value={form.charsPerLine}
@@ -627,7 +636,7 @@
 					</label>
 					<div>
 						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>Print density</span
+							>{t('settings.printDensity')}</span
 						>
 						<div class="flex items-center gap-3">
 							<input
@@ -648,9 +657,9 @@
 				<div class="flex items-center justify-between py-1">
 					<div>
 						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>Auto cut</label
+							>{t('settings.autoCut')}</label
 						>
-						<p class="text-[10px] text-[var(--ui-text-dimmed)]">Cut paper after printing</p>
+						<p class="text-[10px] text-[var(--ui-text-dimmed)]">{t('settings.autoCutDesc')}</p>
 					</div>
 					<Switch bind:checked={form.autoCut} />
 				</div>
@@ -658,7 +667,7 @@
 				{#if form.autoCut}
 					<div>
 						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>Cut mode</span
+							>{t('settings.cutMode')}</span
 						>
 						<div class="flex gap-2">
 							{#each cutModes as cm (cm.id)}
@@ -680,10 +689,10 @@
 				<div class="flex items-center justify-between py-1">
 					<div>
 						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>Auto print</label
+							>{t('settings.autoPrint')}</label
 						>
 						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
-							Print when a transaction completes
+							{t('settings.autoPrintDesc')}
 						</p>
 					</div>
 					<Switch bind:checked={form.autoPrint} />
@@ -692,10 +701,10 @@
 				<div class="flex items-center justify-between py-1">
 					<div>
 						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>Cash drawer</label
+							>{t('settings.cashDrawerHeading')}</label
 						>
 						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
-							Send kick signal to open the drawer
+							{t('settings.cashDrawerDesc')}
 						</p>
 					</div>
 					<Switch bind:checked={form.cashDrawerEnabled} />
@@ -703,7 +712,7 @@
 
 				<label class="block py-1">
 					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Note (optional)</span
+						>{t('settings.noteOptional')}</span
 					>
 					<Input bind:value={form.note} placeholder="e.g. next to register 2" class="w-full" />
 				</label>
@@ -711,10 +720,10 @@
 				<div class="flex items-center justify-between py-1">
 					<div>
 						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>Enabled</label
+							>{t('settings.enabledHeading')}</label
 						>
 						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
-							Take this printer offline temporarily
+							{t('settings.enabledDesc')}
 						</p>
 					</div>
 					<Switch bind:checked={form.enabled} />
@@ -724,7 +733,7 @@
 
 		{#snippet footer()}
 			<Button color="neutral" variant="subtle" size="lg" block onclick={() => (showForm = false)}
-				>Cancel</Button
+				>{t('common.cancel')}</Button
 			>
 			<Button
 				color="primary"
@@ -733,22 +742,22 @@
 				disabled={!form.name.trim() || (!isEditing && !form.id.trim())}
 				onclick={savePrinter}
 			>
-				{isEditing ? 'Update' : 'Add printer'}
+				{isEditing ? t('common.update') : t('settings.addPrinter')}
 			</Button>
 		{/snippet}
 	</Dialog>
 
 	<!-- Delete Confirmation -->
-	<Dialog bind:open={showDelete} title="Delete printer" size="sm">
+	<Dialog bind:open={showDelete} title={t('settings.deletePrinter')} size="sm">
 		<p class="text-[13px] text-[var(--ui-text-muted)]">
 			Delete <span class="font-bold text-[var(--ui-text)]">"{deletingName}"</span>? This cannot be
 			undone.
 		</p>
 		{#snippet footer()}
 			<Button color="neutral" variant="subtle" block onclick={() => (showDelete = false)}
-				>Cancel</Button
+				>{t('common.cancel')}</Button
 			>
-			<Button color="error" block onclick={deletePrinter}>Delete</Button>
+			<Button color="error" block onclick={deletePrinter}>{t('common.delete')}</Button>
 		{/snippet}
 	</Dialog>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
@@ -51,7 +52,7 @@
 	const activeType = $derived(businessTypes.find((t) => t.value === tenant.state.businessType));
 </script>
 
-<svelte:head><title>Setup · Company</title></svelte:head>
+<svelte:head><title>{t('setup.title')} · {t('setup.company')}</title></svelte:head>
 
 <div class="space-y-6">
 	<div>

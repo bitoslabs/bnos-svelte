@@ -5,6 +5,7 @@
 	 * the reactive GLO store (commerce.order filtered to remote sources).
 	 */
 	import { resolve } from '$app/paths';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -85,7 +86,7 @@
 	const hasChannels = $derived(connections.length > 0);
 </script>
 
-<svelte:head><title>BNOS · Marketplace</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.marketplace')}</title></svelte:head>
 
 <div class="space-y-5">
 <!-- KPI cards -->
@@ -136,7 +137,7 @@
 	<!-- First-run: web-store-first. No external channel required to start selling. -->
 	<EmptyState
 		icon="lucide:store"
-		title="Start selling on your web store"
+		title={t('common.startWebStore')}
 		description="Publish your first listing and it goes live on your storefront instantly — no external channel required. Connect TikTok, Facebook or Shopee later to reach more buyers."
 	>
 		{#snippet actions()}
@@ -206,7 +207,7 @@
 			<div class="flex items-center justify-between px-5 py-3.5">
 				<div class="flex items-center gap-2">
 					<Icon name="lucide:radio" class="size-4 text-primary-500" />
-					<h2 class="font-display text-[14px] font-semibold">Channels</h2>
+					<h2 class="font-display text-[14px] font-semibold">{t('common.channel')}</h2>
 				</div>
 				<Button size="sm" color="neutral" variant="ghost" trailingIcon="lucide:arrow-right" href={resolve('/marketplace/channels')}>
 					Manage

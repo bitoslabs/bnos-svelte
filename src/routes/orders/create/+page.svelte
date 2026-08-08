@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -382,7 +383,7 @@
 	}
 </script>
 
-<svelte:head><title>New Order · BNOS</title></svelte:head>
+<svelte:head><title>{t('common.new') + ' ' + t('common.order')} · {t('common.appName')}</title></svelte:head>
 <svelte:window onkeydown={onGlobalKeydown} />
 
 <div class="space-y-4">
@@ -565,7 +566,7 @@
 										<button
 											type="button"
 											onclick={() => decQty(line.id ?? '')}
-											aria-label="Decrease"
+											aria-label={t('common.decrease')}
 											class="grid size-7 place-items-center rounded-lg border border-[var(--ui-border)] text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)]"
 										>
 											<Icon name="lucide:minus" class="size-3.5" />
@@ -581,7 +582,7 @@
 										<button
 											type="button"
 											onclick={() => incQty(line.id ?? '')}
-											aria-label="Increase"
+											aria-label={t('common.increase')}
 											class="grid size-7 place-items-center rounded-lg border border-[var(--ui-border)] text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)]"
 										>
 											<Icon name="lucide:plus" class="size-3.5" />
@@ -596,7 +597,7 @@
 									<button
 										type="button"
 										onclick={() => removeLine(line.id ?? '')}
-										aria-label="Remove"
+										aria-label={t('common.remove')}
 										class="grid size-7 shrink-0 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-[var(--tone-error-text)]"
 									>
 										<Icon name="lucide:trash-2" class="size-3.5" />
@@ -607,7 +608,7 @@
 						<div
 							class="mt-1 flex items-center justify-between border-t border-[var(--ui-border-muted)] px-1 pt-3 text-[13px]"
 						>
-							<span class="text-[var(--ui-text-muted)]">Subtotal</span>
+							<span class="text-[var(--ui-text-muted)]">{t('common.subtotal')}</span>
 							<span class="font-semibold tabular-nums"
 								>{formatMoney(subtotal, currency ?? 'USD')}</span
 							>
@@ -760,7 +761,7 @@
 					<div>
 						<span
 							class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-							>Source</span
+							>{t('common.source')}</span
 						>
 						<div class="flex flex-wrap gap-1.5">
 							{#each ORDER_SOURCES as os (os.value)}
@@ -827,7 +828,7 @@
 					<div class="grid grid-cols-2 gap-3 px-5 py-4">
 						<label class="block">
 							<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-								>Table</span
+								>{t('common.table')}</span
 							>
 							<Input bind:value={tableId} placeholder="e.g. A1, 5" class="w-full" />
 						</label>
@@ -838,7 +839,7 @@
 							<Input
 								bind:value={covers}
 								type="number"
-								placeholder="Number of guests"
+								placeholder={t('common.numberOfGuests')}
 								min="1"
 								class="w-full"
 							/>
@@ -860,11 +861,11 @@
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 									>Recipient name</span
 								>
-								<Input bind:value={shipping.recipientName} placeholder="Full name" class="w-full" />
+								<Input bind:value={shipping.recipientName} placeholder={t('common.fullName')} class="w-full" />
 							</label>
 							<label class="block">
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-									>Phone</span
+									>{t('common.phone')}</span
 								>
 								<Input
 									bind:value={shipping.phone}
@@ -876,7 +877,7 @@
 						</div>
 						<label class="block">
 							<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-								>Address</span
+								>{t('common.address')}</span
 							>
 							<Input
 								bind:value={shipping.address}
@@ -889,15 +890,15 @@
 						<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
 							<label class="block">
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-									>City</span
+									>{t('common.city')}</span
 								>
-								<Input bind:value={shipping.city} placeholder="City" class="w-full" />
+								<Input bind:value={shipping.city} placeholder={t('common.city')} class="w-full" />
 							</label>
 							<label class="block">
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 									>State</span
 								>
-								<Input bind:value={shipping.state} placeholder="Province" class="w-full" />
+								<Input bind:value={shipping.state} placeholder={t('common.province')} class="w-full" />
 							</label>
 							<label class="block">
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
@@ -925,7 +926,7 @@
 								>
 								<Input
 									bind:value={shipping.deliveryProvider}
-									placeholder="Provider"
+									placeholder={t('common.provider')}
 									class="w-full"
 								/>
 							</label>
@@ -982,7 +983,7 @@
 									>
 									<Input
 										bind:value={shipping.driverName}
-										placeholder="Driver / courier"
+										placeholder={t('common.driverCourier')}
 										class="w-full"
 									/>
 								</label>
@@ -1028,11 +1029,11 @@
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 									>Pickup name</span
 								>
-								<Input bind:value={pickup.pickupName} placeholder="Customer name" class="w-full" />
+								<Input bind:value={pickup.pickupName} placeholder={t('common.customerName')} class="w-full" />
 							</label>
 							<label class="block">
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-									>Phone</span
+									>{t('common.phone')}</span
 								>
 								<Input
 									bind:value={pickup.phone}
@@ -1099,7 +1100,7 @@
 			<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 				<div class="flex items-center gap-2 px-5 py-3">
 					<Icon name="lucide:clock" class="size-4 text-primary-500" />
-					<h2 class="font-display text-[14px] font-semibold">Status</h2>
+					<h2 class="font-display text-[14px] font-semibold">{t('common.status')}</h2>
 				</div>
 				<div class="px-5 py-4">
 					<span
@@ -1135,11 +1136,11 @@
 				</div>
 				<div class="space-y-2.5 px-5 py-4 text-[13px]">
 					<div class="flex justify-between">
-						<span class="text-[var(--ui-text-muted)]">Subtotal</span>
+						<span class="text-[var(--ui-text-muted)]">{t('common.subtotal')}</span>
 						<span class="tabular-nums">{formatMoney(subtotal, currency ?? 'USD')}</span>
 					</div>
 					<div class="flex items-center justify-between gap-3">
-						<span class="text-[var(--ui-text-muted)]">Discount</span>
+						<span class="text-[var(--ui-text-muted)]">{t('common.discount')}</span>
 						<div
 							class="inline-flex items-center gap-1 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2 focus-within:border-primary-500"
 						>
@@ -1181,7 +1182,7 @@
 					<div
 						class="flex justify-between border-t border-[var(--ui-border-muted)] pt-2.5 font-display text-[17px] font-bold"
 					>
-						<span>Total</span>
+						<span>{t('common.total')}</span>
 						<span class="tabular-nums">{formatMoney(total, currency ?? 'USD')}</span>
 					</div>
 					{#if showSats}
@@ -1250,16 +1251,16 @@
 			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 				>Name <span class="text-[var(--tone-error-text)]">*</span></span
 			>
-			<Input bind:value={qcName} placeholder="Full name" class="w-full" autofocus />
+			<Input bind:value={qcName} placeholder={t('common.fullName')} class="w-full" autofocus />
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.phone')}</span
 				>
 				<Input bind:value={qcPhone} type="tel" placeholder="020 xx xxx xxx" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Email</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.email')}</span
 				>
 				<Input bind:value={qcEmail} type="email" placeholder="name@email.com" class="w-full" />
 			</label>
@@ -1269,7 +1270,7 @@
 		</p>
 	</div>
 	{#snippet footer()}
-		<Button variant="ghost" color="neutral" onclick={() => (qcOpen = false)}>Cancel</Button>
+		<Button variant="ghost" color="neutral" onclick={() => (qcOpen = false)}>{t('common.cancel')}</Button>
 		<Button
 			color="primary"
 			icon="lucide:user-plus"
