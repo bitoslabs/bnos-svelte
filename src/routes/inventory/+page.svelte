@@ -485,7 +485,7 @@
 				>New adjustment</Button
 			>
 		{:else if tab === 'counts'}
-			<Button color="primary" icon="lucide:plus" onclick={newCount}>New Count</Button>
+			<Button color="primary" icon="lucide:plus" onclick={newCount}>{t('common.new') + ' ' + t('common.count')}</Button>
 		{:else}
 			<Button color="primary" icon="lucide:plus" onclick={() => openCreate(tab)}
 				>New {tab === 'adjustments'
@@ -700,7 +700,7 @@
 				description="Start a stocktake session to reconcile inventory."
 			>
 				{#snippet actions()}<Button color="primary" size="sm" icon="lucide:plus" onclick={newCount}
-						>New Count</Button
+						>{t('common.new') + ' ' + t('common.count')}</Button
 					>{/snippet}
 			</EmptyState>
 		{:else if activeCountId && activeCount()}
@@ -935,7 +935,7 @@
 						color="primary"
 						size="sm"
 						icon="lucide:plus"
-						onclick={() => openCreate('suppliers')}>Add supplier</Button
+						onclick={() => openCreate('suppliers')}>{t('common.add') + ' ' + t('common.supplier')}</Button
 					>{/snippet}
 			</EmptyState>
 		{:else}

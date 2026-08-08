@@ -472,7 +472,7 @@
 </Dialog>
 
 <!-- Edit Dialog -->
-<Dialog bind:open={editOpen} title="Edit customer" size="lg">
+<Dialog bind:open={editOpen} title={t('common.edit') + ' ' + t('common.customer')} size="lg">
 	<div class="space-y-3">
 		<label class="block">
 			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span>

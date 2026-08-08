@@ -289,7 +289,7 @@
 			{#snippet actions()}
 				{#if availableProducts.length === 0}
 					<Button color="primary" size="sm" icon="lucide:plus" href="/catalog"
-						>Add catalog product</Button
+						>{t('common.add') + ' ' + t('common.product')}</Button
 					>
 				{:else}
 					<Button color="primary" size="sm" icon="lucide:plus" onclick={openCreate}

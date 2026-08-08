@@ -398,7 +398,7 @@
 				onclick={() => goto(resolve('/orders'))}
 			/>
 			<div>
-				<h1 class="font-display text-xl font-bold tracking-tight">New Order</h1>
+				<h1 class="font-display text-xl font-bold tracking-tight">{t('common.new') + ' ' + t('common.order')}</h1>
 				<p class="text-[12px] text-[var(--ui-text-muted)]">Create a manual order</p>
 			</div>
 		</div>
@@ -426,7 +426,7 @@
 				<div class="flex items-center justify-between gap-2 px-5 py-3">
 					<div class="flex items-center gap-2">
 						<Icon name="lucide:scan-barcode" class="size-4 text-primary-500" />
-						<h2 class="font-display text-[14px] font-semibold">Add items</h2>
+						<h2 class="font-display text-[14px] font-semibold">{t('common.add') + ' ' + t('common.items')}</h2>
 					</div>
 					<span
 						class="hidden items-center gap-1 rounded-md border border-[var(--ui-border)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--ui-text-dimmed)] sm:inline-flex"
@@ -1245,7 +1245,7 @@
 </div>
 
 <!-- Quick-create customer dialog -->
-<Dialog bind:open={qcOpen} title="New customer" size="sm">
+<Dialog bind:open={qcOpen} title={t('common.new') + ' ' + t('common.customer')} size="sm">
 	<div class="space-y-3">
 		<label class="block">
 			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"

@@ -174,7 +174,7 @@
 			<h1 class="font-display text-xl font-bold tracking-tight">Waitlist &amp; queue</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Manage parties waiting for a table</p>
 		</div>
-		<Button color="primary" icon="lucide:user-plus" onclick={openAdd}>Add party</Button>
+		<Button color="primary" icon="lucide:user-plus" onclick={openAdd}>{t('common.add') + ' ' + t('common.party')}</Button>
 	</div>
 
 	<!-- Stats bar -->

@@ -222,7 +222,7 @@
 			<h1 class="font-display text-xl font-bold tracking-tight">Floor &amp; tables</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Table layout &amp; live status · kind 30610</p>
 		</div>
-		<Button color="primary" variant="solid" icon="lucide:plus" onclick={openAdd}>Add table</Button>
+		<Button color="primary" variant="solid" icon="lucide:plus" onclick={openAdd}>{t('common.add') + ' ' + t('common.table')}</Button>
 	</div>
 
 	<!-- Stats bar -->

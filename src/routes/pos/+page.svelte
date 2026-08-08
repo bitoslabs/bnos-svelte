@@ -1958,7 +1958,7 @@
 					size="sm"
 					icon="lucide:plus-circle"
 					onclick={openCustom}
-					title="Add custom item"
+					title={t('common.add') + ' ' + t('common.customItem')}
 				>
 					Custom
 				</Button>
@@ -2117,7 +2117,7 @@
 						>
 							{#snippet actions()}
 								<Button color="primary" size="sm" icon="lucide:plus" href={resolve('/catalog')}
-									>Add product</Button
+									>{t('common.add') + ' ' + t('common.product')}</Button
 								>
 							{/snippet}
 						</EmptyState>

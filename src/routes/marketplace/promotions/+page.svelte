@@ -104,7 +104,7 @@
 		</div>
 		<div class="flex items-center gap-2">
 			<Button color="neutral" variant="subtle" size="sm" icon="lucide:megaphone" href={resolve('/promotions')}>Campaign manager</Button>
-			<Button color="primary" icon="lucide:plus" onclick={() => (couponOpen = true)}>New coupon</Button>
+			<Button color="primary" icon="lucide:plus" onclick={() => (couponOpen = true)}>{t('common.new') + ' ' + t('common.coupon')}</Button>
 		</div>
 	</div>
 
@@ -193,7 +193,7 @@
 </div>
 
 <!-- Create coupon modal -->
-<Dialog bind:open={couponOpen} title="New coupon" size="md">
+<Dialog bind:open={couponOpen} title={t('common.new') + ' ' + t('common.coupon')} size="md">
 	<div class="space-y-3">
 		<label class="block">
 			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.code')}</span>

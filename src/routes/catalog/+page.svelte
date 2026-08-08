@@ -418,16 +418,17 @@
 
 	const isEditing = $derived(editingId !== null);
 	const dlgTitle = $derived(
-		(isEditing ? 'Edit ' : 'Add ') +
+		(isEditing ? t('common.edit') : t('common.add')) +
+			' ' +
 			(dlgKind === 'products'
-				? 'product'
+				? t('common.product')
 				: dlgKind === 'categories'
-					? 'category'
+					? t('common.category')
 					: dlgKind === 'units'
-						? 'unit'
+						? t('common.unit')
 						: dlgKind === 'modifiers'
-							? 'modifier group'
-							: 'item')
+							? t('common.modifierGroup')
+							: t('common.item'))
 	);
 
 	/** Dynamic dialog width: product editor is wide (gallery + details),
@@ -667,7 +668,7 @@
 					{ id: editingId ?? newRecordId('modifier-group') }
 				);
 			}
-			toast.success(isEditing ? 'Updated' : 'Saved');
+			toast.success(isEditing ? t('common.updated') : t('common.saved'));
 			dlgOpen = false;
 			editingId = null;
 		} catch (e) {
@@ -911,17 +912,17 @@
 			<Button
 				color="primary"
 				icon="lucide:plus"
-				title="Add new item"
+				title={t('common.add') + ' ' + t('common.item')}
 				onclick={() => (tab === 'bundles' ? openBundleCreate() : openCreate(tab))}
-				>Add {tab === 'products'
-					? 'product'
+				>{t('common.add')} {tab === 'products'
+					? t('common.product')
 					: tab === 'categories'
-						? 'category'
+						? t('common.category')
 						: tab === 'units'
-							? 'unit'
+							? t('common.unit')
 							: tab === 'modifiers'
-								? 'modifier'
-								: 'bundle'}</Button
+								? t('common.modifierGroup')
+								: t('common.bundle')}</Button
 			>
 		</div>
 	</div>
@@ -969,7 +970,7 @@
 						color="primary"
 						size="sm"
 						icon="lucide:plus"
-						onclick={() => openCreate('products')}>Add product</Button
+						onclick={() => openCreate('products')}>{t('common.add')} {t('common.product')}</Button
 					>{/snippet}
 			</EmptyState>
 		{:else}
@@ -1151,7 +1152,7 @@
 						color="primary"
 						size="sm"
 						icon="lucide:plus"
-						onclick={() => openCreate('categories')}>Add category</Button
+						onclick={() => openCreate('categories')}>{t('common.add')} {t('common.category')}</Button
 					>{/snippet}
 			</EmptyState>
 		{:else}
@@ -1223,7 +1224,7 @@
 						color="primary"
 						size="sm"
 						icon="lucide:plus"
-						onclick={() => openCreate('units')}>Add unit</Button
+						onclick={() => openCreate('units')}>{t('common.add')} {t('common.unit')}</Button
 					>{/snippet}
 			</EmptyState>
 		{:else}
@@ -1279,14 +1280,14 @@
 		{#if modCtrl.list.length === 0}
 			<EmptyState
 				icon="lucide:sliders-horizontal"
-				title="No modifier groups"
+				title={t('catalog.noModifierGroups')}
 				description="Create modifier groups like sizes or toppings."
 			>
 				{#snippet actions()}<Button
 						color="primary"
 						size="sm"
 						icon="lucide:plus"
-						onclick={() => openCreate('modifiers')}>Add modifier</Button
+						onclick={() => openCreate('modifiers')}>{t('common.add')} {t('common.modifierGroup')}</Button
 					>{/snippet}
 			</EmptyState>
 		{:else}
@@ -1337,14 +1338,14 @@
 		{#if filteredBundles.length === 0}
 			<EmptyState
 				icon="lucide:package-open"
-				title="No bundles"
+				title={t('catalog.noBundles')}
 				description="Create product bundles to sell items together at a special price."
 			>
 				{#snippet actions()}<Button
 						color="primary"
 						size="sm"
 						icon="lucide:plus"
-						onclick={openBundleCreate}>Add bundle</Button
+						onclick={openBundleCreate}>{t('common.add')} {t('common.bundle')}</Button
 					>{/snippet}
 			</EmptyState>
 		{:else}
@@ -1448,7 +1449,7 @@
 	{/if}
 </div>
 
-<Dialog bind:open={bDlgOpen} title={bEditingId ? 'Edit bundle' : 'Add bundle'}>
+<Dialog bind:open={bDlgOpen} title={bEditingId ? t('common.edit') + ' ' + t('common.bundle') : t('common.add') + ' ' + t('common.bundle')}>
 	<div class="space-y-3">
 		<label class="block"
 			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span
@@ -2006,7 +2007,7 @@
 	{#snippet footer()}
 		<Button color="neutral" variant="ghost" onclick={() => (dlgOpen = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" icon="lucide:check" onclick={save}
-			>{isEditing ? 'Update' : 'Save'}</Button
+			>{isEditing ? t('common.update') : t('common.save')}</Button
 		>
 	{/snippet}
 </Dialog>
