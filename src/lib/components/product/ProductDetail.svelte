@@ -150,7 +150,7 @@
 							<Badge color="error">Unavailable</Badge>
 						{/if}
 						{#if d.trackInventory}
-							<Badge color="info">Track inventory</Badge>
+							<Badge color="info">{t('catalog.trackInventory')}</Badge>
 						{/if}
 					</div>
 				</div>

@@ -308,7 +308,7 @@
 							class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 						>
 							<Icon name="lucide:x" class="size-3.5" />
-							Clear
+							{t('common.clear')}
 						</button>
 					{/if}
 				</div>
@@ -391,7 +391,7 @@
 										class="inline-flex items-center gap-1 text-[12px] font-medium text-primary-600 hover:underline dark:text-primary-400"
 									>
 										<Icon name="lucide:paperclip" class="size-3.5" />
-										View
+										{t('common.view')}
 									</a>
 								{:else}
 									<span class="text-[var(--ui-text-dimmed)]">—</span>
@@ -508,11 +508,11 @@
 				<Select
 					bind:value={expStatus}
 					options={[
-						{ value: 'draft', label: 'Draft' },
+						{ value: 'draft', label: t('status.draft') },
 						{ value: 'submitted', label: 'Submitted' },
-						{ value: 'approved', label: 'Approved' },
-						{ value: 'paid', label: 'Paid' },
-						{ value: 'cancelled', label: 'Cancelled' }
+						{ value: 'approved', label: t('status.approved') },
+						{ value: 'paid', label: t('status.paid') },
+						{ value: 'cancelled', label: t('status.cancelled') }
 					]}
 					class="w-full"
 				/>
@@ -601,11 +601,11 @@
 				<Select
 					bind:value={editStatus}
 					options={[
-						{ value: 'draft', label: 'Draft' },
+						{ value: 'draft', label: t('status.draft') },
 						{ value: 'submitted', label: 'Submitted' },
-						{ value: 'approved', label: 'Approved' },
-						{ value: 'paid', label: 'Paid' },
-						{ value: 'cancelled', label: 'Cancelled' }
+						{ value: 'approved', label: t('status.approved') },
+						{ value: 'paid', label: t('status.paid') },
+						{ value: 'cancelled', label: t('status.cancelled') }
 					]}
 					class="w-full"
 				/>

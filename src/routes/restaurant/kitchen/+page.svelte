@@ -175,7 +175,7 @@
 	</div>
 
 	{#if tickets.length === 0}
-		<EmptyState icon="lucide:chef-hat" title="No active tickets" description={t('restaurant.kitchenDesc')} />
+		<EmptyState icon="lucide:chef-hat" title={t('restaurant.noActiveTickets')} description={t('restaurant.kitchenDesc')} />
 	{:else}
 		<!-- Kanban board -->
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

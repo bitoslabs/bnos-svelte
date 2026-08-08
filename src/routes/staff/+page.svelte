@@ -466,7 +466,7 @@
 					size="sm"
 					icon="lucide:download"
 					disabled={staff.length === 0}
-					onclick={exportStaff}>Export</Button
+					onclick={exportStaff}>{t('common.export')}</Button
 				>
 			{/if}
 			{#if canWrite}
@@ -511,7 +511,7 @@
 			</div>
 			<div>
 				<div class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
-					Inactive
+					{t('common.inactive')}
 				</div>
 				<div class="font-display text-xl font-bold tabular-nums">{stats.inactive}</div>
 			</div>
@@ -808,7 +808,7 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Company</span
+					>{t('common.company')}</span
 				>
 				<Input value={tenant.state.organizationName || '—'} disabled class="w-full" />
 			</label>

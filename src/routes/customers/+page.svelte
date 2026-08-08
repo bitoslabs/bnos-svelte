@@ -515,7 +515,7 @@
 				bind:value={editStatus}
 				options={[
 					{ value: 'active', label: 'Active' },
-					{ value: 'inactive', label: 'Inactive' }
+					{ value: 'inactive', label: t('common.inactive') }
 				]}
 				class="w-full"
 			/>

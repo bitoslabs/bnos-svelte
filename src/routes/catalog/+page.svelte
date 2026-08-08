@@ -898,7 +898,7 @@
 			<!-- More actions dropdown -->
 			<Menu id="catalog-header-more" placement="bottom-end" width="md">
 				{#snippet trigger()}
-					<Button color="neutral" variant="ghost" size="icon-sm" title="More options">
+					<Button color="neutral" variant="ghost" size="icon-sm" title={t('catalog.moreOptions')}>
 						<Icon name="lucide:more-horizontal" class="size-4" />
 					</Button>
 				{/snippet}
@@ -1718,7 +1718,7 @@
 						bind:value={pUnitId}
 						class="w-full"
 						options={[
-							{ value: '', label: 'None' },
+							{ value: '', label: t('common.none') },
 							...units.map((u) => ({ value: u.id, label: u.data.symbol ?? u.data.name ?? '' }))
 						]}
 					/></label
@@ -1926,7 +1926,7 @@
 						class="w-full"
 						options={[
 							{ value: 'active', label: 'Active' },
-							{ value: 'inactive', label: 'Inactive' }
+							{ value: 'inactive', label: t('common.inactive') }
 						]}
 					/></label
 				>
@@ -1956,7 +1956,7 @@
 						{ value: 'weight', label: 'Weight' },
 						{ value: 'volume', label: 'Volume' },
 						{ value: 'length', label: 'Length' },
-						{ value: 'time', label: 'Time' }
+						{ value: 'time', label: t('common.time') }
 					]}
 					class="w-full"
 				/>
@@ -1969,7 +1969,7 @@
 						bind:value={uBaseUnitId}
 						class="w-full"
 						options={[
-							{ value: '', label: 'None' },
+							{ value: '', label: t('common.none') },
 							...units
 								.filter((u2) => u2.id !== editingId)
 								.map((u2) => ({ value: u2.id, label: u2.data.name ?? u2.id }))
@@ -2017,7 +2017,7 @@
 <ProductDetail bind:product={detailProduct} bind:open={detailOpen} />
 
 <!-- Quick stock adjust from catalog -->
-<Dialog bind:open={quickAdjustOpen} title="Adjust stock">
+<Dialog bind:open={quickAdjustOpen} title={t('inventory.adjustStock')}>
 	<div class="space-y-3">
 		<p class="text-[12.5px] text-[var(--ui-text-muted)]">
 			Adjusting stock for <span class="font-semibold">{quickAdjustName}</span>

@@ -60,7 +60,7 @@
 		</div>
 		<div class="flex gap-2">
 			<Button color="neutral" variant="ghost" size="sm" onclick={clear} disabled={count === 0}
-				>Clear</Button
+				>{t('common.clear')}</Button
 			>
 			<Button color="primary" size="sm" icon="lucide:sparkles" onclick={seedSamples}
 				>Add samples</Button

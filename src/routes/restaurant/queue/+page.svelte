@@ -267,7 +267,7 @@
 					<!-- Actions -->
 					{#if entry.status === 'waiting'}
 						<div class="flex shrink-0 items-center gap-1">
-							<Button size="icon-sm" variant="ghost" title="Call" onclick={() => callParty(entry.id)}>
+							<Button size="icon-sm" variant="ghost" title={t('restaurant.call')} onclick={() => callParty(entry.id)}>
 								<Icon name="lucide:bell" class="size-4" />
 							</Button>
 							<Button size="sm" color="primary" variant="soft" onclick={() => seatParty(entry.id)}>Seat</Button>
@@ -287,7 +287,7 @@
 </div>
 
 <!-- Add party dialog -->
-<Dialog bind:open={dialogOpen} title="Add party to queue" size="md">
+<Dialog bind:open={dialogOpen} title={t('restaurant.addParty')} size="md">
 	<div class="space-y-3">
 		<div>
 			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</label>

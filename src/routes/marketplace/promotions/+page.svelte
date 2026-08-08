@@ -111,7 +111,7 @@
 	{#if coupons.length === 0 && promos.length === 0}
 		<EmptyState
 			icon="lucide:ticket"
-			title="No channel offers yet"
+			title={t('marketplace.noChannelOffers')}
 			description="Create shareable coupon codes and free-shipping offers to drive sales across TikTok, Facebook, and your website."
 		>
 			{#snippet actions()}

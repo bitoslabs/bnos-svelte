@@ -95,7 +95,7 @@
 
 <div class="space-y-5">
 	<div>
-		<h2 class="font-display text-lg font-bold tracking-tight">Store Settings</h2>
+		<h2 class="font-display text-lg font-bold tracking-tight">{t('nav.storeSettings')}</h2>
 		<p class="text-[12px] text-[var(--ui-text-muted)]">Storefront, fulfillment & sync preferences</p>
 	</div>
 
@@ -125,10 +125,10 @@
 
 	<!-- Fulfillment -->
 	<SettingsSection title="Fulfillment" description={t('marketplace.defaultShipping')} icon="lucide:truck">
-		<SettingRow title="Auto-fulfill on ship" description={t('marketplace.autoFulfillDesc')}>
+		<SettingRow title={t('marketplace.autoFulfill')} description={t('marketplace.autoFulfillDesc')}>
 			<Switch bind:checked={s.autoFulfill} onCheckedChange={touch} />
 		</SettingRow>
-		<SettingRow title="Default handling time" description={t('marketplace.flagThresholdDesc')}>
+		<SettingRow title={t('marketplace.defaultHandlingTime')} description={t('marketplace.flagThresholdDesc')}>
 			<div class="flex items-center gap-2">
 				<Input bind:value={s.handlingTimeDays} type="number" min="0" max="30" oninput={touch} class="w-20 text-center" />
 				<span class="text-[11.5px] text-[var(--ui-text-muted)]">days</span>
@@ -169,7 +169,7 @@
 
 	<!-- Reviews -->
 	<SettingsSection title={t('nav.reviews')} description={t('marketplace.reputation')} icon="lucide:star">
-		<SettingRow title="Flag threshold" description={t('marketplace.flagThresholdDesc')}>
+		<SettingRow title={t('marketplace.flagThreshold')} description={t('marketplace.flagThresholdDesc')}>
 			<div class="flex items-center gap-2">
 				<Input bind:value={s.flagRatingThreshold} type="number" min="1" max="5" oninput={touch} class="w-20 text-center" />
 				<span class="text-[11.5px] text-[var(--ui-text-muted)]">★ & below</span>

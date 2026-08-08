@@ -148,7 +148,7 @@
 	{#if activities.length === 0}
 		<EmptyState
 			icon="lucide:shield-check"
-			title="No activity yet"
+			title={t('activity.noActivity')}
 			description="Refunds, voided orders, discounts, cash movements and shift events will appear here for accountability."
 		/>
 	{:else}

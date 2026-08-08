@@ -159,7 +159,7 @@
 					class="w-full"
 				/>
 				<p class="mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">
-					Mobile phone (0XXXXXXXXX), National ID (13 digits), or e-Wallet ID. Customers scan to pay.
+					{t('settings.promptPayIdDesc')}
 				</p>
 			</div>
 		{:else if cfg.qrScheme === 'vietqr'}
@@ -170,7 +170,7 @@
 						>{t('settings.bankBinCode')}</label
 					>
 					<Input bind:value={cfg.vietqrBin} placeholder="970436 (Vietcombank)" class="w-full" />
-					<p class="mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">6-digit NAPAS bank BIN</p>
+					<p class="mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">{t('settings.bankBinCodeDesc')}</p>
 				</div>
 				<div>
 					<label

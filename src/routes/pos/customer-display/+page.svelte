@@ -213,7 +213,7 @@
 			</div>
 
 			<div class="text-center">
-				<p class="text-[11px] font-semibold tracking-wider text-gray-500 uppercase">Amount due</p>
+				<p class="text-[11px] font-semibold tracking-wider text-gray-500 uppercase">{t('pos.amountDue')}</p>
 				<p class="font-display text-5xl font-black text-white tabular-nums">
 					{formatMoney(payQr.total, cartItems.length ? currency : tenant.state.currency)}
 				</p>

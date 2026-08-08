@@ -99,7 +99,7 @@
 
 	<h3>6. Your choices</h3>
 	<ul>
-		<li><strong>Export</strong> all of your local data as a JSON backup at any time from <a href={resolve('/settings/data')}>Settings → Data → Export backup</a>.</li>
+		<li><strong>{t('common.export')}</strong> all of your local data as a JSON backup at any time from <a href={resolve('/settings/data')}>Settings → Data → Export backup</a>.</li>
 		<li><strong>Wipe</strong> every record from this device (and sign out) from the same page. This only affects this device; records already published to relays remain there until they expire or you delete them.</li>
 		<li><strong>Switch relays</strong> in <a href={resolve('/settings/relays')}>Settings → Relays</a> to choose exactly which servers receive your data.</li>
 		<li><strong>Review the source</strong> — because {site.name} is open source under the {site.license} license, every claim in this policy is auditable at <a href={site.source.url} target="_blank" rel="noopener">{site.source.url}</a>.</li>

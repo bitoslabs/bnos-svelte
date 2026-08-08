@@ -601,7 +601,7 @@
 				<Select
 					bind:value={overviewFilter}
 					options={[
-						{ value: 'all', label: 'All' },
+						{ value: 'all', label: t('common.all') },
 						{ value: 'in_stock', label: 'In Stock' },
 						{ value: 'low_stock', label: 'Low Stock' },
 						{ value: 'out_of_stock', label: 'Out of Stock' }
@@ -612,7 +612,7 @@
 			{#if overviewList.length === 0}
 				<EmptyState
 					icon="lucide:search-x"
-					title="No products match"
+					title={t('catalog.noProductsMatch')}
 					description={t('common.tryDifferentSearch')}
 				/>
 			{:else}
@@ -696,7 +696,7 @@
 		{#if !activeCountId && countSessions.length === 0}
 			<EmptyState
 				icon="lucide:clipboard-check"
-				title="No stock counts"
+				title={t('inventory.noStockCounts')}
 				description="Start a stocktake session to reconcile inventory."
 			>
 				{#snippet actions()}<Button color="primary" size="sm" icon="lucide:plus" onclick={newCount}
@@ -716,7 +716,7 @@
 				</div>
 				<div class="flex gap-2">
 					<Button color="neutral" variant="ghost" onclick={() => (activeCountId = null)}
-						>Back</Button
+						>{t('common.back')}</Button
 					>
 					<Button color="primary" icon="lucide:check" onclick={completeCount}>Complete</Button>
 				</div>
@@ -834,7 +834,7 @@
 		{#if adjCtrl.list.length === 0}
 			<EmptyState
 				icon="lucide:arrow-up-down"
-				title="No stock adjustments"
+				title={t('inventory.noStockAdjustments')}
 				description="Record increases or decreases to keep stock accurate."
 			>
 				{#snippet actions()}<Button
@@ -928,7 +928,7 @@
 		{#if supCtrl.list.length === 0}
 			<EmptyState
 				icon="lucide:truck"
-				title="No suppliers"
+				title={t('inventory.noSuppliers')}
 				description="Add suppliers to raise purchase orders."
 			>
 				{#snippet actions()}<Button
@@ -1021,7 +1021,7 @@
 		{#if poCtrl.list.length === 0}
 			<EmptyState
 				icon="lucide:clipboard-list"
-				title="No purchase orders"
+				title={t('inventory.noPurchaseOrders')}
 				description="Raise POs to your suppliers."
 			>
 				{#snippet actions()}<Button

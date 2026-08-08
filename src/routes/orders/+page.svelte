@@ -400,11 +400,11 @@
 				onclick={exportCSV}
 				disabled={filteredByCriteria.length === 0}
 			>
-				Export
+				{t('common.export')}
 			</Button>
 			<Button color="primary" icon="lucide:plus" href="/orders/create">{t('common.new') + ' ' + t('common.order')}</Button>
 			<Button color="neutral" variant="subtle" size="sm" icon="lucide:scan-line" href="/pos"
-				>POS</Button
+				>{t('nav.posShort')}</Button
 			>
 		</div>
 	</div>
@@ -431,7 +431,7 @@
 				<Icon name="lucide:clock" class="size-4" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Pending</div>
+				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('status.pending')}</div>
 				<div class="font-display text-lg font-bold tabular-nums">{formatInt(pendingCount)}</div>
 			</div>
 		</div>
@@ -442,7 +442,7 @@
 				<Icon name="lucide:circle-check" class="size-4" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Completed</div>
+				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('status.completed')}</div>
 				<div class="font-display text-lg font-bold tabular-nums">{formatInt(completedCount)}</div>
 			</div>
 		</div>
@@ -453,7 +453,7 @@
 				<Icon name="lucide:wallet" class="size-4" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Revenue</div>
+				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('dashboard.revenue')}</div>
 				<div class="font-display text-lg font-bold tabular-nums">
 					{formatMoney(totalRevenue, currency)}
 				</div>
@@ -628,7 +628,7 @@
 				</div>
 				{#if hasActiveFilters}
 					<Button size="sm" color="neutral" variant="ghost" icon="lucide:x" onclick={resetFilters}
-						>Clear</Button
+						>{t('common.clear')}</Button
 					>
 				{/if}
 			{/snippet}

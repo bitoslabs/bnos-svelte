@@ -10,7 +10,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { formatInt } from '$lib/utils/format';
-
+	import { t } from '$lib/i18n/i18n.svelte';
 	export type SelectedCustomer = {
 		id: string;
 		name: string;
@@ -124,7 +124,7 @@
 			>
 				<Icon name="lucide:user-plus" class="size-4" />
 				Add customer
-				<span class="ml-auto text-[10px] font-normal text-[var(--ui-text-dimmed)]">optional</span>
+				<span class="ml-auto text-[10px] font-normal text-[var(--ui-text-dimmed)]">{t('common.optional_field')}</span>
 			</div>
 		{/if}
 	{/snippet}

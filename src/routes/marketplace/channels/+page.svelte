@@ -186,7 +186,7 @@
 							color="neutral"
 							variant="ghost"
 							icon="lucide:power"
-							title="Disconnect"
+							title={t('common.disconnect')}
 							onclick={() => disconnect(c.id, c.data)}
 						/>
 						<Button
@@ -215,7 +215,7 @@
 	{#if connectable.length === 0}
 	<EmptyState
 		icon="lucide:circle-check-big"
-		title="All channels connected"
+		title={t('marketplace.allChannelsConnected')}
 		description="You've connected every available channel. Sync your catalog to start selling."
 	/>
 {:else}
@@ -248,7 +248,7 @@
 </div>
 
 <!-- Connect modal -->
-<Dialog bind:open={() => connectType !== null, (v) => !v && (connectType = null)} title="Connect channel" size="md">
+<Dialog bind:open={() => connectType !== null, (v) => !v && (connectType = null)} title={t('marketplace.connectChannel')} size="md">
 	{#if connectMeta}
 		<div class="space-y-4">
 			<div class="flex items-center gap-3 rounded-xl bg-[var(--ui-bg-accented)] p-3">

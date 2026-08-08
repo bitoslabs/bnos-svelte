@@ -110,7 +110,7 @@
 			<button
 				type="button"
 				class="grid size-8 place-items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:pointer-events-none disabled:opacity-40"
-				title="Next"
+				title={t('common.next')}
 				aria-label="Next page"
 				disabled={controls.page >= controls.totalPages}
 				onclick={() => controls.nextPage()}

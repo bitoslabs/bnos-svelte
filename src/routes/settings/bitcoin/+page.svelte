@@ -415,7 +415,7 @@
 					>
 					<Input bind:value={manualRate} type="number" placeholder="100000" class="w-full" />
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
-						Set your own BTC/fiat exchange rate
+						{t('settings.manualRateDesc')}
 					</p>
 				</div>
 			{/if}
@@ -491,7 +491,7 @@
 						: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
 					onclick={() => (lightningProvider = '')}
 				>
-					<span class="text-[13px] font-semibold text-[var(--ui-text-muted)]">None</span>
+					<span class="text-[13px] font-semibold text-[var(--ui-text-muted)]">{t('common.none')}</span>
 				</button>
 			</div>
 		</div>
@@ -766,7 +766,7 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Min amount ({currency})</span
+					>{t('settings.minAmount')}</span
 				>
 				<Input
 					bind:value={minAmount}
@@ -777,7 +777,7 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Max amount ({currency})</span
+					>{t('settings.maxAmount')}</span
 				>
 				<Input
 					bind:value={maxAmount}
@@ -829,7 +829,7 @@
 					<label
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
 					>
-						Satoshis
+						{t('settings.satoshis')}
 					</label>
 					<div
 						class="flex h-9.5 items-center rounded-lg border border-amber-500/20 bg-amber-500/10 px-3"
@@ -853,7 +853,7 @@
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
-				<label class="text-[13px] font-semibold">Reset bitcoin settings</label>
+				<label class="text-[13px] font-semibold">{t('settings.resetBitcoinSettings')}</label>
 				<p class="text-[11px] text-[var(--ui-text-dimmed)]">
 					{t('settings.resetBitcoinSettingsDesc')}
 				</p>

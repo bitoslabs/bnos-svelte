@@ -452,7 +452,7 @@
 					<kbd class="rounded border border-[var(--ui-border-muted)] px-1.5 py-0.5 font-semibold"
 						>↓</kbd
 					>
-					navigate
+					{t('dialog.navigate')}
 				</span>
 				<span class="flex items-center gap-1">
 					<kbd class="rounded border border-[var(--ui-border-muted)] px-1.5 py-0.5 font-semibold"
@@ -464,7 +464,7 @@
 					<kbd class="rounded border border-[var(--ui-border-muted)] px-1.5 py-0.5 font-semibold"
 						>esc</kbd
 					>
-					close
+					{t('dialog.closeHint')}
 				</span>
 				<span class="flex items-center gap-1.5 font-semibold text-[var(--ui-text-dimmed)]">
 					<Icon name="lucide:command" class="size-3" />K

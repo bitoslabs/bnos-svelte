@@ -344,7 +344,7 @@
 				</div>
 			</div>
 			<Button color="neutral" variant="subtle" size="sm" icon="lucide:eye" href="/orders/{id}"
-				>View</Button
+				>{t('common.view')}</Button
 			>
 		</div>
 

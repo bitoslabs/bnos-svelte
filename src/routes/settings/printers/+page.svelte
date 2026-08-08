@@ -765,7 +765,7 @@
 	<p class="px-1 text-center text-[11px] text-[var(--ui-text-dimmed)]">
 		Need to wire a barcode scanner, scale, or cash drawer?
 		<a class="font-semibold text-primary-500 hover:underline" href={resolve('/settings/hardware')}
-			>Configure hardware</a
+			>{t('settings.configureHardware')}</a
 		>.
 	</p>
 </div>

@@ -34,13 +34,13 @@ import { glo } from '$nostr/store.svelte';
 
 	<div class="surface-card divide-y divide-[var(--ui-border-muted)] text-[13px]">
 		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:building-2" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">Organization</span><span class="ml-auto font-semibold">{tenant.state.organizationName || '—'}</span></div>
-		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:map-pin" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">Branch</span><span class="ml-auto font-semibold">{tenant.state.locationName || 'Main'}</span></div>
+		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:map-pin" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">{t('common.branch')}</span><span class="ml-auto font-semibold">{tenant.state.locationName || 'Main'}</span></div>
 		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:store" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">Business</span><span class="ml-auto font-semibold capitalize">{tenant.state.businessType}</span></div>
 		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:radio" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">{t('settings.relays')}</span><span class="ml-auto font-semibold">{relays.activeRelays.length} active / {relays.relays.length} configured</span></div>
 	</div>
 
 	<div class="grid grid-cols-2 gap-3">
-		<Button color="neutral" variant="subtle" icon="lucide:sliders-horizontal" href="/settings">Settings</Button>
+		<Button color="neutral" variant="subtle" icon="lucide:sliders-horizontal" href="/settings">{t('nav.settings')}</Button>
 		<Button color="error" variant="subtle" icon="lucide:log-out" onclick={signOut}>{t('common.signOut')}</Button>
 	</div>
 </div>

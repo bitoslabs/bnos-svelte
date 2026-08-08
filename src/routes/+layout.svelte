@@ -200,7 +200,7 @@
 		{#if drawerOpen && !isPosRoute}
 			<button
 				type="button"
-				aria-label="Close menu"
+				aria-label={t('topbar.closeMenu')}
 				class="animate-fade fixed inset-0 z-40 bg-black/50 backdrop-blur-[3px] transition-opacity lg:hidden"
 				onclick={() => (drawerOpen = false)}
 			></button>

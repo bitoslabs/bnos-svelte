@@ -279,7 +279,7 @@
 
 	<!-- Table grid -->
 	{#if tables.length === 0}
-		<EmptyState icon="lucide:armchair" title="No tables configured" description="Add tables to manage your floor plan and track live status.">
+		<EmptyState icon="lucide:armchair" title={t('restaurant.noTables')} description="Add tables to manage your floor plan and track live status.">
 			{#snippet actions()}
 				<Button color="primary" variant="soft" size="sm" onclick={seedDemo}>Add demo tables</Button>
 			{/snippet}

@@ -1178,7 +1178,7 @@
 				<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
 					<div class="flex items-center gap-2 px-5 py-3">
 						<Icon name="lucide:user" class="size-4 text-primary-500" />
-						<h2 class="font-display text-[14px] font-semibold">Details</h2>
+						<h2 class="font-display text-[14px] font-semibold">{t('common.details')}</h2>
 					</div>
 					<div class="space-y-3 px-5 py-3 text-[13px]">
 						{#if customerDisplayName}
@@ -1232,7 +1232,7 @@
 							<Icon name="lucide:calendar" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 							<div>
 								<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-									Created
+									{t('toast.created')}
 								</p>
 								<p class="text-[12px] text-[var(--ui-text-muted)]">
 									{relativeTime((order.data as any).occurredAt ?? '')}
@@ -1247,7 +1247,7 @@
 								/>
 								<div>
 									<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-										Completed
+										{t('status.completed')}
 									</p>
 									<p class="text-[12px] text-[var(--ui-text-muted)]">
 										{relativeTime((order.data as any).completedAt ?? '')}

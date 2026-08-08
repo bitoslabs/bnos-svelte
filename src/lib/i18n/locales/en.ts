@@ -147,6 +147,7 @@ export const en = {
 		code: 'Code',
 		role: 'Role',
 		pin: 'PIN',
+		password: 'Password',
 		website: 'Website',
 		bio: 'Bio',
 		picture: 'Picture',

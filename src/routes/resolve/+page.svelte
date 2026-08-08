@@ -172,7 +172,7 @@
 
 		{#if hasError}
 			<div class="flex gap-2">
-				<button type="button" onclick={retry} class="flex-1 rounded-lg bg-primary-500 px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-primary-400">Retry</button>
+				<button type="button" onclick={retry} class="flex-1 rounded-lg bg-primary-500 px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-primary-400">{t('common.retry')}</button>
 				<button type="button" onclick={continueOffline} class="flex-1 rounded-lg border border-[var(--ui-border)] px-4 py-2.5 text-[13px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-muted)]">Continue offline</button>
 			</div>
 		{/if}

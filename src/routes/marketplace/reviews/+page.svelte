@@ -98,7 +98,7 @@
 	{#if reviews.length === 0}
 		<EmptyState
 			icon="lucide:star"
-			title="No reviews yet"
+			title={t('marketplace.noReviews')}
 			description="Customer reviews synced from your channels and captured after purchase will appear here."
 		/>
 	{:else}
@@ -130,7 +130,7 @@
 		<!-- Filters -->
 		<div class="flex flex-wrap items-center gap-2">
 			<div class="flex items-center gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
-				<button type="button" onclick={() => (statusFilter = '__all__')} class="rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all {statusFilter === '__all__' ? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm' : 'text-[var(--ui-text-muted)]'}">All</button>
+				<button type="button" onclick={() => (statusFilter = '__all__')} class="rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all {statusFilter === '__all__' ? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm' : 'text-[var(--ui-text-muted)]'}">{t('common.all')}</button>
 				{#each REVIEW_STATUSES as s (s.value)}
 					<button type="button" onclick={() => (statusFilter = statusFilter === s.value ? '__all__' : s.value)} class="rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {statusFilter === s.value ? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm' : 'text-[var(--ui-text-muted)]'}">{s.label}</button>
 				{/each}
@@ -197,7 +197,7 @@
 								<Icon name={r.data.status === 'hidden' ? 'lucide:eye' : 'lucide:eye-off'} class="size-3.5" />
 							</Button>
 							{#if r.data.status !== 'flagged'}
-								<Button size="sm" color="neutral" variant="ghost" icon="lucide:flag" title="Flag" onclick={() => setStatus(r.id, r.data, 'flagged')} />
+								<Button size="sm" color="neutral" variant="ghost" icon="lucide:flag" title={t('marketplace.flag')} onclick={() => setStatus(r.id, r.data, 'flagged')} />
 							{/if}
 							<Button size="sm" color="primary" variant="subtle" icon="lucide:reply" onclick={() => openReply(r.id, r.data)}>
 								{r.data.reply ? 'Edit reply' : 'Reply'}

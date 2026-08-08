@@ -422,7 +422,7 @@
 		<!-- Summary stat cards -->
 		<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
 			{@render statCard({
-				label: 'Revenue',
+				label: t('dashboard.revenue'),
 				value: formatMoney(totalRevenue, currency),
 				change: revenueChange,
 				icon: 'lucide:trending-up',
@@ -455,7 +455,7 @@
 		<div class="grid grid-cols-2 gap-3 lg:grid-cols-3">
 			<div class="surface-card p-4">
 				<div class="mb-2 flex items-center justify-between">
-					<span class="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">Revenue</span>
+					<span class="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">{t('dashboard.revenue')}</span>
 					<Icon name="lucide:trending-up" class="size-4 text-emerald-600 dark:text-emerald-400" />
 				</div>
 				<div class="font-display text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{formatMoney(totalRevenue, currency)}</div>
@@ -487,7 +487,7 @@
 			<!-- Revenue chart (2 cols) -->
 			<div class="surface-card p-5 lg:col-span-2">
 				<div class="mb-4 flex items-center justify-between">
-					<h2 class="font-display text-[15px] font-semibold tracking-tight">Revenue</h2>
+					<h2 class="font-display text-[15px] font-semibold tracking-tight">{t('dashboard.revenue')}</h2>
 					<div class="flex items-baseline gap-2">
 						<span class="font-display text-lg font-bold tabular-nums text-primary-600 dark:text-primary-400">
 							{formatMoney(totalRevenue, currency)}
@@ -646,7 +646,7 @@
 								<th class="py-2 pr-3 font-semibold">#</th>
 								<th class="py-2 pr-3 font-semibold">{t('common.product')}</th>
 								<th class="py-2 pr-3 text-right font-semibold">{t('common.qty')}</th>
-								<th class="py-2 pr-3 text-right font-semibold">Revenue</th>
+								<th class="py-2 pr-3 text-right font-semibold">{t('dashboard.revenue')}</th>
 								<th class="py-2 text-right font-semibold">% Rev</th>
 							</tr>
 						</thead>

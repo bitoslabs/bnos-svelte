@@ -97,7 +97,7 @@
 	<!-- Stats -->
 	<div class="grid grid-cols-3 gap-3">
 		<div class="metric-card p-3.5">
-			<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">Revenue</p>
+			<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">{t('dashboard.revenue')}</p>
 			<p class="mt-0.5 text-xl font-black tabular-nums">{formatMoney(revenue, currency)}</p>
 		</div>
 		<div class="metric-card p-3.5">
@@ -105,7 +105,7 @@
 			<p class="mt-0.5 text-xl font-black text-amber-500 tabular-nums">{awaitingFulfillment}</p>
 		</div>
 		<div class="metric-card p-3.5">
-			<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">Pending</p>
+			<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">{t('status.pending')}</p>
 			<p class="mt-0.5 text-xl font-black text-blue-500 tabular-nums">{pending}</p>
 		</div>
 	</div>
@@ -131,7 +131,7 @@
 	{#if mpRows.length === 0}
 		<EmptyState
 			icon="lucide:shopping-bag"
-			title="No channel orders yet"
+			title={t('marketplace.noChannelOrders')}
 			description="Orders received from your connected channels will appear here. Make sure your channels are synced."
 		>
 			{#snippet actions()}
@@ -148,12 +148,12 @@
 			<div class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]">
 				<select bind:value={statusFilter} class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium focus:outline-none">
 					<option value="__all__">All statuses</option>
-					<option value="pending">Pending</option>
+					<option value="pending">{t('status.pending')}</option>
 					<option value="confirmed">Confirmed</option>
 					<option value="preparing">Preparing</option>
 					<option value="ready">Ready</option>
-					<option value="completed">Completed</option>
-					<option value="cancelled">Cancelled</option>
+					<option value="completed">{t('status.completed')}</option>
+					<option value="cancelled">{t('status.cancelled')}</option>
 				</select>
 				<Icon name="lucide:chevron-down" class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]" />
 			</div>

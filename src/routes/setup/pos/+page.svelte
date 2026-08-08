@@ -77,7 +77,7 @@
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Header text</span>
-				<Input bind:value={receiptHeader} placeholder="Welcome!" class="w-full" />
+				<Input bind:value={receiptHeader} placeholder={t('common.welcomeMsg')} class="w-full" />
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Footer text</span>
@@ -128,7 +128,7 @@
 
 	<!-- Hardware -->
 	<div class="space-y-4">
-		<h3 class="text-[12px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">Hardware</h3>
+		<h3 class="text-[12px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">{t('settings.grpHardware')}</h3>
 		<div class="grid grid-cols-2 gap-4">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Paper size</span>
@@ -136,13 +136,13 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Printer</span>
-				<Select bind:value={printerType} options={[{ value: 'browser', label: 'Browser' }, { value: 'usb', label: 'USB' }, { value: 'network', label: 'Network' }, { value: 'none', label: 'None' }]} class="w-full" />
+				<Select bind:value={printerType} options={[{ value: 'browser', label: 'Browser' }, { value: 'usb', label: 'USB' }, { value: 'network', label: 'Network' }, { value: 'none', label: t('common.none') }]} class="w-full" />
 			</label>
 		</div>
 	</div>
 
 	<div class="flex justify-between">
-		<Button color="neutral" variant="ghost" icon="lucide:arrow-left" onclick={handleBack}>Back</Button>
+		<Button color="neutral" variant="ghost" icon="lucide:arrow-left" onclick={handleBack}>{t('common.back')}</Button>
 		<Button color="primary" icon="lucide:arrow-right" onclick={handleContinue}>{t('common.continue')}</Button>
 	</div>
 </div>

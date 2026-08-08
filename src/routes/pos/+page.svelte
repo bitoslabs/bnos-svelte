@@ -1735,7 +1735,7 @@
 								<div class="space-y-3 px-3.5 py-3">
 									<div class="grid grid-cols-2 gap-2 text-[11px]">
 										<div class="min-w-0">
-											<div class="text-[var(--ui-text-dimmed)]">Cashier</div>
+											<div class="text-[var(--ui-text-dimmed)]">{t('staff.roleCashier')}</div>
 											<div class="truncate font-semibold">
 												{openShift.data.staffName || tenant.state.activeStaffInfo?.name || '—'}
 											</div>
@@ -1792,7 +1792,7 @@
 										</div>
 										{#if shiftSummary.totalCashIn > 0}
 											<div class="flex items-center justify-between text-[12px]">
-												<span class="text-[var(--ui-text-muted)]">Cash in</span><span
+												<span class="text-[var(--ui-text-muted)]">{t('shifts.cashIn')}</span><span
 													class="text-[var(--tone-success-text)] tabular-nums"
 													>+{formatMoney(shiftSummary.totalCashIn, currency)}</span
 												>
@@ -1800,7 +1800,7 @@
 										{/if}
 										{#if shiftSummary.totalCashOut > 0}
 											<div class="flex items-center justify-between text-[12px]">
-												<span class="text-[var(--ui-text-muted)]">Cash out</span><span
+												<span class="text-[var(--ui-text-muted)]">{t('shifts.cashOut')}</span><span
 													class="text-[var(--tone-error-text)] tabular-nums"
 													>−{formatMoney(shiftSummary.totalCashOut, currency)}</span
 												>
@@ -1832,7 +1832,7 @@
 										color="neutral"
 										variant="soft"
 										icon="lucide:lock"
-										onclick={closeShiftFromPopover}>Close shift</Button
+										onclick={closeShiftFromPopover}>{t('shifts.closeShift')}</Button
 									>
 								</div>
 							{:else}
@@ -1852,7 +1852,7 @@
 										size="sm"
 										block
 										icon="lucide:unlock"
-										onclick={openShiftFromPopover}>Open shift</Button
+										onclick={openShiftFromPopover}>{t('shifts.openShift')}</Button
 									>
 								</div>
 							{/if}
@@ -2050,7 +2050,7 @@
 								{#if scanMatch}
 									<span
 										class="inline-flex items-center gap-1 rounded-md bg-[var(--tone-success-bg)] px-1.5 py-0.5 text-[10.5px] font-bold text-[var(--tone-success-text)]"
-										title="Exact code match — press Enter or pause to add"
+										title={t('pos.exactMatch')}
 									>
 										<Icon name="lucide:corner-down-left" class="size-3" />{t('common.add')}
 									</span>
@@ -2238,7 +2238,7 @@
 						<button
 							type="button"
 							class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
-							onclick={clearCart}>Clear</button
+							onclick={clearCart}>{t('common.clear')}</button
 						>
 					{/if}
 				</header>
@@ -2302,7 +2302,7 @@
 						shiftStaffName = '';
 					}}
 				>
-					Open shift
+					{t('shifts.openShift')}
 				</Button>
 			</div>
 		</div>
@@ -2366,7 +2366,7 @@
 				<button
 					type="button"
 					class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
-					onclick={clearCart}>Clear</button
+					onclick={clearCart}>{t('common.clear')}</button
 				>
 			{/if}
 		</header>
@@ -2572,7 +2572,7 @@
 						<span><Icon name="lucide:tag" class="mr-1 inline size-3.5" />{t('common.discount')}</span>
 						{#if cart.totals.discountAmount > 0}<span class="text-[var(--tone-success-text)]"
 								>−{formatMoney(cart.totals.discountAmount, currency)}</span
-							>{:else}<span class="text-[var(--ui-text-dimmed)]">None</span>{/if}
+							>{:else}<span class="text-[var(--ui-text-dimmed)]">{t('common.none')}</span>{/if}
 					</button>
 					{#if allPromotions.length > 0}
 						<div class="space-y-1.5">
@@ -2938,7 +2938,7 @@
 							class="rounded-lg bg-[var(--tone-success-bg)] px-3 py-2 text-center text-[var(--tone-success-text)]"
 						>
 							<span class="text-[11px] font-semibold tracking-wide uppercase opacity-70"
-								>Change</span
+								>{t('pos.change')}</span
 							>
 							<div class="font-display text-2xl font-bold tabular-nums">
 								{formatMoney(change, currency)}
@@ -3100,7 +3100,7 @@
 </Dialog>
 
 <!-- Line note -->
-<Dialog bind:open={noteOpen} title="Line note" size="sm">
+<Dialog bind:open={noteOpen} title={t('pos.lineNote')} size="sm">
 	<Input bind:value={noteText} placeholder="e.g. extra hot, no onions" class="w-full" />
 	{#snippet footer()}
 		<Button color="neutral" variant="ghost" onclick={() => (noteOpen = false)}>{t('common.cancel')}</Button>
@@ -3109,7 +3109,7 @@
 </Dialog>
 
 <!-- Discount -->
-<Dialog bind:open={discountOpen} title="Cart discount" size="sm">
+<Dialog bind:open={discountOpen} title={t('pos.cartDiscount')} size="sm">
 	<div class="space-y-3">
 		<div class="grid grid-cols-2 gap-2">
 			{#each [['percent', 'Percent'], ['fixed', 'Fixed']] as [v, lbl] (v)}
@@ -3156,7 +3156,7 @@
 	</div>
 	{#snippet footer()}
 		<Button color="neutral" variant="ghost" onclick={() => (discountOpen = false)}>{t('common.cancel')}</Button>
-		<Button color="primary" icon="lucide:check" onclick={applyDiscount}>Apply</Button>
+		<Button color="primary" icon="lucide:check" onclick={applyDiscount}>{t('common.apply')}</Button>
 	{/snippet}
 </Dialog>
 
@@ -3255,7 +3255,7 @@
 	{#if cart.held.length === 0}
 		<EmptyState
 			icon="lucide:pause"
-			title="No held orders"
+			title={t('orders.noHeldOrders')}
 			description={t('orders.parkSale')}
 		/>
 	{:else}
@@ -3488,9 +3488,9 @@
 	{#snippet footer()}
 		<Button color="neutral" variant="ghost" onclick={() => (shiftModalOpen = false)}>{t('common.cancel')}</Button>
 		{#if openShift}
-			<Button color="neutral" icon="lucide:lock" onclick={closeShift}>Close shift</Button>
+			<Button color="neutral" icon="lucide:lock" onclick={closeShift}>{t('shifts.closeShift')}</Button>
 		{:else}
-			<Button color="primary" icon="lucide:unlock" onclick={openShiftAction}>Open shift</Button>
+			<Button color="primary" icon="lucide:unlock" onclick={openShiftAction}>{t('shifts.openShift')}</Button>
 		{/if}
 	{/snippet}
 </Dialog>
@@ -3609,7 +3609,7 @@
 				<p
 					class="text-[10.5px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
 				>
-					Amount due
+					{t('pos.amountDue')}
 				</p>
 				<p class="font-display text-3xl font-black tabular-nums">
 					{formatMoney(payQrAmount, currency)}

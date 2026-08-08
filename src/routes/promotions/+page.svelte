@@ -1467,7 +1467,7 @@
 					</p>
 					<!-- Mode selector -->
 					<div class="flex gap-1 rounded-lg bg-[var(--ui-bg-muted)] p-1">
-						{#each [{ id: 'all' as const, label: 'All products' }, { id: 'categories' as const, label: 'Categories' }, { id: 'products' as const, label: 'Products' }] as mode (mode.id)}
+						{#each [{ id: 'all' as const, label: 'All products' }, { id: 'categories' as const, label: t('catalog.categories') }, { id: 'products' as const, label: 'Products' }] as mode (mode.id)}
 							<button
 								type="button"
 								onclick={() => setApplicabilityMode(mode.id)}

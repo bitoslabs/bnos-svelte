@@ -343,7 +343,7 @@
 					class="rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all {statusFilter ===
 					''
 						? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-						: 'text-[var(--ui-text-muted)]'}">All</button
+						: 'text-[var(--ui-text-muted)]'}">{t('common.all')}</button
 				>
 				{#each LISTING_STATUSES as s (s.value)}
 					<button
@@ -764,7 +764,7 @@
 												color="neutral"
 												variant="ghost"
 												icon="lucide:play"
-												title="Activate"
+												title={t('common.activate')}
 												onclick={() => quickStatus(l.id, l.data, 'active')}
 											/>
 										{/if}
@@ -930,7 +930,7 @@
 		<div class="space-y-3 rounded-xl bg-[var(--ui-bg-accented)] p-3">
 			<div class="flex items-center justify-between">
 				<div>
-					<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Track inventory</p>
+					<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('catalog.trackInventory')}</p>
 					<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">Sync stock across channels</p>
 				</div>
 				<Switch bind:checked={fTrackInv} />

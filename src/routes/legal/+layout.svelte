@@ -40,7 +40,7 @@
 				<Icon name="lucide:scroll-text" class="size-5" />
 			</span>
 			<div>
-				<h1 class="font-display text-xl font-bold tracking-tight">Legal</h1>
+				<h1 class="font-display text-xl font-bold tracking-tight">{t('settings.grpLegal')}</h1>
 				<p class="text-[12.5px] text-[var(--ui-text-muted)]">
 					How {site.name} handles your data and the license it ships under.
 				</p>

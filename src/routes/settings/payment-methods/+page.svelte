@@ -536,7 +536,7 @@
 
 		<!-- Enabled toggle -->
 		<div class="flex items-center justify-between py-1">
-			<span class="text-[13.5px] font-medium">Enabled</span>
+			<span class="text-[13.5px] font-medium">{t('common.enabled')}</span>
 			<Switch checked={formEnabled} onCheckedChange={(v) => (formEnabled = v)} />
 		</div>
 	</div>

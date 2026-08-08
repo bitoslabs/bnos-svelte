@@ -61,7 +61,7 @@
 				</div>
 			</div>
 			{#if txType === 'order'}
-				<Button color="neutral" variant="subtle" size="sm" icon="lucide:receipt-text" href="/orders/{id}">View order</Button>
+				<Button color="neutral" variant="subtle" size="sm" icon="lucide:receipt-text" href="/orders/{id}">{t('orders.viewOrder')}</Button>
 			{/if}
 			<Button color="neutral" variant="subtle" size="sm" icon="lucide:code" onclick={() => {
 				rawItem = (order ?? payment) as any;
@@ -87,7 +87,7 @@
 
 				<!-- Details -->
 				<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
-					<div class="px-5 py-3"><h2 class="font-display text-[14px] font-semibold">Details</h2></div>
+					<div class="px-5 py-3"><h2 class="font-display text-[14px] font-semibold">{t('common.details')}</h2></div>
 					<div class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
 						<div class="flex items-center gap-3 px-5 py-3"><Icon name="lucide:hash" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">ID</span><span class="ml-auto font-mono text-[12px]">{(id ?? '').slice(0, 16)}</span></div>
 						<div class="flex items-center gap-3 px-5 py-3"><Icon name="lucide:type" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">{t('common.type')}</span><span class="ml-auto font-semibold capitalize">{txType}</span></div>
@@ -120,7 +120,7 @@
 				<!-- Totals (if order) -->
 				{#if txType === 'order' && order}
 					<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
-						<div class="px-5 py-3"><h2 class="font-display text-[14px] font-semibold">Summary</h2></div>
+						<div class="px-5 py-3"><h2 class="font-display text-[14px] font-semibold">{t('orders.summary')}</h2></div>
 						<div class="space-y-2 px-5 py-4 text-[13px]">
 							<div class="flex justify-between"><span class="text-[var(--ui-text-muted)]">{t('common.subtotal')}</span><span class="tabular-nums">{formatMoney((order.data as any).subtotal ?? 0, currency)}</span></div>
 							{#if order.data.taxAmount}<div class="flex justify-between"><span class="text-[var(--ui-text-muted)]">{t('common.tax')}</span><span class="tabular-nums">{formatMoney((order.data as any).taxAmount ?? 0, currency)}</span></div>{/if}
@@ -150,7 +150,7 @@
 						<div class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
 							{#if payment.data.orderId}<div class="flex items-center gap-3 px-5 py-3"><Icon name="lucide:link" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">{t('common.order')}</span><a href="/transactions/{payment.data.orderId}" class="ml-auto font-mono text-[12px] text-primary-500">{payment.data.orderId.slice(0, 12)}</a></div>{/if}
 							{#if payment.data.cashReceived}<div class="flex items-center gap-3 px-5 py-3"><Icon name="lucide:banknote" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">Cash received</span><span class="ml-auto tabular-nums">{formatMoney(payment.data.cashReceived, currency)}</span></div>{/if}
-							{#if payment.data.changeGiven}<div class="flex items-center gap-3 px-5 py-3"><Icon name="lucide:coins" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">Change</span><span class="ml-auto tabular-nums">{formatMoney(payment.data.changeGiven, currency)}</span></div>{/if}
+							{#if payment.data.changeGiven}<div class="flex items-center gap-3 px-5 py-3"><Icon name="lucide:coins" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">{t('pos.change')}</span><span class="ml-auto tabular-nums">{formatMoney(payment.data.changeGiven, currency)}</span></div>{/if}
 						</div>
 					</div>
 				{/if}

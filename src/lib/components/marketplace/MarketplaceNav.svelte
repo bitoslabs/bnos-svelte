@@ -31,7 +31,7 @@
 	}
 </script>
 
-<nav class="no-scrollbar -mx-5 mb-5 overflow-x-auto px-5 sm:mx-0 sm:px-0" aria-label="Marketplace">
+<nav class="no-scrollbar -mx-5 mb-5 overflow-x-auto px-5 sm:mx-0 sm:px-0" aria-label={t('nav.sectionMarketplace')}>
 	<div class="flex w-max min-w-full gap-1 border-b border-[var(--ui-border-muted)] pb-px">
 		{#each items as it (it.to)}
 			{@const isActive = active(it.to, it.exact)}

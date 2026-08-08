@@ -205,7 +205,7 @@
 	);
 </script>
 
-<nav class={cn('settings-nav space-y-5 lg:space-y-4', cls)} aria-label="Settings">
+<nav class={cn('settings-nav space-y-5 lg:space-y-4', cls)} aria-label={t('nav.settings')}>
 	{#each visibleGroups as g (g.label)}
 		<section class="settings-nav-group">
 			<div

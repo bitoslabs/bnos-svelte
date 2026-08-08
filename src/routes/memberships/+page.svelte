@@ -1073,7 +1073,7 @@
 							{ value: 'active', label: 'Active' },
 							{ value: 'suspended', label: 'Suspended' },
 							{ value: 'frozen', label: 'Frozen' },
-							{ value: 'cancelled', label: 'Cancelled' },
+							{ value: 'cancelled', label: t('status.cancelled') },
 							{ value: 'expired', label: 'Expired' }
 						]}
 						class="w-full"

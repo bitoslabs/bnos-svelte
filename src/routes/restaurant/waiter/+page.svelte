@@ -171,8 +171,8 @@
 	<!-- Stats bar -->
 	<div class="flex flex-wrap items-center gap-3">
 		{#each [
-			{ label: 'Open', value: stats.total, color: 'bg-[var(--ui-text-dimmed)]' },
-			{ label: 'Pending', value: stats.pending, color: 'bg-amber-500' },
+			{ label: t('common.open'), value: stats.total, color: 'bg-[var(--ui-text-dimmed)]' },
+			{ label: t('status.pending'), value: stats.pending, color: 'bg-amber-500' },
 			{ label: 'Cooking', value: stats.preparing, color: 'bg-blue-500' },
 			{ label: 'Ready', value: stats.ready, color: 'bg-emerald-500' }
 		] as stat (stat.label)}
@@ -217,7 +217,7 @@
 
 		<!-- Order list -->
 		{#if filteredOrders.length === 0}
-			<EmptyState icon="lucide:concierge-bell" title="No open tabs" description="Orders started from the POS that aren't yet completed show up here." />
+			<EmptyState icon="lucide:concierge-bell" title={t('common.noOpenTabs')} description="Orders started from the POS that aren't yet completed show up here." />
 		{:else}
 			<ul class="space-y-2">
 				{#each filteredOrders as o (o.id)}

@@ -25,12 +25,12 @@
 		<div><h1 class="font-display text-xl font-bold tracking-tight">{t('settings.notifications')}</h1><p class="text-[12.5px] text-[var(--ui-text-muted)]">{items.length} on this device</p></div>
 		<div class="flex gap-2">
 			<Button color="neutral" variant="ghost" size="sm" icon="lucide:bell-plus" onclick={() => push({ title: t('common.new') + ' ' + t('common.order'), description: 'Order #ORD-1024 received', icon: 'lucide:receipt-text', color: 'success' })}>Seed</Button>
-			<Button color="neutral" variant="ghost" size="sm" icon="lucide:trash-2" onclick={clearAll} disabled={!items.length}>Clear</Button>
+			<Button color="neutral" variant="ghost" size="sm" icon="lucide:trash-2" onclick={clearAll} disabled={!items.length}>{t('common.clear')}</Button>
 		</div>
 	</div>
 
 	{#if items.length === 0}
-		<EmptyState icon="lucide:bell" title="No notifications" description="Order events, low-stock alerts and sync notices show up here." />
+		<EmptyState icon="lucide:bell" title={t('notifications.noNotifications')} description="Order events, low-stock alerts and sync notices show up here." />
 	{:else}
 		<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
 			{#each items as n (n.id)}

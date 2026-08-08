@@ -267,7 +267,7 @@
 					variant="subtle"
 					size="sm"
 					icon="lucide:lock"
-					onclick={() => (closing = true)}>Close shift</Button
+					onclick={() => (closing = true)}>{t('shifts.closeShift')}</Button
 				>
 			</div>
 
@@ -313,7 +313,7 @@
 					class="w-full"
 				/>
 			</div>
-			<Button color="primary" icon="lucide:lock-open" onclick={openShift}>Open shift</Button>
+			<Button color="primary" icon="lucide:lock-open" onclick={openShift}>{t('shifts.openShift')}</Button>
 		</div>
 	{/if}
 
@@ -337,9 +337,9 @@
 					bind:value={cashType}
 					class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium focus:outline-none"
 				>
-					<option value="cash_in">Cash in</option>
-					<option value="cash_out">Cash out</option>
-					<option value="paid_out">Paid out</option>
+					<option value="cash_in">{t('shifts.cashIn')}</option>
+					<option value="cash_out">{t('shifts.cashOut')}</option>
+					<option value="paid_out">{t('shifts.paidOut')}</option>
 					<option value="bank_deposit">Bank deposit</option>
 				</select>
 				<Icon
@@ -360,7 +360,7 @@
 		{#if activeShift}
 			<EmptyState
 				icon="lucide:banknote"
-				title="No cash movements"
+				title={t('shifts.noCashMovements')}
 				description="Cash in/out, paid outs and bank deposits for this branch appear here."
 			/>
 		{/if}
@@ -535,7 +535,7 @@
 					Force close
 				</Button>
 				<Button color="primary" icon="lucide:check" onclick={() => closeShiftAction(false)}>
-					Close shift
+					{t('shifts.closeShift')}
 				</Button>
 			</div>
 		</div>
