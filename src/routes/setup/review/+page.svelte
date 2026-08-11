@@ -1,17 +1,18 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { t } from '$lib/i18n/i18n.svelte';
-	import { resolve } from '$app/paths';
-	import Icon from '$lib/components/ui/Icon.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
-	import { session } from '$nostr/session.svelte';
-	import { tenant, makeOrganizationObject } from '$nostr/tenant.svelte';
-	import { relays } from '$nostr/relay.svelte';
-	import { glo } from '$nostr/store.svelte';
-	import { upsertOrganizationSettingsFromTenant } from '$nostr/organization-settings';
-	import { toast } from '$lib/stores/toast.svelte';
-	import { truncateNpub, titleCase } from '$lib/utils/format';
-	import { newOrganizationId, newLocationId } from '$lib/utils/record-id';
+import { t } from '$lib/i18n/i18n.svelte';
+import { resolve } from '$app/paths';
+import Icon from '$lib/components/ui/Icon.svelte';
+import Button from '$lib/components/ui/Button.svelte';
+import { session } from '$nostr/session.svelte';
+import { tenant } from '$nostr/tenant.svelte';
+import { relays } from '$nostr/relay.svelte';
+import { glo } from '$nostr/store.svelte';
+import { createSetupWorkspace } from '$nostr/setup-workspace';
+import { toast } from '$lib/stores/toast.svelte';
+import { truncateNpub, titleCase } from '$lib/utils/format';
+import { newOrganizationId, newLocationId } from '$lib/utils/record-id';
 
 	let creating = $state(false);
 	let publishStatus = $state('');
@@ -22,6 +23,17 @@
 	const orgId = $derived(tenant.state.organizationId || newOrganizationId());
 	const locationId = $derived(tenant.state.locationId || newLocationId());
 	const productCount = $derived(glo.all('catalog.product').length);
+
+	// Reserve stable local draft IDs as soon as the user reaches Review. This
+	// prevents the workspace identity from disappearing when they navigate away
+	// or reload before pressing Create workspace. Relay events are still created
+	// only by `create()` below.
+	onMount(() => {
+		tenant.configure({
+			organizationId: orgId,
+			locationId
+		});
+	});
 
 	const rows = $derived([
 		{
@@ -64,53 +76,11 @@
 		creating = true;
 		publishStatus = '';
 		try {
-			// Persist the organization as a GLO object on Nostr kind 30078.
-			const org = makeOrganizationObject({
-				id: orgId,
-				name: tenant.state.organizationName,
-				currency: tenant.state.currency,
-				code:
-					tenant.state.organizationCode || tenant.state.organizationName.slice(0, 3).toUpperCase(),
-				status: 'active'
-			} as unknown as Parameters<typeof makeOrganizationObject>[0]);
-			tenant.configure({ organizationId: orgId });
-			await glo.upsert('organization', org.data, {
-				id: org.id,
-				scope: { organizationId: org.id }
-			});
-			await glo.upsert(
-				'location',
-				{
-					name: tenant.state.locationName || 'Main Branch',
-					code: 'main',
-					type: 'store',
-					status: 'active'
-				},
-				{
-					id: locationId,
-					scope: { organizationId: org.id, locationId }
-				}
-			);
-			tenant.configure({ organizationId: orgId, locationId });
-			upsertOrganizationSettingsFromTenant({
-				...tenant.state,
-				organizationId: orgId,
-				locationId,
-				locationName: tenant.state.locationName || 'Main Branch'
-			});
-
-			// Publish to relays (don't block on failure — local-first)
 			publishStatus = 'Publishing to Nostr…';
-			try {
-				// glo.upsert already publishes to relays internally (awaited)
-				// Just verify it was saved
-				await new Promise((r) => setTimeout(r, 500));
-				publishStatus = 'Published ✓';
-			} catch {
-				publishStatus = 'Saved locally (will sync when online)';
-			}
-
-			tenant.completeSetup();
+			const result = await createSetupWorkspace();
+			publishStatus = result.published
+				? 'Published ✓'
+				: 'Saved locally (will sync when online)';
 			await goto(resolve('/setup/done'));
 		} catch (e) {
 			toast.error('Could not create workspace', e instanceof Error ? e.message : undefined);

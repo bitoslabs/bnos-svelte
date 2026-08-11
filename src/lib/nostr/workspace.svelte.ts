@@ -21,13 +21,15 @@ async function waitFor(check: () => boolean, attempts: number, delayMs: number) 
 	return check();
 }
 
-export function restoreTenantFromWorkspace() {
+export function restoreTenantFromWorkspace(options: { organizationId?: string } = {}) {
 	const orgs = glo.all<Record<string, unknown>>('organization');
 	if (orgs.length === 0) return false;
 
 	const settingsSnapshot = readOrganizationSettings();
-	const preferredOrgId = tenant.state.organizationId || settingsSnapshot?.activeCompanyId || '';
-	const org = orgs.find((item) => item.id === preferredOrgId) ?? orgs[0];
+	const preferredOrgId =
+		options.organizationId || tenant.state.organizationId || settingsSnapshot?.activeCompanyId || '';
+	const org = orgs.find((item) => item.id === preferredOrgId) ?? (options.organizationId ? undefined : orgs[0]);
+	if (!org) return false;
 	const orgData = org.data as Record<string, unknown>;
 	const orgExt = org.extensions?.[BNOS_EXT_KEY];
 	const bnosExt = orgExt && typeof orgExt === 'object' ? (orgExt as Record<string, unknown>) : {};
@@ -93,8 +95,10 @@ export async function resolveWorkspace(options: { allowRelaySync?: boolean } = {
 		await sleep(400);
 		// Bootstrap needs the full workspace collections so a fresh device can
 		// rebuild the complete company + branch list from relay data.
-		await glo.sync('organization');
-		await glo.sync('location');
+		await Promise.all([
+			glo.sync('organization', { relayStrategy: 'primary-first' }),
+			glo.sync('location', { relayStrategy: 'primary-first' })
+		]);
 	} catch {
 		// Local-first fallback: treat sync failure as "not found yet".
 	}

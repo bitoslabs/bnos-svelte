@@ -7,8 +7,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
-	import Popover from '$lib/components/ui/Popover.svelte';
-	import RelayManager from '$lib/components/relay/RelayManager.svelte';
+	import RelayStatusPopover from '$lib/components/RelayStatusPopover.svelte';
 	import { session, hasNip07Extension } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { relays } from '$nostr/relay.svelte';
@@ -29,8 +28,6 @@
 	let backedUp = $state(false);
 	let copied = $state(false);
 
-	let quickOpen = $state(false);
-
 	onMount(() => {
 		session.load();
 		tenant.load();
@@ -42,8 +39,8 @@
 		}
 	});
 
-	function routeAfterLogin() {
-		void goto('/', { replaceState: true });
+	function routeAfterLogin(destination = '/') {
+		void goto(destination, { replaceState: true });
 	}
 
 	async function handleExtension() {
@@ -102,7 +99,7 @@
 		toast.success(t('auth.welcome'), t('auth.newIdentityReady'));
 		generated = null;
 		view = 'login';
-		routeAfterLogin();
+		routeAfterLogin('/setup/identity');
 	}
 </script>
 
@@ -114,7 +111,7 @@
 		<div class="absolute -bottom-40 right-1/4 size-96 rounded-full bg-primary-500/5 blur-3xl"></div>
 	</div>
 
-	<!-- Top-right: theme + quick settings + relays -->
+	<!-- Top-right: theme + relay status -->
 	<div class="absolute right-4 top-4 z-20 flex items-center gap-1.5">
 		<button
 			type="button"
@@ -126,28 +123,7 @@
 			<Icon name={mode.current === 'dark' ? 'lucide:sun' : 'lucide:moon'} class="size-[18px]" />
 		</button>
 
-		<!-- Relays quick popover -->
-		<Popover bind:open={quickOpen} align="end" side="bottom" class="w-80 p-0">
-			{#snippet trigger()}
-				<Icon name="lucide:radio" class="size-[18px]" />
-			{/snippet}
-			{#snippet content()}
-				<div class="w-80 p-0">
-					<div class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-3.5 py-2.5">
-						<div class="flex items-center gap-2">
-							<Icon name="lucide:radio" class="size-4 text-primary-500" />
-							<span class="text-[12.5px] font-bold">{t('auth.relayConfig')}</span>
-						</div>
-						<span class="rounded-full bg-[var(--ui-bg-accented)] px-2 py-0.5 text-[10px] font-bold text-[var(--ui-text-muted)]">
-							{relays.relays.length} relay{relays.relays.length === 1 ? '' : 's'}
-						</span>
-					</div>
-					<div class="max-h-[60vh] overflow-y-auto p-3">
-						<RelayManager variant="compact" showActions={false} />
-					</div>
-				</div>
-			{/snippet}
-		</Popover>
+		<RelayStatusPopover />
 	</div>
 
 	<div class="relative z-10 w-full max-w-sm">

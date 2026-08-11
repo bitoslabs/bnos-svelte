@@ -10,8 +10,9 @@
 	import { setupSteps, stepIndex } from './steps';
 	import { relays } from '$nostr/relay.svelte';
 	import { session } from '$nostr/session.svelte';
-	import { tenant } from '$nostr/tenant.svelte';
-	import { glo } from '$nostr/store.svelte';
+import { tenant } from '$nostr/tenant.svelte';
+import { glo } from '$nostr/store.svelte';
+import { createSetupWorkspace } from '$nostr/setup-workspace';
 	import { resolveWorkspace } from '$nostr/workspace.svelte';
 	import { memberships } from '$nostr/memberships.svelte';
 	import { preferences } from '$lib/theme/preferences.svelte';
@@ -22,6 +23,7 @@
 
 	let quickOpen = $state(false);
 	let resolvingWorkspace = $state(false);
+	let creatingWorkspace = $state(false);
 
 	onMount(() => {
 		session.load();
@@ -86,11 +88,26 @@
 		return '';
 	});
 	const canProceed = $derived(!blockedReason && idx >= 0 && idx < setupSteps.length - 1);
-	const nextLabel = $derived(currentSlug === 'catalog' ? 'Review setup' : 'Next');
+	const nextLabel = $derived(
+		currentSlug === 'catalog' ? 'Review setup' : currentSlug === 'review' ? 'Create workspace' : 'Next'
+	);
 
 	async function go(delta: number) {
 		if (delta > 0 && blockedReason) {
 			toast.warning('Setup step incomplete', blockedReason);
+			return;
+		}
+		if (delta > 0 && currentSlug === 'review') {
+			if (creatingWorkspace) return;
+			creatingWorkspace = true;
+			try {
+				await createSetupWorkspace();
+				await goto(resolve('/setup/done'));
+			} catch (e) {
+				toast.error('Could not create workspace', e instanceof Error ? e.message : undefined);
+			} finally {
+				creatingWorkspace = false;
+			}
 			return;
 		}
 		const next = setupSteps[idx + delta];
@@ -250,7 +267,7 @@
 							type="button"
 							class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-[13px] font-semibold text-white hover:bg-primary-400 disabled:opacity-40"
 							onclick={() => go(1)}
-							disabled={!canProceed}
+						disabled={!canProceed || creatingWorkspace}
 						>
 							{nextLabel}
 							<Icon name="lucide:arrow-right" class="size-4" />

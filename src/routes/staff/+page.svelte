@@ -266,7 +266,7 @@
 	function openEventPreview(s: { id: string; data: Staff }) {
 		const object = sanitizedStaffObject(s);
 		const template = createGloEventTemplate(object as never, {
-			client: 'bdgo-os',
+				client: 'bnos',
 			summary: `${TYPE.staff} ${object.id}`
 		});
 		const staffPubkey = object.data.pubkey;

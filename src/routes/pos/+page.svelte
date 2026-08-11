@@ -11,6 +11,7 @@
 	import MenuDivider from '$lib/components/ui/MenuDivider.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
+	import RelayStatusPopover from '$lib/components/RelayStatusPopover.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -1287,6 +1288,8 @@
 	// Track whether shifts have been hydrated from IndexedDB.
 	// glo.version is $state — it bumps when hydration completes.
 	let shiftsLoaded = $state(false);
+	let shiftRelayRefreshAttempted = $state(false);
+	let shiftRefreshBranch = $state<string | null | undefined>(undefined);
 	$effect(() => {
 		const trackedVersion = glo.version;
 		const trackedShiftCount = shiftStore.all.length;
@@ -1299,6 +1302,24 @@
 			// Not hydrated yet — kick off hydration.
 			glo.hydrate(TYPE.shift);
 		}
+	});
+	// A device can have an empty/stale local shift cache while another terminal
+	// has already opened a shift. Once local hydration finishes, make one fresh
+	// branch-scoped relay request before showing the open-shift gate.
+	$effect(() => {
+		const branchId = tenant.state.locationId;
+		if (shiftRefreshBranch !== branchId) {
+			shiftRefreshBranch = branchId;
+			shiftRelayRefreshAttempted = false;
+		}
+		if (!shiftsLoaded || openShift || shiftRelayRefreshAttempted) return;
+		shiftRelayRefreshAttempted = true;
+		void dataSync.syncTypes([TYPE.shift], {
+			force: true,
+			scope: `pos:shift:${branchId ?? 'main'}`,
+			locationId: branchId,
+			silent: true
+		});
 	});
 	let shiftOpeningCash = $state<number | ''>('');
 	let shiftStaffName = $state('');
@@ -1683,6 +1704,9 @@
 			</div>
 
 			<div class="flex flex-wrap items-center gap-2">
+				<!-- Relay connectivity and quick relay management -->
+				<RelayStatusPopover />
+
 				<!-- Shift status → quick-view popover (sales, drawer, close) -->
 				<Popover
 					bind:open={shiftPopoverOpen}

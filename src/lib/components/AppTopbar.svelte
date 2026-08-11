@@ -16,6 +16,7 @@
 	import { glo } from '$nostr/store.svelte';
 	import { profile } from '$nostr/profile.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
 
 	let { onmenutoggle }: { onmenutoggle?: () => void } = $props();
@@ -80,6 +81,18 @@
 	}
 
 	async function signOut() {
+		const usesLocalKey = session.loginMethod === 'nsec';
+		const ok = await confirm({
+			title: 'Sign out and clear this device?',
+			message: usesLocalKey
+				? 'This removes cached workspace data and the private key stored on this device. Make sure your nsec is backed up before continuing.'
+				: 'This removes cached workspace data from this device. Your private key remains safely inside your NIP-07 extension.',
+			detail: 'Relay data is not deleted. It can be synced again after you sign in.',
+			tone: 'danger',
+			icon: 'lucide:log-out',
+			confirmText: 'Sign out & clear'
+		});
+		if (!ok) return;
 		accountOpen = false;
 		await session.logout();
 		tenant.reset();

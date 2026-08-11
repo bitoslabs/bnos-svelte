@@ -8,7 +8,7 @@
  * surface a destination for the workspace selector / blocked screens.
  */
 import { browser } from '$app/environment';
-import { fetchEvents } from './client';
+import { fetchEventsPrimaryFirst } from './client';
 import { session } from './session.svelte';
 import { glo } from './store.svelte';
 import { tenant, type ActiveStaffInfo } from './tenant.svelte';
@@ -81,7 +81,7 @@ class MembershipsStore {
 		this.resolving = true;
 		try {
 			// 1. Owner-operated records authored by this device's key.
-			await glo.sync(TYPE.staff);
+			await glo.sync(TYPE.staff, { relayStrategy: 'primary-first' });
 			// 2. Records authored by other owners where this user is the staff member.
 			await this.fetchMembershipsByPTag();
 			// 3. Pull NIP-44 company key grants addressed to this user (kind 30512) so
@@ -123,7 +123,7 @@ class MembershipsStore {
 			}
 
 			// Configure tenant — prefer the full org record, else staff-record fallback.
-			if (!restoreTenantFromWorkspace()) {
+			if (!restoreTenantFromWorkspace({ organizationId: me.data.companyId })) {
 				tenant.configure({
 					organizationId: me.data.companyId ?? tenant.state.organizationId,
 					organizationName: me.data.companyName ?? tenant.state.organizationName,
@@ -148,8 +148,8 @@ class MembershipsStore {
 		if (!owners.length) return;
 		try {
 			const [orgEvents, locEvents] = await Promise.all([
-				fetchEvents({ kinds: [30078], authors: owners }),
-				fetchEvents({ kinds: [30600], authors: owners })
+				fetchEventsPrimaryFirst({ kinds: [30078], authors: owners }),
+				fetchEventsPrimaryFirst({ kinds: [30600], authors: owners })
 			]);
 			const parse = (events: { kind: number; content: string; tags: string[][] }[]) =>
 				events
@@ -176,7 +176,7 @@ class MembershipsStore {
 		if (!me) return;
 		this._ownerPubkeys = [];
 		try {
-			const events = await fetchEvents({ kinds: [30500], '#p': [me] });
+			const events = await fetchEventsPrimaryFirst({ kinds: [30500], '#p': [me] });
 			if (!events.length) return;
 			// Remember who authored these staff records (the org owners) so a
 			// staff-member's device can fetch the org + location records.

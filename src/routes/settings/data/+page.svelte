@@ -122,7 +122,7 @@
 			return;
 		for (let i = localStorage.length - 1; i >= 0; i--) {
 			const k = localStorage.key(i);
-			if (k && k.startsWith('bnos-os:')) localStorage.removeItem(k);
+			if (k && k.startsWith('bnos-os:') && k !== 'bnos-os:relays') localStorage.removeItem(k);
 		}
 		await session.logout();
 		tenant.reset();

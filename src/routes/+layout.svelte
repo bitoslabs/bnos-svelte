@@ -15,8 +15,8 @@
 	import { relays } from '$nostr/relay.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { warmRelays } from '$nostr/client';
-	import { hasActiveWorkspaceContext, resolveWorkspace } from '$nostr/workspace.svelte';
-	import { memberships } from '$nostr/memberships.svelte';
+	import { bootstrapAuth } from '$nostr/auth-bootstrap';
+	import { hasActiveWorkspaceContext } from '$nostr/workspace.svelte';
 	import { profile } from '$nostr/profile.svelte';
 	import { organizationKey } from '$lib/crypto/organization-key.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
@@ -38,6 +38,7 @@
 	let drawerOpen = $state(false);
 	let workspaceResolutionPending = false;
 	let workspaceResolutionPubkey = '';
+	let tenantStoragePubkey = '';
 
 	const isPublicRoute = $derived(
 		page.url.pathname === '/login' ||
@@ -88,6 +89,16 @@
 	});
 
 	$effect(() => {
+		if (!session.hydrated) return;
+		const me = session.pubkey ?? '';
+		if (tenantStoragePubkey === me) return;
+		tenantStoragePubkey = me;
+		// Tenant state is identity-scoped. Reload it when the active Nostr key
+		// changes so one account cannot inherit another account's setup flag.
+		tenant.load();
+	});
+
+	$effect(() => {
 		if (isPublicRoute || !session.hydrated || !tenant.hydrated) return;
 		if (workspaceResolutionPubkey !== (session.pubkey ?? '')) {
 			workspaceResolutionPubkey = session.pubkey ?? '';
@@ -95,28 +106,17 @@
 		}
 		if (!session.isAuthenticated) {
 			void goto(resolve('/login'), { replaceState: true });
-		} else if (!tenant.state.setupComplete && !workspaceResolutionPending) {
+		} else if (!workspaceResolutionPending) {
 			workspaceResolutionPending = true;
 			postLoginSyncState = 'checking-workspace';
 			queueMicrotask(async () => {
-				const workspace = await resolveWorkspace();
-				if (workspace.found) {
-					workspaceResolutionPending = false;
-					postLoginSyncDone = false;
-					postLoginSyncState = workspace.source === 'relay' ? 'done' : 'idle';
-					if (workspace.source === 'relay') {
-						setTimeout(() => (postLoginSyncState = 'idle'), 2000);
-					}
-				} else {
-					// Owner path found nothing — a staff member didn't author the
-					// org/location records, so discover the workspace THROUGH their
-					// staff record (kind 30500, #p = me) before giving up.
-					const staffWorkspace = await memberships.resolveStaffWorkspace();
-					workspaceResolutionPending = false;
-					postLoginSyncState = 'idle';
-					if (!staffWorkspace) {
-						void goto(resolve('/resolve'), { replaceState: true });
-					}
+				const result = await bootstrapAuth();
+				workspaceResolutionPending = false;
+				postLoginSyncState = result.source === 'relay' ? 'done' : 'idle';
+				if (result.access === 'setup' || result.access === 'waiting-workspace') {
+					void goto(resolve('/resolve'), { replaceState: true });
+				} else if (result.access === 'blocked') {
+					void goto(resolve('/blocked'), { replaceState: true });
 				}
 			});
 		}
@@ -145,24 +145,9 @@
 		dataSync.backgroundOperationalSync();
 		postLoginSyncState = 'idle';
 
-		// Login → staff matching: resolve this user's staff memberships, then
-		// auto-set the active role. First-run owners get an Owner record created
-		// so the permission system has a role to evaluate. Suspended staff are
-		// routed to /blocked. Skips on public/POS-lightweight routes.
-		const path = page.url.pathname;
-		if (path !== '/login' && !path.startsWith('/setup')) {
-			void (async () => {
-				await memberships.resolve();
-				// Ensure the active org has a local AES key (owner/admin mints it;
-				// staff already imported theirs via the grant sync in memberships.resolve).
-				await organizationKey.autoEnsureActiveKey();
-				if (memberships.autoResolve()) return;
-				await memberships.bootstrapOwnerIfMissing();
-				if (tenant.state.activeStaffId) return;
-				const dest = memberships.resolveLoginDestination();
-				if (dest === '/blocked') void goto(resolve('/blocked'), { replaceState: true });
-			})();
-		}
+		// Workspace and role resolution is handled once by bootstrapAuth().
+		// Only the encryption key warm-up remains on this background path.
+		void organizationKey.autoEnsureActiveKey();
 	});
 
 	// Global dropdown-menu handling: one menu open at a time, close on outside

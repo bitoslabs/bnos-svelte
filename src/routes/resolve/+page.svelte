@@ -7,9 +7,8 @@
 	import { session } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { relays } from '$nostr/relay.svelte';
-	import { warmRelays } from '$nostr/client';
-	import { resolveWorkspace } from '$nostr/workspace.svelte';
-	import { memberships } from '$nostr/memberships.svelte';
+import { bootstrapAuth } from '$nostr/auth-bootstrap';
+import { memberships } from '$nostr/memberships.svelte';
 
 	type StepStatus = 'pending' | 'active' | 'done';
 	interface Step { key: string; label: string; icon: string; status: StepStatus; }
@@ -40,33 +39,9 @@
 		steps = steps.map((s) => ({ ...s, status: 'done' }));
 	}
 
-	async function restoreWorkspace() {
-		let workspace = await resolveWorkspace({ allowRelaySync: true });
-		if (workspace.found) return true;
-
-		await sleep(250);
-		if (await memberships.resolveStaffWorkspace()) return true;
-
-		await sleep(600);
-		workspace = await resolveWorkspace({ allowRelaySync: true });
-		return workspace.found || (await memberships.resolveStaffWorkspace());
-	}
-
-	async function resolveRole() {
-		await memberships.resolve();
-		if (memberships.autoResolve()) return;
-		await memberships.bootstrapOwnerIfMissing();
-		memberships.autoResolve();
-	}
-
-	function finish() {
-		const dest = memberships.resolveLoginDestination();
-		if (dest === '/blocked') {
+	function finish(access: 'ready' | 'blocked') {
+		if (access === 'blocked') {
 			void goto(resolve('/blocked'), { replaceState: true });
-			return;
-		}
-		if (dest === '/staff') {
-			void goto(resolve('/staff'), { replaceState: true });
 			return;
 		}
 		void goto(resolve('/'), { replaceState: true });
@@ -83,38 +58,32 @@
 		}
 
 		updateStep('connecting', 25);
-		try {
-			await warmRelays();
-		} catch {
-			/* best-effort: workspace resolution below handles offline/relay gaps */
-		}
 
 		updateStep('syncing', 50);
-		try {
-			await restoreWorkspace();
-		} catch {
-			/* local-first fallback: show the unresolved state below */
-		}
+		const result = await bootstrapAuth();
 
 		updateStep('workspace', 75);
-		await resolveRole();
 
-		if (!tenant.state.setupComplete || !tenant.state.organizationId) {
-			if (memberships.myStaffRecords.length) {
+		if (result.access === 'waiting-workspace') {
 				hasError = true;
 				errorMessage =
 					'We found your staff login, but the workspace has not synced from the owner device yet. Bring the owner device online and retry.';
 				return;
-			}
+		}
+		if (result.access === 'setup') {
 			updateStep('redirecting', 95);
 			await goto(resolve('/setup'), { replaceState: true });
+			return;
+		}
+		if (result.access === 'blocked') {
+			finish('blocked');
 			return;
 		}
 
 		updateStep('redirecting', 95);
 		await sleep(300);
 		markAllDone();
-		timer = setTimeout(finish, 500);
+		timer = setTimeout(() => finish('ready'), 500);
 	});
 
 	onDestroy(() => { if (timer) clearTimeout(timer); });
