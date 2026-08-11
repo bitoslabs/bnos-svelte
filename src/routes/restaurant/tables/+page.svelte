@@ -228,7 +228,7 @@
 	<!-- Stats bar -->
 	<div class="flex flex-wrap items-center gap-3">
 		{#each [
-			{ label: 'Total', value: stats.total, color: 'neutral' as const, dot: 'bg-[var(--ui-text-dimmed)]' },
+			{ label: t('common.total'), value: stats.total, color: 'neutral' as const, dot: 'bg-[var(--ui-text-dimmed)]' },
 			{ label: 'Available', value: stats.available, color: 'success' as const, dot: 'bg-emerald-500' },
 			{ label: 'Occupied', value: stats.occupied, color: 'error' as const, dot: 'bg-red-500' },
 			{ label: 'Reserved', value: stats.reserved, color: 'warning' as const, dot: 'bg-amber-500' },

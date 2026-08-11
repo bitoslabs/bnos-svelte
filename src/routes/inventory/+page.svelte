@@ -255,31 +255,31 @@
 	const tabs: { id: Tab; label: string; icon: string; count: () => number }[] = [
 		{
 			id: 'overview',
-			label: 'Overview',
+			label: t('inventory.overview'),
 			icon: 'lucide:layout-dashboard',
 			count: () => trackedProducts.length
 		},
 		{
 			id: 'counts',
-			label: 'Counts',
+			label: t('inventory.counts'),
 			icon: 'lucide:clipboard-check',
 			count: () => countSessions.length
 		},
 		{
 			id: 'adjustments',
-			label: 'Adjustments',
+			label: t('inventory.adjustments'),
 			icon: 'lucide:arrow-up-down',
 			count: () => glo.all(TYPE.adjustment).length
 		},
 		{
 			id: 'suppliers',
-			label: 'Suppliers',
+			label: t('inventory.suppliers'),
 			icon: 'lucide:truck',
 			count: () => glo.all(TYPE.supplier).length
 		},
 		{
 			id: 'orders',
-			label: 'Purchase Orders',
+			label: t('inventory.purchaseOrders'),
 			icon: 'lucide:clipboard-list',
 			count: () => glo.all(TYPE.purchaseOrder).length
 		}
@@ -293,8 +293,8 @@
 		items: () => adjustments,
 		search: (a, q) => (a.data.productName ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'product', label: 'Product', value: (a) => a.data.productName },
-			{ key: 'date', label: 'Date', value: (a) => a.data.occurredAt }
+			{ key: 'product', label: t('common.product'), value: (a) => a.data.productName },
+			{ key: 'date', label: t('common.date'), value: (a) => a.data.occurredAt }
 		],
 		defaultSortKey: 'date',
 		defaultSortDir: 'desc',
@@ -305,8 +305,8 @@
 		items: () => suppliers,
 		search: (s, q) => (s.data.name ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'name', label: 'Name', value: (s) => s.data.name },
-			{ key: 'status', label: 'Status', value: (s) => s.data.status ?? 'active' }
+			{ key: 'name', label: t('common.name'), value: (s) => s.data.name },
+			{ key: 'status', label: t('common.status'), value: (s) => s.data.status ?? 'active' }
 		],
 		defaultSortKey: 'name',
 		defaultViewMode: 'table',
@@ -317,8 +317,8 @@
 		search: (o, q) => (o.data.number ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
 			{ key: 'number', label: 'Number', value: (o) => o.data.number },
-			{ key: 'total', label: 'Total', value: (o) => o.data.total },
-			{ key: 'status', label: 'Status', value: (o) => o.data.status }
+			{ key: 'total', label: t('common.total'), value: (o) => o.data.total },
+			{ key: 'status', label: t('common.status'), value: (o) => o.data.status }
 		],
 		defaultSortKey: 'number',
 		defaultSortDir: 'desc',

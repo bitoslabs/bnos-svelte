@@ -19,6 +19,7 @@
 	import {
 		TYPE,
 		statusColor,
+		statusLabel,
 		type Order,
 		type Payment,
 		type Refund,
@@ -401,7 +402,7 @@
 						<h1 class="font-display text-xl font-bold tracking-tight">
 							{order.data.orderNumber ?? '#' + (id ?? '').slice(0, 8)}
 						</h1>
-						<Badge color={statusColor(order.data.status)}>{titleCase(order.data.status)}</Badge>
+						<Badge color={statusColor(order.data.status)}>{statusLabel(order.data.status)}</Badge>
 						{#if refundState && refundState.refundedAmount > 0}
 							<Badge color={refundState.isFullyRefunded ? 'error' : 'warning'}>
 								<span class="inline-flex items-center gap-1">

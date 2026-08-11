@@ -26,6 +26,7 @@
 		type GloObject
 	} from '$lib/domain';
 	import { ORDER_SOURCES, SHIPPING_STATUSES } from '$lib/domain/order-sources';
+	import { statusLabel } from '$lib/domain';
 
 	const id = $derived(page.params.id);
 
@@ -229,23 +230,23 @@
 		if (!order || !loaded) return [];
 		const d = order.data as any;
 		const list: { label: string; oldVal: any; newVal: any }[] = [];
-		if (status !== d.status) list.push({ label: 'Status', oldVal: d.status, newVal: status });
+		if (status !== d.status) list.push({ label: t('common.status'), oldVal: d.status, newVal: status });
 		if (orderType !== (d.type ?? 'takeaway'))
-			list.push({ label: 'Type', oldVal: d.type, newVal: orderType });
+			list.push({ label: t('common.type'), oldVal: d.type, newVal: orderType });
 		if (total !== (d.total ?? 0))
 			list.push({
-				label: 'Total',
+				label: t('common.total'),
 				oldVal: formatMoney(d.total ?? 0, currency),
 				newVal: formatMoney(total, currency)
 			});
 		if (customerName !== (d.customerName ?? ''))
-			list.push({ label: 'Customer', oldVal: d.customerName ?? '—', newVal: customerName || '—' });
+			list.push({ label: t('common.customer'), oldVal: d.customerName ?? '—', newVal: customerName || '—' });
 		if (notes !== (d.notes ?? ''))
-			list.push({ label: 'Notes', oldVal: d.notes ?? '', newVal: notes });
+			list.push({ label: t('common.notes'), oldVal: d.notes ?? '', newVal: notes });
 		if (priority !== (d.priority ?? 'normal'))
 			list.push({ label: 'Priority', oldVal: d.priority ?? 'normal', newVal: priority });
 		if (lines.length !== (d.lines?.length ?? 0))
-			list.push({ label: 'Items', oldVal: d.lines?.length ?? 0, newVal: lines.length });
+			list.push({ label: t('common.items'), oldVal: d.lines?.length ?? 0, newVal: lines.length });
 		return list;
 	});
 
@@ -336,7 +337,7 @@
 						<h1 class="font-display text-xl font-bold tracking-tight">
 							Edit {order.data.orderNumber ?? '#' + (id ?? '').slice(0, 8)}
 						</h1>
-						<Badge color="neutral">{titleCase(order.data.status)}</Badge>
+						<Badge color="neutral">{statusLabel(order.data.status)}</Badge>
 					</div>
 					<p class="text-[12px] text-[var(--ui-text-muted)]">
 						Modify items, quantities, and order details

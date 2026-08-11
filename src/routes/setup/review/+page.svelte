@@ -29,7 +29,7 @@
 			value: truncateNpub(session.npub ?? '', 14, 8),
 			icon: 'lucide:fingerprint'
 		},
-		{ label: 'Company', value: tenant.state.organizationName || '—', icon: 'lucide:building-2' },
+		{ label: t('common.company'), value: tenant.state.organizationName || '—', icon: 'lucide:building-2' },
 		{ label: 'Company code', value: tenant.state.organizationCode || '—', icon: 'lucide:hash' },
 		{
 			label: 'Business model',
@@ -37,7 +37,7 @@
 			icon: 'lucide:network'
 		},
 		{ label: 'Business type', value: titleCase(tenant.state.businessType), icon: 'lucide:store' },
-		{ label: 'Branch', value: tenant.state.locationName || '—', icon: 'lucide:map-pin' },
+		{ label: t('common.branch'), value: tenant.state.locationName || '—', icon: 'lucide:map-pin' },
 		{ label: 'Currency', value: tenant.state.currency, icon: 'lucide:coins' },
 		{
 			label: 'Tax',

@@ -143,7 +143,7 @@
 	const MODULE_LIST = [
 		{ key: 'ordersPerDay', label: 'Orders/day', type: 'limit' as const },
 		{ key: 'branches', label: 'Branches', type: 'limit' as const },
-		{ key: 'staff', label: 'Staff', type: 'limit' as const },
+		{ key: 'staff', label: t('common.staff'), type: 'limit' as const },
 		{ key: 'products', label: 'Products', type: 'limit' as const },
 		{ key: 'customers', label: 'Customers', type: 'limit' as const },
 		{ key: 'restaurant', label: 'Restaurant', type: 'module' as const },

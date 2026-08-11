@@ -16,6 +16,7 @@
 	import {
 		TYPE,
 		statusColor,
+		statusLabel,
 		isRemoteSource,
 		channelMeta,
 		listingStatusLabel,
@@ -185,7 +186,7 @@
 								<div class="min-w-0 flex-1">
 									<div class="flex items-center gap-2">
 										<span class="font-mono text-[12.5px] font-semibold">{o.number}</span>
-										<Badge color={statusColor(o.status)}>{titleCase(o.status)}</Badge>
+										<Badge color={statusColor(o.status)}>{statusLabel(o.status)}</Badge>
 									</div>
 									<p class="truncate text-[11px] text-[var(--ui-text-dimmed)]">
 										{sourceLabel(o.source)}{#if o.customerName} · {o.customerName}{/if}
@@ -233,7 +234,7 @@
 							</p>
 						</div>
 						<Badge color={c.data.status === 'connected' ? 'success' : c.data.status === 'error' ? 'info' : 'neutral'}>
-							{titleCase(c.data.status)}
+							{statusLabel(c.data.status)}
 						</Badge>
 					</div>
 				{/each}

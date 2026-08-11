@@ -6,6 +6,7 @@
 		open = $bindable(false),
 		align = 'center',
 		side = 'top',
+		title,
 		triggerClass = 'inline-grid size-9.5 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] focus-visible:outline-none',
 		triggerActiveClass = '',
 		trigger,
@@ -15,6 +16,8 @@
 		open?: boolean;
 		align?: 'start' | 'center' | 'end';
 		side?: 'top' | 'right' | 'bottom' | 'left';
+		/** Native tooltip shown on the trigger button (e.g. status text). */
+		title?: string;
 		/** Style the trigger button. Defaults to a square icon button; pass a pill
 		 *  class to render e.g. a status chip instead. */
 		triggerClass?: string;
@@ -61,6 +64,7 @@
 	<button
 		type="button"
 		aria-expanded={open}
+		{title}
 		class={cn(
 			triggerClass,
 			open && (triggerActiveClass || 'bg-[var(--ui-bg-accented)] text-[var(--ui-text)]')

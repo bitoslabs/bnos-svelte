@@ -49,10 +49,10 @@
 		search: (r, q) => r.ref.toLowerCase().includes(q) || r.method.toLowerCase().includes(q),
 		sortOptions: () => [
 			{ key: 'ref', label: 'Reference', value: (r) => r.ref },
-			{ key: 'method', label: 'Method', value: (r) => r.method },
-			{ key: 'status', label: 'Status', value: (r) => r.status },
-			{ key: 'amount', label: 'Amount', value: (r) => r.total },
-			{ key: 'date', label: 'Date', value: (r) => r.atMs }
+			{ key: 'method', label: t('common.method'), value: (r) => r.method },
+			{ key: 'status', label: t('common.status'), value: (r) => r.status },
+			{ key: 'amount', label: t('common.amount'), value: (r) => r.total },
+			{ key: 'date', label: t('common.date'), value: (r) => r.atMs }
 		],
 		defaultSortKey: 'date',
 		defaultSortDir: 'desc',

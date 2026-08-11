@@ -89,9 +89,9 @@
 	})());
 
 	const tabs = [
-		{ key: 'waiting' as const, label: 'Waiting', count: stats.waiting },
-		{ key: 'seated' as const, label: 'Seated', count: stats.seated },
-		{ key: 'all' as const, label: 'All', count: queue.length }
+		{ key: 'waiting' as const, label: t('restaurant.waiting'), count: stats.waiting },
+		{ key: 'seated' as const, label: t('restaurant.seated'), count: stats.seated },
+		{ key: 'all' as const, label: t('common.all'), count: queue.length }
 	];
 
 	// ── Actions ──

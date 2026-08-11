@@ -1663,7 +1663,7 @@
 			<div class="flex min-w-0 items-center gap-3">
 				<a
 					href={resolve('/')}
-					aria-label="Back to dashboard"
+					aria-label={t('pos.backToDashboard')}
 					class="grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-sm shadow-primary-500/25"
 				>
 					<Icon name="lucide:scan-line" class="size-5" />
@@ -1672,11 +1672,11 @@
 					<div class="flex items-center gap-2">
 						<h1 class="font-display text-lg font-bold tracking-tight sm:text-xl">{t('pos.terminal')}</h1>
 						<Badge color={cart.isEmpty ? 'neutral' : 'primary'}>
-							{cart.isEmpty ? 'Ready' : `${cart.itemCount} items`}
+							{cart.isEmpty ? t('pos.ready') : t('pos.itemsCount', { count: cart.itemCount })}
 						</Badge>
 					</div>
 					<p class="truncate text-[12.5px] text-[var(--ui-text-muted)]">
-						{tenant.state.organizationName || 'BNOS'} · {tenant.state.locationName || 'Main branch'} ·
+						{tenant.state.organizationName || 'BNOS'} · {tenant.state.locationName || t('pos.mainBranch')} ·
 						{dateLabel} · {clockLabel}
 					</p>
 				</div>
@@ -1700,10 +1700,10 @@
 								></span>
 								<span class="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
 							</span>
-							<span>Shift · {shiftElapsedLabel}</span>
+							<span>{t('shifts.shift')} · {shiftElapsedLabel}</span>
 						{:else}
 							<Icon name="lucide:unlock" class="size-3.5" />
-							<span>No shift</span>
+							<span>{t('shifts.noShift')}</span>
 						{/if}
 						<Icon name="lucide:chevron-down" class="size-3 opacity-60" />
 					{/snippet}
@@ -1726,11 +1726,11 @@
 												{openShift.data.number}
 											</div>
 											<div class="text-[10.5px] text-[var(--ui-text-dimmed)]">
-												Open · {shiftElapsedLabel}
+												{t('common.open')} · {shiftElapsedLabel}
 											</div>
 										</div>
 									</div>
-									<Badge color="success">Live</Badge>
+									<Badge color="success">{t('common.live')}</Badge>
 								</div>
 								<div class="space-y-3 px-3.5 py-3">
 									<div class="grid grid-cols-2 gap-2 text-[11px]">
@@ -1741,7 +1741,7 @@
 											</div>
 										</div>
 										<div>
-											<div class="text-[var(--ui-text-dimmed)]">Opened</div>
+											<div class="text-[var(--ui-text-dimmed)]">{t('shifts.opened')}</div>
 											<div class="font-semibold">{openedTimeLabel}</div>
 										</div>
 									</div>
@@ -1750,9 +1750,9 @@
 										<div class="flex items-center justify-between">
 											<span
 												class="text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
-												>Total sales</span
+												>{t('pos.totalSales')}</span
 											>
-											<Badge color="primary">{formatInt(shiftSummary.totalOrders)} orders</Badge>
+											<Badge color="primary">{t('pos.ordersCount', { count: formatInt(shiftSummary.totalOrders) })}</Badge>
 										</div>
 										<div class="mt-1 font-display text-2xl font-bold tabular-nums">
 											{formatMoney(shiftSummary.totalSales, currency)}
@@ -1763,11 +1763,11 @@
 										<div
 											class="text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
 										>
-											Tenders
+											{t('pos.tenders')}
 										</div>
 										{#if tenderRows.length === 0}
 											<p class="py-1 text-center text-[11.5px] text-[var(--ui-text-dimmed)]">
-												No sales recorded yet
+												{t('pos.noSalesRecorded')}
 											</p>
 										{:else}
 											{#each tenderRows as t (t.label)}
@@ -1785,7 +1785,7 @@
 
 									<div class="space-y-1 rounded-xl border border-[var(--ui-border-muted)] p-3">
 										<div class="flex items-center justify-between text-[12px]">
-											<span class="text-[var(--ui-text-muted)]">Opening cash</span><span
+											<span class="text-[var(--ui-text-muted)]">{t('shifts.openingCash')}</span><span
 												class="tabular-nums"
 												>{formatMoney(openShift.data.openingCash ?? 0, currency)}</span
 											>
@@ -1809,7 +1809,7 @@
 										<div
 											class="flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-1.5 text-[12.5px] font-bold"
 										>
-											<span>Expected drawer</span><span
+											<span>{t('shifts.expectedDrawer')}</span><span
 												class="text-primary-600 tabular-nums dark:text-primary-400"
 												>{formatMoney(shiftSummary.expectedCash, currency)}</span
 											>
@@ -1825,7 +1825,7 @@
 										variant="subtle"
 										icon="lucide:line-chart"
 										href={resolve('/transactions/shifts')}
-										onclick={() => (shiftPopoverOpen = false)}>Report</Button
+										onclick={() => (shiftPopoverOpen = false)}>{t('shifts.report')}</Button
 									>
 									<Button
 										size="sm"
@@ -1844,7 +1844,7 @@
 									</div>
 									<div class="text-[13px] font-bold">{t('pos.noActiveShift')}</div>
 									<p class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">
-										Open a shift to start processing sales and track the drawer.
+										{t('pos.openShiftHint')}
 									</p>
 									<Button
 										class="mt-3"
@@ -1871,9 +1871,9 @@
 					{#snippet trigger()}
 						<Icon name="lucide:boxes" class="size-3.5" />
 						{#if lowStockCount > 0}
-							<span>{formatInt(lowStockCount)} low</span>
+							<span>{t('pos.lowCount', { count: formatInt(lowStockCount) })}</span>
 						{:else}
-							<span>{formatInt(trackedProducts)} tracked</span>
+							<span>{t('pos.trackedCount', { count: formatInt(trackedProducts) })}</span>
 						{/if}
 						<Icon name="lucide:chevron-down" class="size-3 opacity-60" />
 					{/snippet}
@@ -1884,13 +1884,13 @@
 							>
 								<div class="flex items-center gap-2">
 									<Icon name="lucide:boxes" class="size-4 text-[var(--ui-text-muted)]" />
-									<span class="text-[13px] font-bold">Inventory</span>
+									<span class="text-[13px] font-bold">{t('nav.inventory')}</span>
 								</div>
 								<a
 									href={resolve('/catalog')}
 									onclick={() => (stockPopoverOpen = false)}
 									class="text-[11.5px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
-									>Manage</a
+									>{t('common.manage')}</a
 								>
 							</div>
 							<div class="px-3.5 py-3">
@@ -1899,16 +1899,16 @@
 										class="flex items-center gap-2.5 rounded-xl bg-[var(--tone-success-bg)] px-3 py-2.5 text-[var(--tone-success-text)]"
 									>
 										<Icon name="lucide:check-circle-2" class="size-4 shrink-0" />
-										<span class="text-[12px] font-semibold">All tracked items stocked</span>
+										<span class="text-[12px] font-semibold">{t('pos.allStocked')}</span>
 									</div>
 									<p class="mt-2 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
-										{formatInt(trackedProducts)} products tracked
+										{t('pos.productsTracked', { count: formatInt(trackedProducts) })}
 									</p>
 								{:else}
 									<div
 										class="mb-2 text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
 									>
-										{formatInt(lowStockCount)} low · {formatInt(trackedProducts)} tracked
+										{t('pos.lowCount', { count: formatInt(lowStockCount) })} · {t('pos.trackedCount', { count: formatInt(trackedProducts) })}
 									</div>
 									<ul class="space-y-1">
 										{#each lowStockItems as p (p.id)}
@@ -1931,7 +1931,7 @@
 									</ul>
 									{#if lowStockCount > lowStockItems.length}
 										<p class="mt-2 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
-											+{formatInt(lowStockCount - lowStockItems.length)} more
+											{t('pos.moreCount', { count: formatInt(lowStockCount - lowStockItems.length) })}
 										</p>
 									{/if}
 								{/if}
@@ -1950,7 +1950,7 @@
 					onclick={startNewSale}
 					title={t('common.new') + ' ' + t('common.sale')}
 				>
-					New sale
+					{t('common.new')} {t('common.sale')}
 				</Button>
 				<Button
 					color="neutral"
@@ -1960,7 +1960,7 @@
 					onclick={openCustom}
 					title={t('common.add') + ' ' + t('common.customItem')}
 				>
-					Custom
+					{t('pos.custom')}
 				</Button>
 				{#if cart.held.length > 0}
 					<button
@@ -1980,23 +1980,23 @@
 					class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
 				>
 					<Icon name="lucide:monitor" class="size-3.5" />
-					Display
+					{t('pos.display')}
 				</a>
 
 				<!-- Scanner status + keyboard shortcuts -->
 				{#if hardwareSettings.barcodeScanner}
 					<span
-						title="Barcode scanner ready — scan to add items"
+						title={t('pos.scannerReady')}
 						class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 text-[11.5px] font-semibold text-emerald-700 dark:text-emerald-300"
 					>
 						<Icon name="lucide:scan-barcode" class="size-3.5" />
-						<span class="hidden sm:inline">Scanner</span>
+						<span class="hidden sm:inline">{t('pos.scanner')}</span>
 					</span>
 				{/if}
 				<button
 					type="button"
 					onclick={() => (shortcutsOpen = true)}
-					title="Keyboard shortcuts (Shift+/)"
+					title={t('pos.keyboardShortcuts')}
 					class="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--ui-border)] px-2 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 				>
 					<Icon name="lucide:keyboard" class="size-4" />
@@ -2005,24 +2005,24 @@
 				<!-- More options dropdown -->
 				<Menu id="pos-header-more" placement="bottom-end" width="md">
 					{#snippet trigger()}<Icon name="lucide:more-horizontal" class="size-4" />{/snippet}
-					<MenuItem icon="lucide:history" onclick={openHistory}>Recent orders</MenuItem>
+					<MenuItem icon="lucide:history" onclick={openHistory}>{t('orders.recentOrders')}</MenuItem>
 					<MenuItem
 						icon="lucide:pause"
 						onclick={() => {
 							heldOpen = true;
-						}}>Held orders ({formatInt(cart.held.length)})</MenuItem
+						}}>{t('orders.heldOrders')} ({formatInt(cart.held.length)})</MenuItem
 					>
 					{#if cart.lastCompleted}
 						<MenuItem
 							icon="lucide:receipt"
 							onclick={() => {
 								receiptOpen = true;
-							}}>Last receipt</MenuItem
+							}}>{t('pos.lastReceipt')}</MenuItem
 						>
 					{/if}
 					<MenuDivider />
-					<MenuItem icon="lucide:list-ordered" href={resolve('/orders')}>All orders</MenuItem>
-					<MenuItem icon="lucide:package" href={resolve('/catalog')}>Catalog</MenuItem>
+					<MenuItem icon="lucide:list-ordered" href={resolve('/orders')}>{t('orders.allOrders')}</MenuItem>
+					<MenuItem icon="lucide:package" href={resolve('/catalog')}>{t('nav.catalog')}</MenuItem>
 				</Menu>
 			</div>
 		</div>

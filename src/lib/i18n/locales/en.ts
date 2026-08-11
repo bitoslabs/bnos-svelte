@@ -102,6 +102,8 @@ export const en = {
 		disabled: 'Disabled',
 		// Reusable verbs
 		viewRaw: 'View raw',
+		test: 'Test',
+		primary: 'Primary',
 		testConnection: 'Test connection',
 		setPrimary: 'Set primary relay',
 		writeAccess: 'Write access',
@@ -299,7 +301,14 @@ export const en = {
 		held: 'Held',
 		voided: 'Voided',
 		approved: 'Approved',
-		rejected: 'Rejected'
+		rejected: 'Rejected',
+		confirmed: 'Confirmed',
+		preparing: 'Preparing',
+		ready: 'Ready',
+		served: 'Served',
+		packed: 'Packed',
+		received: 'Received',
+		published: 'Published'
 	},
 	nav: {
 		settings: 'Settings',
@@ -348,11 +357,49 @@ export const en = {
 		syncingAllData: 'Syncing all data…',
 		relaysActive: '{active} of {total} relays active',
 		relays: 'Relays',
+		relayPlaceholder: 'wss://relay.example.com',
+		activateRelay: 'Activate relay',
+		deactivateRelay: 'Deactivate relay',
+		noRelays: 'No relays yet',
+		noRelaysDesc: 'Add a relay to sync across devices.',
 		allSettings: 'All Settings',
 		aboutBnos: 'About BNOS',
 		openMenu: 'Open menu',
 		closeMenu: 'Close menu',
 		syncData: 'Sync data'
+	},
+	relayDirectory: {
+		title: 'Recommended relays',
+		description: 'Hand-picked, reliable Nostr relays. Probe latency and add in one click.',
+		search: 'Search relays…',
+		regionAll: 'All',
+		regionGlobal: 'Global',
+		regionEu: 'Europe',
+		regionUs: 'Americas',
+		regionAsia: 'Asia',
+		sortRecommended: 'Recommended',
+		sortLatency: 'Fastest',
+		sortName: 'Name',
+		testAll: 'Test all',
+		testing: 'Testing…',
+		failed: 'Unreachable',
+		notTested: 'Not tested',
+		add: 'Add relay',
+		added: 'Added',
+		premium: 'Premium',
+		kindGeneral: 'General',
+		kindIndex: 'Search',
+		kindFast: 'Fast cache',
+		kindCommunity: 'Community',
+		showAdded: 'Show relays I’ve already added',
+		empty: 'You’ve added every recommended relay.',
+		emptyHint: 'Add a custom relay above, or manage your existing ones.',
+		range: 'Showing {from}–{to} of {total}',
+		reachable: '{ok}/{total} reachable',
+		page: 'Page {page}/{total}',
+		perPage: 'Per page',
+		prev: 'Previous page',
+		next: 'Next page'
 	},
 	sidebar: {
 		nip07Extension: 'NIP-07 extension',
@@ -502,7 +549,26 @@ export const en = {
 		changeDue: 'Change due',
 		tendered: 'Tendered',
 		includesTip: 'Includes {amount} tip',
-		itemsCount: '{count} items'
+		itemsCount: '{count} items',
+		backToDashboard: 'Back to dashboard',
+		ready: 'Ready',
+		mainBranch: 'Main branch',
+		custom: 'Custom',
+		display: 'Display',
+		scannerReady: 'Barcode scanner ready — scan to add items',
+		scanner: 'Scanner',
+		keyboardShortcuts: 'Keyboard shortcuts (Shift+/)',
+		lastReceipt: 'Last receipt',
+		totalSales: 'Total sales',
+		ordersCount: '{count} orders',
+		tenders: 'Tenders',
+		noSalesRecorded: 'No sales recorded yet',
+		openShiftHint: 'Open a shift to start processing sales and track the drawer.',
+		lowCount: '{count} low',
+		trackedCount: '{count} tracked',
+		allStocked: 'All tracked items stocked',
+		productsTracked: '{count} products tracked',
+		moreCount: '+{count} more'
 	},
 	orders: {
 		rawData: 'Order Raw Data',
@@ -519,7 +585,9 @@ export const en = {
 		timeline: 'Timeline',
 		heldOrders: 'Held orders',
 		noHeldOrders: 'No held orders',
-		parkSale: 'Park a sale with Hold to finish it later.'
+		parkSale: 'Park a sale with Hold to finish it later.',
+		recentOrders: 'Recent orders',
+		allOrders: 'All orders'
 	},
 	customers: {
 		noCustomers: 'No customers yet',
@@ -540,7 +608,8 @@ export const en = {
 		moreOptions: 'More options',
 		categories: 'Categories',
 		modifiers: 'Modifiers',
-		bundles: 'Bundles'
+		bundles: 'Bundles',
+		units: 'Units'
 	},
 	inventory: {
 		noStockAdjustments: 'No stock adjustments',
@@ -554,6 +623,7 @@ export const en = {
 		stocktake: 'Stocktake',
 		overview: 'Overview',
 		adjustments: 'Adjustments',
+		counts: 'Counts',
 		noTrackedDesc: "Enable 'Track inventory' on products to see stock overview."
 	},
 	transactions: {
@@ -572,7 +642,13 @@ export const en = {
 		difference: 'Difference',
 		cashIn: 'Cash in',
 		cashOut: 'Cash out',
-		paidOut: 'Paid out'
+		paidOut: 'Paid out',
+		noShift: 'No shift',
+		opened: 'Opened',
+		openingCash: 'Opening cash',
+		expectedDrawer: 'Expected drawer',
+		report: 'Report',
+		shift: 'Shift'
 	},
 	activity: {
 		noActivity: 'No activity yet',
@@ -591,9 +667,14 @@ export const en = {
 	promotions: {
 		noPromotions: 'No promotions',
 		noPromotionsDesc: 'Create your first promotion to get started.',
-		usage: 'Usage'
+		usage: 'Usage',
+		coupons: 'Coupons'
 	},
-	memberships: {},
+	memberships: {
+		plans: 'Plans',
+		subscriptions: 'Subscriptions',
+		checkins: 'Check-ins'
+	},
 	staff: {
 		noStaff: 'No staff yet',
 		noStaffDesc: 'Add your team — cashiers, waiters, chefs — and assign roles.',
@@ -614,7 +695,9 @@ export const en = {
 		queueDesc: "Add parties to the waitlist when you're at capacity.",
 		noActiveTickets: 'No active tickets',
 		waiterAssign: 'Assign waiters to orders from the Orders view.',
-		call: 'Call'
+		call: 'Call',
+		waiting: 'Waiting',
+		seated: 'Seated'
 	},
 	marketplace: {
 		noListings: 'No listings yet',

@@ -161,9 +161,9 @@
 		items: () => coupons,
 		search: (c, q) => (c.data.code ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'code', label: 'Code', value: (c) => c.data.code },
+			{ key: 'code', label: t('common.code'), value: (c) => c.data.code },
 			{ key: 'uses', label: 'Uses', value: (c) => c.data.uses ?? 0 },
-			{ key: 'status', label: 'Status', value: (c) => c.data.status }
+			{ key: 'status', label: t('common.status'), value: (c) => c.data.status }
 		],
 		defaultSortKey: 'code',
 		defaultViewMode: 'grid',
@@ -174,8 +174,8 @@
 		items: () => filteredPromos,
 		search: () => true, // search handled above
 		sortOptions: () => [
-			{ key: 'name', label: 'Name', value: (p) => p.data.name },
-			{ key: 'status', label: 'Status', value: (p) => promoStatus(p.data) },
+			{ key: 'name', label: t('common.name'), value: (p) => p.data.name },
+			{ key: 'status', label: t('common.status'), value: (p) => promoStatus(p.data) },
 			{ key: 'value', label: 'Value', value: (p) => p.data.value }
 		],
 		defaultSortKey: 'name',
@@ -492,7 +492,7 @@
 
 	<!-- Tabs -->
 	<div class="segmented inline-flex w-fit gap-1 p-1">
-		{#each [{ id: 'promotions' as Tab, label: t('nav.promotions'), icon: 'lucide:megaphone', n: promos.length }, { id: 'coupons' as Tab, label: 'Coupons', icon: 'lucide:ticket', n: coupons.length }] as seg (seg.id)}
+		{#each [{ id: 'promotions' as Tab, label: t('nav.promotions'), icon: 'lucide:megaphone', n: promos.length }, { id: 'coupons' as Tab, label: t('promotions.coupons'), icon: 'lucide:ticket', n: coupons.length }] as seg (seg.id)}
 			<button
 				type="button"
 				onclick={() => (tab = seg.id)}
@@ -1467,7 +1467,7 @@
 					</p>
 					<!-- Mode selector -->
 					<div class="flex gap-1 rounded-lg bg-[var(--ui-bg-muted)] p-1">
-						{#each [{ id: 'all' as const, label: 'All products' }, { id: 'categories' as const, label: t('catalog.categories') }, { id: 'products' as const, label: 'Products' }] as mode (mode.id)}
+						{#each [{ id: 'all' as const, label: t('common.all') + ' ' + t('nav.products') }, { id: 'categories' as const, label: t('catalog.categories') }, { id: 'products' as const, label: t('nav.products') }] as mode (mode.id)}
 							<button
 								type="button"
 								onclick={() => setApplicabilityMode(mode.id)}

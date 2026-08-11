@@ -66,9 +66,9 @@
 			(e.data.description ?? '').toLowerCase().includes(q) ||
 			(e.data.payee ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'date', label: 'Date', value: (e) => e.data.occurredAt },
-			{ key: 'amount', label: 'Amount', value: (e) => e.data.amount },
-			{ key: 'category', label: 'Category', value: (e) => e.data.category }
+			{ key: 'date', label: t('common.date'), value: (e) => e.data.occurredAt },
+			{ key: 'amount', label: t('common.amount'), value: (e) => e.data.amount },
+			{ key: 'category', label: t('common.category'), value: (e) => e.data.category }
 		],
 		defaultSortKey: 'date',
 		defaultSortDir: 'desc',

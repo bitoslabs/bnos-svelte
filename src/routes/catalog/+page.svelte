@@ -289,26 +289,26 @@
 	const tabs: { id: Tab; label: string; icon: string; count: () => number }[] = [
 		{
 			id: 'products',
-			label: 'Products',
+			label: t('nav.products'),
 			icon: 'lucide:package',
 			count: () => glo.all(TYPE.product).length
 		},
 		{
 			id: 'categories',
-			label: 'Categories',
+			label: t('catalog.categories'),
 			icon: 'lucide:folder',
 			count: () => glo.all(TYPE.category).length
 		},
-		{ id: 'units', label: 'Units', icon: 'lucide:ruler', count: () => glo.all(TYPE.unit).length },
+		{ id: 'units', label: t('catalog.units'), icon: 'lucide:ruler', count: () => glo.all(TYPE.unit).length },
 		{
 			id: 'modifiers',
-			label: 'Modifiers',
+			label: t('catalog.modifiers'),
 			icon: 'lucide:sliders-horizontal',
 			count: () => glo.all(TYPE.modifierGroup).length
 		},
 		{
 			id: 'bundles',
-			label: 'Bundles',
+			label: t('catalog.bundles'),
 			icon: 'lucide:package-open',
 			count: () => bundles.length
 		}
@@ -320,9 +320,9 @@
 		items: () => products,
 		search: (p, q) => ((p.data as any).name ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'name', label: 'Name', value: (p) => (p.data as any).name ?? '~' },
-			{ key: 'price', label: 'Price', value: (p) => (p.data as any).price ?? 0 },
-			{ key: 'category', label: 'Category', value: (p) => (p.data as any).categoryId ?? '~' }
+			{ key: 'name', label: t('common.name'), value: (p) => (p.data as any).name ?? '~' },
+			{ key: 'price', label: t('common.price'), value: (p) => (p.data as any).price ?? 0 },
+			{ key: 'category', label: t('common.category'), value: (p) => (p.data as any).categoryId ?? '~' }
 		],
 		defaultSortKey: 'name',
 		defaultViewMode: 'table',
@@ -335,8 +335,8 @@
 		items: () => categories,
 		search: (c, q) => (c.data.name ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'name', label: 'Name', value: (c) => c.data.name },
-			{ key: 'order', label: 'Order', value: (c) => c.data.sortOrder ?? 0 }
+			{ key: 'name', label: t('common.name'), value: (c) => c.data.name },
+			{ key: 'order', label: t('common.order'), value: (c) => c.data.sortOrder ?? 0 }
 		],
 		defaultSortKey: 'name',
 		defaultViewMode: 'table',
@@ -351,7 +351,7 @@
 			(u.data.name ?? '').toLowerCase().includes(q) ||
 			(u.data.symbol ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'name', label: 'Name', value: (u) => (u.data as any).name },
+			{ key: 'name', label: t('common.name'), value: (u) => (u.data as any).name },
 			{ key: 'symbol', label: 'Symbol', value: (u) => (u.data as any).symbol }
 		],
 		defaultSortKey: 'name',
@@ -364,7 +364,7 @@
 	const modCtrl = createListControls<{ id: string; data: ModifierGroup }>({
 		items: () => modifiers,
 		search: (m, q) => (m.data.name ?? '').toLowerCase().includes(q),
-		sortOptions: () => [{ key: 'name', label: 'Name', value: (m) => m.data.name }],
+		sortOptions: () => [{ key: 'name', label: t('common.name'), value: (m) => m.data.name }],
 		defaultSortKey: 'name',
 		defaultViewMode: 'table',
 		storageKey: 'catalog-modifiers'
@@ -1952,7 +1952,7 @@
 				<Select
 					bind:value={uType}
 					options={[
-						{ value: 'count', label: 'Count' },
+						{ value: 'count', label: t('common.count') },
 						{ value: 'weight', label: 'Weight' },
 						{ value: 'volume', label: 'Volume' },
 						{ value: 'length', label: 'Length' },

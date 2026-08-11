@@ -20,7 +20,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, formatInt, relativeTime, titleCase } from '$lib/utils/format';
 	import { toOrderRows, type DashboardOrder, type OrderRow } from '$lib/dashboard/metrics';
-	import { TYPE, statusColor, type Location } from '$lib/domain';
+	import { TYPE, statusColor, statusLabel, type Location } from '$lib/domain';
 	import type { OrderLine, PickupInfo, ShippingInfo } from '$lib/domain/types';
 	import { ORDER_SOURCES, sourceLabel, sourceIcon } from '$lib/domain/order-sources';
 	import { printPackingSlip } from '$lib/pos/print';
@@ -137,10 +137,10 @@
 			o.method.toLowerCase().includes(q),
 		sortOptions: () => [
 			{ key: 'number', label: 'Order no.', value: (o) => o.number },
-			{ key: 'status', label: 'Status', value: (o) => o.status },
-			{ key: 'total', label: 'Total', value: (o) => o.total },
-			{ key: 'items', label: 'Items', value: (o) => o.items },
-			{ key: 'date', label: 'Date', value: (o) => o.atMs }
+			{ key: 'status', label: t('common.status'), value: (o) => o.status },
+			{ key: 'total', label: t('common.total'), value: (o) => o.total },
+			{ key: 'items', label: t('common.items'), value: (o) => o.items },
+			{ key: 'date', label: t('common.date'), value: (o) => o.atMs }
 		],
 		defaultSortKey: 'date',
 		defaultSortDir: 'desc',
@@ -677,7 +677,7 @@
 									</span>
 								</Badge>
 							{/if}
-							<Badge color={statusColor(o.status)}>{titleCase(o.status)}</Badge>
+							<Badge color={statusColor(o.status)}>{statusLabel(o.status)}</Badge>
 						</div>
 					</div>
 					<div class="font-display text-xl font-bold tabular-nums">
@@ -831,7 +831,7 @@
 									{o.customerName || '—'}
 								</td>
 								<td class="px-5 py-3"
-									><Badge color={statusColor(o.status)}>{titleCase(o.status)}</Badge></td
+									><Badge color={statusColor(o.status)}>{statusLabel(o.status)}</Badge></td
 								>
 								<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
 									>{o.items}</td
@@ -1004,7 +1004,7 @@
 													>
 														<div class="flex items-center gap-2">
 															<Badge color="neutral">{data?.method || o.method || '—'}</Badge>
-															<Badge color={statusColor(o.status)}>{titleCase(o.status)}</Badge>
+															<Badge color={statusColor(o.status)}>{statusLabel(o.status)}</Badge>
 														</div>
 														<span class="font-display text-base font-bold tabular-nums"
 															>{formatMoney(o.total, currency)}</span

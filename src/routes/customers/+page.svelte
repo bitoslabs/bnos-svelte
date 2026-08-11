@@ -53,12 +53,12 @@
 			(c.data.email ?? '').toLowerCase().includes(q) ||
 			((c.data as { npub?: string }).npub ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'name', label: 'Name', value: (c) => c.data.name ?? '~' },
-			{ key: 'phone', label: 'Phone', value: (c) => c.data.phone ?? '~' },
-			{ key: 'email', label: 'Email', value: (c) => c.data.email ?? '~' },
-			{ key: 'segment', label: 'Segment', value: (c) => (c.data.segment as string) ?? 'none' },
+			{ key: 'name', label: t('common.name'), value: (c) => c.data.name ?? '~' },
+			{ key: 'phone', label: t('common.phone'), value: (c) => c.data.phone ?? '~' },
+			{ key: 'email', label: t('common.email'), value: (c) => c.data.email ?? '~' },
+			{ key: 'segment', label: t('common.segment'), value: (c) => (c.data.segment as string) ?? 'none' },
 			{ key: 'totalSpend', label: 'Total spend', value: (c) => (c.data.totalSpend as number) ?? 0 },
-			{ key: 'status', label: 'Status', value: (c) => c.data.status ?? 'active' }
+			{ key: 'status', label: t('common.status'), value: (c) => c.data.status ?? 'active' }
 		],
 		defaultSortKey: 'name',
 		defaultViewMode: 'table',

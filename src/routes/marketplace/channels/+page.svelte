@@ -20,6 +20,7 @@
 		TYPE,
 		CHANNEL_TYPES,
 		channelMeta,
+		statusLabel,
 		type MarketplaceChannelType,
 		type MarketplaceConnection
 	} from '$lib/domain';
@@ -151,7 +152,7 @@
 						</div>
 					</div>
 					<Badge color={c.data.status === 'connected' ? 'success' : c.data.status === 'error' ? 'info' : 'neutral'}>
-						{titleCase(c.data.status)}
+						{statusLabel(c.data.status)}
 					</Badge>
 				</div>
 

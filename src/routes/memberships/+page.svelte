@@ -50,8 +50,8 @@
 		items: () => plans,
 		search: (m, q) => (m.data.name ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'name', label: 'Name', value: (m) => m.data.name },
-			{ key: 'price', label: 'Price', value: (m) => m.data.price }
+			{ key: 'name', label: t('common.name'), value: (m) => m.data.name },
+			{ key: 'price', label: t('common.price'), value: (m) => m.data.price }
 		],
 		defaultSortKey: 'name',
 		defaultViewMode: 'grid',
@@ -61,8 +61,8 @@
 		items: () => subs,
 		search: (s, q) => (s.data.customerName ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'customer', label: 'Customer', value: (s) => s.data.customerName ?? '~' },
-			{ key: 'status', label: 'Status', value: (s) => s.data.status }
+			{ key: 'customer', label: t('common.customer'), value: (s) => s.data.customerName ?? '~' },
+			{ key: 'status', label: t('common.status'), value: (s) => s.data.status }
 		],
 		defaultSortKey: 'customer',
 		defaultViewMode: 'table',
@@ -71,7 +71,7 @@
 	const ciCtrl = createListControls<{ id: string; data: MembershipCheckIn }>({
 		items: () => checkins,
 		search: (c, q) => (c.data.customerName ?? '').toLowerCase().includes(q),
-		sortOptions: () => [{ key: 'date', label: 'Date', value: (c) => c.data.occurredAt }],
+		sortOptions: () => [{ key: 'date', label: t('common.date'), value: (c) => c.data.occurredAt }],
 		defaultSortKey: 'date',
 		defaultSortDir: 'desc',
 		defaultViewMode: 'table',
@@ -262,9 +262,9 @@
 	}
 
 	const tabs = [
-		{ id: 'plans' as Tab, label: 'Plans', icon: 'lucide:layers' },
-		{ id: 'subscriptions' as Tab, label: 'Subscriptions', icon: 'lucide:badge-check' },
-		{ id: 'checkins' as Tab, label: 'Check-ins', icon: 'lucide:door-open' }
+		{ id: 'plans' as Tab, label: t('memberships.plans'), icon: 'lucide:layers' },
+		{ id: 'subscriptions' as Tab, label: t('memberships.subscriptions'), icon: 'lucide:badge-check' },
+		{ id: 'checkins' as Tab, label: t('memberships.checkins'), icon: 'lucide:door-open' }
 	];
 
 	const modeBadgeColor = (mode?: string) =>

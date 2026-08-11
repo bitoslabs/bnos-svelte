@@ -3,6 +3,7 @@
 	import { cn } from '$lib/utils/cn';
 	import { preferences, accentOptions, densityOptions } from '$lib/theme/preferences.svelte';
 	import { setMode, userPrefersMode } from 'mode-watcher';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	/**
 	 * Compact appearance controls — theme cards + accent swatches + density.
@@ -12,9 +13,9 @@
 	let { class: cls }: { class?: string } = $props();
 
 	const modes = [
-		{ key: 'light', label: 'Light', icon: 'lucide:sun' },
-		{ key: 'dark', label: 'Dark', icon: 'lucide:moon' },
-		{ key: 'system', label: 'Auto', icon: 'lucide:monitor' }
+		{ key: 'light', label: t('settings.light'), icon: 'lucide:sun' },
+		{ key: 'dark', label: t('settings.dark'), icon: 'lucide:moon' },
+		{ key: 'system', label: t('settings.system'), icon: 'lucide:monitor' }
 	] as const;
 </script>
 
@@ -22,7 +23,7 @@
 	<!-- Theme cards -->
 	<div>
 		<p class="mb-2 px-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">
-			Color mode
+			{t('settings.colorMode')}
 		</p>
 		<div class="grid grid-cols-3 gap-1.5">
 			{#each modes as m (m.key)}
@@ -66,7 +67,7 @@
 	<!-- Accent -->
 	<div>
 		<p class="mb-2 px-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">
-			Accent
+			{t('settings.accentColor')}
 		</p>
 		<div class="flex flex-wrap gap-2 px-0.5">
 			{#each accentOptions as opt (opt.key)}
@@ -93,7 +94,7 @@
 	<!-- Density -->
 	<div>
 		<p class="mb-2 px-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">
-			Density
+			{t('settings.density')}
 		</p>
 		<div class="segmented flex gap-1">
 			{#each densityOptions as opt (opt.key)}

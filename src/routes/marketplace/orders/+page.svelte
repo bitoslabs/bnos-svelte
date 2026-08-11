@@ -17,7 +17,7 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { formatMoney, formatInt, relativeTime, titleCase } from '$lib/utils/format';
 	import { toOrderRows, type DashboardOrder } from '$lib/dashboard/metrics';
-	import { TYPE, statusColor, ORDER_SOURCES, sourceLabel, sourceIcon, isRemoteSource } from '$lib/domain';
+	import { TYPE, statusColor, statusLabel, ORDER_SOURCES, sourceLabel, sourceIcon, isRemoteSource } from '$lib/domain';
 
 	const currency = $derived(tenant.state.currency);
 	const orders = $derived(glo.all<DashboardOrder, 'commerce.order'>('commerce.order'));
@@ -51,10 +51,10 @@
 		items: () => filtered,
 		search: () => true,
 		sortOptions: () => [
-			{ key: 'number', label: 'Order', value: (o: (typeof mpRows)[number]) => o.number },
-			{ key: 'status', label: 'Status', value: (o) => o.status },
-			{ key: 'total', label: 'Total', value: (o) => o.total },
-			{ key: 'date', label: 'Date', value: (o) => o.atMs }
+			{ key: 'number', label: t('common.order'), value: (o: (typeof mpRows)[number]) => o.number },
+			{ key: 'status', label: t('common.status'), value: (o) => o.status },
+			{ key: 'total', label: t('common.total'), value: (o) => o.total },
+			{ key: 'date', label: t('common.date'), value: (o) => o.atMs }
 		],
 		defaultSortKey: 'date',
 		defaultSortDir: 'desc',
@@ -182,7 +182,7 @@
 									</span>
 								</td>
 								<td class="px-5 py-3 text-[var(--ui-text-muted)]">{o.customerName || '—'}</td>
-								<td class="px-5 py-3"><Badge color={statusColor(o.status)}>{titleCase(o.status)}</Badge></td>
+								<td class="px-5 py-3"><Badge color={statusColor(o.status)}>{statusLabel(o.status)}</Badge></td>
 								<td class="px-5 py-3 text-right font-semibold tabular-nums">{formatMoney(o.total, currency)}</td>
 								<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]">{relativeTime(o.atMs)}</td>
 							</tr>

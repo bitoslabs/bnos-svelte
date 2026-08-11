@@ -54,6 +54,9 @@ function detectLocale(): Locale {
 function applyHtmlLang(locale: Locale) {
 	if (!browser) return;
 	document.documentElement.lang = localeTag[locale];
+	// Expose the locale to the design system so locale-specific typography can
+	// react immediately without adding classes to every translated label.
+	document.documentElement.dataset.locale = locale;
 }
 
 class I18nStore {

@@ -107,7 +107,7 @@
 		{ label: 'Wallet', value: 'lucide:wallet' },
 		{ label: 'Bank', value: 'lucide:landmark' },
 		{ label: 'Mobile', value: 'lucide:smartphone' },
-		{ label: 'Phone', value: 'lucide:phone' },
+		{ label: t('common.phone'), value: 'lucide:phone' },
 		{ label: 'Gift', value: 'lucide:gift' },
 		{ label: 'Star', value: 'lucide:star' },
 		{ label: 'Bitcoin', value: 'lucide:bitcoin' },

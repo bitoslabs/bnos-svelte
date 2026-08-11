@@ -71,10 +71,10 @@
 		items: () => filtered,
 		search: () => true,
 		sortOptions: () => [
-			{ key: 'name', label: 'Name', value: (l) => l.data.productName },
-			{ key: 'price', label: 'Price', value: (l) => l.data.price },
-			{ key: 'stock', label: 'Stock', value: (l) => l.data.stock ?? 0 },
-			{ key: 'views', label: 'Views', value: (l) => l.data.views ?? 0 }
+			{ key: 'name', label: t('common.name'), value: (l) => l.data.productName },
+			{ key: 'price', label: t('common.price'), value: (l) => l.data.price },
+			{ key: 'stock', label: t('common.stock'), value: (l) => l.data.stock ?? 0 },
+			{ key: 'views', label: t('common.views'), value: (l) => l.data.views ?? 0 }
 		],
 		defaultSortKey: 'name',
 		defaultViewMode: 'list',

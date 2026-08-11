@@ -107,9 +107,9 @@
 			(s.data.role ?? '').toLowerCase().includes(q) ||
 			(s.data.email ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'name', label: 'Name', value: (s) => s.data.name },
-			{ key: 'role', label: 'Role', value: (s) => s.data.role },
-			{ key: 'status', label: 'Status', value: (s) => s.data.status }
+			{ key: 'name', label: t('common.name'), value: (s) => s.data.name },
+			{ key: 'role', label: t('common.role'), value: (s) => s.data.role },
+			{ key: 'status', label: t('common.status'), value: (s) => s.data.status }
 		],
 		defaultSortKey: 'name',
 		defaultViewMode: 'grid',

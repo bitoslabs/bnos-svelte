@@ -159,7 +159,7 @@
 					<h3 class="font-display text-[14px] font-semibold">Conversion funnel</h3>
 				</div>
 				<div class="space-y-3">
-					{#each [{ label: 'Views', value: funnel.views, icon: 'lucide:eye', color: 'bg-blue-500' }, { label: 'Clicks', value: funnel.clicks, icon: 'lucide:mouse-pointer-click', color: 'bg-violet-500' }, { label: 'Orders', value: funnel.conv, icon: 'lucide:shopping-bag', color: 'bg-emerald-500' }] as f (f.label)}
+					{#each [{ label: t('common.views'), value: funnel.views, icon: 'lucide:eye', color: 'bg-blue-500' }, { label: 'Clicks', value: funnel.clicks, icon: 'lucide:mouse-pointer-click', color: 'bg-violet-500' }, { label: 'Orders', value: funnel.conv, icon: 'lucide:shopping-bag', color: 'bg-emerald-500' }] as f (f.label)}
 						<div>
 							<div class="mb-1 flex items-center justify-between text-[11.5px]">
 								<span class="inline-flex items-center gap-1 font-medium text-[var(--ui-text-muted)]">

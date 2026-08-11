@@ -35,6 +35,13 @@
 						window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 					var dark = mode === 'dark' || (mode !== 'light' && prefersDark);
 					var root = document.documentElement;
+					var locale = localStorage.getItem('bnos-os:locale');
+					if (!locale) {
+						try {
+							locale = JSON.parse(localStorage.getItem('bnos-os:settings-general') || '{}').language;
+						} catch (_) {}
+					}
+					if (locale === 'lo' || locale === 'th' || locale === 'en') root.dataset.locale = locale;
 					if (dark) root.classList.add('dark');
 					if (stored) {
 						var p = JSON.parse(stored);

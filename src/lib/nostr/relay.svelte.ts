@@ -14,9 +14,12 @@ export interface RelayPermissions {
 }
 
 export const DEFAULT_RELAYS = [
-	'wss://relay.damus.io',
+	'wss://nostr-01.yakihonne.com',
 	'wss://nos.lol',
-	'wss://relay.nostr.band'
+	'wss://yabu.me',
+	'wss://relay.nostr.band',
+	'wss://nostr.wine',
+	'wss://relay.damus.io',
 ];
 
 class RelayStore {

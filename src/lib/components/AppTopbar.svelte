@@ -1,14 +1,19 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
+	import Switch from '$lib/components/ui/Switch.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
 	import AppearanceControls from '$lib/components/AppearanceControls.svelte';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import { command } from '$lib/stores/command.svelte';
 	import { findNavItem, navSections, navSectionLabel } from '$lib/nav';
 	import { relays } from '$nostr/relay.svelte';
 	import { session } from '$nostr/session.svelte';
+	import { tenant } from '$nostr/tenant.svelte';
+	import { glo } from '$nostr/store.svelte';
 	import { profile } from '$nostr/profile.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
@@ -29,11 +34,26 @@
 	// Popovers
 	let quickOpen = $state(false);
 	let relayOpen = $state(false);
+	let accountOpen = $state(false);
+	// Status trigger is an icon-only chip; the label lives in a tooltip.
 	const statusTriggerClass = $derived(
 		relays.online
-			? 'inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 text-[12px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-500/15 dark:text-emerald-300'
-			: 'inline-flex h-9 items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 text-[12px] font-semibold text-amber-700 transition-colors hover:bg-amber-500/15 dark:text-amber-300'
+			? 'relative inline-grid size-9 place-items-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 transition-colors hover:bg-emerald-500/15 dark:text-emerald-400'
+			: 'relative inline-grid size-9 place-items-center rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-600 transition-colors hover:bg-amber-500/15 dark:text-amber-400'
 	);
+	const statusTitle = $derived(
+		`${relays.online ? t('common.online') : t('common.offline')} · ${t('topbar.relaysActive', { active: relays.activeRelays.length, total: relays.relays.length })}`
+	);
+
+	// Quick add-relay field for the status popover.
+	let newRelay = $state('');
+
+	function addRelay() {
+		const value = newRelay.trim();
+		if (!value) return;
+		relays.add(value);
+		newRelay = '';
+	}
 
 	const syncState = $derived(dataSync.status);
 	const syncLabel = $derived.by(() => {
@@ -57,6 +77,14 @@
 
 	async function syncAllData() {
 		await dataSync.manualSync();
+	}
+
+	async function signOut() {
+		accountOpen = false;
+		await session.logout();
+		tenant.reset();
+		glo.clearAll();
+		await goto(resolve('/login'));
 	}
 </script>
 
@@ -127,25 +155,29 @@
 		bind:open={relayOpen}
 		align="end"
 		side="bottom"
+		title={statusTitle}
 		triggerClass={statusTriggerClass}
 		triggerActiveClass="ring-2 ring-primary-500/20"
 	>
 		{#snippet trigger()}
-			<span class="relative flex size-2">
+			<Icon name={relays.online ? 'lucide:wifi' : 'lucide:wifi-off'} class="size-[18px]" />
+			<span class="absolute -right-0.5 -bottom-0.5 flex size-2.5">
 				{#if relays.online}
 					<span
 						class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75"
 					></span>
-					<span class="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
-				{:else}
-					<span class="relative inline-flex size-2 rounded-full bg-amber-500"></span>
 				{/if}
+				<span
+					class="relative inline-flex size-2.5 rounded-full ring-2 ring-[var(--surface-bg)] {relays.online
+						? 'bg-emerald-500'
+						: 'bg-amber-500'}"
+				></span>
 			</span>
-			<span class="hidden md:inline">{relays.online ? t('common.online') : t('common.offline')}</span>
 		{/snippet}
 		{#snippet content()}
-			<div class="w-72 space-y-3 p-1">
-				<div class="flex items-center justify-between">
+			<div class="w-80 space-y-2.5 p-1">
+				<!-- Header: status + manage -->
+				<div class="flex items-center justify-between px-1">
 					<div class="flex items-center gap-2">
 						<span class="relative flex size-2.5">
 							{#if relays.online}
@@ -157,7 +189,12 @@
 								<span class="relative inline-flex size-2.5 rounded-full bg-amber-500"></span>
 							{/if}
 						</span>
-						<span class="text-[13px] font-semibold">{relays.online ? t('common.connected') : t('common.offline')}</span>
+						<span class="text-[13px] font-semibold"
+							>{relays.online ? t('common.connected') : t('common.offline')}</span
+						>
+						<span class="text-[11px] text-[var(--ui-text-dimmed)]">
+							{t('topbar.relaysActive', { active: relays.activeRelays.length, total: relays.relays.length })}
+						</span>
 					</div>
 					<a
 						href={resolve('/settings/relays')}
@@ -166,57 +203,90 @@
 					>
 				</div>
 
-				<div class="space-y-1.5">
-					{#each relays.relays as url (url)}
-						{@const perm = relays.permissions[url] ?? { read: true, write: true }}
-						{@const active = relays.activeRelays.includes(url)}
-						<div
-							class="flex items-center gap-2.5 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2"
-						>
-							<span
-								class="size-2 shrink-0 rounded-full {active
-									? 'bg-emerald-500'
-									: 'bg-[var(--ui-text-dimmed)]'}"
-							></span>
-							<div class="min-w-0 flex-1">
-								<p class="truncate font-mono text-[11.5px] font-medium">
-									{url.replace('wss://', '')}
-								</p>
-								<div class="mt-0.5 flex items-center gap-1.5">
-									{#if perm.read}
-										<span
-											class="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400"
-											>R</span
-										>
-									{/if}
-									{#if perm.write}
-										<span
-											class="rounded bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-bold text-blue-600 dark:text-blue-400"
-											>W</span
-										>
-									{/if}
-								</div>
-							</div>
-							<span
-								class="text-[10px] font-semibold {active
-									? 'text-emerald-600 dark:text-emerald-400'
-									: 'text-[var(--ui-text-dimmed)]'}"
+				<!-- Quick add relay -->
+				<form class="flex gap-1.5 px-1" onsubmit={(e) => (e.preventDefault(), addRelay())}>
+					<Input
+						bind:value={newRelay}
+						size="sm"
+						icon="lucide:plus"
+						placeholder={t('topbar.relayPlaceholder')}
+						class="flex-1"
+					/>
+					<button
+						type="submit"
+						class="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-primary-500 px-2.5 text-[12px] font-semibold text-white transition-colors hover:bg-primary-400"
+					>
+						{t('common.add')}
+					</button>
+				</form>
+
+				<!-- Relay list: activate / remove -->
+				{#if relays.relays.length === 0}
+					<div
+						class="rounded-lg border border-dashed border-[var(--ui-border-muted)] px-3 py-6 text-center"
+					>
+						<Icon name="lucide:radio-off" class="mx-auto mb-1.5 size-5 text-[var(--ui-text-dimmed)]" />
+						<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('topbar.noRelays')}</p>
+						<p class="mt-0.5 text-[11px] text-[var(--ui-text-dimmed)]">{t('topbar.noRelaysDesc')}</p>
+					</div>
+				{:else}
+					<ul class="max-h-64 space-y-1 overflow-y-auto px-0.5">
+						{#each relays.relays as url (url)}
+							{@const active = relays.isActive(url)}
+							{@const isPrimary = relays.primaryRelay === url}
+							<li
+								class="flex items-center gap-2.5 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-2.5 py-2"
 							>
-								{active ? t('common.live') : t('common.idle')}
-							</span>
-						</div>
-					{/each}
-				</div>
+								<span
+									class="size-2 shrink-0 rounded-full {active
+										? 'bg-emerald-500'
+										: 'bg-[var(--ui-text-dimmed)]'}"
+								></span>
+								<div class="min-w-0 flex-1">
+									<div class="flex items-center gap-1">
+										<p class="truncate font-mono text-[11.5px] font-medium">
+											{url.replace('wss://', '')}
+										</p>
+										{#if isPrimary}
+											<Icon
+												name="lucide:star"
+												class="size-3 shrink-0 fill-amber-400 text-amber-500"
+											/>
+										{/if}
+									</div>
+									<span
+										class="text-[10px] font-semibold {active
+											? 'text-emerald-600 dark:text-emerald-400'
+											: 'text-[var(--ui-text-dimmed)]'}"
+									>
+										{active ? t('common.active') : t('common.inactive')}
+									</span>
+								</div>
+								<Switch
+									checked={active}
+									label={active ? t('topbar.deactivateRelay') : t('topbar.activateRelay')}
+									onCheckedChange={(v) => relays.setActive(url, v)}
+								/>
+								<button
+									type="button"
+									onclick={() => relays.remove(url)}
+									class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
+									aria-label={t('common.removeRelay')}
+									title={t('common.removeRelay')}
+								>
+									<Icon name="lucide:x" class="size-3.5" />
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
 
-				<p class="text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
-					{t('topbar.relaysActive', { active: relays.activeRelays.length, total: relays.relays.length })}
-				</p>
-
+				<!-- Sync all data -->
 				<button
 					type="button"
 					onclick={syncAllData}
 					disabled={syncState === 'syncing'}
-					class="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-60"
+					class="mt-1 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-60"
 				>
 					<Icon name={syncIcon} class={syncIconClass} />
 					<span>{syncLabel}</span>
@@ -344,6 +414,87 @@
 						/>
 					</a>
 				</div>
+			</div>
+		{/snippet}
+	</Popover>
+
+	<!-- Account menu (moved from sidebar bottom) -->
+	<Popover bind:open={accountOpen} align="end" side="bottom" class="w-64 p-0">
+		{#snippet trigger()}
+			<div
+				class="grid size-9 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[12px] font-bold text-white shadow-sm ring-[var(--surface-bg)] transition-shadow hover:ring-2 hover:ring-primary-500/30"
+				title={profile.displayLabel}
+			>
+				{#if profile.hasAvatar}
+					<img
+						src={profile.picture}
+						alt={profile.displayLabel}
+						class="size-9 rounded-full object-cover"
+					/>
+				{:else}
+					{profile.avatarLetter}
+				{/if}
+			</div>
+		{/snippet}
+		{#snippet content()}
+			<div class="w-64 p-1">
+				<!-- Account summary -->
+				<div class="mb-2 flex items-center gap-2.5 rounded-lg px-2.5 py-2">
+					<div
+						class="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[12px] font-bold text-white shadow-sm"
+					>
+						{#if profile.hasAvatar}
+							<img
+								src={profile.picture}
+								alt={profile.displayLabel}
+								class="size-9 rounded-full object-cover"
+							/>
+						{:else}
+							{profile.avatarLetter}
+						{/if}
+					</div>
+					<div class="min-w-0 flex-1">
+						<div class="truncate text-[13px] font-semibold">{profile.displayLabel}</div>
+						<div class="truncate font-mono text-[11px] text-[var(--ui-text-dimmed)]">
+							{profile.subtitle}
+						</div>
+						<div class="mt-1 flex items-center gap-1.5">
+							<span class="live-dot"></span>
+							<span
+								class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-muted)] uppercase"
+							>
+								{session.loginMethod === 'extension'
+									? t('sidebar.nip07Extension')
+									: t('sidebar.privateKey')}
+							</span>
+						</div>
+					</div>
+				</div>
+
+				<a
+					href={resolve('/settings')}
+					onclick={() => (accountOpen = false)}
+					class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+				>
+					<Icon name="lucide:sliders-horizontal" class="size-4 text-[var(--ui-text-dimmed)]" />
+					{t('common.settings')}
+				</a>
+				<a
+					href={resolve('/profile')}
+					onclick={() => (accountOpen = false)}
+					class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+				>
+					<Icon name="lucide:user-circle" class="size-4 text-[var(--ui-text-dimmed)]" />
+					{t('common.profile')}
+				</a>
+				<button
+					type="button"
+					onclick={signOut}
+					class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-[var(--tone-error-text)] transition-colors hover:bg-[var(--tone-error-bg)]"
+				>
+					<Icon name="lucide:log-out" class="size-4" />
+					{t('common.signOut')}
+				</button>
 			</div>
 		{/snippet}
 	</Popover>
