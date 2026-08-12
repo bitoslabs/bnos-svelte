@@ -5,7 +5,6 @@
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
-	import Select from '$lib/components/ui/Select.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import QrCode from '$lib/components/ui/QrCode.svelte';
 	import { testLightningAddress } from '$lib/pos/lightning';
