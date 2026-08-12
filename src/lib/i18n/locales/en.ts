@@ -513,7 +513,36 @@ export const en = {
 		sold: 'sold',
 		noProductSales: 'No product sales yet.',
 		yourStore: 'Your store',
-		items: 'items'
+		items: 'items',
+
+		// ── Premium header status cluster ──
+		btcPrice: 'BTC price',
+		rateUpdated: 'Updated',
+		rateJustNow: 'just now',
+		perUnit: 'per {unit}',
+		satsPerUnit: '{unit} in sats',
+		refreshRate: 'Refresh rate',
+		rateUnavailable: 'Unavailable',
+		rateLoading: 'Fetching…',
+		today2: 'Today',
+		openShiftPrompt: 'Open a shift',
+		openShiftDesc: 'Start a cash drawer session to track today\'s sales.',
+		shiftRunning: 'Shift open',
+		shiftSales: 'Sales',
+		viewShifts: 'View shifts',
+		syncNow: 'Sync now',
+
+		// ── Net profit / insights ──
+		netProfit: 'Net profit',
+		profit: 'Profit',
+		expensesToday: 'Expenses today',
+		margin: 'Margin',
+		lowStock: 'Low stock',
+		lowStockDesc: 'Products at or below their reorder threshold.',
+		outOfStock: 'Out of stock',
+		lowStockCount: '{count} low · {out} out',
+		lowStockManage: 'Manage stock',
+		noLowStock: 'Stock levels are healthy.'
 	},
 	pos: {
 		cart: 'Cart',

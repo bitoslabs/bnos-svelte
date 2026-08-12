@@ -8,11 +8,14 @@
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { session } from '$nostr/session.svelte';
+	import { relays } from '$nostr/relay.svelte';
 	import { CORE_DATA_TYPES, dataSync } from '$nostr/sync.svelte';
-	import { formatMoney, formatInt, relativeTime } from '$lib/utils/format';
+	import { formatMoney, formatNumber, formatInt, relativeTime } from '$lib/utils/format';
 	import {
 		toOrderRows,
 		metricsSummary,
+		expenseSummary,
+		lowStockSummary,
 		buildHourly,
 		buildChartBars,
 		paymentBreakdown,
@@ -22,9 +25,12 @@
 		startOfToday,
 		type DashboardOrder
 	} from '$lib/dashboard/metrics';
+	import { TYPE } from '$lib/domain';
+	import type { Expense } from '$lib/domain/types';
 	import type { GloProduct, GloCustomer } from '@bitos/bnos-core/glo';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
+	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
 
 	let clock = $state('');
 
@@ -56,7 +62,9 @@
 	}
 
 	onMount(() => {
-		dataSync.hydrate(CORE_DATA_TYPES);
+		// Dashboard leads with CORE data; also hydrate expenses (secondary) so the
+		// net-profit card has local-cache data the moment background sync runs.
+		dataSync.hydrate([...CORE_DATA_TYPES, TYPE.expense]);
 
 		void (async () => {
 			await waitForHydration();
@@ -76,7 +84,7 @@
 			}
 		})();
 
-		// live clock
+		// live clock — drives both the time display and the shift duration tick
 		const tick = () =>
 			(clock = new Date().toLocaleTimeString('en-US', {
 				hour: '2-digit',
@@ -107,6 +115,11 @@
 	const btcPrice = $derived(btcRate.rateFor(currency));
 	const btcUsdPrice = $derived(btcRate.rateFor('USD'));
 
+	// Sats equivalent of one unit of the merchant's currency (e.g. 1 THB ≈ N sats).
+	// Useful in a Bitcoin-native POS — the merchant thinks in sats when stacking.
+	const satsPerUnit = $derived(btcPrice > 0 ? btcRate.satsFromAmount(1, currency) : 0);
+	const rateAge = $derived(btcRate.ageLabelFor(currency));
+
 	$effect(() => {
 		if (!tenant.hydrated || !currency) return;
 		untrack(() => void btcRate.ensureRate(currency));
@@ -114,14 +127,56 @@
 	});
 
 	const m = $derived(metricsSummary(rows));
+	const expenses = $derived(glo.all<Expense, typeof TYPE.expense>(TYPE.expense));
+	const exp = $derived(expenseSummary(expenses));
+	const netProfitToday = $derived(m.todaysTotal - exp.todaysTotal);
+	const marginToday = $derived(m.todaysTotal > 0 ? (netProfitToday / m.todaysTotal) * 100 : 0);
 	const hourly = $derived(buildHourly(rows));
 	const chartBars = $derived(buildChartBars(rows));
 	const payments = $derived(paymentBreakdown(todayRows));
 	const segments = $derived(orderTypeSegments(todayRows));
 	const products = $derived(topProducts(orderObjects as never));
 	const recent = $derived([...rows].sort((a, b) => b.atMs - a.atMs).slice(0, 8));
-	const productCount = $derived(glo.all<GloProduct, 'catalog.product'>('catalog.product').length);
+	const allProducts = $derived(glo.all<GloProduct, 'catalog.product'>('catalog.product'));
+	const stock = $derived(lowStockSummary(allProducts as never));
+	const productCount = $derived(allProducts.length);
 	const customerCount = $derived(glo.all<GloCustomer, 'crm.customer'>('crm.customer').length);
+
+	// Active shift + running duration (ticks every second via `clock` dep).
+	const activeShift = $derived(shiftStore.activeShift);
+	const shiftSummary = $derived(activeShift ? shiftStore.summaryFor(activeShift.id) : null);
+	const shiftDuration = $derived.by(() => {
+		void clock; // re-evaluate each second so the timer stays live
+		if (!activeShift) return '';
+		const ms = Date.now() - new Date(activeShift.data.openedAt).getTime();
+		if (!Number.isFinite(ms) || ms < 0) return '0m';
+		const mins = Math.floor(ms / 60000);
+		const h = Math.floor(mins / 60);
+		const mm = mins % 60;
+		return h > 0 ? `${h}h ${mm}m` : `${mm}m`;
+	});
+
+	// Sync / online status line under the org name.
+	const syncStatus = $derived.by(() => {
+		if (!relays.online) return { tone: 'tone-warning', label: t('common.offline') };
+		if (dataSync.status === 'syncing') return { tone: 'tone-info', label: t('common.sync') + '…' };
+		if (dataSync.status === 'failed') return { tone: 'tone-error', label: t('common.syncFailed') };
+		return {
+			tone: 'tone-success',
+			label: dataSync.lastSyncedAt
+				? `${t('common.allDataSynced')} · ${relativeTime(dataSync.lastSyncedAt)}`
+				: t('common.allDataSynced')
+		};
+	});
+
+	const todayLong = $derived(
+		new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+	);
+
+	async function refreshRate() {
+		await btcRate.refresh(currency);
+		if (currency !== 'USD') void btcRate.refresh('USD');
+	}
 
 	function statusColor(status: string): 'success' | 'info' | 'warning' | 'neutral' {
 		const s = status.toLowerCase();
@@ -170,57 +225,172 @@
 <svelte:head><title>{t('common.appName')} · {t('nav.dashboard')}</title></svelte:head>
 
 <div class="dashboard-page dashboard-stack pt-1 pb-12">
-	<!-- Welcome header -->
+	<!-- ══════════════════ Welcome header + premium status cluster ══════════════════ -->
 	<header class="dashboard-header flex flex-wrap items-end justify-between gap-3">
-		<div>
+		<div class="min-w-0">
 			<p class="text-[12px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
 				{greet}
 			</p>
 			<h1 class="font-display text-2xl font-bold tracking-tight">
 				{tenant.state.organizationName || t('dashboard.yourStore')}
 			</h1>
-			<p class="mt-0.5 text-[12.5px] text-[var(--ui-text-muted)]">
-				{session.shortNpub ?? t('profile.nostrIdentity')} · {tenant.state.currency}
-			</p>
+			<div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[var(--ui-text-muted)]">
+				<span class="inline-flex items-center gap-1.5">
+					<span
+						class="relative inline-flex size-2 rounded-full {relays.online
+							? 'bg-emerald-500'
+							: 'bg-amber-500'}"
+						aria-hidden="true"
+					>
+						{#if relays.online}
+							<span class="absolute inset-0 animate-ping rounded-full bg-emerald-500/60"></span>
+						{/if}
+					</span>
+					<span class="font-semibold {syncStatus.tone}">{syncStatus.label}</span>
+				</span>
+				<span class="text-[var(--ui-text-dimmed)]">·</span>
+				<span class="font-mono">{session.shortNpub ?? t('profile.nostrIdentity')}</span>
+				<span class="text-[var(--ui-text-dimmed)]">·</span>
+				<span>{tenant.state.currency}</span>
+			</div>
 		</div>
-		<div class="flex items-center gap-2">
+
+		<!-- Premium status cluster: BTC price · live clock/date -->
+		<div class="flex flex-wrap items-stretch gap-2">
+			<!-- BTC price card -->
 			<div
-				class="flex items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-4 py-2"
+				class="surface-card flex items-stretch overflow-hidden"
+				role="group"
+				aria-label={t('dashboard.btcPrice')}
 			>
-				<Icon name="lucide:bitcoin" class="size-4 text-amber-500" />
-				<div class="leading-tight">
-					<div class="text-[10px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">BTC price</div>
-					<div class="font-mono text-[13px] font-semibold tabular-nums">
+				<div
+					class="grid w-11 shrink-0 place-items-center bg-amber-500/10 text-amber-500"
+					aria-hidden="true"
+				>
+					<Icon name="lucide:bitcoin" class="size-5" />
+				</div>
+				<div class="flex flex-col justify-center px-3.5 py-2">
+					<div class="flex items-center gap-2">
+						<span
+							class="text-[10px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+						>
+							BTC · {currency}
+						</span>
+						<button
+							type="button"
+							class="grid size-5 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] focus-brand"
+							onclick={refreshRate}
+							disabled={btcRate.loading}
+							aria-label={t('dashboard.refreshRate')}
+							title={t('dashboard.refreshRate')}
+						>
+							<Icon
+								name="lucide:refresh-cw"
+								class="size-3.5 {btcRate.loading ? 'animate-spin' : ''}"
+							/>
+						</button>
+					</div>
+					<div class="font-display text-[15px] font-bold leading-tight tabular-nums">
 						{#if btcPrice > 0}
 							{formatMoney(btcPrice, currency)}
 						{:else if btcRate.loading}
-							Loading…
+							<span class="inline-block h-4 w-24 animate-pulse rounded bg-[var(--ui-bg-accented)]"></span>
 						{:else}
-							Unavailable
+							<span class="text-[12px] font-semibold text-[var(--ui-text-dimmed)]">
+								{t('dashboard.rateUnavailable')}
+							</span>
 						{/if}
 					</div>
-					{#if currency !== 'USD' && btcUsdPrice > 0}
-						<div class="text-[10px] text-[var(--ui-text-dimmed)]">{formatMoney(btcUsdPrice, 'USD')} USD</div>
-					{/if}
+					<div class="mt-0.5 flex items-center gap-1.5 text-[10px] text-[var(--ui-text-dimmed)]">
+						{#if satsPerUnit > 0}
+							<span class="tabular-nums"
+								>1 {currency} ≈ {formatNumber(satsPerUnit)} sats</span
+							>
+							<span aria-hidden="true">·</span>
+						{/if}
+						{#if rateAge}
+							<span>{t('dashboard.rateUpdated')} {rateAge}</span>
+						{/if}
+						{#if currency !== 'USD' && btcUsdPrice > 0}
+							<span aria-hidden="true">·</span>
+							<span class="tabular-nums">{formatMoney(btcUsdPrice, 'USD')} USD</span>
+						{/if}
+					</div>
 				</div>
 			</div>
+
+			<!-- Live clock + date card -->
 			<div
-				class="dashboard-clock flex items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-4 py-2"
+				class="surface-card flex items-stretch overflow-hidden"
+				role="group"
+				aria-label={t('common.today')}
 			>
-				<Icon name="lucide:clock" class="size-4 text-[var(--ui-text-dimmed)]" />
-				<span class="font-mono text-[14px] font-semibold tabular-nums">{clock}</span>
+				<div
+					class="grid w-11 shrink-0 place-items-center bg-[var(--ui-bg-muted)] text-[var(--ui-text-dimmed)]"
+					aria-hidden="true"
+				>
+					<Icon name="lucide:calendar-clock" class="size-5" />
+				</div>
+				<div class="flex flex-col justify-center px-3.5 py-2">
+					<div class="font-mono text-[16px] font-bold leading-tight tabular-nums">
+						{clock || '--:--'}
+					</div>
+					<div class="mt-0.5 text-[10px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
+						{todayLong}
+					</div>
+					{#if activeShift}
+						<a
+							href={resolve('/transactions/shifts')}
+							class="mt-0.5 inline-flex items-center gap-1 text-[10px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
+							title={t('dashboard.viewShifts')}
+						>
+							<span class="live-dot !size-1.5"></span>
+							{t('dashboard.shiftRunning')} {shiftDuration}
+						</a>
+					{/if}
+				</div>
 			</div>
 		</div>
 	</header>
 
+	<!-- Active shift banner (only when a shift is open) -->
+	{#if activeShift && shiftSummary}
+		<a
+			href={resolve('/transactions/shifts')}
+			class="surface-card flex flex-wrap items-center gap-3 p-3 transition-colors hover:border-[var(--ui-border-accented)]"
+		>
+			<span class="grid size-9 shrink-0 place-items-center rounded-xl bg-primary-500/10 text-primary-600 dark:text-primary-400">
+				<Icon name="lucide:lock-open" class="size-4" />
+			</span>
+			<div class="min-w-0 flex-1">
+				<div class="flex items-center gap-2">
+					<span class="text-[13px] font-semibold">{t('dashboard.shiftRunning')}</span>
+					<span class="inline-flex items-center gap-1 rounded-md bg-primary-500/10 px-1.5 py-0.5 text-[11px] font-bold text-primary-600 tabular-nums dark:text-primary-400">
+						<Icon name="lucide:timer" class="size-3" />{shiftDuration}
+					</span>
+				</div>
+				<p class="text-[11.5px] text-[var(--ui-text-muted)]">
+					{shiftSummary.totalOrders} {t('dashboard.orders')} · {t('dashboard.shiftSales')}
+					{formatMoney(shiftSummary.totalSales - shiftSummary.totalRefundAmount, currency)}
+				</p>
+			</div>
+			<span class="hidden items-center gap-1 text-[12px] font-semibold text-primary-600 sm:inline-flex dark:text-primary-400">
+				{t('dashboard.viewShifts')}
+				<Icon name="lucide:arrow-right" class="size-3.5" />
+			</span>
+		</a>
+	{/if}
+
 	<!-- Quick actions -->
 	<div class="dashboard-quick-actions grid grid-cols-2 lg:grid-cols-4">
-			{#each quickActions as action (action.label)}
-				<a
-					href={action.to}
-					class="dashboard-quick-action surface-card group flex items-center transition-colors hover:border-[var(--ui-border-accented)]"
+		{#each quickActions as action (action.label)}
+			<a
+				href={action.to}
+				class="dashboard-quick-action surface-card group flex items-center transition-colors hover:border-[var(--ui-border-accented)]"
+			>
+				<div
+					class="dashboard-quick-action-icon grid size-10 shrink-0 place-items-center rounded-xl {action.bg} {action.color}"
 				>
-				<div class="dashboard-quick-action-icon grid size-10 shrink-0 place-items-center rounded-xl {action.bg} {action.color}">
 					<Icon name={action.icon} class="size-5" />
 				</div>
 				<div class="min-w-0">
@@ -235,11 +405,13 @@
 	<div class="dashboard-grid grid grid-cols-1 xl:grid-cols-12">
 		<!-- LEFT COLUMN -->
 		<div class="dashboard-column flex flex-col xl:col-span-5">
-			<!-- {t('dashboard.todaysSales')} -->
+			<!-- Today's sales (hero) -->
 			<div class="dashboard-card accent-bar surface-card" style="--accent: var(--ui-color-primary-500);">
 				<div class="flex items-start justify-between">
 					<div>
-						<div class="text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('dashboard.todaysSales')}</div>
+						<div class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
+							{t('dashboard.todaysSales')}
+						</div>
 						<div class="mt-1 font-display text-3xl font-bold tracking-tight tabular-nums">
 							{formatMoney(m.todaysTotal, currency)}
 						</div>
@@ -275,10 +447,56 @@
 				</div>
 			</div>
 
-			<!-- {t('dashboard.hourlySales')} -->
+			<!-- Low-stock alerts (only when there's something to flag) -->
+			{#if stock.low + stock.out > 0}
+				<div class="dashboard-card surface-card">
+					<div class="mb-3 flex items-center justify-between gap-2">
+						<h3 class="flex items-center gap-2 font-display text-[15px] font-semibold tracking-tight">
+							<Icon name="lucide:package-x" class="size-4 text-amber-500" />
+							{t('dashboard.lowStock')}
+						</h3>
+						<span class="tone-warning rounded-md px-2 py-0.5 text-[11px] font-semibold tabular-nums">
+							{stock.low} low · {stock.out} out
+						</span>
+					</div>
+					<p class="mb-3 text-[12px] text-[var(--ui-text-muted)]">{t('dashboard.lowStockDesc')}</p>
+					<ul class="space-y-1.5">
+						{#each stock.items as item (item.id)}
+							<li class="flex items-center gap-2.5 text-[12.5px]">
+								<span
+									class="grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-bold {item
+										.state === 'out'
+										? 'tone-error'
+										: 'tone-warning'}"
+								>
+									<Icon
+										name={item.state === 'out' ? 'lucide:x' : 'lucide:alert-triangle'}
+										class="size-3"
+									/>
+								</span>
+								<span class="min-w-0 flex-1 truncate font-semibold">{item.name}</span>
+								<span class="shrink-0 font-mono text-[11.5px] tabular-nums text-[var(--ui-text-muted)]">
+									{item.stock}/{item.threshold}
+								</span>
+							</li>
+						{/each}
+					</ul>
+					<a
+						href={resolve('/inventory')}
+						class="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
+					>
+						{t('dashboard.lowStockManage')}
+						<Icon name="lucide:arrow-right" class="size-3.5" />
+					</a>
+				</div>
+			{/if}
+
+			<!-- Hourly sales -->
 			<div class="dashboard-card surface-card">
 				<div class="mb-4 flex items-center justify-between">
-					<h3 class="font-display text-[15px] font-semibold tracking-tight">{t('dashboard.hourlySales')}</h3>
+					<h3 class="font-display text-[15px] font-semibold tracking-tight">
+						{t('dashboard.hourlySales')}
+					</h3>
 					<span class="text-[11px] text-[var(--ui-text-dimmed)]">{t('common.today')}</span>
 				</div>
 				{#if hourly.length}
@@ -293,9 +511,7 @@
 									aria-label={`${hr.label}: ${formatMoney(hr.value, currency)}`}
 									title={formatMoney(hr.value, currency)}
 								></div>
-								<span class="text-[9.5px] font-semibold text-[var(--ui-text-dimmed)]"
-									>{hr.label}</span
-								>
+								<span class="text-[9.5px] font-semibold text-[var(--ui-text-dimmed)]">{hr.label}</span>
 							</div>
 						{/each}
 					</div>
@@ -308,7 +524,9 @@
 
 			<!-- Payment breakdown -->
 			<div class="dashboard-card surface-card">
-				<h3 class="mb-3 font-display text-[15px] font-semibold tracking-tight">{t('dashboard.paymentMethods')}</h3>
+				<h3 class="mb-3 font-display text-[15px] font-semibold tracking-tight">
+					{t('dashboard.paymentMethods')}
+				</h3>
 				{#if payments.length}
 					<div class="space-y-2.5">
 						{#each payments as p (p.key)}
@@ -326,10 +544,7 @@
 										>
 									</div>
 									<div class="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--ui-bg-accented)]">
-										<div
-											class="h-full rounded-full bg-primary-500"
-											style="width: {p.percent}%"
-										></div>
+										<div class="h-full rounded-full bg-primary-500" style="width: {p.percent}%"></div>
 									</div>
 								</div>
 							</div>
@@ -342,9 +557,11 @@
 				{/if}
 			</div>
 
-			<!-- {t('dashboard.orderTypes')} + top products -->
+			<!-- Order types + top products -->
 			<div class="dashboard-card surface-card">
-				<h3 class="mb-3 font-display text-[15px] font-semibold tracking-tight">{t('dashboard.orderTypes')}</h3>
+				<h3 class="mb-3 font-display text-[15px] font-semibold tracking-tight">
+					{t('dashboard.orderTypes')}
+				</h3>
 				{#if segments.length}
 					<div class="mb-4 flex flex-wrap gap-2">
 						{#each segments as s (s.key)}
@@ -362,7 +579,9 @@
 				{/if}
 
 				<div class="border-t border-[var(--ui-border-muted)] pt-3">
-					<h4 class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('dashboard.topProducts')}</h4>
+					<h4 class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">
+						{t('dashboard.topProducts')}
+					</h4>
 					{#if products.length}
 						<ol class="space-y-1.5">
 							{#each products as p, i (p.name)}
@@ -373,7 +592,7 @@
 									>
 									<span class="min-w-0 flex-1 truncate font-semibold">{p.name}</span>
 									<span class="shrink-0 text-[var(--ui-text-muted)] tabular-nums"
-										>{formatInt(p.qty)} sold</span
+										>{formatInt(p.qty)} {t('dashboard.sold')}</span
 									>
 								</li>
 							{/each}
@@ -387,14 +606,27 @@
 
 		<!-- RIGHT COLUMN -->
 		<div class="dashboard-column flex flex-col xl:col-span-7">
-			<!-- Metrics row -->
-			<div class="dashboard-metrics grid grid-cols-3">
+			<!-- Metrics row: Net profit (today) · this week · this month -->
+			<div class="dashboard-metrics grid grid-cols-1 sm:grid-cols-3">
 				<div class="metric-card dashboard-metric-card">
-					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('common.today')}</div>
-					<div class="mt-1 font-display text-lg font-bold tabular-nums">
-						{formatMoney(m.todaysTotal, currency)}
+					<div class="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+						<Icon name="lucide:wallet" class="size-3.5" />
+						{t('dashboard.netProfit')}
+						<span class="text-[var(--ui-text-dimmed)]">· {t('common.today')}</span>
 					</div>
-					<div class="text-[11px] text-[var(--ui-text-muted)]">{m.todaysCount} {t('dashboard.orders')}</div>
+					<div
+						class="mt-1 font-display text-lg font-bold tabular-nums {netProfitToday < 0
+							? 'text-[var(--tone-error-text)]'
+							: ''}"
+					>
+						{formatMoney(netProfitToday, currency)}
+					</div>
+					<div class="text-[11px] text-[var(--ui-text-muted)]">
+						{t('dashboard.expensesToday')} {formatMoney(exp.todaysTotal, currency)}
+						{#if m.todaysTotal > 0}
+							· {t('dashboard.margin')} {marginToday.toFixed(0)}%
+						{/if}
+					</div>
 				</div>
 				<div class="metric-card dashboard-metric-card">
 					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('common.thisWeek')}</div>
@@ -416,13 +648,8 @@
 			<div class="dashboard-card surface-card">
 				<div class="mb-4 flex items-center justify-between">
 					<h3 class="font-display text-[15px] font-semibold tracking-tight">{t('dashboard.salesLast7')}</h3>
-					<span
-						class="font-display text-base font-bold text-primary-600 tabular-nums dark:text-primary-400"
-					>
-						{formatMoney(
-							chartBars.reduce((s, b) => s + b.value, 0),
-							currency
-						)}
+					<span class="font-display text-base font-bold text-primary-600 tabular-nums dark:text-primary-400">
+						{formatMoney(chartBars.reduce((s, b) => s + b.value, 0), currency)}
 					</span>
 				</div>
 				<div class="flex h-44 items-end justify-between gap-2">
@@ -447,11 +674,9 @@
 				</div>
 			</div>
 
-			<!-- {t('dashboard.recentOrders')} -->
+			<!-- Recent orders -->
 			<div class="surface-card overflow-hidden">
-				<div
-					class="dashboard-card-header flex items-center justify-between border-b border-[var(--ui-border-muted)]"
-				>
+				<div class="dashboard-card-header flex items-center justify-between border-b border-[var(--ui-border-muted)]">
 					<h3 class="font-display text-[15px] font-semibold tracking-tight">{t('dashboard.recentOrders')}</h3>
 					<a
 						href={resolve('/orders')}
@@ -487,22 +712,34 @@
 								</div>
 								<div class="min-w-0 flex-1">
 									<div class="flex items-center gap-2">
-											<span class="text-[13px] font-semibold">{o.number}</span>
-											<Badge color={statusColor(o.status)}>{o.status}</Badge>
+										<span class="text-[13px] font-semibold">{o.number}</span>
+										<Badge color={statusColor(o.status)}>{o.status}</Badge>
 									</div>
-										<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
-											{o.items} {o.items !== 1 ? t('dashboard.items') : t('dashboard.item')} · {relativeTime(o.atMs)}
-										</p>
+									<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
+										{o.items} {o.items !== 1 ? t('dashboard.items') : t('dashboard.item')} · {relativeTime(o.atMs)}
+									</p>
+								</div>
+								<div class="text-right">
+									<div class="text-[13px] font-bold tabular-nums">{formatMoney(o.total, currency)}</div>
+									<div
+										class="mt-0.5 flex items-center justify-end gap-1 text-[10.5px] font-semibold text-[var(--ui-text-dimmed)]"
+									>
+										<Icon
+											name={o.method === 'cash'
+												? 'lucide:banknote'
+												: o.method === 'card'
+													? 'lucide:credit-card'
+													: o.method === 'qr'
+														? 'lucide:qr-code'
+														: o.method === 'lightning'
+															? 'lucide:zap'
+															: 'lucide:circle-dot'}
+											class="size-3"
+										/>
+										<span class="capitalize">{o.method}</span>
 									</div>
-									<div class="text-right">
-										<div class="text-[13px] font-bold tabular-nums">{formatMoney(o.total, currency)}</div>
-											<div class="mt-0.5 flex items-center justify-end gap-1 text-[10.5px] font-semibold text-[var(--ui-text-dimmed)]">
-												<Icon name={o.method === 'cash' ? 'lucide:banknote' : o.method === 'card' ? 'lucide:credit-card' : o.method === 'qr' ? 'lucide:qr-code' : o.method === 'lightning' ? 'lucide:zap' : 'lucide:circle-dot'} class="size-3" />
-												<span class="capitalize">{o.method}</span>
-											</div>
-									</div>
-								</a
-							>
+								</div>
+							</a>
 						{/each}
 					</div>
 				{/if}

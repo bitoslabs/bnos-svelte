@@ -4,8 +4,8 @@
  * page calls these inside `$derived` so they recompute reactively as orders
  * change. No runes here → trivially testable.
  */
-import type { GloOrder } from '@bitos/bnos-core/glo';
-import type { Order, ShippingInfo } from '$lib/domain/types';
+import type { GloOrder, GloProduct } from '@bitos/bnos-core/glo';
+import type { Expense, Order, ShippingInfo } from '$lib/domain/types';
 
 /** Local order view: GLO order data + a POS payment method (stored at checkout). */
 export type DashboardOrder = Order & { method?: string };
@@ -330,4 +330,98 @@ export function greeting(): string {
 	if (h < 12) return 'Good morning';
 	if (h < 17) return 'Good afternoon';
 	return 'Good evening';
+}
+
+// ── Net profit (revenue minus expenses) ────────────────────────────────────
+
+export interface ExpenseSummary {
+	todaysTotal: number;
+	weekTotal: number;
+	monthTotal: number;
+}
+
+/** Sum non-cancelled, non-draft expenses by period. `occurredAt` is ISO. */
+export function expenseSummary(
+	expenses: { data: Pick<Expense, 'amount' | 'occurredAt' | 'status'> }[]
+): ExpenseSummary {
+	const now = new Date();
+	const todayStart = startOfDay(now);
+	const weekStart = startOfWeek(now);
+	const monthStart = startOfMonth(now);
+	const out: ExpenseSummary = { todaysTotal: 0, weekTotal: 0, monthTotal: 0 };
+	for (const e of expenses) {
+		const status = e.data.status;
+		if (status === 'cancelled' || status === 'draft') continue;
+		const ms = new Date(e.data.occurredAt).getTime();
+		if (!Number.isFinite(ms)) continue;
+		const amount = Number.isFinite(e.data.amount) ? e.data.amount : 0;
+		if (ms >= monthStart) out.monthTotal += amount;
+		if (ms >= weekStart) out.weekTotal += amount;
+		if (ms >= todayStart) out.todaysTotal += amount;
+	}
+	return out;
+}
+
+// ── Inventory low-stock alerts ─────────────────────────────────────────────
+
+export interface LowStockItem {
+	id: string;
+	name: string;
+	stock: number;
+	threshold: number;
+	state: 'out' | 'low';
+}
+
+export interface LowStockSummary {
+	/** Total products that participate in stock tracking. */
+	tracked: number;
+	low: number;
+	out: number;
+	items: LowStockItem[];
+}
+
+/** A product is "tracked" when it has an explicit stockLevel or any inventory
+ *  config (threshold/reorder). Untracked catalog items (services, etc.) are
+ *  ignored so a non-physical catalog never trips a false low-stock alert. */
+export function lowStockSummary(
+	products: {
+		id: string;
+		data: Pick<GloProduct, 'name'> & {
+			stockLevel?: number;
+			inventory?: { lowStockThreshold?: number; reorderPoint?: number };
+		};
+	}[],
+	limit = 5
+): LowStockSummary {
+	const items: LowStockItem[] = [];
+	let tracked = 0;
+	let low = 0;
+	let out = 0;
+	for (const p of products) {
+		const hasStockField = typeof p.data.stockLevel === 'number';
+		const hasInvConfig = !!p.data.inventory;
+		if (!hasStockField && !hasInvConfig) continue;
+		tracked += 1;
+		const stock = hasStockField ? (p.data.stockLevel as number) : 0;
+		const threshold = p.data.inventory?.lowStockThreshold ?? 5;
+		let state: 'out' | 'low' | null = null;
+		if (stock <= 0) {
+			out += 1;
+			state = 'out';
+		} else if (stock <= threshold) {
+			low += 1;
+			state = 'low';
+		}
+		if (state) {
+			items.push({
+				id: p.id,
+				name: p.data.name || '—',
+				stock,
+				threshold,
+				state
+			});
+		}
+	}
+	items.sort((a, b) => a.stock - b.stock);
+	return { tracked, low, out, items: items.slice(0, limit) };
 }
