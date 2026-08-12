@@ -9,6 +9,8 @@
 	import BnosMark from '$lib/components/BnosMark.svelte';
 	import { truncateNpub } from '$lib/utils/format';
 	import { site, aboutLinks } from '$lib/site';
+	import SupportWidget from '$lib/components/support/SupportWidget.svelte';
+	import ContributorsWidget from '$lib/components/support/ContributorsWidget.svelte';
 
 	const buildRows = [
 		{ label: 'Version', value: `v${site.version}`, icon: 'lucide:tag' },
@@ -116,6 +118,14 @@
 				{/if}
 			</div>
 		</div>
+	</section>
+
+	<section>
+		<SupportWidget />
+	</section>
+
+	<section>
+		<ContributorsWidget />
 	</section>
 
 	<!-- Version & build -->

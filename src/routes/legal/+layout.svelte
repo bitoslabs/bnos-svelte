@@ -11,7 +11,10 @@
 	const links = [
 		{ to: '/legal/privacy', icon: 'lucide:shield-check', label: 'Privacy Policy' },
 		{ to: '/legal/terms', icon: 'lucide:file-text', label: 'Terms of Service' },
-		{ to: '/legal/license', icon: 'lucide:scale', label: 'Open-source License' }
+		{ to: '/legal/license', icon: 'lucide:scale', label: 'Open-source License' },
+		// about
+		{ to: '/about', icon: 'lucide:info', label: 'About' }
+
 	];
 
 	function active(to: string) {
@@ -27,7 +30,7 @@
 <div class="mx-auto w-full max-w-5xl space-y-6 px-5 pt-6 pb-24 lg:pb-12 min-h-dvh lg:pt-10">
 	<header class="space-y-2">
 		<a
-			href={resolve('/settings/about')}
+			href={resolve('/about')}
 			class="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 		>
 			<Icon name="lucide:arrow-left" class="size-4" />

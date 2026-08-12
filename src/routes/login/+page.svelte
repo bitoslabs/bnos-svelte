@@ -294,6 +294,10 @@
 
 		<!-- Footer links: legal + open source -->
 		<div class="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px]">
+			<a href={resolve('/about')} class="inline-flex items-center gap-1 font-semibold text-primary-600 hover:text-primary-500 dark:text-primary-400">
+				<Icon name="lucide:info" class="size-3" />About {site.name}
+			</a>
+			<span class="text-[var(--ui-text-dimmed)]">·</span>
 			<a href={resolve('/legal/privacy')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">{t('legal.privacy')}</a>
 			<span class="text-[var(--ui-text-dimmed)]">·</span>
 			<a href={resolve('/legal/terms')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">{t('legal.terms')}</a>

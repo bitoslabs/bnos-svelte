@@ -41,7 +41,8 @@
 	let tenantStoragePubkey = '';
 
 	const isPublicRoute = $derived(
-		page.url.pathname === '/login' ||
+		page.url.pathname === '/about' ||
+			page.url.pathname === '/login' ||
 			page.url.pathname === '/resolve' ||
 			page.url.pathname.startsWith('/setup') ||
 			page.url.pathname.startsWith('/legal')
