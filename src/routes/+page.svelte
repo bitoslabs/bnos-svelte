@@ -21,7 +21,6 @@
 		paymentBreakdown,
 		orderTypeSegments,
 		topProducts,
-		greeting,
 		startOfToday,
 		type DashboardOrder
 	} from '$lib/dashboard/metrics';
@@ -33,6 +32,9 @@
 	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
 
 	let clock = $state('');
+	let blockHeight = $state<number | null>(null);
+	let blockTimestamp = $state<number | null>(null);
+	let blockLoading = $state(false);
 
 	const greet = $derived.by(() => {
 		const h = new Date().getHours();
@@ -93,7 +95,12 @@
 			}));
 		tick();
 		const id = setInterval(tick, 1000);
-		return () => clearInterval(id);
+		void refreshBlockchain();
+		const blockId = setInterval(refreshBlockchain, 60_000);
+		return () => {
+			clearInterval(id);
+			clearInterval(blockId);
+		};
 	});
 
 	const orderObjects = $derived(glo.all<DashboardOrder, 'commerce.order'>('commerce.order'));
@@ -117,8 +124,20 @@
 
 	// Sats equivalent of one unit of the merchant's currency (e.g. 1 THB ≈ N sats).
 	// Useful in a Bitcoin-native POS — the merchant thinks in sats when stacking.
-	const satsPerUnit = $derived(btcPrice > 0 ? btcRate.satsFromAmount(1, currency) : 0);
+	const showSats = $derived(btcRate.canConvert(currency));
+	const satsPerUnit = $derived(showSats ? btcRate.satsFromAmount(1, currency) : 0);
 	const rateAge = $derived(btcRate.ageLabelFor(currency));
+	const blockAgeMinutes = $derived.by(() => {
+		void clock;
+		return blockTimestamp ? Math.max(0, Math.floor(Date.now() / 1000 - blockTimestamp) / 60) : 0;
+	});
+	const blockAge = $derived.by(() => {
+		const minutes = Math.floor(blockAgeMinutes);
+		if (minutes < 1) return 'just now';
+		if (minutes < 60) return `${minutes}m ago`;
+		const hours = Math.floor(minutes / 60);
+		return hours < 24 ? `${hours}h ago` : `${Math.floor(hours / 24)}d ago`;
+	});
 
 	$effect(() => {
 		if (!tenant.hydrated || !currency) return;
@@ -174,8 +193,42 @@
 	);
 
 	async function refreshRate() {
-		await btcRate.refresh(currency);
-		if (currency !== 'USD') void btcRate.refresh('USD');
+		await Promise.all([
+			btcRate.refresh(currency),
+			currency !== 'USD' ? btcRate.refresh('USD') : Promise.resolve(),
+			refreshBlockchain()
+		]);
+	}
+
+	async function refreshBlockchain() {
+		if (blockLoading) return;
+		blockLoading = true;
+		try {
+			let latest: { height?: number; timestamp?: number } | undefined;
+			try {
+				// Blockstream is the primary source.
+				const hashResponse = await fetch('https://blockstream.info/api/blocks/tip/hash');
+				if (!hashResponse.ok) throw new Error(`HTTP ${hashResponse.status}`);
+				const hash = (await hashResponse.text()).trim();
+				const blockResponse = await fetch(`https://blockstream.info/api/block/${hash}`);
+				if (!blockResponse.ok) throw new Error(`HTTP ${blockResponse.status}`);
+				latest = (await blockResponse.json()) as { height?: number; timestamp?: number };
+			} catch {
+				// Mempool.space fallback.
+				const response = await fetch('https://mempool.space/api/blocks');
+				if (!response.ok) throw new Error(`HTTP ${response.status}`);
+				const blocks = (await response.json()) as Array<{ height?: number; timestamp?: number }>;
+				latest = blocks[0];
+			}
+			if (typeof latest?.height === 'number' && typeof latest.timestamp === 'number') {
+				blockHeight = latest.height;
+				blockTimestamp = latest.timestamp;
+			}
+		} catch {
+			// Keep the last known block when the network is unavailable.
+		} finally {
+			blockLoading = false;
+		}
 	}
 
 	function statusColor(status: string): 'success' | 'info' | 'warning' | 'neutral' {
@@ -316,6 +369,14 @@
 							<span class="tabular-nums">{formatMoney(btcUsdPrice, 'USD')} USD</span>
 						{/if}
 					</div>
+					{#if blockHeight !== null}
+						<div
+							class="mt-1 text-[10px] tabular-nums {blockAgeMinutes >= 15 ? 'text-[var(--tone-warning-text)]' : 'text-[var(--ui-text-dimmed)]'}"
+							title="Latest Bitcoin blockchain block"
+						>
+							Block {formatInt(blockHeight)} · {blockAge}
+						</div>
+					{/if}
 				</div>
 			</div>
 
