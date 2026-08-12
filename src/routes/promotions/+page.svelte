@@ -637,7 +637,6 @@
 						size="sm"
 						icon="lucide:plus"
 						onclick={() => openCreate('promotions')}>{t('common.new')}</Button>
-					>
 				{/snippet}
 			</EmptyState>
 		{:else if pCtrl.viewMode === 'grid'}

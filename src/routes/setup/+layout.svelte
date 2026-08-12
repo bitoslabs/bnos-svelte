@@ -5,6 +5,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import BnosMark from '$lib/components/BnosMark.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { setupSteps, stepIndex } from './steps';
@@ -122,7 +123,7 @@ import { createSetupWorkspace } from '$nostr/setup-workspace';
 			<div
 				class="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-primary-400 to-primary-600"
 			>
-				<Icon name="lucide:zap" class="size-5 text-white" />
+				<BnosMark class="size-5 text-white" />
 			</div>
 			<span class="font-display text-lg font-bold tracking-tight">BNOS</span>
 		</a>

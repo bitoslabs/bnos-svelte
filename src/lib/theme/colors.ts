@@ -2,7 +2,7 @@
  * Color palette data for runtime accent/neutral switching.
  *
  * Tailwind's `bg-primary-500` etc. resolve to `--color-primary-500`. We define
- * those in `@theme` (brand teal by default) and rewrite them on <html> when the
+ * those in `@theme` (orange by default) and rewrite them on <html> when the
  * user picks another accent — exactly mirroring how Nuxt UI remapped its
  * `primary` semantic color at runtime.
  */

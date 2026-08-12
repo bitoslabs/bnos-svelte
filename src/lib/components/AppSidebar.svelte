@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import BnosMark from '$lib/components/BnosMark.svelte';
 	import { findNavItem, navSections, navSectionLabel, navLabel, permissionForNavItem, permissionForPath, type NavItem } from '$lib/nav';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -92,11 +93,8 @@
 		class="app-sidebar-brand flex h-16 items-center {sidebarState.collapsed ? 'justify-center px-0' : 'gap-3 px-5'} border-b border-[var(--glass-border)] transition-all hover:bg-[var(--ui-bg-accented)]"
 		onclick={() => onnavigate?.()}
 	>
-		<div class="relative grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary-400 to-primary-600">
-			<div
-				class="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,.45),transparent_60%)]"
-			></div>
-			<Icon name="lucide:zap" class="relative size-5 text-white" />
+		<div class="relative grid size-10 shrink-0 place-items-center ">
+			<BnosMark class="size-9 text-primary-500" />
 		</div>
 		{#if !sidebarState.collapsed}
 			<div class="leading-tight">

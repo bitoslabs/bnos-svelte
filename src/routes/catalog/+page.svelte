@@ -782,11 +782,6 @@
 					}
 				},
 				{
-					label: 'Edit',
-					icon: 'lucide:pencil',
-					onSelect: () => openEditProduct(p.id)
-				},
-				{
 					label: 'Adjust stock',
 					icon: 'lucide:arrow-up-down',
 					onSelect: () => openQuickAdjustFromCatalog(p.id)
@@ -829,13 +824,6 @@
 		return [
 			[
 				{
-					label: 'Edit',
-					icon: 'lucide:pencil',
-					onSelect: () => openEditCategory(c.id)
-				}
-			],
-			[
-				{
 					label: 'Delete',
 					icon: 'lucide:trash-2',
 					danger: true,
@@ -846,13 +834,6 @@
 	}
 	function unitActions(u: { id: string }): RowAction[][] {
 		return [
-			[
-				{
-					label: 'Edit',
-					icon: 'lucide:pencil',
-					onSelect: () => openEditUnit(u.id)
-				}
-			],
 			[
 				{
 					label: 'Delete',
@@ -1120,7 +1101,20 @@
 											{(p.data as any).available !== false ? 'Active' : 'Inactive'}
 										</button>
 									</td>
-									<td class="px-5 py-3 text-right"><RowActions actions={prodActions(p)} /></td>
+									<td class="px-5 py-3 text-right">
+										<div class="flex items-center justify-end gap-1">
+											<button
+												type="button"
+												class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+												onclick={() => openEditProduct(p.id)}
+												aria-label={t('common.edit')}
+												title={t('common.edit')}
+											>
+												<Icon name="lucide:pencil-line" class="size-3.5" />
+											</button>
+											<RowActions actions={prodActions(p)} />
+										</div>
+									</td>
 								</tr>
 							{/each}
 						</tbody>
@@ -1193,7 +1187,20 @@
 								<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
 									>{c.data.sortOrder ?? 0}</td
 								>
-								<td class="px-5 py-3 text-right"><RowActions actions={catActions(c)} /></td>
+				<td class="px-5 py-3 text-right">
+					<div class="flex items-center justify-end gap-1">
+						<button
+							type="button"
+							class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+							onclick={() => openEditCategory(c.id)}
+							aria-label={t('common.edit')}
+							title={t('common.edit')}
+						>
+							<Icon name="lucide:pencil-line" class="size-3.5" />
+						</button>
+						<RowActions actions={catActions(c)} />
+					</div>
+				</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -1256,7 +1263,20 @@
 								<td class="px-5 py-3 text-[var(--ui-text-muted)] capitalize"
 									>{u.data.type ?? 'count'}</td
 								>
-								<td class="px-5 py-3 text-right"><RowActions actions={unitActions(u)} /></td>
+				<td class="px-5 py-3 text-right">
+					<div class="flex items-center justify-end gap-1">
+						<button
+							type="button"
+							class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+							onclick={() => openEditUnit(u.id)}
+							aria-label={t('common.edit')}
+							title={t('common.edit')}
+						>
+							<Icon name="lucide:pencil-line" class="size-3.5" />
+						</button>
+						<RowActions actions={unitActions(u)} />
+					</div>
+				</td>
 							</tr>
 						{/each}
 					</tbody>

@@ -60,7 +60,7 @@ export function toOrderRows(
 ): OrderRow[] {
 	return objects.map((o) => {
 		const d = o.data;
-		const atMs = new Date(d.occurredAt || 0).getTime();
+		const atMs = new Date(d.occurredAt || d.createdAt || 0).getTime();
 		const method = d.method ?? paymentLookup?.[o.id] ?? 'cash';
 		return {
 			id: o.id,
@@ -165,12 +165,11 @@ export interface HourEntry {
 	isPeak: boolean;
 }
 
-/** Hourly sales for today, from 6am → current hour (bdgo-os buildHourlyData). */
+/** Hourly sales for today, from 6am → 11pm (same range as the Reports chart). */
 export function buildHourly(rows: OrderRow[]): HourEntry[] {
 	const todayStart = startOfDay(new Date());
-	const currentHour = new Date().getHours();
 	const startHour = 6;
-	const endHour = Math.min(currentHour, 23);
+	const endHour = 23;
 	const hours: HourEntry[] = [];
 	const totals = Array.from({ length: Math.max(0, endHour - startHour + 1) }, () => 0);
 	let max = 0;

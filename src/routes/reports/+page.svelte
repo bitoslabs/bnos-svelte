@@ -55,6 +55,10 @@
 		}
 		return Date.now();
 	});
+	const customRangeReady = $derived(
+		rangePreset !== 'custom' ||
+		(Boolean(customStart) && Boolean(customEnd) && rangeStart <= rangeEnd)
+	);
 
 	/** Duration of the selected range, used to compute the previous period. */
 	const rangeDuration = $derived(rangeEnd - rangeStart);
@@ -63,10 +67,12 @@
 
 	// ── Filtered orders ─────────────────────────────────────────────
 	const filteredOrders = $derived(
-		orders.filter((o) => {
-			const t = new Date(o.data.occurredAt || o.data.createdAt || 0).getTime();
-			return t >= rangeStart && t <= rangeEnd;
-		})
+		customRangeReady
+			? orders.filter((o) => {
+				const t = new Date(o.data.occurredAt || o.data.createdAt || 0).getTime();
+				return t >= rangeStart && t <= rangeEnd;
+			})
+			: []
 	);
 
 	const prevOrders = $derived(
@@ -114,18 +120,26 @@
 	// ── Revenue by day (bar chart) ──────────────────────────────────
 	const revenueByDay = $derived.by(() => {
 		const days: { label: string; sublabel: string; total: number; isToday: boolean }[] = [];
-		const numDays = Math.min(Math.ceil((rangeEnd - rangeStart) / MS_DAY) + 1, 31);
-		const now = new Date();
-		for (let i = numDays - 1; i >= 0; i--) {
-			const d = new Date(now);
-			d.setHours(0, 0, 0, 0);
-			d.setDate(d.getDate() - i);
-			const start = d.getTime();
-			const end = start + MS_DAY;
+		if (!customRangeReady) return days;
+		const rangeDayStart = new Date(rangeStart);
+		rangeDayStart.setHours(0, 0, 0, 0);
+		const rangeDayEnd = new Date(rangeEnd);
+		rangeDayEnd.setHours(0, 0, 0, 0);
+		const today = startOfDay(new Date());
+		const numDays = Math.min(
+			Math.max(1, Math.round((rangeDayEnd.getTime() - rangeDayStart.getTime()) / MS_DAY) + 1),
+			31
+		);
+		for (let i = 0; i < numDays; i++) {
+			const d = new Date(rangeDayStart);
+			d.setDate(rangeDayStart.getDate() + i);
+			const dayStart = d.getTime();
+			const dayEnd = new Date(d);
+			dayEnd.setDate(dayEnd.getDate() + 1);
 			const total = filteredOrders
 				.filter((o) => {
 					const t = new Date(o.data.occurredAt || o.data.createdAt || 0).getTime();
-					return t >= start && t < end;
+					return t >= dayStart && t < dayEnd.getTime();
 				})
 				.reduce((s, o) => s + (o.data.total ?? 0), 0);
 			days.push({
@@ -133,9 +147,9 @@
 					numDays <= 7
 						? d.toLocaleDateString('en-US', { weekday: 'short' })
 						: `${d.getDate()}/${d.getMonth() + 1}`,
-				sublabel: numDays > 7 && i === 0 ? 'today' : '',
+				sublabel: numDays > 7 && d.getTime() === today ? 'today' : '',
 				total,
-				isToday: i === 0
+				isToday: d.getTime() === today
 			});
 		}
 		return days;

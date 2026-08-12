@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import { fly } from 'svelte/transition';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import BnosMark from '$lib/components/BnosMark.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
@@ -130,9 +131,9 @@
 		<!-- Brand -->
 		<div class="mb-8 text-center" in:fly={{ y: 8, duration: 300 }}>
 			<div
-				class="mx-auto mb-5 grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 shadow-lg shadow-primary-500/25 ring-4 ring-[var(--ui-bg-elevated)]"
+				class="mx-auto mb-5 grid size-14 place-items-center "
 			>
-				<Icon name="lucide:zap" class="size-7 text-white" />
+				<BnosMark class="size-12 text-primary-500" />
 			</div>
 			<h1 class="font-display text-2xl font-bold tracking-tight">{t('auth.welcomeBack')}</h1>
 			<p class="mt-1.5 text-sm text-[var(--ui-text-muted)]">{t('auth.signInDesc')}</p>

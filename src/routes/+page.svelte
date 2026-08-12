@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -24,6 +24,7 @@
 	} from '$lib/dashboard/metrics';
 	import type { GloProduct, GloCustomer } from '@bitos/bnos-core/glo';
 	import { t } from '$lib/i18n/i18n.svelte';
+	import { btcRate } from '$lib/bitcoin/rate.svelte';
 
 	let clock = $state('');
 
@@ -80,7 +81,6 @@
 			(clock = new Date().toLocaleTimeString('en-US', {
 				hour: '2-digit',
 				minute: '2-digit',
-				second: '2-digit',
 				hour12: true
 			}));
 		tick();
@@ -104,6 +104,14 @@
 	const rows = $derived(toOrderRows(orderObjects as never, paymentMethodMap));
 	const todayRows = $derived(rows.filter((o) => o.atMs >= startOfToday()));
 	const currency = $derived(tenant.state.currency);
+	const btcPrice = $derived(btcRate.rateFor(currency));
+	const btcUsdPrice = $derived(btcRate.rateFor('USD'));
+
+	$effect(() => {
+		if (!tenant.hydrated || !currency) return;
+		untrack(() => void btcRate.ensureRate(currency));
+		if (currency !== 'USD') untrack(() => void btcRate.ensureRate('USD'));
+	});
 
 	const m = $derived(metricsSummary(rows));
 	const hourly = $derived(buildHourly(rows));
@@ -175,11 +183,33 @@
 				{session.shortNpub ?? t('profile.nostrIdentity')} · {tenant.state.currency}
 			</p>
 		</div>
-		<div
-			class="dashboard-clock flex items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-4 py-2"
-		>
-			<Icon name="lucide:clock" class="size-4 text-[var(--ui-text-dimmed)]" />
-			<span class="font-mono text-[14px] font-semibold tabular-nums">{clock}</span>
+		<div class="flex items-center gap-2">
+			<div
+				class="flex items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-4 py-2"
+			>
+				<Icon name="lucide:bitcoin" class="size-4 text-amber-500" />
+				<div class="leading-tight">
+					<div class="text-[10px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">BTC price</div>
+					<div class="font-mono text-[13px] font-semibold tabular-nums">
+						{#if btcPrice > 0}
+							{formatMoney(btcPrice, currency)}
+						{:else if btcRate.loading}
+							Loading…
+						{:else}
+							Unavailable
+						{/if}
+					</div>
+					{#if currency !== 'USD' && btcUsdPrice > 0}
+						<div class="text-[10px] text-[var(--ui-text-dimmed)]">{formatMoney(btcUsdPrice, 'USD')} USD</div>
+					{/if}
+				</div>
+			</div>
+			<div
+				class="dashboard-clock flex items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-4 py-2"
+			>
+				<Icon name="lucide:clock" class="size-4 text-[var(--ui-text-dimmed)]" />
+				<span class="font-mono text-[14px] font-semibold tabular-nums">{clock}</span>
+			</div>
 		</div>
 	</header>
 
@@ -259,7 +289,8 @@
 									class="w-full rounded-t-md transition-all {hr.isPeak
 										? 'bg-primary-500'
 										: 'bg-primary-500/40'}"
-									style="height: {Math.max(3, hr.height)}%"
+									style="height: {Math.max(3, (hr.height / 100) * 112)}px"
+									aria-label={`${hr.label}: ${formatMoney(hr.value, currency)}`}
 									title={formatMoney(hr.value, currency)}
 								></div>
 								<span class="text-[9.5px] font-semibold text-[var(--ui-text-dimmed)]"

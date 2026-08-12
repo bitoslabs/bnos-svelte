@@ -6,6 +6,7 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { session } from '$nostr/session.svelte';
+	import BnosMark from '$lib/components/BnosMark.svelte';
 	import { truncateNpub } from '$lib/utils/format';
 	import { site, aboutLinks } from '$lib/site';
 
@@ -86,7 +87,7 @@
 				<div
 					class="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 shadow-lg shadow-primary-500/25"
 				>
-					<Icon name="lucide:zap" class="size-8 text-white" />
+					<BnosMark class="size-12 text-white" />
 				</div>
 				<h2 class="font-display text-xl font-bold tracking-tight">{site.name}</h2>
 				<p class="mx-auto mt-1 max-w-md text-[12.5px] text-[var(--ui-text-muted)]">

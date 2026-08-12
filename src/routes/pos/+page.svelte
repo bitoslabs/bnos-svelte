@@ -23,6 +23,7 @@
 		TYPE,
 		statusColor,
 		type Product,
+		type CatalogCategory,
 		type ProductVariant,
 		type ModifierGroup,
 		type GloObject,
@@ -399,6 +400,12 @@
 	});
 
 	let activeCat = $state<string>('all');
+	const catalogCategories = $derived(
+		glo.all<CatalogCategory, typeof TYPE.category>(TYPE.category)
+	);
+	const categoryNames = $derived(
+		new Map(catalogCategories.map((category) => [category.id, category.data.name]))
+	);
 	const categories = $derived.by(() => {
 		const categories: string[] = [];
 		for (const p of products) {
@@ -407,6 +414,9 @@
 		}
 		return ['all', ...categories];
 	});
+	function categoryLabel(categoryId: string): string {
+		return categoryId === 'all' ? 'All items' : (categoryNames.get(categoryId) ?? categoryId);
+	}
 	const filtered = $derived(
 		products.filter((p) => {
 			const matchesCat = activeCat === 'all' || p.data.categoryId === activeCat;
@@ -2131,7 +2141,7 @@
 										? 'bg-primary-500 text-white'
 										: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
 								>
-									{cat}
+									{categoryLabel(cat)}
 								</button>
 							{/each}
 							{#if offersCount > 0}

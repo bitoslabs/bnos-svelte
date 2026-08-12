@@ -473,7 +473,7 @@ export const en = {
 		secretKey: 'Secret key (nsec)',
 		savedKey: "I've saved my key somewhere safe. I understand it can't be reset.",
 		continueSetup: 'Continue to setup',
-		backToSignIn: '← Back to sign in',
+		backToSignIn: 'Back to sign in',
 		keyNeverLeaves:
 			'Your key never leaves this device. Records are signed locally and published to Nostr relays.',
 		relayConfig: 'Relay configuration',
