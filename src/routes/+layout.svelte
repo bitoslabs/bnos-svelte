@@ -142,13 +142,13 @@
 		if (!hasActiveWorkspaceContext()) return;
 		postLoginSyncDone = true;
 
-		void warmRelays();
-		dataSync.backgroundOperationalSync();
-		postLoginSyncState = 'idle';
-
-		// Workspace and role resolution is handled once by bootstrapAuth().
-		// Only the encryption key warm-up remains on this background path.
-		void organizationKey.autoEnsureActiveKey();
+		void (async () => {
+			// The key must be ready before encrypted records are fetched.
+			await organizationKey.autoEnsureActiveKey();
+			await warmRelays();
+			dataSync.backgroundOperationalSync();
+			postLoginSyncState = 'idle';
+		})();
 	});
 
 	// Global dropdown-menu handling: one menu open at a time, close on outside

@@ -39,7 +39,7 @@ export interface RelayPermissions {
 
 /** Defaults can be overridden with the browser-safe `PUBLIC_RELAYS` env var. */
 const configuredRelays = relaysFromEnv(env.PUBLIC_RELAYS);
-export const DEFAULT_RELAYS = configuredRelays.length ? configuredRelays : BUILTIN_RELAYS;
+export const DEFAULT_RELAYS = configuredRelays.length ? [...configuredRelays, ...BUILTIN_RELAYS] : BUILTIN_RELAYS;
 
 class RelayStore {
 	/** Canonical list of relay URLs (no trailing slash, wss://). */

@@ -12,6 +12,8 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { browser } from '$app/environment';
+	import { syncPaymentSettingsToNostr, PAYMENT_SETTINGS_SYNC_EVENT } from '$nostr/payment-settings';
+	import { dataSync } from '$nostr/sync.svelte';
 
 	const KEY = 'bnos-os:settings-bitcoin';
 
@@ -244,11 +246,9 @@
 		}
 	});
 
-	function save() {
+	async function save() {
 		if (!browser) return;
-		localStorage.setItem(
-			KEY,
-			JSON.stringify({
+		const settings = {
 				rateSource,
 				manualRate,
 				lightningProvider,
@@ -267,11 +267,48 @@
 				minAmount,
 				maxAmount,
 				receiptShowSats,
-				currency
-			})
-		);
+			currency
+		};
+		localStorage.setItem(KEY, JSON.stringify(settings));
+		await syncPaymentSettingsToNostr('settings.bitcoin', settings);
 		toast.success(t('settings.toastBitcoinSaved'));
 	}
+
+	function onPaymentSettingsSync() {
+		try {
+			const s = JSON.parse(localStorage.getItem(KEY) ?? '{}');
+			if (s.rateSource) rateSource = s.rateSource;
+			if (s.manualRate !== undefined) manualRate = s.manualRate;
+			if (s.lightningProvider !== undefined) lightningProvider = s.lightningProvider;
+			if (s.lightningAddress !== undefined) lightningAddress = s.lightningAddress;
+			if (s.lndUrl !== undefined) lndUrl = s.lndUrl;
+			if (s.lndMacaroon !== undefined) lndMacaroon = s.lndMacaroon;
+			if (s.phoenixdUrl !== undefined) phoenixdUrl = s.phoenixdUrl;
+			if (s.phoenixdPass !== undefined) phoenixdPass = s.phoenixdPass;
+			if (s.albyApiKey !== undefined) albyApiKey = s.albyApiKey;
+			if (s.nwcUrl !== undefined) nwcUrl = s.nwcUrl;
+			if (s.blinkApiKey !== undefined) blinkApiKey = s.blinkApiKey;
+			if (s.blinkWalletId !== undefined) blinkWalletId = s.blinkWalletId;
+			if (s.strikeApiKey !== undefined) strikeApiKey = s.strikeApiKey;
+			if (s.defaultMemo !== undefined) defaultMemo = s.defaultMemo;
+			if (s.defaultExpiry !== undefined) defaultExpiry = s.defaultExpiry;
+			if (s.minAmount !== undefined) minAmount = s.minAmount;
+			if (s.maxAmount !== undefined) maxAmount = s.maxAmount;
+			if (s.receiptShowSats !== undefined) receiptShowSats = s.receiptShowSats;
+			if (s.currency !== undefined) currency = s.currency;
+		} catch { /* keep current form values */ }
+	}
+
+	async function loadFromRelay() {
+		await dataSync.manualPaymentSettingsSync();
+		if (dataSync.status === 'done') toast.success('Settings loaded from relay');
+	}
+
+	$effect(() => {
+		if (!browser) return;
+		window.addEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
+		return () => window.removeEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
+	});
 
 	async function resetAll() {
 		if (!browser) return;
@@ -319,9 +356,20 @@
 	<PageHeader
 		icon="lucide:bitcoin"
 		accent="amber"
-		title={t('settings.bitcoin')}
-		description={t('settings.bitcoinDesc')}
-	/>
+		 title={t('settings.bitcoin')}
+		 description={t('settings.bitcoinDesc')}
+	>
+		{#snippet actions()}
+			<Button
+				variant="ghost"
+				color="neutral"
+				size="sm"
+				icon="lucide:cloud-download"
+				onclick={loadFromRelay}
+				disabled={dataSync.status === 'syncing'}>Load from relay</Button
+			>
+		{/snippet}
+	</PageHeader>
 
 	<!-- ═══ Exchange Rate ═══ -->
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">

@@ -19,6 +19,8 @@
 	import { buildQrPayment } from '$lib/pos/payment-qr';
 	import { getMerchantLightning } from '$lib/pos/lightning';
 	import { tenant } from '$nostr/tenant.svelte';
+	import { syncPaymentSettingsToNostr, PAYMENT_SETTINGS_SYNC_EVENT } from '$nostr/payment-settings';
+	import { dataSync } from '$nostr/sync.svelte';
 
 	let cfg = $state<PayConfig>({ ...defaultPayConfig });
 	let currency = $state('THB');
@@ -38,8 +40,24 @@
 
 	function save() {
 		savePayConfig(cfg);
+		void syncPaymentSettingsToNostr('settings.pay-config', cfg);
 		toast.success(t('settings.toastPayQrSaved'));
 	}
+
+	function onPaymentSettingsSync() {
+		cfg = loadPayConfig();
+	}
+
+	async function loadFromRelay() {
+		await dataSync.manualPaymentSettingsSync();
+		if (dataSync.status === 'done') toast.success('Settings loaded from relay');
+	}
+
+	$effect(() => {
+		if (!browser) return;
+		window.addEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
+		return () => window.removeEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
+	});
 
 	const schemes = [
 		{
@@ -98,6 +116,14 @@
 		description={t('settings.payQrDesc')}
 	>
 		{#snippet actions()}
+			<Button
+				variant="ghost"
+				color="neutral"
+				size="sm"
+				icon="lucide:cloud-download"
+				onclick={loadFromRelay}
+				disabled={dataSync.status === 'syncing'}>Load from relay</Button
+			>
 			<Button variant="ghost" color="neutral" size="sm" icon="lucide:rotate-ccw" onclick={resetAll}
 				>{t('common.reset')}</Button
 			>

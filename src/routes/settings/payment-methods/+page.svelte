@@ -14,6 +14,8 @@
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { hasQrConfigured, loadPayConfig } from '$lib/pos/pay-config';
 	import { isLightningReady } from '$lib/pos/lightning';
+	import { syncPaymentSettingsToNostr, PAYMENT_SETTINGS_SYNC_EVENT } from '$nostr/payment-settings';
+	import { dataSync } from '$nostr/sync.svelte';
 
 	// ── Types ──────────────────────────────────────────────
 	type PaymentType =
@@ -174,6 +176,16 @@
 	function persist() {
 		if (!browser) return;
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(methods));
+		void syncPaymentSettingsToNostr('settings.payment-method', methods);
+	}
+
+	function onPaymentSettingsSync() {
+		load();
+	}
+
+	async function loadFromRelay() {
+		await dataSync.manualPaymentSettingsSync();
+		if (dataSync.status === 'done') toast.success('Settings loaded from relay');
 	}
 
 	// ── CRUD ───────────────────────────────────────────────
@@ -316,6 +328,9 @@
 	// ── Lifecycle ──────────────────────────────────────────
 	$effect(() => {
 		load();
+		if (!browser) return;
+		window.addEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
+		return () => window.removeEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
 	});
 </script>
 
@@ -329,6 +344,14 @@
 		description={t('settings.paymentMethodsDesc')}
 	>
 		{#snippet actions()}
+			<Button
+				variant="ghost"
+				color="neutral"
+				size="sm"
+				icon="lucide:cloud-download"
+				onclick={loadFromRelay}
+				disabled={dataSync.status === 'syncing'}>Load from relay</Button
+			>
 			<Button
 				variant="ghost"
 				color="neutral"

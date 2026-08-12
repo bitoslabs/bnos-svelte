@@ -1,4 +1,3 @@
-import { browser } from '$app/environment';
 import { glo } from './store.svelte';
 import { relays } from './relay.svelte';
 import { session } from './session.svelte';
@@ -9,6 +8,13 @@ import { memberships } from './memberships.svelte';
 import { restoreTenantFromWorkspace } from './workspace.svelte';
 import { applyWorkspaceSettingsFromOrganization } from './workspace-settings';
 import { hydrateOrganizationSettingsFromWorkspace } from './organization-settings';
+import {
+	PAYMENT_SETTINGS_TYPES,
+	hydratePaymentSettingsFromNostr,
+	syncLocalPaymentSettingsToNostr
+} from './payment-settings';
+
+const isBrowser = () => typeof window !== 'undefined';
 
 export const CORE_DATA_TYPES = [
 	TYPE.organization,
@@ -45,6 +51,7 @@ export const SECONDARY_DATA_TYPES = [
 	'restaurant.order',
 	'blocked.entry',
 	'settings.payment-method',
+	...PAYMENT_SETTINGS_TYPES.filter((type) => type !== 'settings.payment-method'),
 	TYPE.marketplaceConnection,
 	TYPE.marketplaceProduct,
 	TYPE.marketplaceReview
@@ -63,13 +70,13 @@ function syncKey(scope: string) {
 }
 
 function getLastSyncAt(scope: string) {
-	if (!browser) return 0;
+	if (!isBrowser()) return 0;
 	const raw = localStorage.getItem(syncKey(scope));
 	return raw ? Number(raw) || 0 : 0;
 }
 
 function setLastSyncAt(scope: string, value = Date.now()) {
-	if (!browser) return;
+	if (!isBrowser()) return;
 	localStorage.setItem(syncKey(scope), String(value));
 }
 
@@ -86,12 +93,12 @@ function includesWorkspaceTypes(types: readonly string[]) {
 }
 
 function staleTypes(types: readonly string[], cooldownMs: number) {
-	if (!browser) return [...types];
+	if (!isBrowser()) return [...types];
 	return types.filter((type) => shouldSync(typeScope(type), cooldownMs));
 }
 
 function idle(callback: () => void) {
-	if (!browser) return;
+	if (!isBrowser()) return;
 	if ('requestIdleCallback' in window) {
 		window.requestIdleCallback(callback, { timeout: 1500 });
 		return;
@@ -142,6 +149,10 @@ class SyncStore {
 			await glo.flushPublishQueue();
 			for (const type of types) {
 				await glo.sync(type, { locationId: options.locationId ?? null });
+				if ((PAYMENT_SETTINGS_TYPES as readonly string[]).includes(type)) {
+					hydratePaymentSettingsFromNostr();
+					await syncLocalPaymentSettingsToNostr([type as (typeof PAYMENT_SETTINGS_TYPES)[number]]);
+				}
 				setLastSyncAt(typeScope(type));
 			}
 			if (includesWorkspaceTypes(types)) {
@@ -242,6 +253,15 @@ class SyncStore {
 	async manualSync() {
 		await this.syncTypes(CORE_DATA_TYPES, { force: true, scope: 'core', silent: false });
 		await this.syncTypes(SECONDARY_DATA_TYPES, { force: true, scope: 'secondary', silent: false });
+	}
+
+	/** Force-refresh merchant payment configuration directly from relays. */
+	async manualPaymentSettingsSync() {
+		return this.syncTypes(PAYMENT_SETTINGS_TYPES, {
+			force: true,
+			scope: 'payment-settings',
+			silent: false
+		});
 	}
 }
 
