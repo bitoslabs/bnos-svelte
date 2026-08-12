@@ -29,6 +29,7 @@
 		type GloObject,
 		type Order,
 		type Customer,
+		type Coupon,
 		type LoyaltyPoints,
 		type PaymentMethod
 	} from '$lib/domain';
@@ -82,6 +83,8 @@
 	} from '$lib/settings/local';
 
 	interface PromotionData {
+		code?: string;
+		isCoupon?: boolean;
 		status?: string;
 		isActive?: boolean;
 		active?: boolean;
@@ -129,6 +132,7 @@
 				TYPE.shift,
 				TYPE.order,
 				TYPE.promotion,
+				TYPE.coupon,
 				TYPE.refund,
 				TYPE.loyaltyPoints
 			],
@@ -159,13 +163,36 @@
 	// (date / time window / min-spend / targeting / usage) is evaluated by the
 	// promo engine so the cart rail can auto-suggest offers the current sale
 	// actually qualifies for. See ./promotions.ts.
-	const allPromotions = $derived(
-		glo
+	const allPromotions = $derived([
+		...glo
 			.all<PromotionData, typeof TYPE.promotion>(TYPE.promotion)
 			.filter(
 				(p) => p.data.status === 'active' || p.data.isActive !== false || p.data.active !== false
-			)
-	);
+			),
+		...glo
+			.all<Coupon, typeof TYPE.coupon>(TYPE.coupon)
+			.filter((p) => p.data.status === 'active' && p.data.active !== false)
+			.map((p) => ({
+				...p,
+				data: {
+					name: p.data.code,
+					code: p.data.code,
+					isCoupon: true,
+					description: p.data.description,
+					type: p.data.type === 'percent' || p.data.type === 'fixed' || p.data.type === 'bogo' ? p.data.type : 'manual',
+					value: p.data.value,
+					minimumSpend: p.data.minSpend,
+					maxUsage: p.data.maxUses,
+					currentUsage: p.data.uses,
+					startsAt: p.data.validFrom,
+					endsAt: p.data.validUntil,
+					productIds: p.data.productIds,
+					categoryIds: p.data.categoryIds,
+					status: p.data.status,
+					active: p.data.active
+				}
+			}))
+	]);
 
 	let promoOpen = $state(false);
 	// Pause auto-apply after a manual removal (cashier intent wins) + remember
@@ -209,8 +236,31 @@
 		promoOpen = false;
 	}
 
+	let couponCode = $state('');
+
+	function applyCouponCode() {
+		const code = couponCode.trim().toUpperCase();
+		const coupon = allPromotions.find((p) => p.data.isCoupon && p.data.code === code);
+		if (!coupon) {
+			toast.error('Coupon not found', code || 'Enter a coupon code');
+			return;
+		}
+		const elig = isPromotionEligible(coupon.data, promoCtx);
+		if (!elig.ok) {
+			toast.warning('Coupon cannot be applied', elig.reason);
+			return;
+		}
+		applyPromotion(coupon.id);
+		couponCode = '';
+	}
+
 	const currency = $derived(tenant.state.currency);
 	const products = $derived(glo.all<Product, typeof TYPE.product>(TYPE.product));
+
+	function productImage(product: Product): string {
+		return product.images?.[0] ?? product.image ?? '';
+	}
+
 	const modifiers = $derived(glo.all<ModifierGroup, typeof TYPE.modifierGroup>(TYPE.modifierGroup));
 	const branchId = $derived(tenant.state.locationId ?? undefined);
 	const stockMap = $derived(computeStock(glo.all(TYPE.adjustment), branchId));
@@ -2211,6 +2261,16 @@
 										class="relative grid aspect-square w-full place-items-center rounded-xl bg-[var(--ui-bg-accented)] text-[var(--ui-text-dimmed)]"
 									>
 										<Icon name="lucide:cup-soda" class="size-6 sm:size-7" />
+										{#if productImage(p.data)}
+											<img
+												src={productImage(p.data)}
+												alt={p.data.name}
+												class="absolute inset-0 size-full rounded-xl object-cover"
+												onerror={(event) => {
+													(event.currentTarget as HTMLImageElement).style.display = 'none';
+												}}
+											/>
+										{/if}
 										{#if promo}
 											<span
 												class="absolute top-1.5 left-1.5 inline-flex items-center gap-0.5 rounded-full bg-primary-500 px-1.5 py-0.5 text-[8.5px] font-bold text-white shadow-sm"
@@ -2315,7 +2375,7 @@
 						<div>
 							<p class="text-[13.5px] font-bold text-[var(--ui-text)]">{t('pos.emptyCart')}</p>
 							<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
-								Tap a product to start a new sale.
+								{t('pos.emptyCartDesc')}
 							</p>
 						</div>
 						<button
@@ -2323,7 +2383,7 @@
 							onclick={openCustom}
 							class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--ui-bg-muted)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 						>
-							<Icon name="lucide:plus-circle" class="size-3.5" /> Custom item
+							<Icon name="lucide:plus-circle" class="size-3.5" /> {t('pos.custom')}
 						</button>
 					</div>
 				{:else}
@@ -3242,6 +3302,15 @@
 <!-- Promotion picker -->
 <Dialog bind:open={promoOpen} title={t('nav.promotions')} size="md">
 	<div class="space-y-2">
+		<div class="flex gap-2">
+			<Input
+				bind:value={couponCode}
+				placeholder="Enter coupon code"
+				class="font-mono uppercase w-full"
+				onkeydown={(e) => e.key === 'Enter' && applyCouponCode()}
+			/>
+			<Button color="primary" icon="lucide:ticket-check" onclick={applyCouponCode}>Apply</Button>
+		</div>
 		{#if cart.appliedPromotionId}
 			<button
 				type="button"

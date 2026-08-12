@@ -12,6 +12,8 @@ import { formatMoney } from '$lib/utils/format';
  *  loosely (some use `value`/`type`, others `discountValue`/`discountType`). */
 export type PromoData = {
 	name?: string;
+	code?: string;
+	isCoupon?: boolean;
 	description?: string;
 	status?: string;
 	isActive?: boolean;
@@ -180,7 +182,7 @@ export function isPromotionEligible(d: PromoData, ctx: PromoCtx): Eligibility {
 
 /** True when the promotion is structurally applicable by the cart (not manual). */
 export function isAutoApplicable(d: PromoData): boolean {
-	return normalizeType(d.type ?? d.discountType) !== 'manual';
+	return !d.isCoupon && normalizeType(d.type ?? d.discountType) !== 'manual';
 }
 
 /**

@@ -497,6 +497,7 @@ export const th = {
 	pos: {
 		cart: 'ตะกร้า',
 		emptyCart: 'ตะกร้าว่าง',
+		emptyCartDesc: 'เพิ่มสินค้าในตะกร้าเพื่อเริ่มการขาย',
 		checkout: 'ชำระเงิน',
 		pay: 'ชำระเงิน',
 		payment: 'การชำระเงิน',

@@ -547,6 +547,7 @@ export const en = {
 	pos: {
 		cart: 'Cart',
 		emptyCart: 'Cart is empty',
+		emptyCartDesc: 'Add products to the cart to start a sale.',
 		checkout: 'Checkout',
 		pay: 'Pay',
 		payment: 'Payment',

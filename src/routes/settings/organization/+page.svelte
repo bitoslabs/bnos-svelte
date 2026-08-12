@@ -25,7 +25,7 @@
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { browser } from '$app/environment';
 	import {
-		currencies as currencyOptions,
+		currencies as defaultCurrencyOptions,
 		businessModels as bizModels,
 		businessTypes as bizTypes
 	} from '$lib/business';
@@ -35,6 +35,7 @@
 	let branches = $state<Branch[]>([]);
 	let activeCompanyId = $state('');
 	let activeBranchId = $state('');
+	let currencyOptions = $state(defaultCurrencyOptions);
 
 	// Quick-switch selectors
 	let switchCompanyId = $state('');
@@ -150,7 +151,30 @@
 	}
 
 	// ── Lifecycle ──
-	onMount(() => loadSettings());
+	async function loadCurrencyOptions() {
+		try {
+			const response = await fetch('https://open.er-api.com/v6/latest/USD');
+			if (!response.ok) return;
+			const data = (await response.json()) as { rates?: Record<string, number> };
+			const displayNames = new Intl.DisplayNames(['en'], { type: 'currency' });
+			const known = new Set(defaultCurrencyOptions.map((option) => option.value));
+			const dynamic = Object.keys(data.rates ?? {})
+				.filter((code) => /^[A-Z]{3}$/.test(code) && !known.has(code))
+				.sort()
+				.map((code) => ({
+					value: code,
+					label: `${code} · ${displayNames.of(code) ?? code}`
+				}));
+			currencyOptions = [...defaultCurrencyOptions, ...dynamic];
+		} catch {
+			// Keep the built-in currency list when the API is unavailable.
+		}
+	}
+
+	onMount(() => {
+		loadSettings();
+		void loadCurrencyOptions();
+	});
 
 	// ── Helpers ──
 	function normalizeSlug(input: string, fallback = 'company'): string {

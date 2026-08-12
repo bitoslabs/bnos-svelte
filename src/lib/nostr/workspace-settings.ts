@@ -29,6 +29,7 @@ type WorkspaceSettingsPayload = {
 	features?: WorkspaceFeatureFlags;
 	locale?: string;
 	defaultPayment?: string;
+	autoApplyPromotions?: boolean;
 	taxRate?: number;
 	taxInclusive?: boolean;
 	receiptHeader?: string;
@@ -90,6 +91,7 @@ export function currentWorkspaceSettingsPayload(): WorkspaceSettingsPayload {
 		features: Object.fromEntries(FEATURE_KEYS.map((key) => [key, features.isEnabled(key)])),
 		locale: general.language,
 		defaultPayment: general.defaultPayment,
+		autoApplyPromotions: general.autoApplyPromotions,
 		taxRate: tenant.state.defaultTaxRate,
 		taxInclusive: tenant.state.taxIncludedInPrice,
 		receiptHeader: receipt.header,
@@ -161,6 +163,7 @@ export function applyWorkspaceSettingsFromOrganization() {
 	const nextGeneral: GeneralSettings = {
 		...general,
 		defaultPayment: payload.defaultPayment ?? general.defaultPayment,
+		autoApplyPromotions: payload.autoApplyPromotions ?? general.autoApplyPromotions,
 		language: payload.locale ?? general.language
 	};
 	saveGeneralSettings(nextGeneral);

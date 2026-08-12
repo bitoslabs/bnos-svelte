@@ -435,17 +435,20 @@ class PosCart {
 		if (this.appliedPromotionId) {
 			try {
 				const promo = glo.get(TYPE.promotion, this.appliedPromotionId);
-				if (promo) {
-					const promoData = promo.data as Record<string, unknown>;
+				const coupon = glo.get(TYPE.coupon, this.appliedPromotionId);
+				const offer = promo ?? coupon;
+				if (offer) {
+					const offerData = offer.data as Record<string, unknown>;
+					const usageField = coupon ? 'uses' : 'currentUsage';
 					const currentUsage =
-						typeof promoData.currentUsage === 'number' ? promoData.currentUsage : 0;
+						typeof offerData[usageField] === 'number' ? offerData[usageField] : 0;
 					await glo.upsert(
-						TYPE.promotion,
+						coupon ? TYPE.coupon : TYPE.promotion,
 						{
-							...promoData,
-							currentUsage: currentUsage + 1
+							...offerData,
+							[usageField]: currentUsage + 1
 						},
-						{ id: promo.id }
+						{ id: offer.id }
 					);
 				}
 			} catch (e) {
@@ -457,10 +460,11 @@ class PosCart {
 		// even after the cart is cleared below.
 		let promotion: CompletedSale['promotion'];
 		if (this.appliedPromotionId) {
-			const promoObj = glo.get(TYPE.promotion, this.appliedPromotionId);
+			const promoObj = glo.get(TYPE.promotion, this.appliedPromotionId) ?? glo.get(TYPE.coupon, this.appliedPromotionId);
 			const pd = promoObj?.data as
 				| {
 						name?: string;
+						code?: string;
 						type?: string;
 						discountType?: string;
 						value?: number;
@@ -469,7 +473,7 @@ class PosCart {
 				| undefined;
 			if (pd) {
 				promotion = {
-					name: pd.name ?? 'Promotion',
+					name: pd.name ?? pd.code ?? 'Promotion',
 					type: pd.type ?? pd.discountType ?? 'percent',
 					value: pd.value ?? pd.discountValue ?? 0
 				};

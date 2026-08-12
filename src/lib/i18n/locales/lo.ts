@@ -497,6 +497,7 @@ export const lo = {
 	pos: {
 		cart: 'ກະຕ່າ',
 		emptyCart: 'ກະຕ່າວ່າງ',
+		emptyCartDesc: 'ເພີ່ມສິນຄ້າໂດຍການຄົ້ນຫາ ສະແກນ ຫຼື ເລືອກເມນູ',
 		checkout: 'ຊຳລະເງິນ',
 		pay: 'ຊຳລະ',
 		payment: 'ການຊຳລະ',

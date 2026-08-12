@@ -58,6 +58,7 @@ describe('promotion engine', () => {
 	it('flags auto-applicable vs manual promotions', () => {
 		expect(isAutoApplicable({ type: 'percent' })).toBe(true);
 		expect(isAutoApplicable({ type: 'bogo' })).toBe(false);
+		expect(isAutoApplicable({ type: 'percent', isCoupon: true })).toBe(false);
 	});
 
 	it('reserves auto-apply for deterministic offers (excludes manual types)', () => {

@@ -380,13 +380,14 @@ export interface LowStockSummary {
 	items: LowStockItem[];
 }
 
-/** A product is "tracked" when it has an explicit stockLevel or any inventory
- *  config (threshold/reorder). Untracked catalog items (services, etc.) are
- *  ignored so a non-physical catalog never trips a false low-stock alert. */
+/** A product is "tracked" only when inventory tracking is explicitly enabled.
+ *  Untracked catalog items (services, etc.) are ignored even if stale stock or
+ *  inventory configuration fields are present on their records. */
 export function lowStockSummary(
 	products: {
 		id: string;
 		data: Pick<GloProduct, 'name'> & {
+			trackInventory?: boolean;
 			stockLevel?: number;
 			inventory?: { lowStockThreshold?: number; reorderPoint?: number };
 		};
@@ -398,11 +399,9 @@ export function lowStockSummary(
 	let low = 0;
 	let out = 0;
 	for (const p of products) {
-		const hasStockField = typeof p.data.stockLevel === 'number';
-		const hasInvConfig = !!p.data.inventory;
-		if (!hasStockField && !hasInvConfig) continue;
+		if (p.data.trackInventory !== true) continue;
 		tracked += 1;
-		const stock = hasStockField ? (p.data.stockLevel as number) : 0;
+		const stock = typeof p.data.stockLevel === 'number' ? p.data.stockLevel : 0;
 		const threshold = p.data.inventory?.lowStockThreshold ?? 5;
 		let state: 'out' | 'low' | null = null;
 		if (stock <= 0) {
