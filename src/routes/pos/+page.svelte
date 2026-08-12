@@ -596,6 +596,11 @@
 	let method = $state<string>('cash');
 	let tendered = $state<number | ''>('');
 	let processing = $state(false);
+	let checkoutProgressStage = $state<'saving' | 'syncing' | 'synced'>('saving');
+
+	function updateCheckoutProgress(stage: 'saving' | 'syncing' | 'synced') {
+		checkoutProgressStage = stage;
+	}
 
 	// Tip
 	let tipAmount = $state(0);
@@ -800,6 +805,8 @@
 	let payQrAmount = $state(0);
 	let payQrMethod = $state('');
 	let payQrNote = $state('');
+	// Optional human-readable description sent as the Lightning invoice memo.
+	let invoiceMemo = $state('');
 	let payQrExpiresAt = $state(0);
 	let payQrSecondsLeft = $state(0);
 	let payQrTimer: ReturnType<typeof setInterval> | null = null;
@@ -816,12 +823,22 @@
 	let payQrPaid = $state(false);
 	let payQrPollTimer: ReturnType<typeof setInterval> | null = null;
 
+	function defaultInvoiceMemo() {
+		const items = cart.items
+			.map((line) => `${line.name}${line.quantity > 1 ? ` × ${line.quantity}` : ''}`)
+			.join(', ');
+		return (cart.customerName ? `Sale for ${cart.customerName}` : items || 'BNOS sale').slice(0, 120);
+	}
+
 	async function openQrCheckout() {
 		if (cart.isEmpty) return;
 		if (!ensureShift()) {
 			toast.info('Open a shift first to process sales.');
 			return;
 		}
+		// Keep the checkout flow single-surface: never leave the receipt mounted
+		// underneath the QR / Lightning dialog.
+		receiptOpen = false;
 		const cfg = loadPayConfig();
 		const amount = grandTotal;
 
@@ -865,7 +882,8 @@
 		};
 		payQrAmount = amount;
 		payQrMethod = 'lightning';
-		payQrNote = cart.customerName || '';
+		payQrNote = invoiceMemo.trim() || defaultInvoiceMemo();
+		invoiceMemo = payQrNote;
 		payQrInvoice = null;
 		payQrIsInvoice = false;
 		payQrPaid = false;
@@ -882,7 +900,7 @@
 		try {
 			const sats = btcRate.satsFromAmount(amount, currency);
 			if (sats <= 0) throw new Error('No BTC rate available for ' + currency);
-			const invoice = await provider.makeInvoice(sats * 1000, cart.customerName || 'BNOS sale');
+			const invoice = await provider.makeInvoice(sats * 1000, payQrNote.trim() || defaultInvoiceMemo());
 			payQrInvoice = { pr: invoice.pr, amountSats: invoice.amountSats };
 			payQrIsInvoice = true;
 			payQrResult = {
@@ -1048,11 +1066,15 @@
 			toast.info('Open a shift first to process sales.');
 			return;
 		}
+		payQrOpen = false;
 		processing = true;
+		checkoutProgressStage = 'saving';
+		receiptOpen = true;
 		try {
 			const sale = await cart.checkout(
 				method as PaymentMethod,
-				typeof tendered === 'number' ? tendered : 0
+				typeof tendered === 'number' ? tendered : 0,
+				updateCheckoutProgress
 			);
 			if (sale) {
 				playSuccessChime();
@@ -1069,6 +1091,7 @@
 				if (generalSettings.autoPrint && hardwareSettings.printerType !== 'none') printReceipt();
 			}
 		} catch (e) {
+			receiptOpen = false;
 			toast.error('Checkout failed', e instanceof Error ? e.message : undefined);
 		} finally {
 			processing = false;
@@ -1085,10 +1108,13 @@
 			toast.info('Open a shift first to process sales.');
 			return;
 		}
+		payQrOpen = false;
 		processing = true;
+		checkoutProgressStage = 'saving';
+		receiptOpen = true;
 		try {
 			const primary = splitPayments[0];
-			const sale = await cart.checkout(primary.method as PaymentMethod, primary.amount);
+			const sale = await cart.checkout(primary.method as PaymentMethod, primary.amount, updateCheckoutProgress);
 			if (sale) {
 				playSuccessChime();
 				successTip = tipAmount;
@@ -1107,6 +1133,7 @@
 				if (generalSettings.autoPrint && hardwareSettings.printerType !== 'none') printReceipt();
 			}
 		} catch (e) {
+			receiptOpen = false;
 			toast.error('Checkout failed', e instanceof Error ? e.message : undefined);
 		} finally {
 			processing = false;
@@ -2762,6 +2789,24 @@
 			{/each}
 		</div>
 
+		{#if method === 'lightning' && !splitMode}
+			<label class="block">
+				<span class="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ui-text-muted)]">
+					<Icon name="lucide:notebook-pen" class="size-3.5" />Invoice description / memo
+				</span>
+				<Input
+					bind:value={invoiceMemo}
+					icon="lucide:message-square-text"
+					placeholder={defaultInvoiceMemo()}
+					maxlength={120}
+					class="w-full"
+				/>
+				<span class="mt-1 block text-[10px] leading-snug text-[var(--ui-text-dimmed)]">
+					Shown to the customer in supported Lightning wallets. Leave blank to use the sale items.
+				</span>
+			</label>
+		{/if}
+
 		<!-- Split payment toggle -->
 		<button
 			type="button"
@@ -3328,8 +3373,36 @@
 </Dialog>
 
 <!-- Receipt -->
-<Dialog bind:open={receiptOpen} size="sm">
-	{#if cart.lastCompleted}
+{#if !payQrOpen}
+	<Dialog bind:open={receiptOpen} size="sm" dismissible={!processing}>
+	{#if processing}
+		<div class="space-y-3 py-1">
+			<div class="relative text-center">
+				<div class="mx-auto grid size-16 place-items-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/25">
+					<Icon name={checkoutProgressStage === 'synced' ? 'lucide:check' : 'lucide:loader-circle'} class="size-8 {checkoutProgressStage === 'synced' ? '' : 'animate-spin'}" />
+				</div>
+				<h2 class="mt-3 font-display text-xl font-black tracking-tight text-[var(--ui-text)]">{checkoutProgressStage === 'synced' ? 'Payment received' : 'Pending payment'}</h2>
+				<p class="mt-0.5 font-mono text-[11px] font-semibold text-[var(--ui-text-dimmed)]">ORDER · PROCESSING</p>
+				<p class="mt-1 font-display text-[2.2rem] leading-none font-black tabular-nums text-[var(--ui-text)]">{formatMoney(grandTotal, currency)}</p>
+				<div class="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-semibold">
+					<span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-emerald-600 dark:text-emerald-400"><Icon name={method === 'cash' ? 'lucide:banknote' : 'lucide:credit-card'} class="size-3.5" />{method}</span>
+					<span class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[var(--ui-text-muted)]"><Icon name="lucide:shopping-bag" class="size-3.5" />{cart.orderType.replace('_', ' ')}</span>
+					<span class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[var(--ui-text-muted)]"><Icon name="lucide:hash" class="size-3.5" />{cart.itemCount} items</span>
+				</div>
+			</div>
+
+			<div class="rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.06] p-4 text-left">
+				<div class="mb-2 flex items-center justify-between text-[10px] font-bold tracking-[0.12em] text-emerald-700 uppercase dark:text-emerald-300"><span>{checkoutProgressStage === 'synced' ? 'Payment received' : 'Syncing receipt'}</span><span>{checkoutProgressStage === 'saving' ? '35%' : checkoutProgressStage === 'syncing' ? '70%' : '100%'}</span></div>
+				<div class="h-2 overflow-hidden rounded-full bg-emerald-500/15"><div class="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-500 {checkoutProgressStage === 'saving' ? 'w-1/3' : checkoutProgressStage === 'syncing' ? 'w-2/3' : 'w-full'}"></div></div>
+				<div class="mt-3 grid grid-cols-3 gap-2 text-[10px] font-semibold">
+					<div class="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300"><Icon name="lucide:check-circle-2" class="size-3.5" />Order</div>
+					<div class="flex items-center gap-1.5 {checkoutProgressStage === 'synced' ? 'text-emerald-700 dark:text-emerald-300' : 'text-[var(--ui-text-dimmed)]'}"><Icon name={checkoutProgressStage === 'synced' ? 'lucide:check-circle-2' : 'lucide:loader-circle'} class="size-3.5 {checkoutProgressStage === 'syncing' ? 'animate-spin' : ''}" />Relay</div>
+					<div class="flex items-center gap-1.5 {checkoutProgressStage === 'synced' ? 'text-emerald-700 dark:text-emerald-300' : 'text-[var(--ui-text-dimmed)]'}"><Icon name={checkoutProgressStage === 'synced' ? 'lucide:check-circle-2' : 'lucide:circle'} class="size-3.5" />Complete</div>
+				</div>
+			</div>
+			<p class="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[var(--ui-text-dimmed)]"><Icon name="lucide:shield-check" class="size-3.5" />Do not close or click again while processing.</p>
+		</div>
+	{:else if cart.lastCompleted}
 		{@const s = cart.lastCompleted}
 		<PaymentSuccessHeader
 			sale={s}
@@ -3571,20 +3644,65 @@
 			{/each}
 		</ul>
 	{/if}
-</Dialog>
+	</Dialog>
+{/if}
 
 <!-- Payment QR checkout (QR / Lightning / bank methods) -->
-<Dialog bind:open={payQrOpen} title={t('common.scanToPay')} size="md">
+				<Dialog
+					bind:open={payQrOpen}
+					title={t('common.scanToPay')}
+					size="md"
+					dismissible={!payQrPaid && !payQrLoading}
+				>
 	{#if payQrResult}
 		<div class="flex flex-col items-center gap-4 py-2">
-			<div class="flex items-center gap-2">
-				<Icon
-					name={payQrResult.badge === 'lightning' ? 'lucide:zap' : 'lucide:qr-code'}
-					class="size-4 {payQrResult.badge === 'lightning' ? 'text-amber-500' : 'text-primary-500'}"
-				/>
-				<span class="text-[12px] font-bold text-[var(--ui-text-muted)] capitalize">
+			<div class="flex w-full items-center justify-between">
+				<div class="flex items-center gap-2">
+					<div class="grid size-8 place-items-center rounded-xl {payQrMethod === 'lightning' ? 'bg-amber-500/10 text-amber-500' : 'bg-primary-500/10 text-primary-500'}">
+						<Icon name={payQrMethod === 'lightning' ? 'lucide:zap' : 'lucide:qr-code'} class="size-4" />
+					</div>
+					<div>
+						<p class="text-[12px] font-bold text-[var(--ui-text)]">{payQrMethod === 'lightning' ? 'Lightning checkout' : 'QR checkout'}</p>
+						<p class="text-[10px] font-medium text-[var(--ui-text-dimmed)]">{payQrMethod === 'lightning' ? 'Secure wallet payment' : 'Secure scan to pay'}</p>
+					</div>
+				</div>
+				<span class="rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[10px] font-bold text-[var(--ui-text-muted)] capitalize">
 					{payQrResult.kind}
 				</span>
+			</div>
+
+			<!-- Payment progress is shared by Lightning, QR, bank and PromptPay flows. -->
+			<div class="w-full rounded-2xl border border-amber-500/15 bg-gradient-to-br from-amber-500/[0.08] via-transparent to-transparent p-3">
+					<div class="mb-3 flex items-center justify-between">
+						<span class="text-[10px] font-bold tracking-[0.14em] text-amber-700 uppercase dark:text-amber-300">
+							{payQrPaid
+								? 'Payment received'
+								: payQrFetching
+									? 'Preparing payment'
+									: payQrMethod === 'lightning'
+										? 'Waiting for wallet payment'
+										: 'Waiting for customer payment'}
+						</span>
+						<span class="font-mono text-[10px] font-bold text-[var(--ui-text-dimmed)]">{payQrPaid ? '100%' : payQrFetching ? '33%' : '66%'}</span>
+					</div>
+					<div class="mb-3 h-1.5 overflow-hidden rounded-full bg-amber-500/15">
+						<div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-700 {payQrPaid ? 'w-full' : payQrFetching ? 'w-1/3' : 'w-2/3'}"></div>
+					</div>
+					<div class="grid grid-cols-3 gap-2">
+						<div class="flex items-center gap-1.5 text-[10px] font-semibold {payQrFetching || payQrPaid ? 'text-amber-700 dark:text-amber-300' : 'text-[var(--ui-text-dimmed)]'}">
+							<Icon name={payQrFetching || payQrPaid ? 'lucide:check-circle-2' : 'lucide:circle'} class="size-3.5 shrink-0" />{payQrMethod === 'lightning' ? 'Invoice' : 'QR ready'}
+						</div>
+						<div class="flex items-center gap-1.5 text-[10px] font-semibold {payQrPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--ui-text-dimmed)]'}">
+							{#if payQrPaid}<Icon name="lucide:check-circle-2" class="size-3.5 shrink-0" />{:else}<span class="size-2 shrink-0 rounded-full bg-amber-500 {payQrFetching ? 'animate-pulse' : ''}"></span>{/if}
+							{payQrMethod === 'lightning' ? 'Wallet' : 'Customer'}
+						</div>
+						<div class="flex items-center gap-1.5 text-[10px] font-semibold {payQrPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--ui-text-dimmed)]'}">
+							<Icon name={payQrPaid ? 'lucide:check-circle-2' : 'lucide:circle'} class="size-3.5 shrink-0" />Complete
+						</div>
+					</div>
+				</div>
+
+			<div class="flex items-center gap-2">
 				{#if payQrIsInvoice}
 					<span
 						class="rounded-full bg-amber-500/10 px-2 py-0.5 text-[9.5px] font-bold text-amber-600 dark:text-amber-400"
@@ -3629,6 +3747,15 @@
 				</button>
 			{/if}
 
+			{#if payQrMethod === 'lightning' && payQrNote}
+				<div class="w-full rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2.5 text-left">
+					<div class="mb-1 flex items-center gap-1.5 text-[10px] font-bold tracking-wide text-amber-700 uppercase dark:text-amber-300">
+						<Icon name="lucide:message-square-text" class="size-3.5" />Invoice memo
+					</div>
+					<p class="break-words whitespace-pre-wrap text-[12.5px] font-medium leading-relaxed text-[var(--ui-text)]">{payQrNote}</p>
+				</div>
+			{/if}
+
 			<div class="text-center">
 				<p
 					class="text-[10.5px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
@@ -3638,12 +3765,12 @@
 				<p class="font-display text-3xl font-black tabular-nums">
 					{formatMoney(payQrAmount, currency)}
 				</p>
-				{#if showSats && payQrMethod !== 'lightning'}
+				{#if showSats || payQrMethod === 'lightning'}
 					<p
 						class="mt-0.5 flex items-center justify-center gap-1 text-[11px] font-semibold text-[var(--tone-warning-text)]"
 					>
 						<Icon name="lucide:zap" class="size-3" />≈ {formatInt(
-							btcRate.satsFromAmount(payQrAmount, currency)
+							payQrInvoice?.amountSats ?? btcRate.satsFromAmount(payQrAmount, currency)
 						)} sats
 					</p>
 				{/if}
@@ -3660,14 +3787,14 @@
 					: 'Expired — regenerate'}
 			</div>
 
-			{#if payQrIsInvoice && payQrProvider?.autoConfirms}
+				{#if payQrIsInvoice && payQrProvider?.autoConfirms}
 				<div
-					class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold {payQrPaid
-						? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-						: 'bg-amber-500/5 text-amber-700 dark:text-amber-300'}"
+					class="flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold {payQrPaid
+						? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+						: 'border-amber-500/15 bg-amber-500/5 text-amber-700 dark:text-amber-300'}"
 				>
 					{#if payQrPaid}
-						<Icon name="lucide:check-circle-2" class="size-3.5" />Payment received — completing…
+						<Icon name="lucide:check-circle-2" class="size-3.5" />Payment received — completing sale…
 					{:else}
 						<span class="relative flex size-2">
 							<span
@@ -3675,7 +3802,7 @@
 							></span>
 							<span class="relative inline-flex size-2 rounded-full bg-amber-500"></span>
 						</span>
-						Watching wallet — will auto-complete on payment
+						Watching wallet — send from Wallet of Satoshi or any Lightning wallet
 					{/if}
 				</div>
 			{/if}
@@ -3701,9 +3828,9 @@
 				>
 					<Icon name="lucide:copy" class="size-3.5" />Copy link
 				</button>
-				{#if payQrResult.payload.startsWith('lightning:')}
+				{#if payQrResult.payload}
 					<a
-						href={payQrResult.payload}
+						href={payQrResult.payload.startsWith('lightning:') ? payQrResult.payload : `lightning:${payQrResult.payload}`}
 						class="flex items-center gap-1 text-[11px] font-semibold text-amber-600 hover:underline dark:text-amber-400"
 					>
 						<Icon name="lucide:external-link" class="size-3.5" />Open in wallet
@@ -3714,13 +3841,14 @@
 	{/if}
 	{#snippet footer()}
 		<Button color="neutral" variant="subtle" icon="lucide:x" onclick={closeQrCheckout}
+			disabled={payQrPaid || payQrLoading}
 			>{t('common.cancel')}</Button
 		>
 		<Button
 			color="primary"
 			icon="lucide:check"
 			onclick={confirmQrPaid}
-			disabled={payQrLoading || payQrFetching}
+			disabled={payQrLoading || payQrFetching || payQrPaid}
 			>{#if payQrLoading}<Icon name="lucide:loader-circle" class="size-4 animate-spin" />…{:else}
 				Mark paid
 			{/if}</Button

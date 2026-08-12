@@ -116,6 +116,15 @@
 	<p class="ps-fade-up mt-0.5 font-mono text-[12px] font-semibold text-[var(--ui-text-dimmed)]">
 		{sale.number}
 	</p>
+	<div class="ps-fade-up mx-auto mt-3 w-full max-w-[260px] text-left">
+		<div class="mb-1.5 flex items-center justify-between text-[9px] font-bold tracking-[0.12em] text-[var(--tone-success-text)] uppercase">
+			<span>Payment confirmed</span>
+			<span>100%</span>
+		</div>
+		<div class="h-1.5 overflow-hidden rounded-full bg-[var(--tone-success-bg)]">
+			<div class="h-full w-full rounded-full bg-[var(--tone-success-text)]"></div>
+		</div>
+	</div>
 
 	<!-- Amount (count-up) -->
 	<div class="ps-fade-up ps-fade-up-2 mt-1.5">

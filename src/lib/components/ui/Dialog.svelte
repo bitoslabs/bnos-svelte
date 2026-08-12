@@ -9,12 +9,14 @@
 		open = $bindable(false),
 		title,
 		size = 'md',
+		dismissible = true,
 		children,
 		footer
 	}: {
 		open?: boolean;
 		title?: string;
 		size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'auto';
+		dismissible?: boolean;
 		children?: Snippet;
 		footer?: Snippet;
 	} = $props();
@@ -30,7 +32,7 @@
 		'max-w-md'
 	);
 	const onKey = (e: KeyboardEvent) => {
-		if (open && e.key === 'Escape') open = false;
+		if (open && dismissible && e.key === 'Escape') open = false;
 	};
 </script>
 
@@ -43,7 +45,7 @@
 			aria-label="Close dialog"
 			tabindex="-1"
 			class="animate-fade fixed inset-0 bg-black/45 backdrop-blur-[2px]"
-			onclick={() => (open = false)}
+			onclick={() => dismissible && (open = false)}
 		></button>
 		<div
 			in:scale={{ duration: 160, start: 0.96 }}
@@ -60,7 +62,8 @@
 					<h2 class="font-display text-[15px] font-semibold tracking-tight">{title}</h2>
 					<button
 						type="button"
-						onclick={() => (open = false)}
+						onclick={() => dismissible && (open = false)}
+						disabled={!dismissible}
 						class="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 						aria-label={t('common.close')}
 					>

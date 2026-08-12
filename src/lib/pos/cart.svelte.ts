@@ -296,8 +296,13 @@ class PosCart {
 	}
 
 	// ── checkout ──
-	async checkout(method: PaymentMethod, tendered = 0): Promise<CompletedSale | null> {
+	async checkout(
+		method: PaymentMethod,
+		tendered = 0,
+		onProgress?: (stage: 'saving' | 'syncing' | 'synced') => void
+	): Promise<CompletedSale | null> {
 		if (this.isEmpty) return null;
+		onProgress?.('saving');
 		const orderId = newRecordId('order');
 		const number = nextReadableNumber({ prefix: 'ORD', scope: tenant.state.locationId });
 		const currency = tenant.state.currency;
@@ -357,6 +362,7 @@ class PosCart {
 		});
 
 		try {
+			onProgress?.('syncing');
 			await glo.upsert<Order>(TYPE.order, order, { id: orderId });
 			await glo.upsert<Payment>(
 				TYPE.payment,
@@ -367,6 +373,7 @@ class PosCart {
 			console.warn('[pos] checkout persist failed', e);
 			toast.error('Sale saved locally', 'Relay sync will retry.');
 		}
+		onProgress?.('synced');
 
 		// ── Post-checkout data flows ──
 
