@@ -15,15 +15,8 @@
 	let revealCldSecret = $state(false);
 	let revealS3Secret = $state(false);
 	let testingProvider = $state<MediaProviderId | null>(null);
-	let serverEnabled = $state<boolean | null>(null);
-
 	onMount(() => {
 		media.load();
-		// Detect whether the server fallback is available (GET /api/media/upload).
-		fetch('/api/media/upload')
-			.then((r) => r.json())
-			.then((d: { enabled?: boolean }) => (serverEnabled = !!d.enabled))
-			.catch(() => (serverEnabled = false));
 	});
 
 	async function testUpload(id: MediaProviderId) {
@@ -71,11 +64,11 @@
 					: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
 			>
 				<div class="flex items-center gap-2">
-					<Icon name="lucide:server" class="size-4 text-[var(--ui-text-muted)]" />
-					<span class="text-[13px] font-bold">{t('settings.serverFallbackProvider')}</span>
+					<Icon name="lucide:flower-2" class="size-4 text-[var(--ui-text-muted)]" />
+					<span class="text-[13px] font-bold">Free Blossom</span>
 				</div>
 				<p class="mt-1 text-[11px] text-[var(--ui-text-muted)]">
-					{t('settings.serverFallbackProviderDesc')}
+					Direct PUT upload, authorized by your Nostr identity
 				</p>
 			</button>
 			{#each MEDIA_PROVIDERS as p (p.id)}
@@ -101,24 +94,11 @@
 			{/each}
 		</div>
 
-		<SettingRow title={t('common.serverFallback')} description={t('settings.mediaFallbackDesc')}>
-			{#if serverEnabled === null}
-				<Badge color="neutral"
-					><Icon name="lucide:loader-circle" class="mr-1 size-3 animate-spin" />{t(
-						'settings.checking'
-					)}</Badge
-				>
-			{:else if serverEnabled}
-				<Badge color="success"
-					><Icon name="lucide:check" class="mr-1 size-3" />{t('settings.available')}</Badge
-				>
-			{:else}
-				<Badge color="warning"
-					><Icon name="lucide:triangle-alert" class="mr-1 size-3" />{t(
-						'settings.notConfiguredShort'
-					)}</Badge
-				>
-			{/if}
+		<SettingRow
+			title="Free Blossom"
+			description="Direct Nostr-authenticated uploads to blossom.nostr.build."
+		>
+			<Badge color="success"><Icon name="lucide:check" class="mr-1 size-3" />Available</Badge>
 		</SettingRow>
 	</SettingsSection>
 

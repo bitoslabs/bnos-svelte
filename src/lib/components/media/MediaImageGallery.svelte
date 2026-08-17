@@ -3,7 +3,7 @@
 	 * MediaImageGallery — multi-image input that backs the `images: string[]`
 	 * field (products, marketplace listings). The first image is the cover.
 	 *
-	 * Reuses `media.upload()` (Cloudinary / S3 / server fallback) so it stores
+	 * Reuses `media.upload()` (Cloudinary / S3 / free Blossom) so it stores
 	 * URLs only — never data URIs. Supports:
 	 *   • drag & drop multiple files onto the dropzone
 	 *   • click to pick one or more files

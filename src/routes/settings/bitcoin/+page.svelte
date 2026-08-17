@@ -8,6 +8,7 @@
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import QrCode from '$lib/components/ui/QrCode.svelte';
 	import { testLightningAddress } from '$lib/pos/lightning';
+	import { nwcConnect, nwcGetInfo, nwcGetBalanceSats } from '$lib/nostr/nwc-client';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { browser } from '$app/environment';
@@ -42,7 +43,6 @@
 	let nodeStatus = $state<'idle' | 'connecting' | 'connected' | 'error'>('idle');
 	let nodePubkey = $state('');
 	let nodeAlias = $state('');
-	let nodeResult = $state('');
 
 	// ── Payment settings ────────────────────────
 	let defaultMemo = $state('Payment');
@@ -172,8 +172,43 @@
 				nodeAlias = res.domain;
 				testStatus = 'success';
 				nodeStatus = 'connected';
-				testResult = `✓ ${res.domain} · accepts ${res.minSats}–${res.maxSats} sats`;
-				toast.success('Lightning address verified', 'Live invoices can be requested at checkout.');
+				testResult = `✓ ${res.domain} · accepts ${res.minSats}–${res.maxSats} sats${
+					res.zapReceipts ? ' · zap receipts ✓ (instant auto-confirm)' : ' · manual confirm only'
+				}`;
+				toast.success(
+					'Lightning address verified',
+					res.zapReceipts
+						? 'Payments auto-confirm the moment they arrive (NIP-57 zap receipts).'
+						: 'Live invoices can be requested at checkout.'
+				);
+				return;
+			}
+
+			// NWC → REAL live wallet handshake (read-only get_info + get_balance —
+			// the connection secret stays on this device, so a live test is safe).
+			if (lightningProvider === 'nwc') {
+				const c = nwcConnect(nwcUrl);
+				const info = await nwcGetInfo();
+				const alias = info.alias || 'NWC wallet';
+				const methods = info.methods ?? [];
+				if (!methods.includes('make_invoice'))
+					throw new Error('This NWC connection cannot create invoices — re-connect it with receive permission');
+				const notif = info.notifications ?? [];
+				const balance = await nwcGetBalanceSats().catch(() => null);
+				nodePubkey = c.walletPubkey.slice(0, 8) + '…';
+				nodeAlias = alias;
+				const bits = [`✓ ${alias}`];
+				if (balance !== null) bits.push(`${balance.toLocaleString()} sats balance`);
+				bits.push(notif.includes('payment_received') ? 'instant auto-confirm' : 'polling auto-confirm');
+				testStatus = 'success';
+				nodeStatus = 'connected';
+				testResult = bits.join(' · ');
+				toast.success(
+					'NWC wallet connected',
+					notif.includes('payment_received')
+						? 'Payments are detected automatically the moment they arrive.'
+						: 'Payments are detected via periodic status checks.'
+				);
 				return;
 			}
 
@@ -605,7 +640,8 @@
 				>
 				<Input bind:value={nwcUrl} placeholder="nostr+walletconnect://…" class="w-full" />
 				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
-					Nostr Wallet Connect string from your wallet
+					Nostr Wallet Connect string from your wallet — paid invoices are detected
+					automatically (NIP-47 push + polling)
 				</p>
 			</div>
 		{:else if lightningProvider === 'lnaddress'}

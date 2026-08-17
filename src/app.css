@@ -550,6 +550,238 @@
 		backdrop-filter: saturate(180%) blur(20px);
 		-webkit-backdrop-filter: saturate(180%) blur(20px);
 	}
+
+	/* ── Boot / splash screen ───────────────────────────────────────────────
+	   Shared classes for the branded boot splash (hex badge with a perimeter
+	   trace + bolt draw + PoW segment sweep). The Svelte BootSplash component
+	   consumes these; the static pre-JS twin in app.html carries its own
+	   inline copy of the same animation timeline. */
+
+	/* Regular flat-top hexagon: all six sides equal (side = 50% of width),
+	   so the vertical span is width * √3/2 ≈ 6.7%–93.3%. */
+	.hex-clip {
+		clip-path: polygon(25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%, 0% 50%);
+		border-radius: 24%;
+	}
+
+	/* Proof-of-Work segments. */
+	.pow-bar {
+		display: inline-flex;
+		gap: 2px;
+		align-items: center;
+	}
+	.pow-bar > span {
+		width: 3px;
+		height: 9px;
+		background: var(--color-primary-500);
+		border-radius: 1px;
+		opacity: 0.18;
+		transition:
+			opacity 0.3s ease,
+			box-shadow 0.3s ease;
+	}
+	.pow-bar > span.is-filled {
+		opacity: 1;
+		box-shadow: 0 0 4px color-mix(in oklab, var(--color-primary-500) 45%, transparent);
+	}
+	/* Boot/splash variant: segments sweep in a loop while the app initializes. */
+	.pow-bar > span.pow-boot-seg {
+		background: var(--color-primary-500);
+		animation: pow-boot-sweep 1.2s ease-in-out infinite;
+	}
+	@keyframes pow-boot-sweep {
+		0%,
+		100% {
+			opacity: 0.18;
+			box-shadow: none;
+		}
+		35% {
+			opacity: 1;
+			box-shadow: 0 0 6px color-mix(in oklab, var(--color-primary-500) 55%, transparent);
+		}
+	}
+
+	/* Gentle logo pulse for the boot screen (echoes the static splash). */
+	.bs-pulse-soft {
+		isolation: isolate;
+		overflow: hidden;
+	}
+	.bs-boot-orbit {
+		position: absolute;
+		z-index: 1;
+		inset: 3px;
+		width: calc(100% - 6px);
+		height: calc(100% - 6px);
+		pointer-events: none;
+	}
+	.bs-boot-orbit polygon {
+		fill: none;
+		stroke: rgb(255 255 255 / 0.72);
+		stroke-width: 1.8;
+		stroke-linejoin: round;
+		stroke-dasharray: 260;
+		stroke-dashoffset: 260;
+		animation: bs-orbit-trace 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+	}
+	.bs-pulse-soft::after {
+		content: '';
+		position: absolute;
+		z-index: 0;
+		inset: -45% -85%;
+		background: linear-gradient(
+			110deg,
+			transparent 44%,
+			rgb(255 255 255 / 0.4) 50%,
+			transparent 56%
+		);
+		transform: translateX(-55%);
+		animation: bs-charge-sheen 2.4s ease-in-out infinite;
+	}
+	.bs-symbol {
+		position: relative;
+		z-index: 2;
+	}
+	.bs-bolt {
+		transform-box: fill-box;
+		transform-origin: center;
+		animation: bs-bolt-fill 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+	}
+	.bs-bolt-trace {
+		fill: none;
+		stroke: rgb(255 255 255 / 0.95);
+		stroke-width: 0.7;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		stroke-dasharray: 1;
+		stroke-dashoffset: 1;
+		animation: bs-bolt-draw 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+	}
+	/* Spark comet riding the stroke tip (same path, same easing, so it stays
+	 * locked to the draw). Progressive enhancement — hides if unsupported. */
+	.bs-spark {
+		offset-path: path('M13 2L3 14h9l-1 8 10-12h-9l1-8z');
+		offset-rotate: 0deg;
+		filter: drop-shadow(0 0 1px rgb(255 255 255 / 0.95));
+		animation: bs-spark-run 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+	}
+	@keyframes bs-orbit-trace {
+		0%,
+		6% {
+			stroke-dashoffset: 260;
+			opacity: 0;
+		}
+		9% {
+			opacity: 1;
+		}
+		26% {
+			stroke-dashoffset: 0;
+			opacity: 0.8;
+		}
+		30%,
+		100% {
+			stroke-dashoffset: 0;
+			opacity: 0;
+		}
+	}
+	@keyframes bs-charge-sheen {
+		0%,
+		10%,
+		100% {
+			transform: translateX(-55%);
+			opacity: 0;
+		}
+		12% {
+			opacity: 1;
+		}
+		28% {
+			transform: translateX(55%);
+			opacity: 0;
+		}
+	}
+	/* Fill: dim while the stroke traces, flash in with a glow pop the instant
+	 * the draw completes, hold, then discharge. */
+	@keyframes bs-bolt-fill {
+		0%,
+		26% {
+			opacity: 0.3;
+			transform: scale(1);
+			filter: none;
+		}
+		36% {
+			opacity: 1;
+			transform: scale(1.08);
+			filter: drop-shadow(0 0 2px rgb(255 255 255 / 0.9));
+		}
+		42% {
+			transform: scale(1);
+			filter: drop-shadow(0 0 1px rgb(255 255 255 / 0.3));
+		}
+		70% {
+			opacity: 1;
+		}
+		84%,
+		100% {
+			opacity: 0.3;
+			transform: scale(1);
+			filter: none;
+		}
+	}
+	@keyframes bs-bolt-draw {
+		0%,
+		11% {
+			stroke-dashoffset: 1;
+			opacity: 0;
+		}
+		13% {
+			opacity: 1;
+		}
+		28% {
+			stroke-dashoffset: 0;
+			opacity: 0.95;
+		}
+		34%,
+		100% {
+			stroke-dashoffset: 0;
+			opacity: 0;
+		}
+	}
+	/* Spark comet: locked to the same 11→28% window and easing as the
+	 * stroke draw, so it rides exactly at the tip. */
+	@keyframes bs-spark-run {
+		0%,
+		11% {
+			offset-distance: 0%;
+			opacity: 0;
+		}
+		13% {
+			opacity: 1;
+		}
+		28% {
+			offset-distance: 100%;
+			opacity: 1;
+		}
+		32%,
+		100% {
+			offset-distance: 100%;
+			opacity: 0;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.bs-pulse-soft,
+		.bs-pulse-soft::after,
+		.bs-boot-orbit polygon,
+		.bs-bolt,
+		.bs-bolt-trace,
+		.pow-bar > span.pow-boot-seg {
+			animation: none;
+		}
+		.bs-spark {
+			display: none;
+		}
+		.pow-bar > span.pow-boot-seg {
+			opacity: 0.6;
+		}
+	}
 	.app-main {
 		/* Page gutter — tracks --spacing so the full-bleed .data-panel negative
 	   margins stay perfectly aligned with the page padding in every density. */

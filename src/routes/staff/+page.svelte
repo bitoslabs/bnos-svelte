@@ -167,7 +167,9 @@
 			employeeCode: '',
 			department: '',
 			status: 'active',
-			branchIds: [],
+			// New staff start assigned to the first configured branch. Editing keeps
+			// the saved assignment (including an intentionally empty, company-wide one).
+			branchIds: locations[0] ? [locations[0].id] : [],
 			useCustomPermissions: false,
 			customPermissions: [],
 			pin: '',

@@ -4,7 +4,7 @@
 	 *
 	 * One component backs every image field in the app: product images, logos,
 	 * avatars, brand images, receipt logos. It delegates the actual upload to
-	 * `media.upload()` (Cloudinary / S3 / server fallback) and stores only the
+	 * `media.upload()` (Cloudinary / S3 / free Blossom) and stores only the
 	 * resulting URL — never a data URI.
 	 *
 	 * Inputs (in priority order):

@@ -879,9 +879,10 @@
 	let payQrIsInvoice = $state(false);
 	// The active Lightning provider (for header label + auto-confirm polling).
 	let payQrProvider = $state<LightningProvider | null>(null);
-	// Auto-confirm polling.
+	// Auto-confirm: push watch (NWC kind 7375) + polling backstop.
 	let payQrPaid = $state(false);
 	let payQrPollTimer: ReturnType<typeof setInterval> | null = null;
+	let payQrWatchStop: (() => void) | null = null;
 
 	function defaultInvoiceMemo() {
 		const items = cart.items
@@ -962,6 +963,9 @@
 			if (sats <= 0) throw new Error('No BTC rate available for ' + currency);
 			const invoice = await provider.makeInvoice(sats * 1000, payQrNote.trim() || defaultInvoiceMemo());
 			payQrInvoice = { pr: invoice.pr, amountSats: invoice.amountSats };
+			// Re-assign so the dialog re-reads `autoConfirms` — makeInvoice flips it
+			// on when the provider proves auto-confirmable (zap receipts / verify).
+			payQrProvider = provider;
 			payQrIsInvoice = true;
 			payQrResult = {
 				payload: invoice.pr,
@@ -1012,10 +1016,25 @@
 
 	function startPaymentPolling(provider: LightningProvider, pr: string) {
 		stopPaymentPolling();
-		if (!provider.getPaymentStatus || !provider.autoConfirms) return;
-		let cancelled = false;
+		if (!provider.autoConfirms) return;
+		// 1) Push (preferred): NWC wallets emit kind 7375 `payment_received` the
+		//    moment sats land — settles instantly, no polling needed.
+		const hasPush = typeof provider.watchPayment === 'function';
+		if (hasPush) {
+			payQrWatchStop = provider.watchPayment!(pr, (preimage) => {
+				if (!payQrOpen || payQrPaid) return;
+				payQrPaid = true;
+				stopPaymentPolling();
+				toast.success('Lightning payment received', 'Auto-confirming the sale…');
+				setTimeout(() => confirmQrPaid(), 600);
+			});
+		}
+		// 2) Poll backstop: authoritative `lookup_invoice` every 4s (only path
+		//    for providers without push; slower cadence when push is active).
+		if (!provider.getPaymentStatus) return;
+		const intervalMs = hasPush ? 10_000 : 4_000;
 		payQrPollTimer = setInterval(async () => {
-			if (cancelled || !payQrOpen) {
+			if (!payQrOpen || payQrPaid) {
 				stopPaymentPolling();
 				return;
 			}
@@ -1026,12 +1045,16 @@
 				toast.success('Lightning payment received', 'Auto-confirming the sale…');
 				setTimeout(() => confirmQrPaid(), 600);
 			}
-		}, 4000);
+		}, intervalMs);
 	}
 	function stopPaymentPolling() {
 		if (payQrPollTimer) {
 			clearInterval(payQrPollTimer);
 			payQrPollTimer = null;
+		}
+		if (payQrWatchStop) {
+			payQrWatchStop();
+			payQrWatchStop = null;
 		}
 	}
 
@@ -1127,6 +1150,7 @@
 			return;
 		}
 		payQrOpen = false;
+		stopPaymentPolling();
 		processing = true;
 		checkoutProgressStage = 'saving';
 		receiptOpen = true;
@@ -1169,6 +1193,7 @@
 			return;
 		}
 		payQrOpen = false;
+		stopPaymentPolling();
 		processing = true;
 		checkoutProgressStage = 'saving';
 		receiptOpen = true;

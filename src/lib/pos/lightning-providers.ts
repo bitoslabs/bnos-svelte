@@ -19,15 +19,26 @@
  * On any failure the POS falls back to a static `lightning:` QR.
  */
 import { browser } from '$app/environment';
-import { finalizeEvent, nip04 } from 'nostr-tools';
+import type { Event } from 'nostr-tools/pure';
+import {
+	nwcConnect,
+	nwcLookupInvoice,
+	nwcMakeInvoice,
+	watchPaymentReceived,
+	nwcNotificationMatchesInvoice,
+	type NwcConnection
+} from '$lib/nostr/nwc-client';
 import {
 	type LightningInvoice,
+	checkVerifyUrl,
 	decodeBolt11AmountMsat,
 	isLightningAddress,
 	isLnurlString,
+	lnurlSupportsZap,
 	resolveLnurlPay,
 	requestInvoice
 } from './lightning';
+import { buildZapRequest, watchZapReceipts } from './zap-receipts';
 
 const BITCOIN_SETTINGS_KEY = 'bnos-os:settings-bitcoin';
 
@@ -63,6 +74,10 @@ export interface LightningProvider {
 	makeInvoice(amountMsat: number, memo?: string): Promise<LightningInvoice>;
 	/** Poll payment status (optional). Returns 'unknown' if unsupported. */
 	getPaymentStatus?(pr: string): Promise<'pending' | 'paid' | 'expired' | 'unknown'>;
+	/** Push-based payment watch (optional, NWC kind 7375): fires once when the
+	 *  invoice is settled. Returns an unwatch function. When absent the POS
+	 *  falls back to `getPaymentStatus` polling. */
+	watchPayment?(pr: string, onPaid: (preimage?: string) => void): () => void;
 }
 
 function makeInvoiceResult(
@@ -83,17 +98,92 @@ function makeInvoiceResult(
 
 /* ── 1. Lightning Address (LNURL-pay) ──────────────────────────────────── */
 
+/** Detection context that lets a plain Lightning Address auto-confirm: the
+ *  merchant's Nostr pubkey (9734 `p` tag + receipt filter) and the relays to
+ *  watch for NIP-57 kind 9735 zap receipts. */
+export interface LnurlDetectionContext {
+	recipientPubkey?: string;
+	relays?: string[];
+}
+
+/** Widely-readable relays used when the merchant hasn't configured any
+ *  (subset of the app's builtin relay list). */
+const FALLBACK_ZAP_RELAYS = ['wss://nos.lol', 'wss://relay.damus.io', 'wss://relay.nostr.band'];
+
 export class LnurlAddressProvider implements LightningProvider {
 	readonly id = 'lnaddress';
 	readonly label: string;
-	readonly autoConfirms = false;
-	constructor(private readonly address: string) {
+	/** Starts false; `makeInvoice` flips it true once the provider proves
+	 *  auto-confirmable (NIP-57 zap receipts and/or a pollable verify URL). */
+	autoConfirms = false;
+	/** Per-invoice detection state, populated by makeInvoice. */
+	private pending: {
+		pr: string;
+		verifyUrl?: string;
+		zapRequestId?: string;
+		recipientPubkey?: string;
+		relays?: string[];
+	} | null = null;
+
+	constructor(
+		private readonly address: string,
+		private readonly ctx?: LnurlDetectionContext
+	) {
 		this.label = `Lightning · ${address}`;
 	}
+
 	async makeInvoice(amountMsat: number, memo?: string): Promise<LightningInvoice> {
 		const meta = await resolveLnurlPay(this.address);
-		const inv = await requestInvoice(meta, amountMsat, memo);
-		return makeInvoiceResult(inv.pr, amountMsat, 'lnurl');
+		// "Zaps style" push detection: NIP-57-capable providers publish a kind
+		// 9735 receipt the moment the customer pays the invoice.
+		const zapCapable =
+			lnurlSupportsZap(meta) && !!this.ctx?.recipientPubkey && !!this.ctx.relays?.length;
+		let zap: Event | undefined;
+		if (zapCapable) {
+			zap = buildZapRequest({
+				recipientPubkey: this.ctx!.recipientPubkey!,
+				amountMsat,
+				relays: this.ctx!.relays!,
+				memo
+			});
+		}
+		const inv = await requestInvoice(
+			meta,
+			amountMsat,
+			memo,
+			zap ? JSON.stringify(zap) : undefined
+		);
+		this.pending = {
+			pr: inv.pr,
+			verifyUrl: inv.verifyUrl,
+			zapRequestId: zap?.id,
+			recipientPubkey: this.ctx?.recipientPubkey,
+			relays: this.ctx?.relays
+		};
+		this.autoConfirms = !!zap || !!inv.verifyUrl;
+		return { ...makeInvoiceResult(inv.pr, amountMsat, 'lnurl'), verifyUrl: inv.verifyUrl };
+	}
+
+	/** Push: settle the instant the provider publishes the 9735 receipt. */
+	watchPayment(pr: string, onPaid: (preimage?: string) => void): () => void {
+		const p = this.pending;
+		if (!p || p.pr !== pr || !p.zapRequestId || !p.recipientPubkey || !p.relays?.length)
+			return () => {};
+		return watchZapReceipts({
+			relays: p.relays,
+			recipientPubkey: p.recipientPubkey,
+			requestId: p.zapRequestId,
+			pr,
+			onPaid
+		});
+	}
+
+	/** Poll backstop: the LNURL-pay `verify` URL (spec LUD-06), when the
+	 *  provider returns one. */
+	async getPaymentStatus(pr: string): Promise<'pending' | 'paid' | 'expired' | 'unknown'> {
+		const p = this.pending;
+		if (!p || p.pr !== pr || !p.verifyUrl) return 'unknown';
+		return checkVerifyUrl(p.verifyUrl);
 	}
 }
 
@@ -183,16 +273,15 @@ export class BlinkProvider implements LightningProvider {
 
 /* ── 3. NWC (Nostr Wallet Connect) ─────────────────────────────────────── */
 
-interface NwcConnection {
+export interface NwcConnectionLegacy {
 	walletPubkey: string;
 	relay: string;
 	secret: string; // hex
 }
 
-export function parseNwcUri(uri: string): NwcConnection | null {
-	const m = uri
-		.trim()
-		.match(/^nostr\+walletconnect:\/\/([0-9a-fA-F]{64})\?(.*)$/);
+/** Parse a NWC URI (single-relay legacy shape; kept for compatibility). */
+export function parseNwcUri(uri: string): NwcConnectionLegacy | null {
+	const m = uri.trim().match(/^nostr\+walletconnect:\/\/([0-9a-fA-F]{64})\?(.*)$/);
 	if (!m) return null;
 	const params = new URLSearchParams(m[2]);
 	const relay = params.get('relay');
@@ -207,6 +296,15 @@ function hexToBytes(hex: string): Uint8Array {
 	return out;
 }
 
+/**
+ * NWC provider — delegates to the shared persistent client in
+ * `$lib/nostr/nwc-client` (multi-relay SimplePool, correct kind 23195 response
+ * handling). Auto-detection is two-layered, matching NIP-47:
+ *   1. `watchPayment` — push: the wallet emits kind 7375 `payment_received`
+ *      the moment sats land (instant, authenticated by the wallet key).
+ *   2. `getPaymentStatus` — pull backstop: `lookup_invoice` polling for
+ *      wallets that don't push notifications.
+ */
 export class NwcProvider implements LightningProvider {
 	readonly id = 'nwc';
 	readonly label = 'NWC wallet';
@@ -214,89 +312,58 @@ export class NwcProvider implements LightningProvider {
 	private readonly conn: NwcConnection;
 
 	constructor(uri: string) {
-		const c = parseNwcUri(uri);
-		if (!c) throw new Error('Invalid NWC URI');
-		this.conn = c;
-	}
-
-	/** Send a NWC request and await the wallet's encrypted response. */
-	private async request(payload: unknown, timeoutMs = 20000): Promise<any> {
-		const sk = hexToBytes(this.conn.secret);
-		const content = await nip04.encrypt(sk, this.conn.walletPubkey, JSON.stringify(payload));
-		const event = finalizeEvent(
-			{
-				kind: 23194,
-				created_at: Math.floor(Date.now() / 1000),
-				tags: [['p', this.conn.walletPubkey]],
-				content
-			},
-			sk
-		);
-		return new Promise((resolve, reject) => {
-			let ws: WebSocket | null = null;
-			let settled = false;
-			const timer = setTimeout(() => done(new Error('NWC timeout — relay unreachable or wallet offline')), timeoutMs);
-			const done = (err: Error | null, val?: unknown) => {
-				if (settled) return;
-				settled = true;
-				clearTimeout(timer);
-				try {
-					ws?.close();
-				} catch {
-					/* */
-				}
-				if (err) reject(err);
-				else resolve(val);
-			};
-			try {
-				ws = new WebSocket(this.conn.relay);
-			} catch (e) {
-				done(e instanceof Error ? e : new Error('NWC connection failed'));
-				return;
-			}
-			ws.onopen = () => ws!.send(JSON.stringify(['EVENT', event]));
-			ws.onmessage = async (msg) => {
-				try {
-					const [type, data] = JSON.parse(msg.data as string);
-					if (
-						type === 'EVENT' &&
-						data?.kind === 23194 &&
-						Array.isArray(data.tags) &&
-						data.tags.some((t: string[]) => t[0] === 'e' && t[1] === event.id)
-					) {
-						const decrypted = await nip04.decrypt(sk, this.conn.walletPubkey, data.content);
-						const result = JSON.parse(decrypted) as { result?: unknown; error?: { message?: string } };
-						if (result.error) done(new Error(result.error.message ?? 'NWC error'));
-						else done(null, result.result);
-					}
-				} catch {
-					/* ignore malformed frame */
-				}
-			};
-			ws.onerror = () => done(new Error('NWC relay connection failed'));
-		});
+		// Validates the URI (throws on garbage) and activates the shared connection.
+		try {
+			this.conn = nwcConnect(uri);
+		} catch (e) {
+			throw e instanceof Error ? e : new Error('Invalid NWC URI');
+		}
 	}
 
 	async makeInvoice(amountMsat: number, memo?: string): Promise<LightningInvoice> {
-		const r = (await this.request({
-			method: 'make_invoice',
-			params: { amount: Math.round(amountMsat), description: memo ?? 'BNOS sale' }
-		})) as { invoice?: string; payment_request?: string; amount?: number };
-		const pr = r.invoice ?? r.payment_request;
-		if (!pr) throw new Error('Wallet returned no invoice');
+		const pr = await nwcMakeInvoice(amountMsat, memo ?? 'BNOS sale');
 		return makeInvoiceResult(pr, amountMsat, 'lnurl');
 	}
 
 	async getPaymentStatus(pr: string): Promise<'pending' | 'paid' | 'expired' | 'unknown'> {
 		try {
-			const r = (await this.request({
-				method: 'lookup_invoice',
-				params: { invoice: pr }
-			})) as { settled?: boolean; preimage?: string };
-			return r.settled ? 'paid' : 'pending';
+			const r = await nwcLookupInvoice(pr);
+			return r?.settled ? 'paid' : 'pending';
 		} catch {
 			return 'unknown';
 		}
+	}
+
+	/** Push-based: settle the moment the wallet emits `payment_received`.
+	 *  When the notification carries the BOLT11 we match it exactly; some
+	 *  wallets omit it, so we then confirm via an authoritative lookup. */
+	watchPayment(pr: string, onPaid: (preimage?: string) => void): () => void {
+		let done = false;
+		const settle = (preimage?: string) => {
+			if (done) return;
+			done = true;
+			unwatch();
+			onPaid(preimage);
+		};
+		const unwatch = watchPaymentReceived((n) => {
+			if (nwcNotificationMatchesInvoice(n, pr)) {
+				settle(n.preimage);
+			} else if (!n.invoice) {
+				// No BOLT11 in the notification — can't match by string; ask the
+				// wallet whether *our* invoice settled.
+				void nwcLookupInvoice(pr)
+					.then((s) => {
+						if (s?.settled) settle(s.preimage);
+					})
+					.catch(() => {
+						/* keep waiting */
+					});
+			}
+		});
+		return () => {
+			done = true;
+			unwatch();
+		};
 	}
 }
 
@@ -451,12 +518,16 @@ export class StrikeProvider implements LightningProvider {
 
 /** Pure selection: given a provider config, return the matching provider or null.
  *  (No localStorage / browser dependency — easy to unit test.) */
-export function selectProviderForConfig(cfg: ProviderConfig): LightningProvider | null {
+export function selectProviderForConfig(
+	cfg: ProviderConfig,
+	ctx?: LnurlDetectionContext
+): LightningProvider | null {
 	switch (cfg.lightningProvider) {
 		case 'lnaddress':
 			if (cfg.lightningAddress) {
 				const v = cfg.lightningAddress.trim();
-				if (isLightningAddress(v) || isLnurlString(v)) return new LnurlAddressProvider(v);
+				if (isLightningAddress(v) || isLnurlString(v))
+					return new LnurlAddressProvider(v, ctx);
 			}
 			return null;
 		case 'blink':
@@ -482,10 +553,47 @@ export function selectProviderForConfig(cfg: ProviderConfig): LightningProvider 
 	}
 }
 
+/** Best-effort browser context for Lightning Address auto-confirm: the
+ *  merchant's Nostr pubkey (persisted by the session store) and the app's
+ *  configured relays (or a readable fallback subset). */
+export function loadDetectionContext(): LnurlDetectionContext {
+	if (!browser) return {};
+	let recipientPubkey: string | undefined;
+	let relays: string[] | undefined;
+	try {
+		const pk = localStorage.getItem('nostr_pubkey');
+		if (pk && /^[0-9a-f]{64}$/i.test(pk)) recipientPubkey = pk.toLowerCase();
+	} catch {
+		/* ignore */
+	}
+	try {
+		const raw = localStorage.getItem('bnos-os:relays');
+		if (raw) {
+			const parsed = JSON.parse(raw) as unknown;
+			const urls: unknown[] = Array.isArray(parsed)
+				? parsed
+				: parsed && typeof parsed === 'object' && Array.isArray((parsed as { relays?: unknown[] }).relays)
+					? (parsed as { relays: unknown[] }).relays
+					: [];
+			relays = [
+				...new Set(
+					urls
+						.map((u) => String(u).trim())
+						.filter((u) => /^wss:\/\//.test(u))
+				)
+			].slice(0, 6);
+		}
+	} catch {
+		/* ignore */
+	}
+	if (!relays?.length) relays = FALLBACK_ZAP_RELAYS;
+	return { recipientPubkey, relays };
+}
+
 /** Resolve the merchant's configured Lightning provider, or null if none.
  *  Respects the `lightningProvider` selection from Settings → Bitcoin. */
 export function getActiveLightningProvider(): LightningProvider | null {
-	return selectProviderForConfig(loadProviderConfig());
+	return selectProviderForConfig(loadProviderConfig(), loadDetectionContext());
 }
 
 /** Human label for the active provider (for the POS dialog header). */

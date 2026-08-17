@@ -16,6 +16,7 @@ const BUILTIN_RELAYS = [
 	'wss://relay.nostr.band',
 	'wss://nostr.wine',
 	'wss://relay.damus.io',
+	'wss://relay.bitos.space'
 ];
 
 function relaysFromEnv(value: string | undefined): string[] {

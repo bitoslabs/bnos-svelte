@@ -29,6 +29,7 @@
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import PwaPrompt from '$lib/components/PwaPrompt.svelte';
 	import OfflineBadge from '$lib/components/OfflineBadge.svelte';
+	import BootSplash from '$lib/components/ui/BootSplash.svelte';
 	import { popovers } from '$lib/stores/popovers.svelte';
 	import { permissionForPath } from '$lib/nav';
 	import { permissions } from '$lib/permissions.svelte';
@@ -55,6 +56,12 @@
 	loadSidebarCollapsed();
 
 	onMount(() => {
+		// Dismiss the static splash from app.html once the app has mounted.
+		const splash = document.getElementById('boot-splash');
+		if (splash) {
+			splash.classList.add('bs-out');
+			setTimeout(() => splash.remove(), 400);
+		}
 		preferences.load();
 		preferences.apply();
 		features.load();
@@ -168,7 +175,11 @@
 
 <svelte:window onpointerdown={onGlobalPointerDown} onkeydown={onGlobalKey} />
 
-{#if isPublicRoute}
+{#if !session.hydrated}
+	<!-- Brief boot state while local session state hydrates
+	     (static twin lives in app.html for the pre-JS window). -->
+	<BootSplash />
+{:else if isPublicRoute}
 	{@render children()}
 {:else}
 	<div class="app-shell flex min-h-screen">

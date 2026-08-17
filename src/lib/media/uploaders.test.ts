@@ -7,14 +7,16 @@
  *
  * (Server project: unit tests run under vitest's `server` project, node env.)
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
 	getSigningKey,
 	signAwsRequestV4,
 	signCloudinaryRequest,
 	toHex,
 	classifyMime,
-	humanBytes
+	humanBytes,
+	sha256File,
+	uploadToBlossom
 } from './uploaders';
 
 const SECRET = 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY';
@@ -70,6 +72,51 @@ describe('Cloudinary signature', () => {
 });
 
 describe('utilities', () => {
+	it('hashes file data using SHA-256 for Blossom uploads', async () => {
+		const file = new File(['hello'], 'hello.txt', { type: 'text/plain' });
+		expect(await sha256File(file)).toBe(
+			'2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
+		);
+	});
+
+	it('uploads raw file bytes to Blossom with PUT and its signed hash', async () => {
+		const originalFetch = globalThis.fetch;
+		const fetchMock = vi.fn().mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					url: 'https://blossom.nostr.build/abc.txt',
+					type: 'text/plain',
+					size: 5
+				}),
+				{ status: 201, headers: { 'Content-Type': 'application/json' } }
+			)
+		);
+		globalThis.fetch = fetchMock;
+		try {
+			const file = new File(['hello'], 'hello.txt', { type: 'text/plain' });
+			const result = await uploadToBlossom(file, async (hash) => `Nostr signed-${hash}`);
+
+			expect(fetchMock).toHaveBeenCalledWith('https://blossom.nostr.build/upload', {
+				method: 'PUT',
+				headers: {
+					Authorization:
+						'Nostr signed-2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
+					'Content-Type': 'text/plain',
+					'X-SHA-256':
+						'2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
+				},
+				body: file
+			});
+			expect(result).toMatchObject({
+				url: 'https://blossom.nostr.build/abc.txt',
+				kind: 'file',
+				provider: 'blossom'
+			});
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
+	});
+
 	it('classifies mime types', () => {
 		expect(classifyMime('image/png')).toBe('image');
 		expect(classifyMime('video/mp4')).toBe('video');

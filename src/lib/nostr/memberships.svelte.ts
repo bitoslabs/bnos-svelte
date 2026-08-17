@@ -8,7 +8,7 @@
  * surface a destination for the workspace selector / blocked screens.
  */
 import { browser } from '$app/environment';
-import { fetchEventsPrimaryFirst } from './client';
+import { fetchEvents } from './client';
 import { session } from './session.svelte';
 import { glo } from './store.svelte';
 import { tenant, type ActiveStaffInfo } from './tenant.svelte';
@@ -147,9 +147,13 @@ class MembershipsStore {
 		const owners = [...new Set(authors.filter((a) => !!a && a !== me))];
 		if (!owners.length) return;
 		try {
+			// Workspace configuration is replaceable data. Query every readable relay
+			// here so a stale primary cannot hide a newer organization or branch update
+			// that has already reached another relay. `batchUpsert` keeps the newest
+			// version using the record update timestamp.
 			const [orgEvents, locEvents] = await Promise.all([
-				fetchEventsPrimaryFirst({ kinds: [30078], authors: owners }),
-				fetchEventsPrimaryFirst({ kinds: [30600], authors: owners })
+				fetchEvents({ kinds: [30078], authors: owners }),
+				fetchEvents({ kinds: [30600], authors: owners })
 			]);
 			const parse = (events: { kind: number; content: string; tags: string[][] }[]) =>
 				events
@@ -176,7 +180,8 @@ class MembershipsStore {
 		if (!me) return;
 		this._ownerPubkeys = [];
 		try {
-			const events = await fetchEventsPrimaryFirst({ kinds: [30500], '#p': [me] });
+			// Membership updates may also arrive at a non-primary relay first.
+			const events = await fetchEvents({ kinds: [30500], '#p': [me] });
 			if (!events.length) return;
 			// Remember who authored these staff records (the org owners) so a
 			// staff-member's device can fetch the org + location records.

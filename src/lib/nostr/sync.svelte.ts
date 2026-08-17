@@ -251,6 +251,13 @@ class SyncStore {
 	}
 
 	async manualSync() {
+		// Workspace records are authored by the owner, not by the staff device.
+		// Fetch them through the staff membership before the normal sync, otherwise
+		// the author-scoped organization/location queries can leave the device with
+		// stale company details such as the store name or currency.
+		if (tenant.state.activeStaffId !== null && tenant.state.activeRole !== 'owner') {
+			await memberships.resolveStaffWorkspace();
+		}
 		await this.syncTypes(CORE_DATA_TYPES, { force: true, scope: 'core', silent: false });
 		await this.syncTypes(SECONDARY_DATA_TYPES, { force: true, scope: 'secondary', silent: false });
 	}

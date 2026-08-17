@@ -48,6 +48,21 @@ describe('lightning provider factory', () => {
 		expect(p!.autoConfirms).toBe(false);
 	});
 
+	it('passes the detection ctx to lnaddress (autoConfirms until invoice proves it)', () => {
+		const p = selectProviderForConfig(
+			{
+				lightningProvider: 'lnaddress',
+				lightningAddress: 'store@bitdigo.com'
+			} as ProviderConfig,
+			{ recipientPubkey: PK64, relays: ['wss://nos.lol'] }
+		);
+		expect(p).not.toBeNull();
+		expect(p!.id).toBe('lnaddress');
+		// Starts false — flips on only after makeInvoice confirms zap/verify support.
+		expect(p!.autoConfirms).toBe(false);
+		expect(typeof p!.watchPayment).toBe('function');
+	});
+
 	it('selects blink when configured (auto-confirms)', () => {
 		const p = selectProviderForConfig({
 			lightningProvider: 'blink',

@@ -56,6 +56,302 @@
 		</script>
 	</head>
 	<body data-sveltekit-preload-data="hover">
+		<!-- Instant splash: paints before the JS bundle loads; the SvelteKit
+		     layout removes it (fade-out) as soon as the app mounts. -->
+		<div id="boot-splash" role="status" aria-label="Loading BNOS">
+			<div class="bs-inner">
+				<!-- Brand lockup: hex badge (BNOS hex language) + display wordmark. -->
+				<div class="bs-mark" aria-hidden="true">
+					<!-- Perimeter trace: a compact system-online moment before the app mounts. -->
+					<svg class="bs-boot-orbit" viewBox="0 0 100 100" aria-hidden="true">
+						<polygon points="25,6.7 75,6.7 100,50 75,93.3 25,93.3 0,50" />
+					</svg>
+					<!-- BNOS lightning bolt: drawn then revealed with a spark. -->
+					<svg class="bs-symbol" viewBox="0 0 24 24" aria-hidden="true">
+						<path class="bs-bolt-fill" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#fff" />
+						<path class="bs-bolt-trace" pathLength="1" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+						<!-- Spark comet riding the stroke tip while the bolt draws. -->
+						<circle class="bs-spark" r="0.7" fill="#fff" />
+					</svg>
+				</div>
+				<p class="bs-logo">BNOS</p>
+				<div class="bs-pow" aria-hidden="true">
+					<span></span><span></span><span></span><span></span><span></span><span></span
+					><span></span><span></span><span></span>
+				</div>
+				<noscript><p class="bs-noscript">BNOS needs JavaScript to run.</p></noscript>
+			</div>
+			<style>
+				#boot-splash {
+					position: fixed;
+					inset: 0;
+					z-index: 9999;
+					display: grid;
+					place-items: center;
+					background: #f6f7f9;
+					pointer-events: none;
+					transition:
+						opacity 0.3s ease,
+						visibility 0.3s ease;
+				}
+				html.dark #boot-splash {
+					background: #0d0d0f;
+				}
+				.bs-inner {
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					gap: 16px;
+				}
+				/* Hex badge — regular flat-top hexagon, orange to match the app accent. */
+				.bs-mark {
+					width: 60px;
+					height: 60px;
+					display: grid;
+					place-items: center;
+					position: relative;
+					isolation: isolate;
+					overflow: hidden;
+					background: linear-gradient(135deg, #fbbf24, #f97316);
+					clip-path: polygon(25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%, 0% 50%);
+					filter: drop-shadow(0 4px 18px rgb(249 115 22 / 0.5));
+				}
+				.bs-boot-orbit {
+					position: absolute;
+					z-index: 1;
+					inset: 3px;
+					width: calc(100% - 6px);
+					height: calc(100% - 6px);
+					pointer-events: none;
+				}
+				.bs-boot-orbit polygon {
+					fill: none;
+					stroke: rgb(255 255 255 / 0.72);
+					stroke-width: 1.8;
+					stroke-linejoin: round;
+					stroke-dasharray: 260;
+					stroke-dashoffset: 260;
+					animation: bs-orbit-trace 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+				}
+				.bs-mark::after {
+					content: '';
+					position: absolute;
+					z-index: 0;
+					inset: -45% -85%;
+					background: linear-gradient(
+						110deg,
+						transparent 44%,
+						rgb(255 255 255 / 0.4) 50%,
+						transparent 56%
+					);
+					transform: translateX(-55%);
+					animation: bs-charge-sheen 2.4s ease-in-out infinite;
+				}
+				.bs-mark > .bs-symbol {
+					position: relative;
+					z-index: 2;
+					width: 34px;
+					height: 34px;
+				}
+				/* Fill participates in the draw: dim while tracing, flash in when the
+				   stroke completes — the reveal moment. */
+				.bs-bolt-fill {
+					transform-box: fill-box;
+					transform-origin: center;
+					animation: bs-bolt-fill 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+				}
+				.bs-bolt-trace {
+					fill: none;
+					stroke: rgb(255 255 255 / 0.95);
+					stroke-width: 0.7;
+					stroke-linecap: round;
+					stroke-linejoin: round;
+					stroke-dasharray: 1;
+					stroke-dashoffset: 1;
+					animation: bs-bolt-draw 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+				}
+				/* Spark comet riding the stroke tip (same path, same easing, so it stays
+				   locked to the draw). Progressive enhancement — hides if unsupported. */
+				.bs-spark {
+					offset-path: path('M13 2L3 14h9l-1 8 10-12h-9l1-8z');
+					offset-rotate: 0deg;
+					filter: drop-shadow(0 0 1px rgb(255 255 255 / 0.95));
+					animation: bs-spark-run 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+				}
+				.bs-logo {
+					margin: 0;
+					font-family: 'Space Grotesk', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+					font-size: 26px;
+					font-weight: 700;
+					letter-spacing: -0.02em;
+					line-height: 1;
+					color: #18181b;
+				}
+				html.dark .bs-logo {
+					color: #f4f4f5;
+				}
+				.bs-pow {
+					display: flex;
+					gap: 3px;
+				}
+				.bs-pow span {
+					width: 3px;
+					height: 9px;
+					border-radius: 1px;
+					background: #f97316; /* primary-500 — orange, matches the app accent */
+					opacity: 0.18;
+					animation: bs-sweep 1.2s ease-in-out infinite;
+				}
+				.bs-pow span:nth-child(1) { animation-delay: 0s; }
+				.bs-pow span:nth-child(2) { animation-delay: 0.12s; }
+				.bs-pow span:nth-child(3) { animation-delay: 0.24s; }
+				.bs-pow span:nth-child(4) { animation-delay: 0.36s; }
+				.bs-pow span:nth-child(5) { animation-delay: 0.48s; }
+				.bs-pow span:nth-child(6) { animation-delay: 0.6s; }
+				.bs-pow span:nth-child(7) { animation-delay: 0.72s; }
+				.bs-pow span:nth-child(8) { animation-delay: 0.84s; }
+				.bs-pow span:nth-child(9) { animation-delay: 0.96s; }
+				@keyframes bs-sweep {
+					0%,
+					100% {
+						opacity: 0.18;
+						box-shadow: 0 0 6px rgb(249 115 22 / 0);
+					}
+					35% {
+						opacity: 1;
+						box-shadow: 0 0 6px rgb(249 115 22 / 0.55);
+					}
+				}
+				@keyframes bs-orbit-trace {
+					0%,
+					6% {
+						stroke-dashoffset: 260;
+						opacity: 0;
+					}
+					9% {
+						opacity: 1;
+					}
+					26% {
+						stroke-dashoffset: 0;
+						opacity: 0.8;
+					}
+					30%,
+					100% {
+						stroke-dashoffset: 0;
+						opacity: 0;
+					}
+				}
+				@keyframes bs-charge-sheen {
+					0%,
+					10%,
+					100% {
+						transform: translateX(-55%);
+						opacity: 0;
+					}
+					12% {
+						opacity: 1;
+					}
+					28% {
+						transform: translateX(55%);
+						opacity: 0;
+					}
+				}
+				/* Fill: dim while the stroke traces, flash in with a glow pop the
+				   instant the draw completes, hold, then discharge. */
+				@keyframes bs-bolt-fill {
+					0%,
+					26% {
+						opacity: 0.3;
+						transform: scale(1);
+						filter: none;
+					}
+					36% {
+						opacity: 1;
+						transform: scale(1.08);
+						filter: drop-shadow(0 0 2px rgb(255 255 255 / 0.9));
+					}
+					42% {
+						transform: scale(1);
+						filter: drop-shadow(0 0 1px rgb(255 255 255 / 0.3));
+					}
+					70% {
+						opacity: 1;
+					}
+					84%,
+					100% {
+						opacity: 0.3;
+						transform: scale(1);
+						filter: none;
+					}
+				}
+				@keyframes bs-bolt-draw {
+					0%,
+					11% {
+						stroke-dashoffset: 1;
+						opacity: 0;
+					}
+					13% {
+						opacity: 1;
+					}
+					28% {
+						stroke-dashoffset: 0;
+						opacity: 0.95;
+					}
+					34%,
+					100% {
+						stroke-dashoffset: 0;
+						opacity: 0;
+					}
+				}
+				/* Spark comet: locked to the same 11→28% window and easing as the
+				   stroke draw, so it rides exactly at the tip. */
+				@keyframes bs-spark-run {
+					0%,
+					11% {
+						offset-distance: 0%;
+						opacity: 0;
+					}
+					13% {
+						opacity: 1;
+					}
+					28% {
+						offset-distance: 100%;
+						opacity: 1;
+					}
+					32%,
+					100% {
+						offset-distance: 100%;
+						opacity: 0;
+					}
+				}
+				@media (prefers-reduced-motion: reduce) {
+					.bs-mark,
+					.bs-mark svg,
+					.bs-mark::after,
+					.bs-bolt-fill,
+					.bs-bolt-trace,
+					.bs-pow span {
+						animation: none;
+					}
+					.bs-spark {
+						display: none;
+					}
+					.bs-pow span {
+						opacity: 0.6;
+					}
+				}
+				#boot-splash.bs-out {
+					opacity: 0;
+					visibility: hidden;
+				}
+				.bs-noscript {
+					margin: 0;
+					font-size: 12px;
+					font-family: 'JetBrains Mono', monospace;
+					color: #a1a1aa;
+				}
+			</style>
+		</div>
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

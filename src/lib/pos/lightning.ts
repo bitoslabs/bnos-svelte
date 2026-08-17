@@ -33,6 +33,15 @@ export interface LnurlPayMetadata {
 	commentAllowed?: number;
 	/** Nostr pubkey for NIP-57 zaps (optional). */
 	nostrPubkey?: string;
+	/** The LNURL-pay metadata endpoint this was resolved from. */
+	endpoint?: string;
+}
+
+/** NIP-57 zap support: the provider signs kind 9735 zap receipts with
+ *  `nostrPubkey` — that's what makes "zaps style" payment detection possible
+ *  with a plain Lightning Address (no wallet connection needed). */
+export function lnurlSupportsZap(meta: LnurlPayMetadata): boolean {
+	return !!meta.nostrPubkey && /^[0-9a-f]{64}$/i.test(meta.nostrPubkey);
 }
 
 export interface LightningInvoice {
@@ -46,6 +55,9 @@ export interface LightningInvoice {
 	expiresAt: number;
 	/** Where the invoice came from. */
 	source: 'lnurl' | 'static';
+	/** LNURL-pay `verify` URL (optional, spec LUD-06): pollable settlement
+	 *  status for this invoice — the non-Nostr auto-confirm fallback. */
+	verifyUrl?: string;
 }
 
 export interface LightningWallet {
@@ -203,6 +215,7 @@ export async function resolveLnurlPay(addrOrLnurl: string): Promise<LnurlPayMeta
 
 	return {
 		domain,
+		endpoint: url,
 		callback: data.callback,
 		minSendable: data.minSendable ?? 1000,
 		maxSendable: data.maxSendable ?? 1_000_000_000,
@@ -212,11 +225,19 @@ export async function resolveLnurlPay(addrOrLnurl: string): Promise<LnurlPayMeta
 	};
 }
 
-/** Request an amount-locked BOLT11 invoice from a resolved LNURL-pay endpoint. */
+/** Request an amount-locked BOLT11 invoice from a resolved LNURL-pay endpoint.
+ *
+ *  `zapRequest` (NIP-57): serialized kind 9734 event. When passed, the provider
+ *  ties the invoice to a zap and — on settlement — publishes a kind 9735 zap
+ *  receipt to the relays named in the request's `relays` tag. Subscribing to
+ *  those relays then gives push-style payment detection ("zaps style"), no
+ *  wallet connection required. Providers also return an optional `verify` URL
+ *  (spec) that can be polled for settlement as a fallback. */
 export async function requestInvoice(
 	meta: LnurlPayMetadata,
 	amountMsat: number,
-	comment?: string
+	comment?: string,
+	zapRequest?: string
 ): Promise<LightningInvoice> {
 	if (amountMsat < meta.minSendable || amountMsat > meta.maxSendable) {
 		throw new Error(
@@ -226,12 +247,29 @@ export async function requestInvoice(
 	const cb = new URL(meta.callback);
 	cb.searchParams.set('amount', String(Math.round(amountMsat)));
 	if (comment && meta.commentAllowed) cb.searchParams.set('comment', comment.slice(0, meta.commentAllowed));
+	if (zapRequest) {
+		cb.searchParams.set('nostr', zapRequest);
+		// Some providers (Alby et al.) also expect the lnurl bech32 of the
+		// metadata endpoint — same param set bitos-nostr sends when zapping.
+		if (meta.endpoint) {
+			try {
+				const { encodeBytes } = await import('nostr-tools/nip19');
+				cb.searchParams.set(
+					'lnurl',
+					encodeBytes('lnurl', new TextEncoder().encode(meta.endpoint))
+				);
+			} catch {
+				/* optional param — ignore */
+			}
+		}
+	}
 
 	const data = (await getJson(cb.toString())) as {
 		status?: string;
 		reason?: string;
 		pr?: string;
 		successAction?: { tag?: string };
+		verify?: string;
 	};
 
 	if (data.status === 'ERROR') throw new Error(data.reason ?? 'Invoice request failed');
@@ -245,8 +283,25 @@ export async function requestInvoice(
 		amountMsat: verifiedMsat,
 		amountSats: Math.round(verifiedMsat / 1000),
 		expiresAt: Math.floor(Date.now() / 1000) + 3600, // BOLT11 default expiry
-		source: 'lnurl'
+		source: 'lnurl',
+		verifyUrl: data.verify
 	};
+}
+
+/** Poll a LNURL-pay `verify` URL → settlement state (spec LUD-06). */
+export async function checkVerifyUrl(
+	verifyUrl: string
+): Promise<'pending' | 'paid' | 'unknown'> {
+	try {
+		const data = (await getJson(verifyUrl, 8000)) as {
+			status?: string;
+			settled?: boolean;
+		};
+		if (data.status === 'ERROR') return 'unknown';
+		return data.settled === true ? 'paid' : 'pending';
+	} catch {
+		return 'unknown';
+	}
 }
 
 /** One-shot: resolve address → fetch invoice for an amount. Falls back to a
@@ -331,14 +386,18 @@ export function isLightningReady(): boolean {
 /** Quick validation used by the Bitcoin settings page "Test" button. */
 export async function testLightningAddress(
 	addr: string
-): Promise<{ ok: true; domain: string; minSats: number; maxSats: number } | { ok: false; error: string }> {
+): Promise<
+	| { ok: true; domain: string; minSats: number; maxSats: number; zapReceipts: boolean }
+	| { ok: false; error: string }
+> {
 	try {
 		const meta = await resolveLnurlPay(addr);
 		return {
 			ok: true,
 			domain: meta.domain,
 			minSats: Math.round(meta.minSendable / 1000),
-			maxSats: Math.round(meta.maxSendable / 1000)
+			maxSats: Math.round(meta.maxSendable / 1000),
+			zapReceipts: lnurlSupportsZap(meta)
 		};
 	} catch (e) {
 		return { ok: false, error: e instanceof Error ? e.message : String(e) };
