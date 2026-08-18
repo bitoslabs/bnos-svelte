@@ -38,7 +38,7 @@ import {
 	resolveLnurlPay,
 	requestInvoice
 } from './lightning';
-import { buildZapRequest, watchZapReceipts } from './zap-receipts';
+import { buildZapRequest, queryZapReceiptOnce, watchZapReceipts } from './zap-receipts';
 
 const BITCOIN_SETTINGS_KEY = 'bnos-os:settings-bitcoin';
 
@@ -78,6 +78,11 @@ export interface LightningProvider {
 	 *  invoice is settled. Returns an unwatch function. When absent the POS
 	 *  falls back to `getPaymentStatus` polling. */
 	watchPayment?(pr: string, onPaid: (preimage?: string) => void): () => void;
+	/** Cashier-triggered on-demand check ("Check payment" button): a deeper,
+	 *  one-shot lookup than getPaymentStatus — e.g. verify URL plus a
+	 *  historical zap-receipt query that catches receipts the live watch
+	 *  missed. Returns the best answer the provider can give right now. */
+	checkPaymentNow?(pr: string): Promise<'pending' | 'paid' | 'unknown'>;
 }
 
 function makeInvoiceResult(
@@ -123,6 +128,8 @@ export class LnurlAddressProvider implements LightningProvider {
 		zapRequestId?: string;
 		recipientPubkey?: string;
 		relays?: string[];
+		/** Unix seconds the invoice was created — bounds receipt backfills. */
+		createdAtSec: number;
 	} | null = null;
 
 	constructor(
@@ -158,7 +165,8 @@ export class LnurlAddressProvider implements LightningProvider {
 			verifyUrl: inv.verifyUrl,
 			zapRequestId: zap?.id,
 			recipientPubkey: this.ctx?.recipientPubkey,
-			relays: this.ctx?.relays
+			relays: this.ctx?.relays,
+			createdAtSec: Math.floor(Date.now() / 1000)
 		};
 		this.autoConfirms = !!zap || !!inv.verifyUrl;
 		return { ...makeInvoiceResult(inv.pr, amountMsat, 'lnurl'), verifyUrl: inv.verifyUrl };
@@ -184,6 +192,28 @@ export class LnurlAddressProvider implements LightningProvider {
 		const p = this.pending;
 		if (!p || p.pr !== pr || !p.verifyUrl) return 'unknown';
 		return checkVerifyUrl(p.verifyUrl);
+	}
+
+	/** Cashier-triggered "Check payment": verify URL first, then a one-shot
+	 *  zap-receipt backfill query over the request's relays — catches receipts
+	 *  the live watch missed (e.g. relay reconnect gap) even for providers
+	 *  without a verify URL. */
+	async checkPaymentNow(pr: string): Promise<'pending' | 'paid' | 'unknown'> {
+		const p = this.pending;
+		if (!p || p.pr !== pr) return 'unknown';
+		const viaVerify = p.verifyUrl ? await checkVerifyUrl(p.verifyUrl) : 'unknown';
+		if (viaVerify === 'paid') return 'paid';
+		if (p.zapRequestId && p.recipientPubkey && p.relays?.length && browser) {
+			const preimage = await queryZapReceiptOnce({
+				relays: p.relays,
+				recipientPubkey: p.recipientPubkey,
+				requestId: p.zapRequestId,
+				pr,
+				sinceSec: p.createdAtSec - 120
+			});
+			if (preimage !== undefined) return 'paid';
+		}
+		return viaVerify;
 	}
 }
 

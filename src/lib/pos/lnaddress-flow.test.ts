@@ -7,6 +7,8 @@ const PR = 'lnbc1000n1pxyzqq'; // decodes to 100 sats = 100_000 msat
 /** Route table for the mocked provider (an LNURL-pay service with NIP-57). */
 let callbackQuery: URLSearchParams | null = null;
 let verifyResponse: { status: string; settled: boolean } = { status: 'OK', settled: false };
+/** When false the mocked provider omits the verify URL (e.g. strike.me). */
+let includeVerify = true;
 
 function stubFetch() {
 	return vi.fn(async (input: RequestInfo | URL) => {
@@ -29,9 +31,14 @@ function stubFetch() {
 		}
 		if (url.startsWith('https://prov.example/callback')) {
 			callbackQuery = new URL(url).searchParams;
-			return new Response(JSON.stringify({ status: 'OK', pr: PR, verify: 'https://prov.example/verify?v=1' }), {
-				status: 200
-			});
+			return new Response(
+				JSON.stringify({
+					status: 'OK',
+					pr: PR,
+					...(includeVerify ? { verify: 'https://prov.example/verify?v=1' } : {})
+				}),
+				{ status: 200 }
+			);
 		}
 		if (url.startsWith('https://prov.example/verify')) {
 			return new Response(JSON.stringify(verifyResponse), { status: 200 });
@@ -47,6 +54,7 @@ beforeEach(() => {
 	vi.stubGlobal('fetch', fetchMock);
 	callbackQuery = null;
 	verifyResponse = { status: 'OK', settled: false };
+	includeVerify = true;
 });
 afterEach(() => {
 	vi.unstubAllGlobals();
@@ -108,5 +116,39 @@ describe('LnurlAddressProvider auto-confirm flow (mocked provider)', () => {
 		expect(inv.pr).toBe(PR);
 		expect(callbackQuery!.get('nostr')).toBeNull(); // no zap request sent
 		expect(provider.autoConfirms).toBe(true); // verify URL present
+	});
+});
+
+describe('LnurlAddressProvider.checkPaymentNow (manual check button)', () => {
+	it('reports paid once the verify URL settles', async () => {
+		const provider = new LnurlAddressProvider('store@prov.example', {
+			recipientPubkey: PK64,
+			relays: ['wss://nos.lol']
+		});
+		await provider.makeInvoice(100_000);
+		expect(await provider.checkPaymentNow(PR)).toBe('pending');
+		verifyResponse = { status: 'OK', settled: true };
+		expect(await provider.checkPaymentNow(PR)).toBe('paid');
+	});
+
+	it('reports pending while unsettled (no nostr ctx)', async () => {
+		const provider = new LnurlAddressProvider('store@prov.example');
+		await provider.makeInvoice(100_000);
+		expect(await provider.checkPaymentNow(PR)).toBe('pending');
+	});
+
+	it('returns unknown for a different invoice', async () => {
+		const provider = new LnurlAddressProvider('store@prov.example');
+		await provider.makeInvoice(100_000);
+		expect(await provider.checkPaymentNow('lnbc9999n1other')).toBe('unknown');
+	});
+
+	it('returns unknown when the provider offers no status channel at all (strike.me-style)', async () => {
+		includeVerify = false;
+		const provider = new LnurlAddressProvider('store@prov.example');
+		const inv = await provider.makeInvoice(100_000);
+		expect(inv.verifyUrl).toBeUndefined();
+		expect(provider.autoConfirms).toBe(false); // nothing to watch or poll
+		expect(await provider.checkPaymentNow(PR)).toBe('unknown'); // → "Cannot verify automatically" toast
 	});
 });

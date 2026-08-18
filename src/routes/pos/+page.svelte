@@ -883,6 +883,44 @@
 	let payQrPaid = $state(false);
 	let payQrPollTimer: ReturnType<typeof setInterval> | null = null;
 	let payQrWatchStop: (() => void) | null = null;
+	// Cashier-triggered "Check payment" (for providers the automatic watchers
+	// can't see — e.g. strike.me addresses without NIP-57 zap receipts).
+	let payQrChecking = $state(false);
+
+	/** On-demand payment check: verify URL / zap-receipt backfill /
+	 *  lookup_invoice depending on the provider. Paid → same auto-confirm
+	 *  flow; otherwise clear feedback so the cashier knows what to do. */
+	async function manualCheckPayment() {
+		if (payQrChecking || payQrPaid || payQrLoading || !payQrProvider || !payQrInvoice?.pr)
+			return;
+		payQrChecking = true;
+		const pr = payQrInvoice.pr;
+		try {
+			let status: 'pending' | 'paid' | 'expired' | 'unknown' = 'unknown';
+			if (typeof payQrProvider.checkPaymentNow === 'function') {
+				status = await payQrProvider.checkPaymentNow(pr);
+			} else if (payQrProvider.getPaymentStatus) {
+				status = await payQrProvider.getPaymentStatus(pr);
+			}
+			if (status === 'paid') {
+				payQrPaid = true;
+				stopPaymentPolling();
+				toast.success('Lightning payment received', 'Auto-confirming the sale…');
+				setTimeout(() => confirmQrPaid(), 600);
+			} else if (status === 'pending') {
+				toast.info('No payment yet', 'The invoice is still unpaid — check again after the customer pays.');
+			} else {
+				toast.warning(
+					'Cannot verify automatically',
+					'This wallet provider does not expose payment status. Confirm the payment in your wallet app, then tap Mark paid.'
+				);
+			}
+		} catch {
+			toast.error('Check failed', 'Could not reach the payment provider — try again.');
+		} finally {
+			payQrChecking = false;
+		}
+	}
 
 	function defaultInvoiceMemo() {
 		const items = cart.items
@@ -3920,6 +3958,23 @@
 					<span class="font-semibold text-[var(--ui-text)]">Mark paid</span> to complete.
 				</span>
 			</div>
+
+			{#if payQrIsInvoice && !payQrPaid}
+				<!-- Manual on-demand check: for providers the automatic watchers can't
+				     see (e.g. a strike.me Lightning Address with no zap receipts). -->
+				<button
+					type="button"
+					class="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--surface-bg)] px-3 py-2 text-[11.5px] font-semibold text-[var(--ui-text)] transition-colors hover:border-primary-500/40 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:text-primary-400"
+					onclick={manualCheckPayment}
+					disabled={payQrChecking || payQrFetching}
+				>
+					{#if payQrChecking}
+						<Icon name="lucide:loader-circle" class="size-3.5 animate-spin" />Checking…
+					{:else}
+						<Icon name="lucide:refresh-cw" class="size-3.5" />Check payment
+					{/if}
+				</button>
+			{/if}
 
 			<div class="flex w-full items-center justify-center gap-2">
 				<button

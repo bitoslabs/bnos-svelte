@@ -11,6 +11,7 @@
 	import { nwcConnect, nwcGetInfo, nwcGetBalanceSats } from '$lib/nostr/nwc-client';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
+	import SaveBar from '$lib/components/ui/SaveBar.svelte';
 	import { browser } from '$app/environment';
 	import { syncPaymentSettingsToNostr, PAYMENT_SETTINGS_SYNC_EVENT } from '$nostr/payment-settings';
 	import { dataSync } from '$nostr/sync.svelte';
@@ -39,8 +40,7 @@
 	let blinkWalletId = $state('');
 	let strikeApiKey = $state('');
 
-	// ── Node status ─────────────────────────────
-	let nodeStatus = $state<'idle' | 'connecting' | 'connected' | 'error'>('idle');
+	// ── Node status (populated by a successful test) ──
 	let nodePubkey = $state('');
 	let nodeAlias = $state('');
 
@@ -56,28 +56,90 @@
 	// ── Test connection ─────────────────────────
 	let testStatus = $state<'idle' | 'loading' | 'success' | 'error'>('idle');
 	let testResult = $state('');
+	/** Detection capability proven by the last test, for the result chips. */
+	let testCapMode = $state<'instant' | 'poll' | 'manual' | null>(null);
+	/** Connection fields frozen at the moment of the last successful test —
+	 *  editing any of them flips the header pill back to "Not verified". */
+	let verifiedSnapshot = $state('');
+
+	/** Connection fields that invalidate a verification when changed. */
+	function providerFieldsSnapshot(): string {
+		return JSON.stringify([
+			lightningProvider,
+			lightningAddress,
+			nwcUrl,
+			blinkApiKey,
+			blinkWalletId,
+			albyApiKey,
+			strikeApiKey,
+			lndUrl,
+			lndMacaroon,
+			phoenixdUrl,
+			phoenixdPass
+		]);
+	}
+	/** A test result only counts while the connection fields are untouched. */
+	const connectionVerified = $derived(
+		testStatus === 'success' &&
+			verifiedSnapshot !== '' &&
+			verifiedSnapshot === providerFieldsSnapshot()
+	);
+	/** Header pill state — single source of truth (no stale "Connected"). */
+	const connPill = $derived(
+		testStatus === 'loading'
+			? 'testing'
+			: connectionVerified
+				? 'verified'
+				: testStatus === 'error'
+					? 'error'
+					: lightningProvider
+						? 'unverified'
+						: 'none'
+	);
 
 	// ── Conversion preview ──────────────────────
 	let previewAmount = $state(100);
 
-	const providerOptions = [
+	/** How the POS detects payment for each provider — shown up-front on the
+	 *  card so the merchant knows what to expect before configuring. */
+	const providerOptions: {
+		id: string;
+		label: string;
+		icon: string;
+		desc: string;
+		detect: 'instant' | 'auto' | 'manual' | 'varies';
+	}[] = [
 		{
 			id: 'lnaddress',
-			label: 'Lightning Address (recommended)',
+			label: 'Lightning Address',
 			icon: 'lucide:at-sign',
-			desc: 'user@domain.com · no node needed'
+			desc: 'user@domain.com · no node needed',
+			detect: 'varies'
 		},
 		{
 			id: 'nwc',
 			label: 'NWC (Nostr Wallet Connect)',
 			icon: 'lucide:link',
-			desc: 'NWC relay URL · your own wallet'
+			desc: 'Connection string from your wallet',
+			detect: 'instant'
 		},
-		{ id: 'lnd', label: 'LND (REST)', icon: 'lucide:server', desc: 'Self-hosted Lightning node' },
-		{ id: 'phoenixd', label: 'PhoenixD', icon: 'lucide:flame', desc: 'Self-hosted Lightning' },
-		{ id: 'alby', label: 'Alby', icon: 'lucide:zap', desc: 'Alby API / OAuth' },
-		{ id: 'blink', label: 'Blink (Galoy)', icon: 'lucide:wallet', desc: 'Bitcoin Beach Wallet' },
-		{ id: 'strike', label: 'Strike', icon: 'lucide:credit-card', desc: 'Strike API' }
+		{
+			id: 'blink',
+			label: 'Blink (Galoy)',
+			icon: 'lucide:wallet',
+			desc: 'Blink / Bitcoin Beach wallet',
+			detect: 'auto'
+		},
+		{ id: 'alby', label: 'Alby', icon: 'lucide:zap', desc: 'Alby API key', detect: 'auto' },
+		{
+			id: 'strike',
+			label: 'Strike',
+			icon: 'lucide:credit-card',
+			desc: 'Strike API key',
+			detect: 'manual'
+		},
+		{ id: 'lnd', label: 'LND (REST)', icon: 'lucide:server', desc: 'Self-hosted node', detect: 'manual' },
+		{ id: 'phoenixd', label: 'PhoenixD', icon: 'lucide:flame', desc: 'Self-hosted daemon', detect: 'manual' }
 	];
 
 	// ── Rate fetching ───────────────────────────
@@ -148,11 +210,63 @@
 		return n.toLocaleString();
 	}
 
+	// ── Dirty tracking (sticky SaveBar) ─────────
+	function snapshot() {
+		return {
+			rateSource,
+			manualRate,
+			lightningProvider,
+			lightningAddress,
+			lndUrl,
+			lndMacaroon,
+			phoenixdUrl,
+			phoenixdPass,
+			albyApiKey,
+			nwcUrl,
+			blinkApiKey,
+			blinkWalletId,
+			strikeApiKey,
+			defaultMemo,
+			defaultExpiry,
+			minAmount,
+			maxAmount,
+			receiptShowSats
+		};
+	}
+	let saved = $state<ReturnType<typeof snapshot> | null>(null);
+	const dirty = $derived(saved !== null && JSON.stringify(snapshot()) !== JSON.stringify(saved));
+
+	/** Discard: roll the form back to the last saved values. */
+	function discardChanges() {
+		if (!saved) return;
+		rateSource = saved.rateSource;
+		manualRate = saved.manualRate;
+		lightningProvider = saved.lightningProvider;
+		lightningAddress = saved.lightningAddress;
+		lndUrl = saved.lndUrl;
+		lndMacaroon = saved.lndMacaroon;
+		phoenixdUrl = saved.phoenixdUrl;
+		phoenixdPass = saved.phoenixdPass;
+		albyApiKey = saved.albyApiKey;
+		nwcUrl = saved.nwcUrl;
+		blinkApiKey = saved.blinkApiKey;
+		blinkWalletId = saved.blinkWalletId;
+		strikeApiKey = saved.strikeApiKey;
+		defaultMemo = saved.defaultMemo;
+		defaultExpiry = saved.defaultExpiry;
+		minAmount = saved.minAmount;
+		maxAmount = saved.maxAmount;
+		receiptShowSats = saved.receiptShowSats;
+	}
+
 	// ── Test connection ─────────────────────────
+	/** One button, honest per-provider behavior:
+	 *  lnaddress / nwc / blink → real live handshake; node providers →
+	 *  config-presence check (a signed invoice call can't be safely mocked). */
 	async function testConnection() {
 		testStatus = 'loading';
 		testResult = '';
-		nodeStatus = 'connecting';
+		testCapMode = null;
 		try {
 			// Field-presence checks (apply to every provider).
 			if (lightningProvider === 'lnaddress' && !lightningAddress)
@@ -160,7 +274,7 @@
 			if (lightningProvider === 'lnd' && !lndUrl) throw new Error('Enter LND REST URL');
 			if (lightningProvider === 'phoenixd' && !phoenixdUrl) throw new Error('Enter PhoenixD URL');
 			if (lightningProvider === 'alby' && !albyApiKey) throw new Error('Enter Alby API key');
-			if (lightningProvider === 'nwc' && !nwcUrl) throw new Error('Enter NWC relay URL');
+			if (lightningProvider === 'nwc' && !nwcUrl) throw new Error('Enter the NWC connection string');
 			if (lightningProvider === 'blink' && !blinkApiKey) throw new Error('Enter Blink API key');
 			if (lightningProvider === 'strike' && !strikeApiKey) throw new Error('Enter Strike API key');
 
@@ -170,16 +284,17 @@
 				if (!res.ok) throw new Error(res.error);
 				nodePubkey = '';
 				nodeAlias = res.domain;
+				testCapMode = res.zapReceipts ? 'instant' : 'manual';
 				testStatus = 'success';
-				nodeStatus = 'connected';
-				testResult = `✓ ${res.domain} · accepts ${res.minSats}–${res.maxSats} sats${
-					res.zapReceipts ? ' · zap receipts ✓ (instant auto-confirm)' : ' · manual confirm only'
-				}`;
+				verifiedSnapshot = providerFieldsSnapshot();
+				testResult = res.zapReceipts
+					? `✓ ${res.domain} · accepts ${res.minSats}–${res.maxSats} sats`
+					: `✓ ${res.domain} · accepts ${res.minSats}–${res.maxSats} sats · this provider publishes no zap receipts`;
 				toast.success(
 					'Lightning address verified',
 					res.zapReceipts
 						? 'Payments auto-confirm the moment they arrive (NIP-57 zap receipts).'
-						: 'Live invoices can be requested at checkout.'
+						: 'Sales are confirmed with the “Check payment” button or Mark paid.'
 				);
 				return;
 			}
@@ -197,11 +312,16 @@
 				const balance = await nwcGetBalanceSats().catch(() => null);
 				nodePubkey = c.walletPubkey.slice(0, 8) + '…';
 				nodeAlias = alias;
+				testCapMode = notif.includes('payment_received') ? 'instant' : 'poll';
 				const bits = [`✓ ${alias}`];
 				if (balance !== null) bits.push(`${balance.toLocaleString()} sats balance`);
-				bits.push(notif.includes('payment_received') ? 'instant auto-confirm' : 'polling auto-confirm');
+				bits.push(
+					notif.includes('payment_received')
+						? 'payments detected instantly'
+						: 'payments detected by status checks'
+				);
 				testStatus = 'success';
-				nodeStatus = 'connected';
+				verifiedSnapshot = providerFieldsSnapshot();
 				testResult = bits.join(' · ');
 				toast.success(
 					'NWC wallet connected',
@@ -212,25 +332,96 @@
 				return;
 			}
 
+			// Blink → REAL live GraphQL handshake (key check + BTC wallet discovery).
+			if (lightningProvider === 'blink') {
+				const res = await fetch('https://api.blink.sv/graphql', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json', 'X-Api-Key': blinkApiKey },
+					body: JSON.stringify({
+						query: 'query { me { username defaultAccount { wallets { id walletCurrency } } } }'
+					})
+				});
+				if (!res.ok) throw new Error(`Blink API HTTP ${res.status} — check the API key`);
+				const j = (await res.json()) as {
+					data?: {
+						me?: {
+							username?: string;
+							defaultAccount?: { wallets?: { id: string; walletCurrency: string }[] };
+						};
+					};
+					errors?: { message?: string }[];
+				};
+				const me = j.data?.me;
+				if (!me) throw new Error(j.errors?.[0]?.message || 'Blink rejected this API key');
+				const btc = (me.defaultAccount?.wallets ?? []).find((w) => w.walletCurrency === 'BTC');
+				if (!btc) throw new Error('No BTC wallet found on this Blink account');
+				// Auto-discover the wallet id when the field is empty.
+				if (!blinkWalletId.trim()) blinkWalletId = btc.id;
+				nodePubkey = btc.id.slice(0, 8) + '…';
+				nodeAlias = me.username ? `Blink · @${me.username}` : 'Blink wallet';
+				testCapMode = 'poll';
+				testStatus = 'success';
+				verifiedSnapshot = providerFieldsSnapshot();
+				testResult = `✓ ${nodeAlias} · BTC wallet found · payments detected by status checks`;
+				toast.success('Blink wallet connected', 'Save to apply the auto-discovered wallet id.');
+				return;
+			}
+
 			// Node providers: config-presence verified. Live node calls run at
 			// checkout (a signed invoice request can't be safely mocked here).
 			await new Promise((r) => setTimeout(r, 400));
-			if (lightningProvider === 'lnd' || lightningProvider === 'phoenixd') {
-				nodePubkey = '';
-				nodeAlias = lightningProvider === 'lnd' ? 'LND (REST)' : 'PhoenixD';
-			} else {
-				nodePubkey = '';
-				nodeAlias = lightningProvider;
-			}
-
+			nodePubkey = '';
+			nodeAlias =
+				lightningProvider === 'lnd'
+					? 'LND (REST)'
+					: lightningProvider === 'phoenixd'
+						? 'PhoenixD'
+						: lightningProvider === 'alby'
+							? 'Alby'
+							: 'Strike';
+			testCapMode = 'manual';
 			testStatus = 'success';
-			nodeStatus = 'connected';
-			testResult = `✓ Config verified · ${nodeAlias}`;
-			toast.success('Config saved', 'Node issues invoices at checkout.');
+			verifiedSnapshot = providerFieldsSnapshot();
+			testResult = `✓ Config verified · ${nodeAlias} issues invoices at checkout`;
+			toast.success('Config verified', 'Invoices are issued at checkout.');
 		} catch (err) {
 			testStatus = 'error';
-			nodeStatus = 'error';
+			nodePubkey = '';
+			nodeAlias = '';
 			testResult = (err as Error)?.message || 'Connection failed';
+		}
+	}
+
+	/** Chip descriptor for a detection capability. */
+	function capChip(
+		mode: 'instant' | 'poll' | 'manual' | 'auto' | 'varies' | null
+	): { icon: string; label: string; cls: string } {
+		switch (mode) {
+			case 'instant':
+			case 'auto':
+				return {
+					icon: 'lucide:zap',
+					label: 'Instant detect',
+					cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+				};
+			case 'poll':
+				return {
+					icon: 'lucide:refresh-cw',
+					label: 'Auto-detect',
+					cls: 'bg-sky-500/10 text-sky-600 dark:text-sky-400'
+				};
+			case 'varies':
+				return {
+					icon: 'lucide:circle-help',
+					label: 'Detect: depends on provider',
+					cls: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'
+				};
+			default:
+				return {
+					icon: 'lucide:hand',
+					label: 'Manual confirm',
+					cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+				};
 		}
 	}
 
@@ -272,6 +463,7 @@
 		} catch {
 			/* */
 		}
+		saved = snapshot();
 		updateCacheAge();
 
 		// Auto-refresh stale rate
@@ -304,6 +496,7 @@
 			currency
 		};
 		localStorage.setItem(KEY, JSON.stringify(settings));
+		saved = snapshot();
 		await syncPaymentSettingsToNostr('settings.bitcoin', settings);
 		toast.success(t('settings.toastBitcoinSaved'));
 	}
@@ -375,11 +568,13 @@
 		minAmount = 0;
 		maxAmount = 0;
 		receiptShowSats = false;
-		nodeStatus = 'idle';
 		nodePubkey = '';
 		nodeAlias = '';
 		testStatus = 'idle';
 		testResult = '';
+		testCapMode = null;
+		verifiedSnapshot = '';
+		saved = snapshot();
 		toast.info('Settings reset');
 	}
 </script>
@@ -511,26 +706,33 @@
 				<Icon name="lucide:zap" class="size-4 text-amber-500" />
 				<h2 class="font-display text-[14px] font-semibold">{t('settings.lightningBackend')}</h2>
 			</div>
-			{#if nodeStatus === 'connected'}
+			{#if connPill === 'verified'}
 				<span
 					class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400"
 				>
-					<span class="size-1.5 rounded-full bg-emerald-500"></span>
-					Connected
+					<Icon name="lucide:badge-check" class="size-3" />
+					Verified
 				</span>
-			{:else if nodeStatus === 'connecting'}
+			{:else if connPill === 'testing'}
 				<span
 					class="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400"
 				>
-					<span class="size-1.5 animate-pulse rounded-full bg-amber-500"></span>
-					Connecting…
+					<Icon name="lucide:loader-circle" class="size-3 animate-spin" />
+					Testing…
 				</span>
-			{:else if nodeStatus === 'error'}
+			{:else if connPill === 'error'}
 				<span
 					class="inline-flex items-center gap-1 rounded-full bg-[var(--tone-error-bg)] px-2 py-0.5 text-[10px] font-bold text-[var(--tone-error-text)]"
 				>
 					<span class="size-1.5 rounded-full bg-[var(--tone-error-text)]"></span>
 					Error
+				</span>
+			{:else if connPill === 'unverified'}
+				<span
+					class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5 text-[10px] font-bold text-[var(--ui-text-muted)]"
+				>
+					<span class="size-1.5 rounded-full bg-[var(--ui-text-dimmed)]"></span>
+					Not verified
 				</span>
 			{/if}
 		</div>
@@ -541,39 +743,72 @@
 				class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
 				>{t('settings.selectProvider')}</label
 			>
-			<div class="space-y-2">
+			<div class="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label={t('settings.selectProvider')}>
 				{#each providerOptions as opt (opt.id)}
+					{@const chip = capChip(
+						opt.detect === 'varies' && connectionVerified && lightningProvider === 'lnaddress'
+							? testCapMode ?? 'varies'
+							: opt.detect
+					)}
 					<button
 						type="button"
-						class="w-full rounded-xl border px-4 py-3 text-left transition-all {lightningProvider ===
+						role="radio"
+						aria-checked={lightningProvider === opt.id}
+						class="rounded-xl border p-3 text-left transition-all {lightningProvider ===
 						opt.id
 							? 'border-amber-500 bg-amber-500/10'
 							: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
 						onclick={() => (lightningProvider = opt.id)}
 					>
-						<div class="flex items-center justify-between">
+						<div class="flex items-start gap-2.5">
 							<span
-								class="flex items-center gap-2 text-[13px] font-semibold {lightningProvider ===
+								class="grid size-8 shrink-0 place-items-center rounded-lg {lightningProvider ===
 								opt.id
-									? 'text-amber-600 dark:text-amber-400'
-									: ''}"
+									? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+									: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
 							>
 								<Icon name={opt.icon} class="size-4" />
-								{opt.label}
 							</span>
-							<span class="text-[10px] text-[var(--ui-text-dimmed)]">{opt.desc}</span>
+							<div class="min-w-0 flex-1">
+								<div class="flex items-center gap-1.5">
+									<span class="truncate text-[12.5px] font-semibold">{opt.label}</span>
+									{#if opt.id === 'lnaddress'}
+										<span
+											class="shrink-0 rounded-full bg-amber-500/15 px-1.5 py-px text-[9px] font-bold text-amber-700 dark:text-amber-300"
+											>Recommended</span
+										>
+									{/if}
+									{#if lightningProvider === opt.id}
+										<Icon
+											name="lucide:circle-check-big"
+											class="ml-auto size-3.5 shrink-0 text-amber-500"
+										/>
+									{/if}
+								</div>
+								<p class="mt-0.5 truncate text-[10.5px] text-[var(--ui-text-dimmed)]">{opt.desc}</p>
+								<span
+									class="mt-1.5 inline-flex items-center gap-1 rounded-full px-1.5 py-px text-[9.5px] font-semibold {chip.cls}"
+								>
+									<Icon name={chip.icon} class="size-2.5" />{chip.label}
+								</span>
+							</div>
 						</div>
 					</button>
 				{/each}
 				<!-- None option -->
 				<button
 					type="button"
-					class="w-full rounded-xl border px-4 py-3 text-left transition-all {!lightningProvider
+					role="radio"
+					aria-checked={!lightningProvider}
+					class="rounded-xl border px-4 py-3 text-left transition-all {!lightningProvider
 						? 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)]'
 						: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
 					onclick={() => (lightningProvider = '')}
 				>
-					<span class="text-[13px] font-semibold text-[var(--ui-text-muted)]">{t('common.none')}</span>
+					<span class="text-[12.5px] font-semibold text-[var(--ui-text-muted)]"
+						>{t('common.none')}</span
+					>
+					<p class="mt-0.5 text-[10.5px] text-[var(--ui-text-dimmed)]">Cash-only checkout</p>
 				</button>
 			</div>
 		</div>
@@ -651,18 +886,7 @@
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
 						>{t('settings.lightningAddressHeading')}</label
 					>
-					<div class="flex gap-2">
-						<Input bind:value={lightningAddress} placeholder="store@bitdigo.com" class="flex-1" />
-						<Button
-							variant="subtle"
-							color="primary"
-							size="md"
-							icon="lucide:plug"
-							onclick={testConnection}
-							disabled={!lightningAddress || testStatus === 'loading'}
-							>{testStatus === 'loading' ? '…' : 'Test'}</Button
-						>
-					</div>
+					<Input bind:value={lightningAddress} placeholder="store@bitdigo.com" class="w-full" />
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
 						Get one free at
 						<a
@@ -693,23 +917,10 @@
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
 						>{t('settings.blinkApiKey')}</label
 					>
-					<div class="flex gap-2">
-						<Input
-							bind:value={blinkApiKey}
-							type="password"
-							placeholder="blink-api-key"
-							class="flex-1"
-						/>
-						<Button
-							variant="subtle"
-							size="md"
-							icon="lucide:refresh-cw"
-							onclick={testConnection}
-							disabled={!blinkApiKey || testStatus === 'loading'}
-						/>
-					</div>
+					<Input bind:value={blinkApiKey} type="password" placeholder="blink-api-key" class="w-full" />
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
-						Blink (Galoy) API access token
+						Blink (Galoy) API access token — “Test connection” checks it live and can auto-fill
+						the wallet id below
 					</p>
 				</div>
 				<div>
@@ -743,41 +954,79 @@
 			</div>
 		{/if}
 
-		<!-- Test connection result -->
-		{#if testResult}
-			<div class="px-5 py-3">
-				<div
-					class="rounded-lg p-2.5 text-[12px] font-medium {testStatus === 'success'
-						? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-						: 'bg-[var(--tone-error-bg)] text-[var(--tone-error-text)]'}"
-				>
-					{testResult}
+		<!-- Unified connection test: one button + inline status for every provider -->
+		{#if lightningProvider}
+			<div class="space-y-2.5 px-5 py-4">
+				<div class="flex flex-wrap items-center justify-between gap-2">
+					<div class="flex min-w-0 flex-wrap items-center gap-1.5">
+						{#if connPill === 'verified'}
+							{@const chip = capChip(testCapMode)}
+							<Icon name="lucide:badge-check" class="size-4 shrink-0 text-emerald-500" />
+							<span class="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400"
+								>Connected</span
+							>
+							{#if testCapMode}
+								<span
+									class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold {chip.cls}"
+								>
+									<Icon name={chip.icon} class="size-2.5" />{chip.label}
+								</span>
+							{/if}
+						{:else if connPill === 'unverified'}
+							<Icon name="lucide:circle-dashed" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
+							<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								>Not verified yet</span
+							>
+						{:else if connPill === 'error'}
+							<Icon name="lucide:circle-x" class="size-4 shrink-0 text-[var(--tone-error-text)]" />
+							<span class="text-[12px] font-semibold text-[var(--tone-error-text)]"
+								>Test failed</span
+							>
+						{/if}
+					</div>
+					<Button
+						color="primary"
+						variant="subtle"
+						size="sm"
+						icon={testStatus === 'loading' ? 'lucide:loader-circle' : 'lucide:plug'}
+						onclick={testConnection}
+						disabled={testStatus === 'loading'}
+					>
+						{testStatus === 'loading'
+							? 'Testing…'
+							: connectionVerified
+								? 'Test again'
+								: 'Test connection'}
+					</Button>
 				</div>
-			</div>
-		{/if}
-
-		<!-- Test connection button -->
-		{#if lightningProvider && lightningProvider !== 'blink'}
-			<div class="flex justify-end px-5 py-4">
-				<Button
-					color="primary"
-					variant="subtle"
-					size="sm"
-					icon="lucide:plug"
-					onclick={testConnection}
-					disabled={testStatus === 'loading'}
-				>
-					{testStatus === 'loading' ? 'Testing…' : 'Test connection'}
-				</Button>
-				<p class="mt-1 text-[9.5px] text-[var(--ui-text-dimmed)]">
-					<Icon name="lucide:info" class="-mt-0.5 mr-0.5 inline size-3" />Verifies config fields are
-					present. Live node / invoice calls run in the POS checkout flow.
-				</p>
+				{#if testResult}
+					<div
+						class="rounded-lg p-2.5 text-[12px] font-medium {connectionVerified
+							? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+							: testStatus === 'error'
+								? 'bg-[var(--tone-error-bg)] text-[var(--tone-error-text)]'
+								: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+					>
+						{testResult}
+					</div>
+				{:else if connPill === 'unverified'}
+					<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+						{#if lightningProvider === 'lnaddress'}
+							Runs a live LNURL-pay resolution and reports whether payments auto-detect.
+						{:else if lightningProvider === 'nwc'}
+							Opens a live NIP-47 handshake (read-only) and reports the detection mode.
+						{:else if lightningProvider === 'blink'}
+							Checks the API key against Blink and auto-discovers your BTC wallet id.
+						{:else}
+							Verifies the config fields. Live invoice calls run at checkout.
+						{/if}
+					</p>
+				{/if}
 			</div>
 		{/if}
 
 		<!-- Node info -->
-		{#if nodeStatus === 'connected' && nodePubkey}
+		{#if connectionVerified && nodePubkey}
 			<div class="px-5 py-4">
 				<div class="space-y-1.5 rounded-xl bg-[var(--ui-bg-muted)] p-3">
 					<div class="flex items-center justify-between gap-2">
@@ -947,7 +1196,5 @@
 		</div>
 	</section>
 
-	<div class="flex justify-end">
-		<Button color="primary" icon="lucide:check" onclick={save}>{t('common.saveChanges')}</Button>
-	</div>
+	<SaveBar visible={dirty} onsave={save} ondiscard={discardChanges} />
 </div>

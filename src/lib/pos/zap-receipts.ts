@@ -120,3 +120,41 @@ export function watchZapReceipts(opts: {
 		}
 	};
 }
+
+/**
+ * One-shot historical query for the receipt settling this checkout — used by
+ * the cashier's manual "Check payment" tap. Catches receipts the live watch
+ * missed (relay hiccup, subscription opened after publication) without
+ * waiting for the next poll. Returns the preimage when found, else undefined.
+ */
+export async function queryZapReceiptOnce(opts: {
+	relays: string[];
+	recipientPubkey: string;
+	requestId: string;
+	pr: string;
+	/** Only look at receipts from this unix second onwards. */
+	sinceSec?: number;
+	maxWaitMs?: number;
+}): Promise<string | undefined> {
+	if (!browser || !opts.relays.length) return undefined;
+	pool ??= new SimplePool();
+	try {
+		const events = await pool.querySync(
+			opts.relays,
+			{
+				kinds: [ZAP_RECEIPT_KIND],
+				'#p': [opts.recipientPubkey],
+				since: opts.sinceSec ?? Math.floor(Date.now() / 1000) - 3600
+			},
+			{ maxWait: opts.maxWaitMs ?? 3000 }
+		);
+		for (const receipt of events) {
+			if (zapReceiptMatches(receipt, { requestId: opts.requestId, pr: opts.pr })) {
+				return zapReceiptPreimage(receipt);
+			}
+		}
+	} catch {
+		/* offline / unreachable relays — nothing found */
+	}
+	return undefined;
+}
