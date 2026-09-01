@@ -366,7 +366,17 @@ export const en = {
 		aboutBnos: 'About BNOS',
 		openMenu: 'Open menu',
 		closeMenu: 'Close menu',
-		syncData: 'Sync data'
+		syncData: 'Sync data',
+		viewAllRelays: 'View all relays',
+		// Notification center
+		markAllRead: 'Mark all as read',
+		markAsRead: 'Mark as read',
+		removeNotification: 'Remove notification',
+		clearAllNotifications: 'Clear all notifications',
+		youAreAllCaughtUp: 'You\u2019re all caught up',
+		caughtUpDesc: 'New orders, stock alerts and system events appear here.',
+		unreadTab: 'Unread',
+		onThisDevice: 'on this device'
 	},
 	relayDirectory: {
 		title: 'Recommended relays',
@@ -1026,7 +1036,9 @@ export const en = {
 		selectProvider: 'Select provider',
 		lightningReceiveQr: 'Lightning receive QR',
 		paymentSettings: 'Payment settings',
-		defaultMemo: 'Default memo',
+		defaultMemo: 'Default invoice memo',
+		defaultMemoDesc:
+			'Description attached to every Lightning invoice (shown in the customer\u2019s wallet) when the cashier leaves it blank. Leave as “Payment” to use the sale items instead.',
 		defaultExpiry: 'Default expiry (seconds)',
 		minAmount: 'Min amount ({currency})',
 		maxAmount: 'Max amount ({currency})',
@@ -1280,6 +1292,15 @@ export const en = {
 	},
 	notifications: {
 		noNotifications: 'No notifications',
+		title: 'Notifications',
+		relayOfflineTitle: 'Relay connection lost',
+		relayOfflineDesc: 'Your changes stay on this device and sync automatically later.',
+		relayOnlineTitle: 'Back online',
+		relayOnlineDesc: 'Connected and syncing with your relays.',
+		syncFailedTitle: 'Sync failed',
+		syncFailedDesc: 'Could not reach your relays. It will retry automatically.',
+		syncDoneTitle: 'All data synced',
+		syncDoneDesc: 'Everything is up to date across your relays.'
 	},
 	blocked: {
 		title: 'Account Restricted',

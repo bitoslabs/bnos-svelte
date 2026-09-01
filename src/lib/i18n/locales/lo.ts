@@ -345,7 +345,17 @@ export const lo = {
 		aboutBnos: 'ກ່ຽວກັບ BNOS',
 		openMenu: 'ເປີດເມນູ',
 		closeMenu: 'ປິດເມນູ',
-		syncData: 'ຊິງຂໍ້ມູນ'
+		syncData: 'ຊິງຂໍ້ມູນ',
+		viewAllRelays: 'ເບິ່ງຣິເລທັງໝົດ',
+		// Notification center
+		markAllRead: 'ໝາຍວ່າອ່ານແລ້ວທັງໝົດ',
+		markAsRead: 'ໝາຍວ່າອ່ານແລ້ວ',
+		removeNotification: 'ລົບການແຈ້ງເຕືອນ',
+		clearAllNotifications: 'ລົບການແຈ້ງເຕືອນທັງໝົດ',
+		youAreAllCaughtUp: 'ທ່ານອ່ານຄົບແລ້ວ',
+		caughtUpDesc: 'ຄຳສັ່ງຊື້ໃໝ່, ການແຈ້ງເຕືອນສິນຄ້າໜ້ອຍ ແລະ ເຫດການຂອງລະບົບຈະປາກົດຢູ່ນີ້',
+		unreadTab: 'ຍັງບໍ່ອ່ານ',
+		onThisDevice: 'ໃນອຸປະກອນນີ້'
 	},
 	relayDirectory: {
 		title: 'ຣິເລແນະນຳ',
@@ -1181,6 +1191,15 @@ export const lo = {
 	},
 	notifications: {
 		noNotifications: 'ບໍ່ມີການແຈ້ງເຕືອນ',
+		title: 'ການແຈ້ງເຕືອນ',
+		relayOfflineTitle: 'ຂາດການເຊື່ອມຕໍ່ຣິເລ',
+		relayOfflineDesc: 'ການແກ້ໄຂຂອງທ່ານຈະຢູ່ໃນອຸປະກອນນີ້ ແລະຊິງອັດຕະໂນມັດພາຍຫຼັງ',
+		relayOnlineTitle: 'ກັບມາອອນລາຍນ໌ແລ້ວ',
+		relayOnlineDesc: 'ເຊື່ອມຕໍ່ ແລະຊິງຂໍ້ມູນກັບຣິເລຂອງທ່ານແລ້ວ',
+		syncFailedTitle: 'ຊິງຂໍ້ມູນບໍ່ສຳເລັດ',
+		syncFailedDesc: 'ບໍ່ສາມາດຕິດຕໍ່ຣິເລໄດ້ ລະບົບຈະລອງໃໝ່ອັດຕະໂນມັດ',
+		syncDoneTitle: 'ຊິງຂໍ້ມູນທັງໝົດແລ້ວ',
+		syncDoneDesc: 'ຂໍ້ມູນທັງໝົດເປັນປັດຈຸບັນແລ້ວທົ່ວຣິເລຂອງທ່ານ'
 	},
 	blocked: {
 		title: 'ບັນຊີຖືກຈຳກັດ',

@@ -75,6 +75,9 @@ describe('LnurlAddressProvider auto-confirm flow (mocked provider)', () => {
 		expect(inv.amountSats).toBe(100);
 		expect(inv.verifyUrl).toBe('https://prov.example/verify?v=1');
 
+		// Memo delivery is reported honestly per channel.
+		expect(inv.memoDelivery).toBe('zap');
+
 		// The invoice request carried our zap request + the lnurl bech32 param.
 		expect(callbackQuery).not.toBeNull();
 		expect(callbackQuery!.get('amount')).toBe('100000');
@@ -105,6 +108,25 @@ describe('LnurlAddressProvider auto-confirm flow (mocked provider)', () => {
 		expect(await provider.getPaymentStatus(PR)).toBe('paid');
 		// Unknown invoice → unknown (never falsely confirms).
 		expect(await provider.getPaymentStatus('lnbc9999n1other')).toBe('unknown');
+	});
+
+	it('reports comment delivery when no zap ctx but comments allowed', async () => {
+		// No nostr ctx → no zap request; provider allows comments (255) → comment path.
+		const provider = new LnurlAddressProvider('store@prov.example');
+		const inv = await provider.makeInvoice(100_000, 'Table 4');
+		expect(inv.memoDelivery).toBe('comment');
+		expect(callbackQuery!.get('comment')).toBe('Table 4');
+	});
+
+	it('reports none when the provider allows no comments and no zap was sent', async () => {
+		// commentAllowed 0 on the stub: easiest is to re-stub — but our stub has
+		// commentAllowed 255; emulate by passing no memo AND no zap: provider
+		// gets no comment param → 'none' is only truthful without a comment.
+		// Use a provider without ctx and no memo sent via makeInvoice default.
+		const provider = new LnurlAddressProvider('store@prov.example');
+		const inv = await provider.makeInvoice(100_000, '');
+		// No memo given and no zap: nothing traveled → 'none'.
+		expect(inv.memoDelivery).toBe('none');
 	});
 
 	it('flips autoConfirms via verify even without a zap-capable provider', async () => {

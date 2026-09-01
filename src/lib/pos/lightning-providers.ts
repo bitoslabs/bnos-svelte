@@ -130,6 +130,8 @@ export class LnurlAddressProvider implements LightningProvider {
 		relays?: string[];
 		/** Unix seconds the invoice was created — bounds receipt backfills. */
 		createdAtSec: number;
+		/** How the memo traveled (LNURL spec: provider owns the description). */
+		memoDelivery: 'invoice' | 'comment' | 'zap' | 'none';
 	} | null = null;
 
 	constructor(
@@ -166,10 +168,15 @@ export class LnurlAddressProvider implements LightningProvider {
 			zapRequestId: zap?.id,
 			recipientPubkey: this.ctx?.recipientPubkey,
 			relays: this.ctx?.relays,
-			createdAtSec: Math.floor(Date.now() / 1000)
+			createdAtSec: Math.floor(Date.now() / 1000),
+			memoDelivery: inv.memoDelivery ?? 'none'
 		};
 		this.autoConfirms = !!zap || !!inv.verifyUrl;
-		return { ...makeInvoiceResult(inv.pr, amountMsat, 'lnurl'), verifyUrl: inv.verifyUrl };
+		return {
+			...makeInvoiceResult(inv.pr, amountMsat, 'lnurl'),
+			verifyUrl: inv.verifyUrl,
+			memoDelivery: inv.memoDelivery
+		};
 	}
 
 	/** Push: settle the instant the provider publishes the 9735 receipt. */
@@ -352,7 +359,7 @@ export class NwcProvider implements LightningProvider {
 
 	async makeInvoice(amountMsat: number, memo?: string): Promise<LightningInvoice> {
 		const pr = await nwcMakeInvoice(amountMsat, memo ?? 'BNOS sale');
-		return makeInvoiceResult(pr, amountMsat, 'lnurl');
+		return { ...makeInvoiceResult(pr, amountMsat, 'lnurl'), memoDelivery: 'invoice' };
 	}
 
 	async getPaymentStatus(pr: string): Promise<'pending' | 'paid' | 'expired' | 'unknown'> {

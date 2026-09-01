@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
@@ -9,6 +10,7 @@
 	import AppearanceControls from '$lib/components/AppearanceControls.svelte';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import { command } from '$lib/stores/command.svelte';
+	import { notifications, type AppNotification } from '$lib/stores/notifications.svelte';
 	import { findNavItem, navSections, navSectionLabel } from '$lib/nav';
 	import { relays } from '$nostr/relay.svelte';
 	import { session } from '$nostr/session.svelte';
@@ -18,6 +20,7 @@
 	import { dataSync } from '$nostr/sync.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
+	import { relativeTime } from '$lib/utils/format';
 
 	let { onmenutoggle }: { onmenutoggle?: () => void } = $props();
 
@@ -32,30 +35,45 @@
 		return section ? navSectionLabel(section) : '';
 	});
 
-	// Popovers
-	let quickOpen = $state(false);
-	let relayOpen = $state(false);
-	let accountOpen = $state(false);
-	// Status trigger is an icon-only chip; the label lives in a tooltip.
-	const statusTriggerClass = $derived(
-		relays.online
-			? 'relative inline-grid size-9 place-items-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 transition-colors hover:bg-emerald-500/15 dark:text-emerald-400'
-			: 'relative inline-grid size-9 place-items-center rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-600 transition-colors hover:bg-amber-500/15 dark:text-amber-400'
-	);
-	const statusTitle = $derived(
-		`${relays.online ? t('common.online') : t('common.offline')} · ${t('topbar.relaysActive', { active: relays.activeRelays.length, total: relays.relays.length })}`
+	// ── Notification center ────────────────────────────────────────────────
+	// Hydrate the persisted feed (system-event wiring lives in the root layout).
+	onMount(() => {
+		notifications.load();
+	});
+
+	let notifOpen = $state(false);
+	let notifTab = $state<'all' | 'unread'>('all');
+
+	const unreadCount = $derived(notifications.unread);
+	const unreadBadge = $derived(unreadCount > 9 ? '9+' : String(unreadCount));
+	const notifItems = $derived(
+		notifTab === 'unread'
+			? notifications.items.filter((n) => !n.read)
+			: notifications.items
 	);
 
-	// Quick add-relay field for the status popover.
-	let newRelay = $state('');
+	const notifToneBg: Record<AppNotification['tone'], string> = {
+		info: 'tone-info',
+		success: 'tone-success',
+		warning: 'tone-warning',
+		error: 'tone-error'
+	};
+	const notifToneText: Record<AppNotification['tone'], string> = {
+		info: 'tone-text-info',
+		success: 'tone-text-success',
+		warning: 'tone-text-warning',
+		error: 'tone-text-error'
+	};
 
-	function addRelay() {
-		const value = newRelay.trim();
-		if (!value) return;
-		relays.add(value);
-		newRelay = '';
+	function openNotification(n: AppNotification) {
+		notifications.markRead(n.id);
+		if (n.href) {
+			notifOpen = false;
+			void goto(resolve(n.href as '/'));
+		}
 	}
 
+	// ── Sync engine ────────────────────────────────────────────────────────
 	const syncState = $derived(dataSync.status);
 	const syncLabel = $derived.by(() => {
 		if (syncState === 'syncing') return t('topbar.syncingAllData');
@@ -70,15 +88,42 @@
 		return 'lucide:refresh-cw';
 	});
 	const syncIconClass = $derived.by(() => {
-		if (syncState === 'syncing') return 'size-3.5 animate-spin';
-		if (syncState === 'done') return 'size-3.5 text-emerald-500';
-		if (syncState === 'failed') return 'size-3.5 text-[var(--tone-error-text)]';
-		return 'size-3.5';
+		if (syncState === 'syncing') return 'animate-spin';
+		if (syncState === 'done') return 'text-emerald-500';
+		if (syncState === 'failed') return 'text-[var(--tone-error-text)]';
+		return '';
 	});
 
 	async function syncAllData() {
 		await dataSync.manualSync();
 	}
+
+	// ── Relay status ───────────────────────────────────────────────────────
+	let relayOpen = $state(false);
+
+	// Labeled status chip: live dot + wifi glyph + "n/m" count (icon-only on xs).
+	const relayTriggerClass = $derived(
+		relays.online
+			? 'relative inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 text-[12.5px] font-semibold text-emerald-600 transition-colors hover:bg-emerald-500/15 dark:text-emerald-400'
+			: 'relative inline-flex h-9 items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 text-[12.5px] font-semibold text-amber-600 transition-colors hover:bg-amber-500/15 dark:text-amber-400'
+	);
+	const relayStatusTitle = $derived(
+		`${relays.online ? t('common.online') : t('common.offline')} · ${t('topbar.relaysActive', { active: relays.activeRelays.length, total: relays.relays.length })}`
+	);
+
+	// Quick add-relay field for the status popover.
+	let newRelay = $state('');
+
+	function addRelay() {
+		const value = newRelay.trim();
+		if (!value) return;
+		relays.add(value);
+		newRelay = '';
+	}
+
+	// ── Popovers ───────────────────────────────────────────────────────────
+	let quickOpen = $state(false);
+	let accountOpen = $state(false);
 
 	async function signOut() {
 		const usesLocalKey = session.loginMethod === 'nsec';
@@ -128,6 +173,7 @@
 		{/if}
 	</div>
 
+
 	<!-- Command palette trigger (⌘K) -->
 	<button
 		type="button"
@@ -153,38 +199,221 @@
 		<Icon name="lucide:search" class="size-[18px]" />
 	</button>
 
-	<!-- Notifications -->
-	<a
-		href={resolve('/notifications')}
-		class="relative grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-		aria-label={t('settings.notifications')}
-		title={t('settings.notifications')}
-	>
-		<Icon name="lucide:bell" class="size-[18px]" />
-	</a>
+	<!-- Divider: tasks ↔ system cluster -->
+	<div class="mx-1 hidden h-5 w-px bg-[var(--ui-border-muted)] sm:block"></div>
 
-	<!-- System status (relay + sync) popover -->
+	<!-- Sync status (system button) -->
+	<button
+		type="button"
+		onclick={syncAllData}
+		disabled={syncState === 'syncing'}
+		class="relative hidden size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:cursor-not-allowed disabled:opacity-60 sm:grid"
+		aria-label={syncLabel}
+		title={syncLabel}
+	>
+		<Icon name={syncIcon} class="size-[18px] {syncIconClass}" />
+		{#if syncState === 'failed'}
+			<span
+				class="absolute -right-0.5 -bottom-0.5 size-2 rounded-full bg-[var(--tone-error-text)] ring-2 ring-[var(--surface-bg)]"
+			></span>
+		{/if}
+	</button>
+
+	<!-- 🔔 Notification center -->
+	<Popover
+		bind:open={notifOpen}
+		align="end"
+		side="bottom"
+		title={t('notifications.title')}
+		triggerClass="relative grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+	>
+		{#snippet trigger()}
+			<Icon name={unreadCount > 0 ? 'lucide:bell-ring' : 'lucide:bell'} class="size-[18px]" />
+			{#if unreadCount > 0}
+				<span
+					class="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-primary-500 px-1 text-[9.5px] leading-4 font-bold text-white ring-2 ring-[var(--surface-bg)]"
+					aria-label="{unreadCount} {t('topbar.unreadTab')}"
+				>
+					{unreadBadge}
+				</span>
+			{/if}
+		{/snippet}
+		{#snippet content()}
+			<div class="flex w-[min(380px,calc(100vw-2.5rem))] flex-col p-1">
+				<!-- Header: title + mark-all-read -->
+				<div class="flex items-center justify-between px-1 pb-2">
+					<div class="flex items-center gap-2">
+						<span class="text-[13px] font-semibold">{t('notifications.title')}</span>
+						{#if unreadCount > 0}
+							<span
+								class="rounded-full bg-primary-500/15 px-1.5 py-px text-[10px] font-bold text-primary-600 dark:text-primary-400"
+							>
+								{unreadBadge}
+							</span>
+						{/if}
+					</div>
+					{#if unreadCount > 0}
+						<button
+							type="button"
+							onclick={() => notifications.markAllRead()}
+							class="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold text-primary-600 hover:bg-primary-500/10 dark:text-primary-400"
+						>
+							<Icon name="lucide:check-check" class="size-3.5" />
+							{t('topbar.markAllRead')}
+						</button>
+					{/if}
+				</div>
+
+				<!-- Tabs: All / Unread -->
+				<div class="mb-2 flex gap-1 rounded-lg bg-[var(--ui-bg-muted)] p-1">
+					<button
+						type="button"
+						onclick={() => (notifTab = 'all')}
+						class="flex-1 rounded-md px-2 py-1 text-[11.5px] font-semibold transition-colors {notifTab ===
+						'all'
+							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
+							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
+					>
+						{t('common.all')}
+					</button>
+					<button
+						type="button"
+						onclick={() => (notifTab = 'unread')}
+						class="flex-1 rounded-md px-2 py-1 text-[11.5px] font-semibold transition-colors {notifTab ===
+						'unread'
+							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
+							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
+					>
+						{t('topbar.unreadTab')}{#if unreadCount > 0} · {unreadCount}{/if}
+					</button>
+				</div>
+
+				<!-- Feed -->
+				{#if notifItems.length === 0}
+					<div
+						class="flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--ui-border-muted)] px-3 py-7"
+					>
+						<Icon
+							name="lucide:bell-off"
+							class="mb-1.5 size-5 text-[var(--ui-text-dimmed)]"
+						/>
+						<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
+							{t('topbar.youAreAllCaughtUp')}
+						</p>
+						<p class="mt-0.5 text-center text-[11px] text-[var(--ui-text-dimmed)]">
+							{t('topbar.caughtUpDesc')}
+						</p>
+					</div>
+				{:else}
+					<ul class="max-h-72 space-y-1 overflow-y-auto pr-0.5">
+						{#each notifItems as n (n.id)}
+							<li class="group relative">
+								<button
+									type="button"
+									onclick={() => openNotification(n)}
+									class="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-[var(--ui-bg-accented)] {n.read
+										? ''
+										: 'bg-primary-500/[0.06]'}"
+									title={n.href ? t('common.view') : t('topbar.markAsRead')}
+								>
+									<span
+										class="grid size-8 shrink-0 place-items-center rounded-lg {notifToneBg[n.tone]}"
+									>
+										<Icon name={n.icon} class="size-4 {notifToneText[n.tone]}" />
+									</span>
+									<span class="min-w-0 flex-1">
+										<span class="flex items-center gap-1.5">
+											{#if !n.read}
+												<span class="size-1.5 shrink-0 rounded-full bg-primary-500"></span>
+											{/if}
+											<span class="truncate text-[12.5px] font-semibold text-[var(--ui-text)]"
+												>{n.title}</span
+											>
+										</span>
+										{#if n.description}
+											<span class="block truncate text-[11.5px] text-[var(--ui-text-dimmed)]"
+												>{n.description}</span
+											>
+										{/if}
+										<span class="mt-0.5 block text-[10px] text-[var(--ui-text-dimmed)]">
+											{relativeTime(n.at)}
+										</span>
+									</span>
+									{#if n.href}
+										<Icon
+											name="lucide:chevron-right"
+											class="mt-1.5 size-3.5 shrink-0 text-[var(--ui-text-dimmed)] opacity-0 transition-opacity group-hover:opacity-100"
+										/>
+									{/if}
+								</button>
+								<button
+									type="button"
+									onclick={() => notifications.remove(n.id)}
+									class="absolute top-1.5 right-1.5 grid size-6 place-items-center rounded-md text-[var(--ui-text-dimmed)] opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
+									aria-label={t('topbar.removeNotification')}
+									title={t('topbar.removeNotification')}
+								>
+									<Icon name="lucide:x" class="size-3" />
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+
+				<!-- Footer: view all + clear -->
+				<div class="mt-2 flex items-center gap-1.5 border-t border-[var(--ui-border-muted)] px-1 pt-2">
+					<a
+						href={resolve('/notifications')}
+						onclick={() => (notifOpen = false)}
+						class="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11.5px] font-semibold text-primary-600 transition-colors hover:bg-primary-500/10 dark:text-primary-400"
+					>
+						<Icon name="lucide:list" class="size-3.5" />
+						{t('common.viewAll')}
+					</a>
+					{#if notifications.items.length > 0}
+						<span class="h-4 w-px bg-[var(--ui-border-muted)]"></span>
+						<button
+							type="button"
+							onclick={() => notifications.clear()}
+							class="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11.5px] font-semibold text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
+							title={t('topbar.clearAllNotifications')}
+						>
+							<Icon name="lucide:trash-2" class="size-3.5" />
+							{t('common.clear')}
+						</button>
+					{/if}
+				</div>
+			</div>
+		{/snippet}
+	</Popover>
+
+	<!-- System status (relay) popover — labeled chip, icon-only on mobile -->
 	<Popover
 		bind:open={relayOpen}
 		align="end"
 		side="bottom"
-		title={statusTitle}
-		triggerClass={statusTriggerClass}
-		triggerActiveClass="ring-2 ring-primary-500/20"
+		title={relayStatusTitle}
+		triggerClass={relayTriggerClass}
+		triggerActiveClass="ring-2 ring-emerald-500/20"
 	>
 		{#snippet trigger()}
-			<Icon name={relays.online ? 'lucide:wifi' : 'lucide:wifi-off'} class="size-[18px]" />
-			<span class="absolute -right-0.5 -bottom-0.5 flex size-2.5">
+			<span class="relative flex size-4 items-center justify-center">
+				<Icon name={relays.online ? 'lucide:wifi' : 'lucide:wifi-off'} class="size-4" />
 				{#if relays.online}
 					<span
-						class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75"
-					></span>
+						class="absolute -right-1 -bottom-0.5 flex size-2.5"
+					>
+						<span
+							class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75"
+						></span>
+						<span
+							class="relative inline-flex size-2.5 rounded-full bg-emerald-500 ring-2 ring-[var(--surface-bg)]"
+						></span>
+					</span>
 				{/if}
-				<span
-					class="relative inline-flex size-2.5 rounded-full ring-2 ring-[var(--surface-bg)] {relays.online
-						? 'bg-emerald-500'
-						: 'bg-amber-500'}"
-				></span>
+			</span>
+			<span class="hidden tabular-nums sm:inline">
+				{relays.activeRelays.length}/{relays.relays.length}
 			</span>
 		{/snippet}
 		{#snippet content()}
@@ -301,9 +530,19 @@
 					disabled={syncState === 'syncing'}
 					class="mt-1 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-60"
 				>
-					<Icon name={syncIcon} class={syncIconClass} />
+					<Icon name={syncIcon} class="size-3.5 {syncIconClass}" />
 					<span>{syncLabel}</span>
 				</button>
+
+				<!-- View all relays (full page) -->
+				<a
+					href={resolve('/settings/relays')}
+					onclick={() => (relayOpen = false)}
+					class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500/10 px-3 py-2 text-[12px] font-semibold text-primary-600 transition-colors hover:bg-primary-500/15 dark:text-primary-400"
+				>
+					<Icon name="lucide:radio" class="size-3.5" />
+					{t('topbar.viewAllRelays')}
+				</a>
 			</div>
 		{/snippet}
 	</Popover>
@@ -368,7 +607,7 @@
 						class="flex flex-col items-center gap-1 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] py-2.5 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:opacity-60"
 						title={t('topbar.syncData')}
 					>
-						<Icon name={syncIcon} class={syncIconClass} />
+						<Icon name={syncIcon} class="size-4 {syncIconClass}" />
 						<span class="text-[10px] font-semibold">{t('common.sync')}</span>
 					</button>
 					<a

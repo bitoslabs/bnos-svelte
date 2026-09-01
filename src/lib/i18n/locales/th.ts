@@ -345,7 +345,17 @@ export const th = {
 		aboutBnos: 'เกี่ยวกับ BNOS',
 		openMenu: 'เปิดเมนู',
 		closeMenu: 'ปิดเมนู',
-		syncData: 'ซิงค์ข้อมูล'
+		syncData: 'ซิงค์ข้อมูล',
+		viewAllRelays: 'ดูรีเลย์ทั้งหมด',
+		// Notification center
+		markAllRead: 'ทำเครื่องหมายว่าอ่านทั้งหมด',
+		markAsRead: 'ทำเครื่องหมายว่าอ่านแล้ว',
+		removeNotification: 'ลบการแจ้งเตือน',
+		clearAllNotifications: 'ล้างการแจ้งเตือนทั้งหมด',
+		youAreAllCaughtUp: 'คุณอ่านครบทั้งหมดแล้ว',
+		caughtUpDesc: 'ออเดอร์ใหม่ การแจ้งเตือนสต็อก และเหตุการณ์ของระบบจะแสดงที่นี่',
+		unreadTab: 'ยังไม่อ่าน',
+		onThisDevice: 'ในอุปกรณ์นี้'
 	},
 	relayDirectory: {
 		title: 'รีเลย์แนะนำ',
@@ -1183,6 +1193,15 @@ export const th = {
 	},
 	notifications: {
 		noNotifications: 'ไม่มีการแจ้งเตือน',
+		title: 'การแจ้งเตือน',
+		relayOfflineTitle: 'ขาดการเชื่อมต่อรีเลย์',
+		relayOfflineDesc: 'การเปลี่ยนแปลงจะถูกเก็บไว้ในอุปกรณ์นี้และซิงค์ให้อัตโนมัติภายหลัง',
+		relayOnlineTitle: 'กลับมาออนไลน์แล้ว',
+		relayOnlineDesc: 'เชื่อมต่อและซิงค์กับรีเลย์ของคุณแล้ว',
+		syncFailedTitle: 'ซิงค์ไม่สำเร็จ',
+		syncFailedDesc: 'ติดต่อรีเลย์ไม่ได้ ระบบจะลองใหม่โดยอัตโนมัติ',
+		syncDoneTitle: 'ซิงค์ข้อมูลครบแล้ว',
+		syncDoneDesc: 'ข้อมูลทั้งหมดเป็นปัจจุบันแล้วทั่วทั้งรีเลย์ของคุณ'
 	},
 	blocked: {
 		title: 'บัญชีถูกจำกัด',

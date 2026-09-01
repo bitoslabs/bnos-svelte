@@ -31,6 +31,7 @@
 	import OfflineBadge from '$lib/components/OfflineBadge.svelte';
 	import BootSplash from '$lib/components/ui/BootSplash.svelte';
 	import { popovers } from '$lib/stores/popovers.svelte';
+	import { startSystemNotifications } from '$lib/stores/notifications.svelte';
 	import { permissionForPath } from '$lib/nav';
 	import { permissions } from '$lib/permissions.svelte';
 	import favicon from '$lib/assets/favicon.svg';
@@ -67,6 +68,9 @@
 		features.load();
 		media.load();
 		relays.load();
+		// Wire relay/sync system events into the notification center (idempotent;
+		// the topbar + /notifications page hydrate the persisted feed themselves).
+		startSystemNotifications();
 		session.load();
 		tenant.load();
 		profile.load();

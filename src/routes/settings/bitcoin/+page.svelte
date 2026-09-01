@@ -1089,6 +1089,9 @@
 					>{t('settings.defaultMemo')}</span
 				>
 				<Input bind:value={defaultMemo} placeholder={t('pos.payment')} class="w-full" />
+				<span class="mt-1 block text-[10px] leading-snug text-[var(--ui-text-dimmed)]">
+					{t('settings.defaultMemoDesc')}
+				</span>
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"

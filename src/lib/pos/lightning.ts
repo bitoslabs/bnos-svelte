@@ -58,6 +58,12 @@ export interface LightningInvoice {
 	/** LNURL-pay `verify` URL (optional, spec LUD-06): pollable settlement
 	 *  status for this invoice — the non-Nostr auto-confirm fallback. */
 	verifyUrl?: string;
+	/** How the memo travels, for honest UI feedback:
+	 *  'invoice' — embedded in the BOLT11 description (customer's wallet shows it)
+	 *  'comment' — LNURL `comment` param → payment note in the merchant's wallet
+	 *  'zap'     — inside the NIP-57 zap request → merchant's zap receipt
+	 *  'none'    — provider accepts no memo channel */
+	memoDelivery?: 'invoice' | 'comment' | 'zap' | 'none';
 }
 
 export interface LightningWallet {
@@ -278,13 +284,22 @@ export async function requestInvoice(
 	const verified = decodeBolt11AmountMsat(data.pr);
 	// Some providers return zero-amount invoices (rare); trust requested amount then.
 	const verifiedMsat = verified ?? amountMsat;
+	// LUD-06: the BOLT11 description of an LNURL invoice is the provider's
+	// metadata JSON (wallet-verified) — our memo can't go there. Report the
+	// channel it actually used so the UI can tell the cashier.
+	const memoDelivery = zapRequest
+		? ('zap' as const)
+		: comment && (meta.commentAllowed ?? 0) > 0
+			? ('comment' as const)
+			: ('none' as const);
 	return {
 		pr: data.pr,
 		amountMsat: verifiedMsat,
 		amountSats: Math.round(verifiedMsat / 1000),
 		expiresAt: Math.floor(Date.now() / 1000) + 3600, // BOLT11 default expiry
 		source: 'lnurl',
-		verifyUrl: data.verify
+		verifyUrl: data.verify,
+		memoDelivery
 	};
 }
 
@@ -322,6 +337,8 @@ const BITCOIN_SETTINGS_KEY = 'bnos-os:settings-bitcoin';
 interface BitcoinSettings {
 	lightningProvider?: string;
 	lightningAddress?: string;
+	/** Default Lightning invoice memo (Settings → Bitcoin → Payment settings). */
+	defaultMemo?: string;
 	nwcUrl?: string;
 	lndUrl?: string;
 	lndMacaroon?: string;

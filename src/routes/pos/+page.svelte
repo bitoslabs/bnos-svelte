@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
+	import { onDestroy, onMount, untrack } from 'svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -68,8 +68,10 @@
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
 	import { buildPaymentQr, isQrMethod, type PaymentQrResult } from '$lib/pos/payment-qr';
 	import { loadPayConfig } from '$lib/pos/pay-config';
-	import { getMerchantLightning } from '$lib/pos/lightning';
-	import { getActiveLightningProvider, type LightningProvider } from '$lib/pos/lightning-providers';
+	import { getMerchantLightning, loadBitcoinLightningSettings } from '$lib/pos/lightning';
+	import { PaymentQrFlowStore } from '$lib/pos/payment-qr-flow.svelte';
+	import { resolveInvoiceMemo } from '$lib/pos/invoice-memo';
+	import PaymentQrDialog from '$lib/components/pos/PaymentQrDialog.svelte';
 	import QrCode from '$lib/components/ui/QrCode.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -857,76 +859,50 @@
 	let successTendered = $state(0);
 
 	// ── QR / Lightning checkout flow ──
-	// When the cashier taps Charge on a QR/Lightning method we open a payment-QR
-	// dialog (shown on POS + pushed to the customer display) instead of completing
-	// instantly. The sale completes when the cashier taps "Mark paid".
-	let payQrOpen = $state(false);
-	let payQrResult = $state<PaymentQrResult | null>(null);
-	let payQrAmount = $state(0);
-	let payQrMethod = $state('');
-	let payQrNote = $state('');
+	// Mechanics (invoice fetch, countdown, payment detection) live in the
+	// PaymentQrFlow store; this page supplies cart context + sale completion.
 	// Optional human-readable description sent as the Lightning invoice memo.
 	let invoiceMemo = $state('');
-	let payQrExpiresAt = $state(0);
-	let payQrSecondsLeft = $state(0);
-	let payQrTimer: ReturnType<typeof setInterval> | null = null;
-	let payQrLoading = $state(false);
-	// True while fetching a real Lightning invoice (LNURL-pay).
-	let payQrFetching = $state(false);
-	// Holds the live BOLT11 invoice so we can regenerate on expiry.
-	let payQrInvoice = $state<{ pr: string; amountSats: number } | null>(null);
-	// Whether the shown QR is a real amount-locked invoice vs a static fallback.
-	let payQrIsInvoice = $state(false);
-	// The active Lightning provider (for header label + auto-confirm polling).
-	let payQrProvider = $state<LightningProvider | null>(null);
-	// Auto-confirm: push watch (NWC kind 7375) + polling backstop.
-	let payQrPaid = $state(false);
-	let payQrPollTimer: ReturnType<typeof setInterval> | null = null;
-	let payQrWatchStop: (() => void) | null = null;
-	// Cashier-triggered "Check payment" (for providers the automatic watchers
-	// can't see — e.g. strike.me addresses without NIP-57 zap receipts).
-	let payQrChecking = $state(false);
 
-	/** On-demand payment check: verify URL / zap-receipt backfill /
-	 *  lookup_invoice depending on the provider. Paid → same auto-confirm
-	 *  flow; otherwise clear feedback so the cashier knows what to do. */
-	async function manualCheckPayment() {
-		if (payQrChecking || payQrPaid || payQrLoading || !payQrProvider || !payQrInvoice?.pr)
-			return;
-		payQrChecking = true;
-		const pr = payQrInvoice.pr;
-		try {
-			let status: 'pending' | 'paid' | 'expired' | 'unknown' = 'unknown';
-			if (typeof payQrProvider.checkPaymentNow === 'function') {
-				status = await payQrProvider.checkPaymentNow(pr);
-			} else if (payQrProvider.getPaymentStatus) {
-				status = await payQrProvider.getPaymentStatus(pr);
-			}
-			if (status === 'paid') {
-				payQrPaid = true;
-				stopPaymentPolling();
-				toast.success('Lightning payment received', 'Auto-confirming the sale…');
-				setTimeout(() => confirmQrPaid(), 600);
-			} else if (status === 'pending') {
-				toast.info('No payment yet', 'The invoice is still unpaid — check again after the customer pays.');
-			} else {
-				toast.warning(
-					'Cannot verify automatically',
-					'This wallet provider does not expose payment status. Confirm the payment in your wallet app, then tap Mark paid.'
-				);
-			}
-		} catch {
-			toast.error('Check failed', 'Could not reach the payment provider — try again.');
-		} finally {
-			payQrChecking = false;
-		}
+	/** Effective default invoice memo: cashier input > Settings default memo >
+	 *  sale context (customer or items). Used as the BOLT11 description. */
+	function defaultInvoiceMemo() {
+		return resolveInvoiceMemo({
+			settingsMemo: loadBitcoinLightningSettings().defaultMemo,
+			customerName: cart.customerName || undefined,
+			items: cart.items.map((l) => ({ name: l.name, quantity: l.quantity }))
+		});
 	}
 
-	function defaultInvoiceMemo() {
-		const items = cart.items
-			.map((line) => `${line.name}${line.quantity > 1 ? ` × ${line.quantity}` : ''}`)
-			.join(', ');
-		return (cart.customerName ? `Sale for ${cart.customerName}` : items || 'BNOS sale').slice(0, 120);
+	const payFlow = new PaymentQrFlowStore({
+		satsFromAmount: (a) => btcRate.satsFromAmount(a, currency),
+		defaultMemo: defaultInvoiceMemo,
+		showOnCustomerDisplay: () => loadPayConfig().showOnCustomerDisplay,
+		broadcastQr: broadcastPayQr,
+		broadcastQrClear: broadcastClearPayQr,
+		onAutoPaid: onQrAutoPaid,
+		notify: payFlowNotify
+	});
+
+	// Tear down countdown + payment watchers when the POS unmounts.
+	onDestroy(() => payFlow.destroy());
+
+	/** Map store notifications to toasts (UI stays out of the store). */
+	function payFlowNotify(kind: 'no-provider' | 'fallback' | 'invoice-error' | 'no-rate', detail?: string) {
+		if (kind === 'no-provider')
+			toast.warning(
+				'No Lightning provider',
+				'Select & configure a Lightning provider in Settings → Bitcoin (Lightning Address, Blink, NWC, …).'
+			);
+		else if (kind === 'fallback')
+			toast.warning('Live invoice unavailable', `Showing static address. ${detail ?? ''}`.trim());
+		else if (kind === 'invoice-error') toast.error('Invoice request failed', detail);
+	}
+
+	/** A payment was detected automatically — celebrate and complete the sale. */
+	function onQrAutoPaid() {
+		toast.success('Lightning payment received', 'Auto-confirming the sale…');
+		setTimeout(() => confirmQrPaid(), 600);
 	}
 
 	async function openQrCheckout() {
@@ -941,9 +917,10 @@
 		const cfg = loadPayConfig();
 		const amount = grandTotal;
 
-		// Lightning path: fetch a real amount-locked BOLT11 invoice (LNURL-pay).
+		// Lightning path: live amount-locked BOLT11 invoice (LNURL-pay / NWC).
 		if (method === 'lightning') {
-			await openLightningCheckout(amount, cfg);
+			payFlow.openLightning(amount, invoiceMemo.trim() || defaultInvoiceMemo());
+			invoiceMemo = payFlow.note;
 			return;
 		}
 
@@ -959,197 +936,15 @@
 			toast.warning('Pay QR not configured', result.hint ?? 'Set it up in Settings → Pay QR.');
 			return;
 		}
-		showQrDialog(result, amount, method, 'qr-static');
-	}
-
-	async function openLightningCheckout(amount: number, cfg: ReturnType<typeof loadPayConfig>) {
-		const provider = getActiveLightningProvider();
-		if (!provider) {
-			toast.warning(
-				'No Lightning provider',
-				'Select & configure a Lightning provider in Settings → Bitcoin (Lightning Address, Blink, NWC, …).'
-			);
-			return;
-		}
-		payQrProvider = provider;
-		// Pre-open the dialog in a fetching state so the UI feels instant.
-		payQrResult = {
-			payload: '',
-			kind: 'lightning',
-			configured: true,
-			badge: 'lightning'
-		};
-		payQrAmount = amount;
-		payQrMethod = 'lightning';
-		payQrNote = invoiceMemo.trim() || defaultInvoiceMemo();
-		invoiceMemo = payQrNote;
-		payQrInvoice = null;
-		payQrIsInvoice = false;
-		payQrPaid = false;
-		payQrFetching = true;
-		payQrExpiresAt = Date.now() + 15 * 60 * 1000;
-		payQrSecondsLeft = Math.floor((payQrExpiresAt - Date.now()) / 1000);
-		payQrOpen = true;
-		startQrCountdown();
-		await fetchLightningInvoice(amount, provider);
-	}
-
-	async function fetchLightningInvoice(amount: number, provider: LightningProvider) {
-		payQrFetching = true;
-		try {
-			const sats = btcRate.satsFromAmount(amount, currency);
-			if (sats <= 0) throw new Error('No BTC rate available for ' + currency);
-			const invoice = await provider.makeInvoice(sats * 1000, payQrNote.trim() || defaultInvoiceMemo());
-			payQrInvoice = { pr: invoice.pr, amountSats: invoice.amountSats };
-			// Re-assign so the dialog re-reads `autoConfirms` — makeInvoice flips it
-			// on when the provider proves auto-confirmable (zap receipts / verify).
-			payQrProvider = provider;
-			payQrIsInvoice = true;
-			payQrResult = {
-				payload: invoice.pr,
-				kind: 'lightning',
-				configured: true,
-				badge: 'lightning'
-			};
-			// Re-broadcast the real invoice to the customer display.
-			if (loadPayConfig().showOnCustomerDisplay) {
-				broadcastPayQr(invoice.pr, amount, 'lightning', 'lightning', 'lightning');
-			}
-			// Auto-confirm: poll the provider for payment status (NWC/Blink/Alby).
-			startPaymentPolling(provider, invoice.pr);
-		} catch (e) {
-			// Graceful fallback: static address QR (only for the Lightning Address path).
-			const wallet = getMerchantLightning();
-			if (wallet) {
-				const fallback = `lightning:${wallet.address}`;
-				payQrIsInvoice = false;
-				payQrResult = {
-					payload: fallback,
-					kind: 'lightning',
-					configured: true,
-					badge: 'lightning'
-				};
-				toast.warning(
-					'Live invoice unavailable',
-					`Showing static address. ${e instanceof Error ? e.message : ''}`.trim()
-				);
-				if (loadPayConfig().showOnCustomerDisplay) {
-					broadcastPayQr(fallback, amount, 'lightning', 'lightning', 'lightning');
-				}
-			} else {
-				// No static fallback for node providers — surface the real error.
-				payQrIsInvoice = false;
-				payQrResult = {
-					payload: '',
-					kind: 'lightning',
-					configured: true,
-					badge: 'lightning'
-				};
-				toast.error('Invoice request failed', e instanceof Error ? e.message : undefined);
-			}
-		} finally {
-			payQrFetching = false;
-		}
-	}
-
-	function startPaymentPolling(provider: LightningProvider, pr: string) {
-		stopPaymentPolling();
-		if (!provider.autoConfirms) return;
-		// 1) Push (preferred): NWC wallets emit kind 7375 `payment_received` the
-		//    moment sats land — settles instantly, no polling needed.
-		const hasPush = typeof provider.watchPayment === 'function';
-		if (hasPush) {
-			payQrWatchStop = provider.watchPayment!(pr, (preimage) => {
-				if (!payQrOpen || payQrPaid) return;
-				payQrPaid = true;
-				stopPaymentPolling();
-				toast.success('Lightning payment received', 'Auto-confirming the sale…');
-				setTimeout(() => confirmQrPaid(), 600);
-			});
-		}
-		// 2) Poll backstop: authoritative `lookup_invoice` every 4s (only path
-		//    for providers without push; slower cadence when push is active).
-		if (!provider.getPaymentStatus) return;
-		const intervalMs = hasPush ? 10_000 : 4_000;
-		payQrPollTimer = setInterval(async () => {
-			if (!payQrOpen || payQrPaid) {
-				stopPaymentPolling();
-				return;
-			}
-			const status = await provider.getPaymentStatus!(pr).catch(() => 'unknown' as const);
-			if (status === 'paid') {
-				payQrPaid = true;
-				stopPaymentPolling();
-				toast.success('Lightning payment received', 'Auto-confirming the sale…');
-				setTimeout(() => confirmQrPaid(), 600);
-			}
-		}, intervalMs);
-	}
-	function stopPaymentPolling() {
-		if (payQrPollTimer) {
-			clearInterval(payQrPollTimer);
-			payQrPollTimer = null;
-		}
-		if (payQrWatchStop) {
-			payQrWatchStop();
-			payQrWatchStop = null;
-		}
-	}
-
-	function regenerateInvoice() {
-		if (!payQrOpen || payQrMethod !== 'lightning' || !payQrProvider) return;
-		void fetchLightningInvoice(payQrAmount, payQrProvider);
-	}
-
-	function showQrDialog(
-		result: PaymentQrResult,
-		amount: number,
-		payMethod: string,
-		_source: string
-	) {
-		payQrResult = result;
-		payQrAmount = amount;
-		payQrMethod = payMethod;
-		payQrNote = cart.customerName || '';
-		payQrIsInvoice = false;
-		payQrInvoice = null;
-		payQrExpiresAt = Date.now() + 15 * 60 * 1000;
-		payQrSecondsLeft = Math.floor((payQrExpiresAt - Date.now()) / 1000);
-		payQrOpen = true;
-		if (loadPayConfig().showOnCustomerDisplay) {
-			broadcastPayQr(result.payload, amount, payMethod, result.kind, result.badge);
-		}
-		startQrCountdown();
-	}
-
-	function startQrCountdown() {
-		if (payQrTimer) clearInterval(payQrTimer);
-		payQrTimer = setInterval(() => {
-			payQrSecondsLeft = Math.max(0, Math.floor((payQrExpiresAt - Date.now()) / 1000));
-			if (payQrSecondsLeft <= 0) {
-				clearInterval(payQrTimer!);
-				payQrTimer = null;
-			}
-		}, 1000);
-	}
-
-	function closeQrCheckout() {
-		payQrOpen = false;
-		payQrResult = null;
-		stopPaymentPolling();
-		if (payQrTimer) {
-			clearInterval(payQrTimer);
-			payQrTimer = null;
-		}
-		broadcastClearPayQr();
+		payFlow.openStatic(result, amount, method, cart.customerName || '');
 	}
 
 	async function confirmQrPaid() {
-		if (payQrLoading) return;
-		payQrLoading = true;
-		const paidMethod = payQrMethod as PaymentMethod;
-		const paidAmount = payQrAmount;
-		closeQrCheckout();
+		if (payFlow.loading) return;
+		payFlow.loading = true;
+		const paidMethod = payFlow.method as PaymentMethod;
+		const paidAmount = payFlow.amount;
+		payFlow.close();
 		processing = true;
 		try {
 			const sale = await cart.checkout(paidMethod, 0);
@@ -1171,14 +966,8 @@
 			toast.error(t('pos.checkoutFailed'), e instanceof Error ? e.message : undefined);
 		} finally {
 			processing = false;
-			payQrLoading = false;
+			payFlow.loading = false;
 		}
-	}
-
-	function fmtQrCountdown(s: number): string {
-		const m = Math.floor(s / 60);
-		const sec = s % 60;
-		return `${m}:${sec.toString().padStart(2, '0')}`;
 	}
 
 	async function checkout() {
@@ -1187,8 +976,7 @@
 			toast.info('Open a shift first to process sales.');
 			return;
 		}
-		payQrOpen = false;
-		stopPaymentPolling();
+		payFlow.close();
 		processing = true;
 		checkoutProgressStage = 'saving';
 		receiptOpen = true;
@@ -1230,8 +1018,7 @@
 			toast.info('Open a shift first to process sales.');
 			return;
 		}
-		payQrOpen = false;
-		stopPaymentPolling();
+		payFlow.close();
 		processing = true;
 		checkoutProgressStage = 'saving';
 		receiptOpen = true;
@@ -1648,7 +1435,7 @@
 			promoOpen ||
 			customOpen ||
 			receiptOpen ||
-			payQrOpen ||
+			payFlow.open ||
 			heldOpen ||
 			historyOpen ||
 			shiftModalOpen ||
@@ -3515,7 +3302,7 @@
 </Dialog>
 
 <!-- Receipt -->
-{#if !payQrOpen}
+{#if !payFlow.open}
 	<Dialog bind:open={receiptOpen} size="sm" dismissible={!processing}>
 	{#if processing}
 		<div class="space-y-3 py-1">
@@ -3789,231 +3576,15 @@
 	</Dialog>
 {/if}
 
-<!-- Payment QR checkout (QR / Lightning / bank methods) -->
-				<Dialog
-					bind:open={payQrOpen}
-					title={t('common.scanToPay')}
-					size="md"
-					dismissible={!payQrPaid && !payQrLoading}
-				>
-	{#if payQrResult}
-		<div class="flex flex-col items-center gap-4 py-2">
-			<div class="flex w-full items-center justify-between">
-				<div class="flex items-center gap-2">
-					<div class="grid size-8 place-items-center rounded-xl {payQrMethod === 'lightning' ? 'bg-amber-500/10 text-amber-500' : 'bg-primary-500/10 text-primary-500'}">
-						<Icon name={payQrMethod === 'lightning' ? 'lucide:zap' : 'lucide:qr-code'} class="size-4" />
-					</div>
-					<div>
-						<p class="text-[12px] font-bold text-[var(--ui-text)]">{payQrMethod === 'lightning' ? 'Lightning checkout' : 'QR checkout'}</p>
-						<p class="text-[10px] font-medium text-[var(--ui-text-dimmed)]">{payQrMethod === 'lightning' ? 'Secure wallet payment' : 'Secure scan to pay'}</p>
-					</div>
-				</div>
-				<span class="rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[10px] font-bold text-[var(--ui-text-muted)] capitalize">
-					{payQrResult.kind}
-				</span>
-			</div>
-
-			<!-- Payment progress is shared by Lightning, QR, bank and PromptPay flows. -->
-			<div class="w-full rounded-2xl border border-amber-500/15 bg-gradient-to-br from-amber-500/[0.08] via-transparent to-transparent p-3">
-					<div class="mb-3 flex items-center justify-between">
-						<span class="text-[10px] font-bold tracking-[0.14em] text-amber-700 uppercase dark:text-amber-300">
-							{payQrPaid
-								? 'Payment received'
-								: payQrFetching
-									? 'Preparing payment'
-									: payQrMethod === 'lightning'
-										? 'Waiting for wallet payment'
-										: 'Waiting for customer payment'}
-						</span>
-						<span class="font-mono text-[10px] font-bold text-[var(--ui-text-dimmed)]">{payQrPaid ? '100%' : payQrFetching ? '33%' : '66%'}</span>
-					</div>
-					<div class="mb-3 h-1.5 overflow-hidden rounded-full bg-amber-500/15">
-						<div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-700 {payQrPaid ? 'w-full' : payQrFetching ? 'w-1/3' : 'w-2/3'}"></div>
-					</div>
-					<div class="grid grid-cols-3 gap-2">
-						<div class="flex items-center gap-1.5 text-[10px] font-semibold {payQrFetching || payQrPaid ? 'text-amber-700 dark:text-amber-300' : 'text-[var(--ui-text-dimmed)]'}">
-							<Icon name={payQrFetching || payQrPaid ? 'lucide:check-circle-2' : 'lucide:circle'} class="size-3.5 shrink-0" />{payQrMethod === 'lightning' ? 'Invoice' : 'QR ready'}
-						</div>
-						<div class="flex items-center gap-1.5 text-[10px] font-semibold {payQrPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--ui-text-dimmed)]'}">
-							{#if payQrPaid}<Icon name="lucide:check-circle-2" class="size-3.5 shrink-0" />{:else}<span class="size-2 shrink-0 rounded-full bg-amber-500 {payQrFetching ? 'animate-pulse' : ''}"></span>{/if}
-							{payQrMethod === 'lightning' ? 'Wallet' : 'Customer'}
-						</div>
-						<div class="flex items-center gap-1.5 text-[10px] font-semibold {payQrPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--ui-text-dimmed)]'}">
-							<Icon name={payQrPaid ? 'lucide:check-circle-2' : 'lucide:circle'} class="size-3.5 shrink-0" />Complete
-						</div>
-					</div>
-				</div>
-
-			<div class="flex items-center gap-2">
-				{#if payQrIsInvoice}
-					<span
-						class="rounded-full bg-amber-500/10 px-2 py-0.5 text-[9.5px] font-bold text-amber-600 dark:text-amber-400"
-						>amount-locked invoice</span
-					>
-				{/if}
-				{#if payQrProvider?.label}
-					<span
-						class="rounded-full bg-[var(--ui-bg-accented)] px-2 py-0.5 text-[9.5px] font-bold text-[var(--ui-text-muted)]"
-						>{payQrProvider.label}</span
-					>
-				{/if}
-			</div>
-
-			<div class="rounded-2xl border border-[var(--ui-border)] bg-white p-3 shadow-sm">
-				{#if payQrFetching}
-					<div
-						class="flex size-[224px] flex-col items-center justify-center gap-3 text-[var(--ui-text-dimmed)]"
-					>
-						<Icon name="lucide:loader-circle" class="size-8 animate-spin text-amber-500" />
-						<span class="text-[11.5px] font-semibold">Generating Lightning invoice…</span>
-						<span class="text-[10px] text-[var(--ui-text-dimmed)]">Contacting wallet provider</span>
-					</div>
-				{:else if payQrResult.payload}
-					<QrCode value={payQrResult.payload} size={224} badge={payQrResult.badge} />
-				{:else}
-					<div class="flex size-[224px] items-center justify-center text-[var(--ui-text-dimmed)]">
-						<Icon name="lucide:qr-code" class="size-8" />
-					</div>
-				{/if}
-			</div>
-
-			{#if payQrMethod === 'lightning' && !payQrFetching}
-				<button
-					type="button"
-					onclick={regenerateInvoice}
-					class="flex items-center gap-1 text-[11px] font-semibold text-amber-600 hover:underline dark:text-amber-400"
-				>
-					<Icon name="lucide:refresh-cw" class="size-3.5" />{payQrIsInvoice
-						? 'New invoice'
-						: 'Try live invoice again'}
-				</button>
-			{/if}
-
-			{#if payQrMethod === 'lightning' && payQrNote}
-				<div class="w-full rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2.5 text-left">
-					<div class="mb-1 flex items-center gap-1.5 text-[10px] font-bold tracking-wide text-amber-700 uppercase dark:text-amber-300">
-						<Icon name="lucide:message-square-text" class="size-3.5" />Invoice memo
-					</div>
-					<p class="break-words whitespace-pre-wrap text-[12.5px] font-medium leading-relaxed text-[var(--ui-text)]">{payQrNote}</p>
-				</div>
-			{/if}
-
-			<div class="text-center">
-				<p
-					class="text-[10.5px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-				>
-					{t('pos.amountDue')}
-				</p>
-				<p class="font-display text-3xl font-black tabular-nums">
-					{formatMoney(payQrAmount, currency)}
-				</p>
-				{#if showSats || payQrMethod === 'lightning'}
-					<p
-						class="mt-0.5 flex items-center justify-center gap-1 text-[11px] font-semibold text-[var(--tone-warning-text)]"
-					>
-						<Icon name="lucide:zap" class="size-3" />≈ {formatInt(
-							payQrInvoice?.amountSats ?? btcRate.satsFromAmount(payQrAmount, currency)
-						)} sats
-					</p>
-				{/if}
-			</div>
-
-			<div
-				class="flex items-center gap-1.5 text-[11.5px] font-semibold {payQrSecondsLeft < 60
-					? 'text-[var(--tone-error-text)]'
-					: 'text-[var(--ui-text-muted)]'}"
-			>
-				<Icon name="lucide:clock" class="size-3.5" />
-				{payQrSecondsLeft > 0
-					? `Expires in ${fmtQrCountdown(payQrSecondsLeft)}`
-					: 'Expired — regenerate'}
-			</div>
-
-				{#if payQrIsInvoice && payQrProvider?.autoConfirms}
-				<div
-					class="flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold {payQrPaid
-						? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-						: 'border-amber-500/15 bg-amber-500/5 text-amber-700 dark:text-amber-300'}"
-				>
-					{#if payQrPaid}
-						<Icon name="lucide:check-circle-2" class="size-3.5" />Payment received — completing sale…
-					{:else}
-						<span class="relative flex size-2">
-							<span
-								class="absolute inline-flex size-full animate-ping rounded-full bg-amber-400 opacity-75"
-							></span>
-							<span class="relative inline-flex size-2 rounded-full bg-amber-500"></span>
-						</span>
-						Watching wallet — send from Wallet of Satoshi or any Lightning wallet
-					{/if}
-				</div>
-			{/if}
-
-			<div
-				class="mt-1 flex items-center gap-2 rounded-lg bg-[var(--ui-bg-muted)] px-3 py-2 text-[11px] text-[var(--ui-text-muted)]"
-			>
-				<Icon name="lucide:info" class="size-3.5 shrink-0" />
-				<span>
-					Ask the customer to scan with their wallet. When payment is received, tap
-					<span class="font-semibold text-[var(--ui-text)]">Mark paid</span> to complete.
-				</span>
-			</div>
-
-			{#if payQrIsInvoice && !payQrPaid}
-				<!-- Manual on-demand check: for providers the automatic watchers can't
-				     see (e.g. a strike.me Lightning Address with no zap receipts). -->
-				<button
-					type="button"
-					class="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--surface-bg)] px-3 py-2 text-[11.5px] font-semibold text-[var(--ui-text)] transition-colors hover:border-primary-500/40 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:text-primary-400"
-					onclick={manualCheckPayment}
-					disabled={payQrChecking || payQrFetching}
-				>
-					{#if payQrChecking}
-						<Icon name="lucide:loader-circle" class="size-3.5 animate-spin" />Checking…
-					{:else}
-						<Icon name="lucide:refresh-cw" class="size-3.5" />Check payment
-					{/if}
-				</button>
-			{/if}
-
-			<div class="flex w-full items-center justify-center gap-2">
-				<button
-					type="button"
-					class="flex items-center gap-1 text-[11px] font-semibold text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-					onclick={() =>
-						navigator.clipboard
-							?.writeText(payQrResult?.payload ?? '')
-							.then(() => toast.success('Payment link copied'))}
-				>
-					<Icon name="lucide:copy" class="size-3.5" />Copy link
-				</button>
-				{#if payQrResult.payload}
-					<a
-						href={payQrResult.payload.startsWith('lightning:') ? payQrResult.payload : `lightning:${payQrResult.payload}`}
-						class="flex items-center gap-1 text-[11px] font-semibold text-amber-600 hover:underline dark:text-amber-400"
-					>
-						<Icon name="lucide:external-link" class="size-3.5" />Open in wallet
-					</a>
-				{/if}
-			</div>
-		</div>
-	{/if}
-	{#snippet footer()}
-		<Button color="neutral" variant="subtle" icon="lucide:x" onclick={closeQrCheckout}
-			disabled={payQrPaid || payQrLoading}
-			>{t('common.cancel')}</Button
-		>
-		<Button
-			color="primary"
-			icon="lucide:check"
-			onclick={confirmQrPaid}
-			disabled={payQrLoading || payQrFetching || payQrPaid}
-			>{#if payQrLoading}<Icon name="lucide:loader-circle" class="size-4 animate-spin" />…{:else}
-				Mark paid
-			{/if}</Button
-		>
-	{/snippet}
-</Dialog>
+<!-- Payment QR checkout (QR / Lightning / bank methods) — see PaymentQrDialog -->
+<PaymentQrDialog
+	flow={payFlow}
+	{currency}
+	showSats={showSats}
+	satsFromAmount={(a) => btcRate.satsFromAmount(a, currency)}
+	onclose={() => payFlow.close()}
+	onconfirm={confirmQrPaid}
+/>
 
 <!-- Keyboard shortcuts help -->
 <Dialog bind:open={shortcutsOpen} title="Keyboard shortcuts" size="sm">
