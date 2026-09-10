@@ -16,7 +16,7 @@
 	 *   </Menu>
 	 */
 	export const menuPanel = tv({
-		base: 'absolute z-50 min-w-52 rounded-xl border border-[var(--ui-border-muted)] bg-[var(--surface-bg)] p-1.5 shadow-[var(--shadow-pop)] outline-none',
+		base: 'absolute z-50 min-w-52 rounded-xl border border-[var(--ui-border)] bg-[var(--surface-bg)] p-1.5 shadow-[var(--shadow-pop)] outline-none',
 		variants: {
 			placement: {
 				'bottom-start': 'top-full left-0 mt-1.5',

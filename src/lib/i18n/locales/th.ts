@@ -334,8 +334,12 @@ export const th = {
 		searchCommands: 'ค้นหาและคำสั่ง (⌘K)',
 		manageRelays: 'จัดการรีเลย์',
 		syncingAllData: 'กำลังซิงค์ข้อมูลทั้งหมด…',
+		syncing: 'กำลังซิงค์…',
+		synced: 'ซิงค์แล้ว',
+		syncFailedShort: 'ล้มเหลว',
+		lastSynced: 'ซิงค์ครั้งล่าสุด {time}',
+		syncErrorDesc: 'ซิงค์กับรีเลย์ไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง',
 		relaysActive: 'เชื่อมต่อรีเลย์ {active} จาก {total}',
-		relays: 'รีเลย์',
 		relayPlaceholder: 'wss://relay.example.com',
 		activateRelay: 'เปิดใช้งานรีเลย์',
 		deactivateRelay: 'ปิดใช้งานรีเลย์',
@@ -345,7 +349,6 @@ export const th = {
 		aboutBnos: 'เกี่ยวกับ BNOS',
 		openMenu: 'เปิดเมนู',
 		closeMenu: 'ปิดเมนู',
-		syncData: 'ซิงค์ข้อมูล',
 		viewAllRelays: 'ดูรีเลย์ทั้งหมด',
 		// Notification center
 		markAllRead: 'ทำเครื่องหมายว่าอ่านทั้งหมด',
@@ -398,7 +401,6 @@ export const th = {
 		collapseSidebar: 'ย่อแถบด้านข้าง',
 		collapse: 'ย่อ',
 		expand: 'ขยาย',
-		main: 'หลัก',
 		goDashboard: 'ไปที่แดชบอร์ด BNOS'
 	},
 	toast: {

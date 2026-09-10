@@ -334,8 +334,12 @@ export const lo = {
 		searchCommands: 'ຄົ້ນຫາແລະຄຳສັ່ງຊື້ (⌘K)',
 		manageRelays: 'ຈັດການຣິເລ',
 		syncingAllData: 'ກຳລັງຊິງຂໍ້ມູນທັງໝົດ…',
+		syncing: 'ກຳລັງຊິງ…',
+		synced: 'ຊິງແລ້ວ',
+		syncFailedShort: 'ລົ້ມເຫຼວ',
+		lastSynced: 'ຊິງຄັ້ງສຸດທ້າຍ {time}',
+		syncErrorDesc: 'ບໍ່ສາມາດຊິງກັບຣິເລໄດ້. ກວດສອບການເຊື່ອມຕໍ່ແລ້ວລອງໃໝ່.',
 		relaysActive: 'ເຊື່ອມຣິເລ {active} ຈາກ {total}',
-		relays: 'ຣິເລ',
 		relayPlaceholder: 'wss://relay.example.com',
 		activateRelay: 'ເປີດໃຊ້ຣິເລ',
 		deactivateRelay: 'ປິດໃຊ້ຣິເລ',
@@ -345,7 +349,6 @@ export const lo = {
 		aboutBnos: 'ກ່ຽວກັບ BNOS',
 		openMenu: 'ເປີດເມນູ',
 		closeMenu: 'ປິດເມນູ',
-		syncData: 'ຊິງຂໍ້ມູນ',
 		viewAllRelays: 'ເບິ່ງຣິເລທັງໝົດ',
 		// Notification center
 		markAllRead: 'ໝາຍວ່າອ່ານແລ້ວທັງໝົດ',
@@ -398,7 +401,6 @@ export const lo = {
 		collapseSidebar: 'ຫຍໍ້ແຖບຂ້າງ',
 		collapse: 'ຫຍໍ້',
 		expand: 'ຂະຫຍາຍ',
-		main: 'ຫຼັກ',
 		goDashboard: 'ໄປທີ່ແດສບອດ BNOS'
 	},
 	toast: {

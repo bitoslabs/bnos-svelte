@@ -210,30 +210,8 @@
 		{/each}
 	</nav>
 
-	<!-- Active tenant pill -->
-	{#if tenant.state.organizationName}
-		<div
-			class="app-tenant-pill mx-3 mb-2 flex items-center {sidebarState.collapsed ? 'justify-center' : 'gap-2.5'} rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] {sidebarState.collapsed ? 'px-0' : 'px-3'} py-2"
-			title={sidebarState.collapsed ? tenant.state.organizationName : undefined}
-		>
-			<span
-				class="grid size-7 shrink-0 place-items-center rounded-md bg-primary-500/10 text-[11px] font-bold text-primary-600 dark:text-primary-400"
-			>
-				{tenant.state.organizationName.slice(0, 2).toUpperCase()}
-			</span>
-			{#if !sidebarState.collapsed}
-				<span class="min-w-0 flex-1">
-					<span class="block truncate text-[12.5px] font-semibold">{tenant.state.organizationName}</span>
-					<span class="block truncate text-[11px] text-[var(--ui-text-dimmed)]">
-						{tenant.state.currency} · {tenant.state.locationName ?? t('sidebar.main')}
-					</span>
-				</span>
-			{/if}
-		</div>
-	{/if}
-
 	<!-- Collapse toggle -->
-	<div class="app-user-menu flex items-center {sidebarState.collapsed ? 'justify-center' : ''} p-3">
+	<div class="app-sidebar-footer flex items-center {sidebarState.collapsed ? 'justify-center' : ''} p-3">
 		<button
 			type="button"
 			onclick={toggleCollapsed}

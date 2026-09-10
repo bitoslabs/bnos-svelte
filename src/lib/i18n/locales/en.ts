@@ -355,8 +355,12 @@ export const en = {
 		searchCommands: 'Search & commands (⌘K)',
 		manageRelays: 'Manage relays',
 		syncingAllData: 'Syncing all data…',
+		syncing: 'Syncing…',
+		synced: 'Synced',
+		syncFailedShort: 'Failed',
+		lastSynced: 'Last synced {time}',
+		syncErrorDesc: 'Could not sync with your relays. Check your connection and try again.',
 		relaysActive: '{active} of {total} relays active',
-		relays: 'Relays',
 		relayPlaceholder: 'wss://relay.example.com',
 		activateRelay: 'Activate relay',
 		deactivateRelay: 'Deactivate relay',
@@ -366,7 +370,6 @@ export const en = {
 		aboutBnos: 'About BNOS',
 		openMenu: 'Open menu',
 		closeMenu: 'Close menu',
-		syncData: 'Sync data',
 		viewAllRelays: 'View all relays',
 		// Notification center
 		markAllRead: 'Mark all as read',
@@ -419,7 +422,6 @@ export const en = {
 		collapseSidebar: 'Collapse sidebar',
 		collapse: 'Collapse',
 		expand: 'Expand',
-		main: 'Main',
 		goDashboard: 'Go to BNOS dashboard'
 	},
 	toast: {

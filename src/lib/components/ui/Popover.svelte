@@ -77,7 +77,7 @@
 	{#if open}
 		<div
 			class={cn(
-				'animate-rise absolute z-50 rounded-xl border border-[var(--ui-border-muted)] bg-[var(--surface-bg)] p-1.5 text-[var(--ui-text)] shadow-[var(--shadow-pop)] outline-none',
+				'animate-rise absolute z-50 rounded-xl border border-[var(--ui-border)] bg-[var(--surface-bg)] p-1.5 text-[var(--ui-text)] shadow-[var(--shadow-pop)] outline-none',
 				sideClass,
 				alignClass,
 				cls

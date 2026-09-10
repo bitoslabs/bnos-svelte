@@ -18,6 +18,7 @@
 	import { glo } from '$nostr/store.svelte';
 	import { profile } from '$nostr/profile.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
+	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { relativeTime } from '$lib/utils/format';
@@ -74,12 +75,26 @@
 	}
 
 	// ── Sync engine ────────────────────────────────────────────────────────
+	// Labeled status chip (twin of the relay chip below): icon + short state
+	// label on ≥sm, icon-only on xs. Clicking always triggers a manual sync.
 	const syncState = $derived(dataSync.status);
-	const syncLabel = $derived.by(() => {
+	const syncShortLabel = $derived.by(() => {
+		if (syncState === 'syncing') return t('topbar.syncing');
+		if (syncState === 'done') return t('topbar.synced');
+		if (syncState === 'failed') return t('topbar.syncFailedShort');
+		return t('common.sync');
+	});
+	const syncFullLabel = $derived.by(() => {
 		if (syncState === 'syncing') return t('topbar.syncingAllData');
 		if (syncState === 'done') return t('common.allDataSynced');
 		if (syncState === 'failed') return t('common.syncFailed');
 		return t('common.syncAll');
+	});
+	const syncTitle = $derived.by(() => {
+		if (dataSync.lastSyncedAt > 0) {
+			return `${syncFullLabel} · ${t('topbar.lastSynced', { time: relativeTime(dataSync.lastSyncedAt) })}`;
+		}
+		return syncFullLabel;
 	});
 	const syncIcon = $derived.by(() => {
 		if (syncState === 'syncing') return 'lucide:loader-circle';
@@ -89,13 +104,25 @@
 	});
 	const syncIconClass = $derived.by(() => {
 		if (syncState === 'syncing') return 'animate-spin';
-		if (syncState === 'done') return 'text-emerald-500';
-		if (syncState === 'failed') return 'text-[var(--tone-error-text)]';
 		return '';
+	});
+	const syncChipClass = $derived.by(() => {
+		const base =
+			'relative inline-flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-[12.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60';
+		if (syncState === 'done') {
+			return `${base} border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/15 dark:text-emerald-400`;
+		}
+		if (syncState === 'failed') {
+			return `${base} border-red-500/30 bg-[var(--tone-error-bg)] text-[var(--tone-error-text)] hover:border-red-500/50`;
+		}
+		return `${base} border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]`;
 	});
 
 	async function syncAllData() {
 		await dataSync.manualSync();
+		if (dataSync.status === 'failed') {
+			toast.error(t('common.syncFailed'), dataSync.error || t('topbar.syncErrorDesc'));
+		}
 	}
 
 	// ── Relay status ───────────────────────────────────────────────────────
@@ -202,21 +229,18 @@
 	<!-- Divider: tasks ↔ system cluster -->
 	<div class="mx-1 hidden h-5 w-px bg-[var(--ui-border-muted)] sm:block"></div>
 
-	<!-- Sync status (system button) -->
+	<!-- Sync status chip (system control — twin of the relay chip) -->
 	<button
 		type="button"
 		onclick={syncAllData}
 		disabled={syncState === 'syncing'}
-		class="relative hidden size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:cursor-not-allowed disabled:opacity-60 sm:grid"
-		aria-label={syncLabel}
-		title={syncLabel}
+		class={syncChipClass}
+		aria-label={syncTitle}
+		title={syncTitle}
+		aria-live="polite"
 	>
-		<Icon name={syncIcon} class="size-[18px] {syncIconClass}" />
-		{#if syncState === 'failed'}
-			<span
-				class="absolute -right-0.5 -bottom-0.5 size-2 rounded-full bg-[var(--tone-error-text)] ring-2 ring-[var(--surface-bg)]"
-			></span>
-		{/if}
+		<Icon name={syncIcon} class="size-4 {syncIconClass}" />
+		<span class="hidden sm:inline">{syncShortLabel}</span>
 	</button>
 
 	<!-- 🔔 Notification center -->
@@ -531,8 +555,13 @@
 					class="mt-1 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-60"
 				>
 					<Icon name={syncIcon} class="size-3.5 {syncIconClass}" />
-					<span>{syncLabel}</span>
+					<span>{syncFullLabel}</span>
 				</button>
+				{#if dataSync.lastSyncedAt > 0}
+					<p class="px-1 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
+						{t('topbar.lastSynced', { time: relativeTime(dataSync.lastSyncedAt) })}
+					</p>
+				{/if}
 
 				<!-- View all relays (full page) -->
 				<a
@@ -594,37 +623,6 @@
 						{t('settings.language')}
 					</div>
 					<LanguageSwitcher />
-				</div>
-
-				<!-- Quick action widgets -->
-				<div class="grid grid-cols-2 gap-1.5 px-3.5 pb-3">
-					<button
-						type="button"
-						onclick={() => {
-							void syncAllData();
-						}}
-						disabled={syncState === 'syncing'}
-						class="flex flex-col items-center gap-1 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] py-2.5 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:opacity-60"
-						title={t('topbar.syncData')}
-					>
-						<Icon name={syncIcon} class="size-4 {syncIconClass}" />
-						<span class="text-[10px] font-semibold">{t('common.sync')}</span>
-					</button>
-					<a
-						href={resolve('/settings/relays')}
-						onclick={() => (quickOpen = false)}
-						class="flex flex-col items-center gap-1 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] py-2.5 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-						title={t('topbar.manageRelays')}
-					>
-						<span class="relative flex size-4 items-center justify-center">
-							{#if relays.online}
-								<span class="absolute size-2 animate-ping rounded-full bg-emerald-400 opacity-70"
-								></span>
-							{/if}
-							<Icon name="lucide:radio" class="size-4" />
-						</span>
-						<span class="text-[10px] font-semibold">{t('topbar.relays')}</span>
-					</a>
 				</div>
 
 				<!-- Links -->
