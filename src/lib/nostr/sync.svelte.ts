@@ -128,6 +128,8 @@ class SyncStore {
 			/** Restrict the relay query to one branch (`glo:scope:org:loc` topic).
 			 *  Omit for org-wide sync. Workspace types ignore this. */
 			locationId?: string | null;
+			/** Read the primary relay first, falling back only when it has no result. */
+			relayStrategy?: 'all' | 'primary-first';
 		} = {}
 	) {
 		const scope = options.scope ?? types.join(',');
@@ -145,10 +147,13 @@ class SyncStore {
 		}
 
 		try {
-			await warmRelays();
+			await warmRelays(options.relayStrategy);
 			await glo.flushPublishQueue();
 			for (const type of types) {
-				await glo.sync(type, { locationId: options.locationId ?? null });
+				await glo.sync(type, {
+					locationId: options.locationId ?? null,
+					relayStrategy: options.relayStrategy
+				});
 				if ((PAYMENT_SETTINGS_TYPES as readonly string[]).includes(type)) {
 					hydratePaymentSettingsFromNostr();
 					await syncLocalPaymentSettingsToNostr([type as (typeof PAYMENT_SETTINGS_TYPES)[number]]);
@@ -260,6 +265,19 @@ class SyncStore {
 		}
 		await this.syncTypes(CORE_DATA_TYPES, { force: true, scope: 'core', silent: false });
 		await this.syncTypes(SECONDARY_DATA_TYPES, { force: true, scope: 'secondary', silent: false });
+	}
+
+	/**
+	 * Fast setup completion: confirm only the workspace on the preferred relay.
+	 * The normal idle sync later reads operational data from every enabled relay.
+	 */
+	async confirmSetupOnPrimary() {
+		return this.syncTypes([TYPE.organization, TYPE.location], {
+			force: true,
+			scope: 'setup-primary',
+			silent: true,
+			relayStrategy: 'primary-first'
+		});
 	}
 
 	/** Force-refresh merchant payment configuration directly from relays. */

@@ -53,6 +53,7 @@
 		currency: string;
 		kind: string;
 		badge: string;
+		imageUrl?: string;
 	};
 
 	type PayQrClearMessage = { type: 'pay-qr-clear' };
@@ -84,6 +85,7 @@
 		total: number;
 		kind: string;
 		badge: string;
+		imageUrl?: string;
 	} | null>(null);
 
 	onMount(() => {
@@ -107,7 +109,13 @@
 					cartCustomerName = msg.customerName;
 					cartOrderType = msg.orderType;
 				} else if (msg.type === 'pay-qr') {
-					payQr = { payload: msg.payload, total: msg.total, kind: msg.kind, badge: msg.badge };
+					payQr = {
+						payload: msg.payload,
+						total: msg.total,
+						kind: msg.kind,
+						badge: msg.badge,
+						imageUrl: msg.imageUrl
+					};
 				} else if (msg.type === 'pay-qr-clear') {
 					payQr = null;
 				} else if (msg.type === 'checkout-success') {
@@ -209,7 +217,11 @@
 			</div>
 
 			<div class="rounded-3xl border border-white/10 bg-white p-5 shadow-2xl">
-				<QrCode value={payQr.payload} size={320} badge={payQr.badge as any} />
+				{#if payQr.imageUrl}
+					<img src={payQr.imageUrl} alt="Bank payment QR" class="size-[320px] object-contain" />
+				{:else}
+					<QrCode value={payQr.payload} size={320} badge={payQr.badge as any} />
+				{/if}
 			</div>
 
 			<div class="text-center">

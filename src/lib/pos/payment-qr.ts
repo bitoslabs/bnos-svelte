@@ -22,6 +22,8 @@ export interface PaymentQrRequest {
 export interface PaymentQrResult {
 	/** QR payload string to encode. */
 	payload: string;
+	/** A merchant-uploaded static QR image, displayed instead of encoding `payload`. */
+	imageUrl?: string;
 	/** Human label for the QR scheme shown under the code. */
 	kind: 'promptpay' | 'vietqr' | 'bank' | 'lightning' | 'unknown';
 	/** Whether a real scannable QR could be built (config present). */
@@ -82,6 +84,19 @@ export function buildQrPayment(req: PaymentQrRequest): PaymentQrResult {
 			};
 		case 'bank':
 		default:
+			if (cfg.useStaticBankQr) {
+				const imageUrl = cfg.staticBankQrImageUrl.trim();
+				if (!imageUrl) {
+					return {
+						payload: '',
+						kind: 'bank',
+						configured: false,
+						hint: 'Upload a static bank QR image in Settings → Pay QR.',
+						badge: 'bank'
+					};
+				}
+				return { payload: '', imageUrl, kind: 'bank', configured: true, badge: 'bank' };
+			}
 			if (!cfg.bankAccountNumber.trim()) {
 				return {
 					payload: '',

@@ -28,7 +28,14 @@ export interface PaymentFlowDeps {
 	/** Whether the customer-facing display should mirror the QR. */
 	showOnCustomerDisplay(): boolean;
 	/** Push the QR to the customer display. */
-	broadcastQr(payload: string, total: number, method: string, kind: string, badge: string): void;
+	broadcastQr(
+		payload: string,
+		total: number,
+		method: string,
+		kind: string,
+		badge: string,
+		imageUrl?: string
+	): void;
 	/** Clear the customer display QR. */
 	broadcastQrClear(): void;
 	/** A payment was detected (push / poll / manual check) — complete the sale. */
@@ -142,7 +149,7 @@ export class PaymentQrFlowStore {
 		this.lastCheck = 'none';
 		this.beginWindow();
 		if (this.deps.showOnCustomerDisplay()) {
-			this.deps.broadcastQr(result.payload, amount, method, result.kind, result.badge);
+			this.deps.broadcastQr(result.payload, amount, method, result.kind, result.badge, result.imageUrl);
 		}
 	}
 

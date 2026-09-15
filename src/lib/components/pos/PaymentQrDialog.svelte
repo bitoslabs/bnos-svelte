@@ -205,6 +205,12 @@
 							<span class="text-[11.5px] font-semibold">Generating Lightning invoice…</span>
 							<span class="text-[10px] text-[var(--ui-text-dimmed)]">Contacting wallet provider</span>
 						</div>
+					{:else if flow.result.imageUrl}
+						<img
+							src={flow.result.imageUrl}
+							alt="Bank payment QR"
+							class="size-[224px] object-contain"
+						/>
 					{:else if flow.result.payload}
 						<QrCode value={flow.result.payload} size={224} badge={flow.result.badge} />
 					{:else}

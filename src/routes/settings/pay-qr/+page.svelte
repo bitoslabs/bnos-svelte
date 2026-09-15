@@ -7,6 +7,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import QrCode from '$lib/components/ui/QrCode.svelte';
+	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { browser } from '$app/environment';
@@ -207,28 +208,57 @@
 				</div>
 			</div>
 		{:else}
-			<div class="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-2">
-				<div>
-					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>{t('settings.accountName')}</label
-					>
-					<Input bind:value={cfg.bankAccountName} placeholder="Bitdigo Co., Ltd." class="w-full" />
+			<div class="space-y-4 px-5 py-4">
+				<div
+					class="flex items-start justify-between gap-3 rounded-xl bg-[var(--ui-bg-muted)] p-3.5 sm:items-center"
+				>
+					<div class="min-w-0 flex-1">
+						<p class="text-[13px] font-semibold">Use a static bank QR image</p>
+						<p class="mt-0.5 text-[11px] leading-relaxed break-words text-[var(--ui-text-dimmed)]">
+							Upload the QR issued by your bank. It is shown as-is at checkout; the sale amount is not embedded in it.
+						</p>
+					</div>
+					<div class="shrink-0 pt-0.5 sm:pt-0">
+						<Switch bind:checked={cfg.useStaticBankQr} />
+					</div>
 				</div>
-				<div>
-					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>{t('settings.accountNumber')}</label
-					>
-					<Input bind:value={cfg.bankAccountNumber} placeholder="1234 5678 90" class="w-full" />
-				</div>
-				<div class="sm:col-span-2">
-					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>{t('settings.bankName')}</label
-					>
-					<Input bind:value={cfg.bankName} placeholder="e.g. Kasikornbank" class="w-full" />
-				</div>
+
+				{#if cfg.useStaticBankQr}
+					<MediaImageInput
+						bind:value={cfg.staticBankQrImageUrl}
+						purpose="brand"
+						label="Static bank QR image"
+						hint="PNG, JPEG, or WebP · this same image appears on POS and the customer display"
+						preview="square"
+						size={176}
+						objectFit="contain"
+						maxBytes={2 * 1024 * 1024}
+					/>
+				{:else}
+					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+						<div>
+							<label
+								class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+								>{t('settings.accountName')}</label
+							>
+							<Input bind:value={cfg.bankAccountName} placeholder="Bitdigo Co., Ltd." class="w-full" />
+						</div>
+						<div>
+							<label
+								class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+								>{t('settings.accountNumber')}</label
+							>
+							<Input bind:value={cfg.bankAccountNumber} placeholder="1234 5678 90" class="w-full" />
+						</div>
+						<div class="sm:col-span-2">
+							<label
+								class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+								>{t('settings.bankName')}</label
+							>
+							<Input bind:value={cfg.bankName} placeholder="e.g. Kasikornbank" class="w-full" />
+						</div>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</section>
@@ -251,7 +281,16 @@
 		</div>
 		<div class="flex flex-col items-center gap-3 px-5 py-6 sm:flex-row sm:items-start sm:gap-6">
 			<!-- QR preview -->
-			{#if qrPreview?.configured}
+			{#if qrPreview?.imageUrl}
+				<div class="flex flex-col items-center gap-2">
+					<img
+						src={qrPreview.imageUrl}
+						alt="Static bank payment QR preview"
+						class="size-[180px] rounded-xl border border-[var(--ui-border)] bg-white object-contain p-2"
+					/>
+					<span class="text-[11px] font-semibold text-[var(--ui-text-muted)]">Static bank QR</span>
+				</div>
+			{:else if qrPreview?.configured}
 				<div class="flex flex-col items-center gap-2">
 					<QrCode value={qrPreview.payload} size={180} badge={qrPreview.badge} />
 					<span class="text-[11px] font-semibold text-[var(--ui-text-muted)] capitalize">
@@ -273,9 +312,9 @@
 			<div class="flex-1">
 				<h3 class="text-[13px] font-bold">{t('settings.whatCustomersSee')}</h3>
 				<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
-					When the cashier selects
-					<span class="font-semibold">QR</span> at checkout, this exact code is generated (instantly,
-					offline) and shown both on the POS dialog and — if enabled — pushed to the customer-facing display.
+					When the cashier selects <span class="font-semibold">QR</span> at checkout, this code is shown
+					in the POS dialog and — if enabled — on the customer-facing display.
+					{#if qrPreview?.imageUrl} The uploaded bank QR is static, so confirm the displayed amount before marking the sale paid.{/if}
 				</p>
 				{#if qrPreview?.payload}
 					<details class="mt-3">

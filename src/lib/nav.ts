@@ -54,6 +54,22 @@ export interface RoutePermission {
 	action: PermissionAction;
 }
 
+/**
+ * Routes which belong to the signed-in person, rather than to the business.
+ *
+ * Keep these explicit. Without this exception, `/settings`'s permission rule
+ * also matches every nested path and would prevent a cashier (or any other
+ * non-admin) from editing their Nostr profile or device appearance.
+ */
+export const selfServiceRoutes = new Set([
+	'/profile',
+	'/settings',
+	'/settings/profile',
+	'/settings/appearance',
+	'/settings/notifications',
+	'/settings/about'
+]);
+
 export const routePermissions: Record<string, RoutePermission> = {
 	'/pos': { resource: 'pos', action: 'read' },
 	'/orders': { resource: 'orders', action: 'read' },
@@ -232,6 +248,9 @@ export function findNavItem(path: string): NavItem | undefined {
 
 export function permissionForPath(path: string): RoutePermission | undefined {
 	const current = normalizePath(path);
+	// Self-service pages require an authenticated session (enforced by the root
+	// layout), but deliberately do not require a business-role permission.
+	if (selfServiceRoutes.has(current)) return undefined;
 	return rankedRoutePermissions.find(([to]) => current === to || current.startsWith(to + '/'))?.[1];
 }
 

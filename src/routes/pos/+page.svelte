@@ -1403,12 +1403,18 @@
 	const recentOrders = $derived.by(() => {
 		const all = glo.all<Order, typeof TYPE.order>(TYPE.order);
 		return all
+			.filter((order) => {
+				const status = String(recordValue(order.data).status ?? '');
+				return status === 'completed' || status === 'paid';
+			})
 			.slice()
 			.sort((a, b) => {
-				const aCreatedAt = recordValue(a.data).createdAt;
-				const bCreatedAt = recordValue(b.data).createdAt;
-				const aTime = typeof aCreatedAt === 'string' ? aCreatedAt : '';
-				const bTime = typeof bCreatedAt === 'string' ? bCreatedAt : '';
+				const aData = recordValue(a.data);
+				const bData = recordValue(b.data);
+				const aTimestamp = aData.occurredAt ?? aData.createdAt;
+				const bTimestamp = bData.occurredAt ?? bData.createdAt;
+				const aTime = typeof aTimestamp === 'string' ? aTimestamp : '';
+				const bTime = typeof bTimestamp === 'string' ? bTimestamp : '';
 				return bTime.localeCompare(aTime);
 			})
 			.slice(0, 10);
@@ -1595,7 +1601,8 @@
 		total: number,
 		payMethod: string,
 		kind: string,
-		badge: string
+		badge: string,
+		imageUrl?: string
 	) {
 		displayChannel?.postMessage({
 			type: 'pay-qr',
@@ -1604,7 +1611,8 @@
 			method: payMethod,
 			currency,
 			kind,
-			badge
+			badge,
+			imageUrl
 		});
 	}
 	function broadcastClearPayQr() {
@@ -3534,9 +3542,15 @@
 			{#each recentOrders as o (o.id)}
 				{@const orderData = recordValue(o.data)}
 				{@const total =
+					(typeof orderData.total === 'number' ? orderData.total : undefined) ??
 					(orderData.totals as { total?: number } | undefined)?.total ??
 					(typeof orderData.amount === 'number' ? orderData.amount : 0)}
-				{@const rawDate = typeof orderData.createdAt === 'string' ? orderData.createdAt : ''}
+				{@const rawDate =
+					typeof orderData.occurredAt === 'string'
+						? orderData.occurredAt
+						: typeof orderData.createdAt === 'string'
+							? orderData.createdAt
+							: ''}
 				{@const orderTime = rawDate
 					? new Intl.DateTimeFormat('en-US', {
 							hour: 'numeric',

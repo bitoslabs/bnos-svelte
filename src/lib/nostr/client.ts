@@ -11,13 +11,17 @@ import {
 } from '@bitos/bnos-core';
 import { relays } from './relay.svelte';
 
-/** Preconnect to the configured relays (warms sockets). */
-export async function warmRelays() {
+/** Preconnect to relays before a foreground read/write. */
+export async function warmRelays(strategy: 'all' | 'primary-first' = 'all') {
 	if (!relays.online) return;
 	try {
-		const targets = relays.readableNormalized.length
+		const allTargets = relays.readableNormalized.length
 			? relays.readableNormalized
 			: relays.writableNormalized;
+		const primaryTargets = relays.primaryReadableNormalized.length
+			? relays.primaryReadableNormalized
+			: relays.primaryWritableNormalized;
+		const targets = strategy === 'primary-first' && primaryTargets.length ? primaryTargets : allTargets;
 		await preconnectRelays(targets);
 	} catch {
 		/* best effort */

@@ -17,17 +17,9 @@
    such as SKU-123, IDs, phone numbers, and money: Latin characters and digits
    fall through to the normal UI font automatically. */
 @font-face {
-	font-family: 'Bouasavanh Lao';
-	src: url('$lib/assets/fonts/Bouasavanh.woff2') format('woff2');
+	font-family: 'Chanthavong Lao';
+	src: url('$lib/assets/fonts/chanthavong-Regular.woff2?v=13') format('woff2');
 	font-weight: normal;
-	font-style: normal;
-	unicode-range: U+0E80-0EFF;
-}
-
-@font-face {
-	font-family: 'Bouasavanh Lao';
-	src: url('$lib/assets/fonts/Bouasavanh-Bold.woff2') format('woff2');
-	font-weight: bold;
 	font-style: normal;
 	unicode-range: U+0E80-0EFF;
 }
@@ -514,11 +506,11 @@
 		color: var(--ui-text);
 	}
 
-	/* Lao labels use Bouasavanh, while the existing display and numeric styles
+	/* Lao labels use Chanthavong, while the existing display and numeric styles
 	   remain stable for figures, money, and active navigation/status controls. */
 	html[data-locale='lo'] {
-		--font-sans: 'Bouasavanh Lao', 'Plus Jakarta Sans', 'SF Pro Text', ui-sans-serif, system-ui, sans-serif;
-		--font-display: 'Bouasavanh Lao', 'Space Grotesk', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+		--font-sans: 'Chanthavong Lao', 'Plus Jakarta Sans', 'SF Pro Text', ui-sans-serif, system-ui, sans-serif;
+		--font-display: 'Chanthavong Lao', 'Space Grotesk', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 	}
 
 	/* Lao glyphs need slightly more vertical room than the Latin UI font. Keep

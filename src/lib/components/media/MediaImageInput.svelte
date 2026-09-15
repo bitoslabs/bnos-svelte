@@ -34,6 +34,7 @@
 		hint = '',
 		preview = 'square',
 		size = 80,
+		objectFit = 'cover',
 		placeholder = 'https://…',
 		disabled = false
 	}: {
@@ -46,6 +47,8 @@
 		/** `square` | `round` (avatar) | `wide` (banner/product) | `none`. */
 		preview?: 'square' | 'round' | 'wide' | 'none';
 		size?: number;
+		/** Preserve the complete image for documents such as payment QR codes. */
+		objectFit?: 'cover' | 'contain';
 		placeholder?: string;
 		disabled?: boolean;
 	} = $props();
@@ -116,7 +119,7 @@
 
 <div class="space-y-2">
 	<!-- Dropzone + preview + actions -->
-	<div class="flex items-start gap-3">
+	<div class="flex items-start gap-3 {preview === 'wide' ? 'flex-col' : ''}">
 		{#if preview !== 'none'}
 			<div
 				role="button"
@@ -139,7 +142,11 @@
 				ondrop={onDrop}
 			>
 				{#if value}
-					<img src={value} alt={label} class="h-full w-full object-cover" />
+					<img
+						src={value}
+						alt={label}
+						class="h-full w-full {objectFit === 'contain' ? 'object-contain' : 'object-cover'}"
+					/>
 					{#if uploading}
 						<div
 							class="absolute inset-0 grid place-items-center bg-black/40 backdrop-blur-sm"
@@ -157,7 +164,7 @@
 			</div>
 		{/if}
 
-		<div class="min-w-0 flex-1 space-y-2">
+		<div class="min-w-0 flex-1 space-y-2 {preview === 'wide' ? 'w-full' : ''}">
 			{#if label}
 				<span class="block text-[12px] font-semibold text-[var(--ui-text-muted)]">{label}</span>
 			{/if}
