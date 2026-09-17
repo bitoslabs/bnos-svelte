@@ -6,7 +6,7 @@ import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 
 export default defineConfig({
 	preview: {
-		allowedHosts: ['app.bitos.space', 'app.bnos.space']
+		allowedHosts: ['app.bitos.space']
 	},
 	plugins: [
 		tailwindcss(),
