@@ -59,6 +59,7 @@ const APP_STORAGE_PREFIXES = [
 	'active-role',
 	'setup-'
 ];
+const PRESERVE_ON_LOGOUT = new Set(['bnos-os:relays']);
 
 class SessionStore {
 	/** Current auth snapshot, or null when signed out. */
@@ -179,6 +180,7 @@ class SessionStore {
 			for (let i = localStorage.length - 1; i >= 0; i--) {
 				const key = localStorage.key(i);
 				if (!key) continue;
+				if (PRESERVE_ON_LOGOUT.has(key)) continue;
 				if (APP_STORAGE_PREFIXES.some((prefix) => key.startsWith(prefix))) {
 					keysToRemove.push(key);
 				}
@@ -187,21 +189,21 @@ class SessionStore {
 				localStorage.removeItem(key);
 			}
 		} catch (e) {
-			console.error('[session] Failed to clear localStorage on logout', e);
+			/* best effort */
 		}
 
 		// 2. sessionStorage — clear entirely
 		try {
 			sessionStorage.clear();
 		} catch (e) {
-			console.error('[session] Failed to clear sessionStorage on logout', e);
+			/* best effort */
 		}
 
 		// 3. IndexedDB (idb-keyval) — wipe all GLO collections + publish queue
 		try {
 			await idbClear();
 		} catch (e) {
-			console.error('[session] Failed to clear IndexedDB on logout', e);
+			/* best effort */
 		}
 
 		// 4. Cache API — delete any cached responses
@@ -210,7 +212,7 @@ class SessionStore {
 				const cacheNames = await window.caches.keys();
 				await Promise.all(cacheNames.map((name) => window.caches.delete(name)));
 			} catch (e) {
-				console.error('[session] Failed to clear caches on logout', e);
+				/* best effort */
 			}
 		}
 	};

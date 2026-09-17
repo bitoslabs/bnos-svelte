@@ -5,6 +5,7 @@
 	 * the reactive GLO store (commerce.order filtered to remote sources).
 	 */
 	import { resolve } from '$app/paths';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -15,6 +16,7 @@
 	import {
 		TYPE,
 		statusColor,
+		statusLabel,
 		isRemoteSource,
 		channelMeta,
 		listingStatusLabel,
@@ -85,7 +87,7 @@
 	const hasChannels = $derived(connections.length > 0);
 </script>
 
-<svelte:head><title>BNOS · Marketplace</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.marketplace')}</title></svelte:head>
 
 <div class="space-y-5">
 <!-- KPI cards -->
@@ -132,19 +134,19 @@
 	</div>
 </div>
 
-{#if !hasChannels}
-	<!-- First-run: connect a channel -->
+{#if !hasChannels && listings.length === 0}
+	<!-- First-run: web-store-first. No external channel required to start selling. -->
 	<EmptyState
-		icon="lucide:plug-zap"
-		title="Connect your first sales channel"
-		description="Sync your catalog to TikTok, Facebook, Shopee, or your own website and start receiving unified orders."
+		icon="lucide:store"
+		title={t('common.startWebStore')}
+		description="Publish your first listing and it goes live on your storefront instantly — no external channel required. Connect TikTok, Facebook or Shopee later to reach more buyers."
 	>
 		{#snippet actions()}
-			<Button color="primary" icon="lucide:plus" href={resolve('/marketplace/channels')}
-				>Connect a channel</Button
+			<Button color="primary" icon="lucide:plus" href={resolve('/marketplace/listings')}
+				>Publish a listing</Button
 			>
-			<Button color="neutral" variant="subtle" icon="lucide:book-open" href={resolve('/marketplace/analytics')}
-				>Learn more</Button
+			<Button color="neutral" variant="subtle" icon="lucide:radio" href={resolve('/marketplace/channels')}
+				>Connect a channel</Button
 			>
 		{/snippet}
 	</EmptyState>
@@ -184,7 +186,7 @@
 								<div class="min-w-0 flex-1">
 									<div class="flex items-center gap-2">
 										<span class="font-mono text-[12.5px] font-semibold">{o.number}</span>
-										<Badge color={statusColor(o.status)}>{titleCase(o.status)}</Badge>
+										<Badge color={statusColor(o.status)}>{statusLabel(o.status)}</Badge>
 									</div>
 									<p class="truncate text-[11px] text-[var(--ui-text-dimmed)]">
 										{sourceLabel(o.source)}{#if o.customerName} · {o.customerName}{/if}
@@ -206,7 +208,7 @@
 			<div class="flex items-center justify-between px-5 py-3.5">
 				<div class="flex items-center gap-2">
 					<Icon name="lucide:radio" class="size-4 text-primary-500" />
-					<h2 class="font-display text-[14px] font-semibold">Channels</h2>
+					<h2 class="font-display text-[14px] font-semibold">{t('common.channel')}</h2>
 				</div>
 				<Button size="sm" color="neutral" variant="ghost" trailingIcon="lucide:arrow-right" href={resolve('/marketplace/channels')}>
 					Manage
@@ -232,7 +234,7 @@
 							</p>
 						</div>
 						<Badge color={c.data.status === 'connected' ? 'success' : c.data.status === 'error' ? 'info' : 'neutral'}>
-							{titleCase(c.data.status)}
+							{statusLabel(c.data.status)}
 						</Badge>
 					</div>
 				{/each}

@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import QrCode from '$lib/components/ui/QrCode.svelte';
+	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { browser } from '$app/environment';
@@ -18,6 +20,8 @@
 	import { buildQrPayment } from '$lib/pos/payment-qr';
 	import { getMerchantLightning } from '$lib/pos/lightning';
 	import { tenant } from '$nostr/tenant.svelte';
+	import { syncPaymentSettingsToNostr, PAYMENT_SETTINGS_SYNC_EVENT } from '$nostr/payment-settings';
+	import { dataSync } from '$nostr/sync.svelte';
 
 	let cfg = $state<PayConfig>({ ...defaultPayConfig });
 	let currency = $state('THB');
@@ -33,12 +37,28 @@
 	});
 
 	// Lightning address is read-only here — single source is Settings → Bitcoin.
-	const lightningAddr = $derived(loaded ? getMerchantLightning()?.address ?? '' : '');
+	const lightningAddr = $derived(loaded ? (getMerchantLightning()?.address ?? '') : '');
 
 	function save() {
 		savePayConfig(cfg);
-		toast.success('Pay QR settings saved');
+		void syncPaymentSettingsToNostr('settings.pay-config', cfg);
+		toast.success(t('settings.toastPayQrSaved'));
 	}
+
+	function onPaymentSettingsSync() {
+		cfg = loadPayConfig();
+	}
+
+	async function loadFromRelay() {
+		await dataSync.manualPaymentSettingsSync();
+		if (dataSync.status === 'done') toast.success('Settings loaded from relay');
+	}
+
+	$effect(() => {
+		if (!browser) return;
+		window.addEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
+		return () => window.removeEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
+	});
 
 	const schemes = [
 		{
@@ -73,11 +93,11 @@
 	async function resetAll() {
 		if (
 			!(await confirm({
-				title: 'Reset Pay QR settings?',
-				message: 'PromptPay / VietQR / bank / Lightning config will return to defaults.',
+				title: t('common.resetPayQr'),
+				message: t('common.payQrResetMsg'),
 				tone: 'danger',
 				icon: 'lucide:rotate-ccw',
-				confirmText: 'Reset all'
+				confirmText: t('settings.resetAll')
 			}))
 		)
 			return;
@@ -87,18 +107,26 @@
 	}
 </script>
 
-<svelte:head><title>Pay QR · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.payQr')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
 	<PageHeader
 		icon="lucide:qr-code"
 		accent="primary"
-		title="Pay QR"
-		description="QR codes shown at checkout & on the customer display"
+		title={t('settings.payQr')}
+		description={t('settings.payQrDesc')}
 	>
 		{#snippet actions()}
+			<Button
+				variant="ghost"
+				color="neutral"
+				size="sm"
+				icon="lucide:cloud-download"
+				onclick={loadFromRelay}
+				disabled={dataSync.status === 'syncing'}>Load from relay</Button
+			>
 			<Button variant="ghost" color="neutral" size="sm" icon="lucide:rotate-ccw" onclick={resetAll}
-				>Reset</Button
+				>{t('common.reset')}</Button
 			>
 		{/snippet}
 	</PageHeader>
@@ -107,7 +135,7 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:layout-grid" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">QR scheme</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.qrScheme')}</h2>
 		</div>
 		<div class="grid grid-cols-1 gap-2 px-5 py-4 sm:grid-cols-3">
 			{#each schemes as s (s.id)}
@@ -119,7 +147,11 @@
 						: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
 					onclick={() => (cfg.qrScheme = s.id)}
 				>
-					<span class="flex items-center gap-2 text-[13px] font-semibold {cfg.qrScheme === s.id ? s.color : ''}">
+					<span
+						class="flex items-center gap-2 text-[13px] font-semibold {cfg.qrScheme === s.id
+							? s.color
+							: ''}"
+					>
 						<Icon name={s.icon} class="size-4" />
 						{s.label}
 					</span>
@@ -135,10 +167,10 @@
 			<Icon name="lucide:settings-2" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">
 				{cfg.qrScheme === 'promptpay'
-					? 'PromptPay account'
+					? t('settings.promptPayAccount')
 					: cfg.qrScheme === 'vietqr'
-						? 'VietQR account'
-						: 'Bank account'}
+						? t('settings.vietQrAccount')
+						: t('settings.bankAccount')}
 			</h2>
 		</div>
 
@@ -146,7 +178,7 @@
 			<div class="px-5 py-4">
 				<label
 					class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-					>PromptPay ID</label
+					>{t('settings.promptPayId')}</label
 				>
 				<Input
 					bind:value={cfg.promptpayId}
@@ -154,7 +186,7 @@
 					class="w-full"
 				/>
 				<p class="mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">
-					Mobile phone (0XXXXXXXXX), National ID (13 digits), or e-Wallet ID. Customers scan to pay.
+					{t('settings.promptPayIdDesc')}
 				</p>
 			</div>
 		{:else if cfg.qrScheme === 'vietqr'}
@@ -162,42 +194,71 @@
 				<div>
 					<label
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>Bank BIN code</label
+						>{t('settings.bankBinCode')}</label
 					>
 					<Input bind:value={cfg.vietqrBin} placeholder="970436 (Vietcombank)" class="w-full" />
-					<p class="mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">6-digit NAPAS bank BIN</p>
+					<p class="mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">{t('settings.bankBinCodeDesc')}</p>
 				</div>
 				<div>
 					<label
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>Account number</label
+						>{t('settings.accountNumber')}</label
 					>
 					<Input bind:value={cfg.vietqrAccount} placeholder="0011001234567" class="w-full" />
 				</div>
 			</div>
 		{:else}
-			<div class="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-2">
-				<div>
-					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>Account name</label
-					>
-					<Input bind:value={cfg.bankAccountName} placeholder="Bitdigo Co., Ltd." class="w-full" />
+			<div class="space-y-4 px-5 py-4">
+				<div
+					class="flex items-start justify-between gap-3 rounded-xl bg-[var(--ui-bg-muted)] p-3.5 sm:items-center"
+				>
+					<div class="min-w-0 flex-1">
+						<p class="text-[13px] font-semibold">Use a static bank QR image</p>
+						<p class="mt-0.5 text-[11px] leading-relaxed break-words text-[var(--ui-text-dimmed)]">
+							Upload the QR issued by your bank. It is shown as-is at checkout; the sale amount is not embedded in it.
+						</p>
+					</div>
+					<div class="shrink-0 pt-0.5 sm:pt-0">
+						<Switch bind:checked={cfg.useStaticBankQr} />
+					</div>
 				</div>
-				<div>
-					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>Account number</label
-					>
-					<Input bind:value={cfg.bankAccountNumber} placeholder="1234 5678 90" class="w-full" />
-				</div>
-				<div class="sm:col-span-2">
-					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>Bank name</label
-					>
-					<Input bind:value={cfg.bankName} placeholder="e.g. Kasikornbank" class="w-full" />
-				</div>
+
+				{#if cfg.useStaticBankQr}
+					<MediaImageInput
+						bind:value={cfg.staticBankQrImageUrl}
+						purpose="brand"
+						label="Static bank QR image"
+						hint="PNG, JPEG, or WebP · this same image appears on POS and the customer display"
+						preview="square"
+						size={176}
+						objectFit="contain"
+						maxBytes={2 * 1024 * 1024}
+					/>
+				{:else}
+					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+						<div>
+							<label
+								class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+								>{t('settings.accountName')}</label
+							>
+							<Input bind:value={cfg.bankAccountName} placeholder="Bitdigo Co., Ltd." class="w-full" />
+						</div>
+						<div>
+							<label
+								class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+								>{t('settings.accountNumber')}</label
+							>
+							<Input bind:value={cfg.bankAccountNumber} placeholder="1234 5678 90" class="w-full" />
+						</div>
+						<div class="sm:col-span-2">
+							<label
+								class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+								>{t('settings.bankName')}</label
+							>
+							<Input bind:value={cfg.bankName} placeholder="e.g. Kasikornbank" class="w-full" />
+						</div>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</section>
@@ -206,25 +267,35 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:eye" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Live preview</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.livePreview')}</h2>
 			<div class="ml-auto flex items-center gap-2">
 				<Input
 					bind:value={previewAmount}
 					type="number"
 					min="0"
 					class="w-28"
-					placeholder="Amount"
+					placeholder={t('common.amount')}
 				/>
 				<span class="text-[11px] text-[var(--ui-text-dimmed)]">{currency}</span>
 			</div>
 		</div>
 		<div class="flex flex-col items-center gap-3 px-5 py-6 sm:flex-row sm:items-start sm:gap-6">
 			<!-- QR preview -->
-			{#if qrPreview?.configured}
+			{#if qrPreview?.imageUrl}
+				<div class="flex flex-col items-center gap-2">
+					<img
+						src={qrPreview.imageUrl}
+						alt="Static bank payment QR preview"
+						class="size-[180px] rounded-xl border border-[var(--ui-border)] bg-white object-contain p-2"
+					/>
+					<span class="text-[11px] font-semibold text-[var(--ui-text-muted)]">Static bank QR</span>
+				</div>
+			{:else if qrPreview?.configured}
 				<div class="flex flex-col items-center gap-2">
 					<QrCode value={qrPreview.payload} size={180} badge={qrPreview.badge} />
-					<span class="text-[11px] font-semibold capitalize text-[var(--ui-text-muted)]">
-						{qrPreview.kind} · {previewAmount.toFixed(2)} {currency}
+					<span class="text-[11px] font-semibold text-[var(--ui-text-muted)] capitalize">
+						{qrPreview.kind} · {previewAmount.toFixed(2)}
+						{currency}
 					</span>
 				</div>
 			{:else}
@@ -232,26 +303,27 @@
 					class="flex size-[180px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--ui-border)] p-4 text-center"
 				>
 					<Icon name="lucide:qr-code" class="size-8 text-[var(--ui-text-dimmed)]" />
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">{qrPreview?.hint ?? 'Not configured'}</p>
+					<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+						{qrPreview?.hint ?? t('settings.notConfigured')}
+					</p>
 				</div>
 			{/if}
 
 			<div class="flex-1">
-				<h3 class="text-[13px] font-bold">What customers see</h3>
+				<h3 class="text-[13px] font-bold">{t('settings.whatCustomersSee')}</h3>
 				<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
-					When the cashier selects
-					<span class="font-semibold">QR</span> at checkout, this exact code is generated
-					(instantly, offline) and shown both on the POS dialog and — if enabled — pushed to the
-					customer-facing display.
+					When the cashier selects <span class="font-semibold">QR</span> at checkout, this code is shown
+					in the POS dialog and — if enabled — on the customer-facing display.
+					{#if qrPreview?.imageUrl} The uploaded bank QR is static, so confirm the displayed amount before marking the sale paid.{/if}
 				</p>
 				{#if qrPreview?.payload}
 					<details class="mt-3">
 						<summary
 							class="cursor-pointer text-[11px] font-semibold text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-							>Raw payload</summary
+							>{t('settings.rawPayload')}</summary
 						>
 						<code
-							class="mt-1 block break-all rounded-lg bg-[var(--ui-bg-muted)] p-2 font-mono text-[10px] text-[var(--ui-text-muted)]"
+							class="mt-1 block rounded-lg bg-[var(--ui-bg-muted)] p-2 font-mono text-[10px] break-all text-[var(--ui-text-muted)]"
 							>{qrPreview.payload}</code
 						>
 					</details>
@@ -264,9 +336,11 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:zap" class="size-4 text-amber-500" />
-			<h2 class="font-display text-[14px] font-semibold">Lightning address</h2>
+			<h2 class="font-display text-[14px] font-semibold">
+				{t('settings.lightningAddressHeading')}
+			</h2>
 			<span class="ml-auto text-[9.5px] font-medium text-[var(--ui-text-dimmed)]"
-				>managed in Bitcoin</span
+				>{t('settings.managedInBitcoin')}</span
 			>
 		</div>
 		<div class="px-5 py-4">
@@ -285,7 +359,7 @@
 							href="/settings/bitcoin"
 							class="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
 						>
-							<Icon name="lucide:pencil" class="size-3" />Edit in Bitcoin settings
+							<Icon name="lucide:pencil" class="size-3" />{t('settings.editInBitcoin')}
 						</a>
 					</div>
 				</div>
@@ -295,16 +369,18 @@
 				>
 					<Icon name="lucide:zap-off" class="size-5 shrink-0 text-amber-500" />
 					<div class="min-w-0">
-						<p class="text-[12.5px] font-semibold text-[var(--ui-text)]">No Lightning address yet</p>
+						<p class="text-[12.5px] font-semibold text-[var(--ui-text)]">
+							{t('settings.noLightningYet')}
+						</p>
 						<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
-							The POS shows a static fallback QR but can't fetch amount-locked invoices. Add one to accept
-							Lightning.
+							The POS shows a static fallback QR but can't fetch amount-locked invoices. Add one to
+							accept Lightning.
 						</p>
 						<a
 							href="/settings/bitcoin"
 							class="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 hover:underline dark:text-amber-400"
 						>
-							<Icon name="lucide:arrow-right" class="size-3" />Configure in Bitcoin settings
+							<Icon name="lucide:arrow-right" class="size-3" />{t('settings.configureInBitcoin')}
 						</a>
 					</div>
 				</div>
@@ -316,22 +392,22 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:monitor" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Checkout behaviour</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.checkoutBehaviour')}</h2>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
-				<label class="text-[13px] font-semibold">Show QR on customer display</label>
+				<label class="text-[13px] font-semibold">{t('settings.showQrOnCustomerDisplay')}</label>
 				<p class="text-[11px] text-[var(--ui-text-dimmed)]">
-					Auto-push the QR to the customer-facing screen during checkout
+					{t('settings.showQrOnCustomerDisplayDesc')}
 				</p>
 			</div>
 			<Switch bind:checked={cfg.showOnCustomerDisplay} />
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
-				<label class="text-[13px] font-semibold">Confirm sale on "Mark paid"</label>
+				<label class="text-[13px] font-semibold">{t('settings.confirmSaleOnPaid')}</label>
 				<p class="text-[11px] text-[var(--ui-text-dimmed)]">
-					Tap once to complete the sale (vs. hold for manual verify)
+					{t('settings.confirmSaleOnPaidDesc')}
 				</p>
 			</div>
 			<Switch bind:checked={cfg.confirmOnPaid} />
@@ -339,6 +415,6 @@
 	</section>
 
 	<div class="flex justify-end">
-		<Button color="primary" icon="lucide:check" onclick={save}>Save changes</Button>
+		<Button color="primary" icon="lucide:check" onclick={save}>{t('common.saveChanges')}</Button>
 	</div>
 </div>

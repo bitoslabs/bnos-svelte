@@ -1,12 +1,13 @@
 <script lang="ts" module>
 	import { tv, type VariantProps } from 'tailwind-variants';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	/**
 	 * Dropdown-menu container. Open state lives in the shared `popovers` store,
 	 * so only one menu is open app-wide and outside-click / Escape closing is
 	 * handled globally in `+layout.svelte`. Pair with `MenuItem` + `MenuDivider`.
 	 *
-	 *   <Menu id="row-1" label="Actions" triggerClass="...">
+	 *   <Menu id="row-1" label={t('common.actions')} triggerClass="...">
 	 *     {#snippet trigger()}<Icon name="lucide:ellipsis-vertical" />{/snippet}
 	 *     <MenuItem icon="lucide:pencil" onclick={edit}>Edit</MenuItem>
 	 *     <MenuItem icon="lucide:copy" onclick={copy}>Duplicate</MenuItem>
@@ -15,7 +16,7 @@
 	 *   </Menu>
 	 */
 	export const menuPanel = tv({
-		base: 'absolute z-50 min-w-52 rounded-xl border border-[var(--ui-border-muted)] bg-[var(--surface-bg)] p-1.5 shadow-[var(--shadow-pop)] outline-none',
+		base: 'absolute z-50 min-w-52 rounded-xl border border-[var(--ui-border)] bg-[var(--surface-bg)] p-1.5 shadow-[var(--shadow-pop)] outline-none',
 		variants: {
 			placement: {
 				'bottom-start': 'top-full left-0 mt-1.5',

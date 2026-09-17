@@ -5,6 +5,7 @@
 	 * filtered by REMOTE_SOURCES. Deep-links into the shared order detail.
 	 */
 	import { resolve } from '$app/paths';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -16,7 +17,7 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { formatMoney, formatInt, relativeTime, titleCase } from '$lib/utils/format';
 	import { toOrderRows, type DashboardOrder } from '$lib/dashboard/metrics';
-	import { TYPE, statusColor, ORDER_SOURCES, sourceLabel, sourceIcon, isRemoteSource } from '$lib/domain';
+	import { TYPE, statusColor, statusLabel, ORDER_SOURCES, sourceLabel, sourceIcon, isRemoteSource } from '$lib/domain';
 
 	const currency = $derived(tenant.state.currency);
 	const orders = $derived(glo.all<DashboardOrder, 'commerce.order'>('commerce.order'));
@@ -50,10 +51,10 @@
 		items: () => filtered,
 		search: () => true,
 		sortOptions: () => [
-			{ key: 'number', label: 'Order', value: (o: (typeof mpRows)[number]) => o.number },
-			{ key: 'status', label: 'Status', value: (o) => o.status },
-			{ key: 'total', label: 'Total', value: (o) => o.total },
-			{ key: 'date', label: 'Date', value: (o) => o.atMs }
+			{ key: 'number', label: t('common.order'), value: (o: (typeof mpRows)[number]) => o.number },
+			{ key: 'status', label: t('common.status'), value: (o) => o.status },
+			{ key: 'total', label: t('common.total'), value: (o) => o.total },
+			{ key: 'date', label: t('common.date'), value: (o) => o.atMs }
 		],
 		defaultSortKey: 'date',
 		defaultSortDir: 'desc',
@@ -82,7 +83,7 @@
 	});
 </script>
 
-<svelte:head><title>Marketplace · Orders</title></svelte:head>
+<svelte:head><title>{t('nav.marketplace')} · {t('nav.marketplaceOrders')}</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">
@@ -96,7 +97,7 @@
 	<!-- Stats -->
 	<div class="grid grid-cols-3 gap-3">
 		<div class="metric-card p-3.5">
-			<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">Revenue</p>
+			<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">{t('dashboard.revenue')}</p>
 			<p class="mt-0.5 text-xl font-black tabular-nums">{formatMoney(revenue, currency)}</p>
 		</div>
 		<div class="metric-card p-3.5">
@@ -104,7 +105,7 @@
 			<p class="mt-0.5 text-xl font-black text-amber-500 tabular-nums">{awaitingFulfillment}</p>
 		</div>
 		<div class="metric-card p-3.5">
-			<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">Pending</p>
+			<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">{t('status.pending')}</p>
 			<p class="mt-0.5 text-xl font-black text-blue-500 tabular-nums">{pending}</p>
 		</div>
 	</div>
@@ -130,7 +131,7 @@
 	{#if mpRows.length === 0}
 		<EmptyState
 			icon="lucide:shopping-bag"
-			title="No channel orders yet"
+			title={t('marketplace.noChannelOrders')}
 			description="Orders received from your connected channels will appear here. Make sure your channels are synced."
 		>
 			{#snippet actions()}
@@ -147,12 +148,12 @@
 			<div class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]">
 				<select bind:value={statusFilter} class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium focus:outline-none">
 					<option value="__all__">All statuses</option>
-					<option value="pending">Pending</option>
+					<option value="pending">{t('status.pending')}</option>
 					<option value="confirmed">Confirmed</option>
 					<option value="preparing">Preparing</option>
 					<option value="ready">Ready</option>
-					<option value="completed">Completed</option>
-					<option value="cancelled">Cancelled</option>
+					<option value="completed">{t('status.completed')}</option>
+					<option value="cancelled">{t('status.cancelled')}</option>
 				</select>
 				<Icon name="lucide:chevron-down" class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]" />
 			</div>
@@ -163,12 +164,12 @@
 				<table class="table-surface w-full text-left">
 					<thead>
 						<tr>
-							<SortableTh column="number" active={controls.sortKey === 'number'} direction={controls.sortDir} applySort={controls.applySort}>Order</SortableTh>
+							<SortableTh column="number" active={controls.sortKey === 'number'} direction={controls.sortDir} applySort={controls.applySort}>{t('common.order')}</SortableTh>
 							<th class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">Channel</th>
-							<th class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">Customer</th>
-							<SortableTh column="status" active={controls.sortKey === 'status'} direction={controls.sortDir} applySort={controls.applySort}>Status</SortableTh>
-							<SortableTh column="total" active={controls.sortKey === 'total'} direction={controls.sortDir} align="right" applySort={controls.applySort}>Total</SortableTh>
-							<SortableTh column="date" active={controls.sortKey === 'date'} direction={controls.sortDir} align="right" applySort={controls.applySort}>Date</SortableTh>
+							<th class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">{t('common.customer')}</th>
+							<SortableTh column="status" active={controls.sortKey === 'status'} direction={controls.sortDir} applySort={controls.applySort}>{t('common.status')}</SortableTh>
+							<SortableTh column="total" active={controls.sortKey === 'total'} direction={controls.sortDir} align="right" applySort={controls.applySort}>{t('common.total')}</SortableTh>
+							<SortableTh column="date" active={controls.sortKey === 'date'} direction={controls.sortDir} align="right" applySort={controls.applySort}>{t('common.date')}</SortableTh>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
@@ -181,7 +182,7 @@
 									</span>
 								</td>
 								<td class="px-5 py-3 text-[var(--ui-text-muted)]">{o.customerName || '—'}</td>
-								<td class="px-5 py-3"><Badge color={statusColor(o.status)}>{titleCase(o.status)}</Badge></td>
+								<td class="px-5 py-3"><Badge color={statusColor(o.status)}>{statusLabel(o.status)}</Badge></td>
 								<td class="px-5 py-3 text-right font-semibold tabular-nums">{formatMoney(o.total, currency)}</td>
 								<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]">{relativeTime(o.atMs)}</td>
 							</tr>

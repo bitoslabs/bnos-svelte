@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -25,6 +26,7 @@
 		type GloObject
 	} from '$lib/domain';
 	import { ORDER_SOURCES, SHIPPING_STATUSES } from '$lib/domain/order-sources';
+	import { statusLabel } from '$lib/domain';
 
 	const id = $derived(page.params.id);
 
@@ -228,23 +230,23 @@
 		if (!order || !loaded) return [];
 		const d = order.data as any;
 		const list: { label: string; oldVal: any; newVal: any }[] = [];
-		if (status !== d.status) list.push({ label: 'Status', oldVal: d.status, newVal: status });
+		if (status !== d.status) list.push({ label: t('common.status'), oldVal: d.status, newVal: status });
 		if (orderType !== (d.type ?? 'takeaway'))
-			list.push({ label: 'Type', oldVal: d.type, newVal: orderType });
+			list.push({ label: t('common.type'), oldVal: d.type, newVal: orderType });
 		if (total !== (d.total ?? 0))
 			list.push({
-				label: 'Total',
+				label: t('common.total'),
 				oldVal: formatMoney(d.total ?? 0, currency),
 				newVal: formatMoney(total, currency)
 			});
 		if (customerName !== (d.customerName ?? ''))
-			list.push({ label: 'Customer', oldVal: d.customerName ?? '—', newVal: customerName || '—' });
+			list.push({ label: t('common.customer'), oldVal: d.customerName ?? '—', newVal: customerName || '—' });
 		if (notes !== (d.notes ?? ''))
-			list.push({ label: 'Notes', oldVal: d.notes ?? '', newVal: notes });
+			list.push({ label: t('common.notes'), oldVal: d.notes ?? '', newVal: notes });
 		if (priority !== (d.priority ?? 'normal'))
 			list.push({ label: 'Priority', oldVal: d.priority ?? 'normal', newVal: priority });
 		if (lines.length !== (d.lines?.length ?? 0))
-			list.push({ label: 'Items', oldVal: d.lines?.length ?? 0, newVal: lines.length });
+			list.push({ label: t('common.items'), oldVal: d.lines?.length ?? 0, newVal: lines.length });
 		return list;
 	});
 
@@ -311,7 +313,7 @@
 	];
 </script>
 
-<svelte:head><title>Edit Order · BNOS</title></svelte:head>
+<svelte:head><title>{t('common.edit') + ' ' + t('common.order')} · {t('common.appName')}</title></svelte:head>
 
 {#if !order}
 	<div class="py-12 text-center text-[var(--ui-text-dimmed)]">
@@ -335,7 +337,7 @@
 						<h1 class="font-display text-xl font-bold tracking-tight">
 							Edit {order.data.orderNumber ?? '#' + (id ?? '').slice(0, 8)}
 						</h1>
-						<Badge color="neutral">{titleCase(order.data.status)}</Badge>
+						<Badge color="neutral">{statusLabel(order.data.status)}</Badge>
 					</div>
 					<p class="text-[12px] text-[var(--ui-text-muted)]">
 						Modify items, quantities, and order details
@@ -343,7 +345,7 @@
 				</div>
 			</div>
 			<Button color="neutral" variant="subtle" size="sm" icon="lucide:eye" href="/orders/{id}"
-				>View</Button
+				>{t('common.view')}</Button
 			>
 		</div>
 
@@ -395,7 +397,7 @@
 						<div>
 							<span
 								class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-								>Source</span
+								>{t('common.source')}</span
 							>
 							<div class="flex flex-wrap gap-1.5">
 								{#each ORDER_SOURCES as os (os.value)}
@@ -526,7 +528,7 @@
 						<div class="grid grid-cols-2 gap-3 px-5 py-4">
 							<label class="block">
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-									>Table</span
+									>{t('common.table')}</span
 								>
 								<Input bind:value={tableId} placeholder="e.g. A1, 5" class="w-full" />
 							</label>
@@ -537,7 +539,7 @@
 								<Input
 									bind:value={covers}
 									type="number"
-									placeholder="Number of guests"
+									placeholder={t('common.numberOfGuests')}
 									min="1"
 									class="w-full"
 								/>
@@ -561,13 +563,13 @@
 									>
 									<Input
 										bind:value={shipping.recipientName}
-										placeholder="Full name"
+										placeholder={t('common.fullName')}
 										class="w-full"
 									/>
 								</label>
 								<label class="block">
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-										>Phone</span
+										>{t('common.phone')}</span
 									>
 									<Input
 										bind:value={shipping.phone}
@@ -579,7 +581,7 @@
 							</div>
 							<label class="block">
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-									>Address</span
+									>{t('common.address')}</span
 								>
 								<Input
 									bind:value={shipping.address}
@@ -592,15 +594,15 @@
 							<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
 								<label class="block">
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-										>City</span
+										>{t('common.city')}</span
 									>
-									<Input bind:value={shipping.city} placeholder="City" class="w-full" />
+									<Input bind:value={shipping.city} placeholder={t('common.city')} class="w-full" />
 								</label>
 								<label class="block">
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 										>State</span
 									>
-									<Input bind:value={shipping.state} placeholder="Province" class="w-full" />
+									<Input bind:value={shipping.state} placeholder={t('common.province')} class="w-full" />
 								</label>
 								<label class="block">
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
@@ -628,7 +630,7 @@
 									>
 									<Input
 										bind:value={shipping.deliveryProvider}
-										placeholder="Provider"
+										placeholder={t('common.provider')}
 										class="w-full"
 									/>
 								</label>
@@ -685,7 +687,7 @@
 										>
 										<Input
 											bind:value={shipping.driverName}
-											placeholder="Driver / courier"
+											placeholder={t('common.driverCourier')}
 											class="w-full"
 										/>
 									</label>
@@ -721,13 +723,13 @@
 									>
 									<Input
 										bind:value={pickup.pickupName}
-										placeholder="Customer name"
+										placeholder={t('common.customerName')}
 										class="w-full"
 									/>
 								</label>
 								<label class="block">
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-										>Phone</span
+										>{t('common.phone')}</span
 									>
 									<Input
 										bind:value={pickup.phone}
@@ -805,7 +807,7 @@
 								color="neutral"
 								variant="subtle"
 								icon="lucide:barcode"
-								onclick={handleBarcodeScan}>Scan</Button
+								onclick={handleBarcodeScan}>{t('common.scan')}</Button
 							>
 						</div>
 
@@ -854,10 +856,10 @@
 							<table class="w-full text-left text-[13px]">
 								<thead>
 									<tr>
-										<th class="px-3 py-2.5">Item</th>
-										<th class="px-3 py-2.5 text-center">Qty</th>
-										<th class="px-3 py-2.5 text-right">Price</th>
-										<th class="px-3 py-2.5 text-right">Total</th>
+										<th class="px-3 py-2.5">{t('common.item')}</th>
+										<th class="px-3 py-2.5 text-center">{t('common.qty')}</th>
+										<th class="px-3 py-2.5 text-right">{t('common.price')}</th>
+										<th class="px-3 py-2.5 text-right">{t('common.total')}</th>
 										<th class="w-10 px-3 py-2.5"></th>
 									</tr>
 								</thead>
@@ -960,7 +962,7 @@
 				<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
 					<div class="flex items-center gap-2 px-5 py-3">
 						<Icon name="lucide:clock" class="size-4 text-primary-500" />
-						<h2 class="font-display text-[14px] font-semibold">Status</h2>
+						<h2 class="font-display text-[14px] font-semibold">{t('common.status')}</h2>
 					</div>
 					<div class="px-5 py-4">
 						<span
@@ -992,12 +994,12 @@
 					</div>
 					<div class="space-y-2.5 px-5 py-4 text-[13px]">
 						<div class="flex justify-between">
-							<span class="text-[var(--ui-text-muted)]">Subtotal</span><span class="tabular-nums"
+							<span class="text-[var(--ui-text-muted)]">{t('common.subtotal')}</span><span class="tabular-nums"
 								>{formatMoney(subtotal, currency ?? 'USD')}</span
 							>
 						</div>
 						<div class="flex items-center justify-between gap-3">
-							<span class="text-[var(--ui-text-muted)]">Discount</span>
+							<span class="text-[var(--ui-text-muted)]">{t('common.discount')}</span>
 							<input
 								bind:value={discountAmount}
 								type="number"
@@ -1026,7 +1028,7 @@
 						<div
 							class="flex justify-between border-t border-[var(--ui-border-muted)] pt-2.5 font-display text-[16px] font-bold"
 						>
-							<span>Total</span><span class="tabular-nums"
+							<span>{t('common.total')}</span><span class="tabular-nums"
 								>{formatMoney(total, currency ?? 'USD')}</span
 							>
 						</div>
@@ -1068,7 +1070,7 @@
 						{saving ? 'Saving…' : 'Save Changes'}
 					</Button>
 					<Button color="neutral" variant="ghost" block onclick={() => goto(`/orders/${id}`)}
-						>Cancel</Button
+						>{t('common.cancel')}</Button
 					>
 				</div>
 			</div>

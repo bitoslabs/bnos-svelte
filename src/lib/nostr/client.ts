@@ -11,13 +11,17 @@ import {
 } from '@bitos/bnos-core';
 import { relays } from './relay.svelte';
 
-/** Preconnect to the configured relays (warms sockets). */
-export async function warmRelays() {
+/** Preconnect to relays before a foreground read/write. */
+export async function warmRelays(strategy: 'all' | 'primary-first' = 'all') {
 	if (!relays.online) return;
 	try {
-		const targets = relays.readableNormalized.length
+		const allTargets = relays.readableNormalized.length
 			? relays.readableNormalized
 			: relays.writableNormalized;
+		const primaryTargets = relays.primaryReadableNormalized.length
+			? relays.primaryReadableNormalized
+			: relays.primaryWritableNormalized;
+		const targets = strategy === 'primary-first' && primaryTargets.length ? primaryTargets : allTargets;
 		await preconnectRelays(targets);
 	} catch {
 		/* best effort */
@@ -32,7 +36,22 @@ export async function fetchEvents(filter: NostrFilter): Promise<NostrEvent[]> {
 	try {
 		return await queryRelays(relays.readableNormalized, filter);
 	} catch (e) {
-		console.warn('[nostr] query failed', e);
+		return [];
+	}
+}
+
+/** Query the primary readable relay first, then fall back to the others. */
+export async function fetchEventsPrimaryFirst(filter: NostrFilter): Promise<NostrEvent[]> {
+	if (!relays.online || !relays.readableNormalized.length) return [];
+	try {
+		const primary = relays.primaryReadableNormalized;
+		const fallback = relays.readableNormalized.filter((url) => !primary.includes(url));
+		if (primary.length) {
+			const primaryEvents = await queryRelays(primary, filter, { maxWaitMs: 1800 });
+			if (primaryEvents.length || !fallback.length) return primaryEvents;
+		}
+		return fallback.length ? await queryRelays(fallback, filter) : [];
+	} catch (e) {
 		return [];
 	}
 }
@@ -52,7 +71,6 @@ export async function sendEvent(event: NostrEvent): Promise<boolean> {
 		}
 		return await publishToRelays(event, remaining.length ? remaining : relays.writableNormalized);
 	} catch (e) {
-		console.warn('[nostr] publish failed', e);
 		return false;
 	}
 }

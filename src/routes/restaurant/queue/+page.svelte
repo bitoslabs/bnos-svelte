@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -88,9 +89,9 @@
 	})());
 
 	const tabs = [
-		{ key: 'waiting' as const, label: 'Waiting', count: stats.waiting },
-		{ key: 'seated' as const, label: 'Seated', count: stats.seated },
-		{ key: 'all' as const, label: 'All', count: queue.length }
+		{ key: 'waiting' as const, label: t('restaurant.waiting'), count: stats.waiting },
+		{ key: 'seated' as const, label: t('restaurant.seated'), count: stats.seated },
+		{ key: 'all' as const, label: t('common.all'), count: queue.length }
 	];
 
 	// ── Actions ──
@@ -164,7 +165,7 @@
 	void tick;
 </script>
 
-<svelte:head><title>BNOS · Queue</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.orderQueue')}</title></svelte:head>
 
 <div class="space-y-4">
 	<!-- Header -->
@@ -173,7 +174,7 @@
 			<h1 class="font-display text-xl font-bold tracking-tight">Waitlist &amp; queue</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Manage parties waiting for a table</p>
 		</div>
-		<Button color="primary" icon="lucide:user-plus" onclick={openAdd}>Add party</Button>
+		<Button color="primary" icon="lucide:user-plus" onclick={openAdd}>{t('common.add') + ' ' + t('common.party')}</Button>
 	</div>
 
 	<!-- Stats bar -->
@@ -214,7 +215,7 @@
 
 	<!-- Queue list -->
 	{#if filtered.length === 0}
-		<EmptyState icon="lucide:clipboard-list" title="Queue is empty" description="Add parties to the waitlist when you're at capacity." />
+		<EmptyState icon="lucide:clipboard-list" title={t('common.queueEmpty')} description="Add parties to the waitlist when you're at capacity." />
 	{:else}
 		<ol class="space-y-2">
 			{#each filtered as entry, i (entry.id)}
@@ -266,16 +267,16 @@
 					<!-- Actions -->
 					{#if entry.status === 'waiting'}
 						<div class="flex shrink-0 items-center gap-1">
-							<Button size="icon-sm" variant="ghost" title="Call" onclick={() => callParty(entry.id)}>
+							<Button size="icon-sm" variant="ghost" title={t('restaurant.call')} onclick={() => callParty(entry.id)}>
 								<Icon name="lucide:bell" class="size-4" />
 							</Button>
 							<Button size="sm" color="primary" variant="soft" onclick={() => seatParty(entry.id)}>Seat</Button>
-							<Button size="icon-sm" variant="ghost" color="error" title="Cancel" onclick={() => cancelParty(entry.id)}>
+							<Button size="icon-sm" variant="ghost" color="error" title={t('common.cancel')} onclick={() => cancelParty(entry.id)}>
 								<Icon name="lucide:x" class="size-4" />
 							</Button>
 						</div>
 					{:else}
-						<Button size="icon-sm" variant="ghost" color="error" title="Remove" onclick={() => removeEntry(entry.id)}>
+						<Button size="icon-sm" variant="ghost" color="error" title={t('common.remove')} onclick={() => removeEntry(entry.id)}>
 							<Icon name="lucide:trash-2" class="size-4" />
 						</Button>
 					{/if}
@@ -286,15 +287,15 @@
 </div>
 
 <!-- Add party dialog -->
-<Dialog bind:open={dialogOpen} title="Add party to queue" size="md">
+<Dialog bind:open={dialogOpen} title={t('restaurant.addParty')} size="md">
 	<div class="space-y-3">
 		<div>
-			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</label>
+			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</label>
 			<Input bind:value={formName} placeholder="Party name" />
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<div>
-				<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</label>
+				<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.phone')}</label>
 				<Input bind:value={formPhone} placeholder="+856…" icon="lucide:phone" />
 			</div>
 			<div>
@@ -312,7 +313,7 @@
 		</div>
 	</div>
 	{#snippet footer()}
-		<Button variant="ghost" onclick={() => (dialogOpen = false)}>Cancel</Button>
+		<Button variant="ghost" onclick={() => (dialogOpen = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" onclick={addParty}>Add to queue</Button>
 	{/snippet}
 </Dialog>

@@ -5,6 +5,7 @@
 	 * order detail for full shipping/tracking edits.
 	 */
 	import { resolve } from '$app/paths';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
@@ -105,7 +106,7 @@
 	const totalToShip = $derived(rowsFor('pending').length + rowsFor('packed').length);
 </script>
 
-<svelte:head><title>Marketplace · Shipping</title></svelte:head>
+<svelte:head><title>{t('nav.marketplace')} · {t('nav.shipping')}</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">
@@ -120,7 +121,7 @@
 	{#if fulfillable.length === 0}
 		<EmptyState
 			icon="lucide:truck"
-			title="Nothing to fulfill"
+			title={t('restaurant.nothingToFulfill')}
 			description="Channel orders awaiting shipment will appear here in a board. Connect a channel and receive orders to get started."
 		/>
 	{:else}

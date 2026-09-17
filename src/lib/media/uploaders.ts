@@ -5,7 +5,7 @@
  * module fully unit-testable (see `uploaders.test.ts`) and reusable from any
  * store, route, or component.
  *
- * Three upload paths are supported:
+ * Four upload paths are supported:
  *
  *   • Cloudinary  — unsigned "upload preset" flow (safest for browsers; the
  *                   secret never ships to the client) OR signed uploads using
@@ -14,9 +14,10 @@
  *                   Crypto. Works against AWS S3 and any S3-compatible store
  *                   (Cloudflare R2, MinIO, Backblaze B2, …). CORS must allow
  *                   PUT from this origin.
- *   • Server      — POST `/api/media/upload`, which signs + forwards to
- *                   Cloudinary using server-side env vars. Used automatically
- *                   when no personal provider is configured.
+ *   • Blossom     — authenticated direct PUT to the free nostr.build Blossom
+ *                   server. This is the no-configuration default.
+ *   • Server      — optional POST `/api/media/upload`, which signs + forwards
+ *                   to Cloudinary using server-side env vars.
  *
  * Ported from bitos-nostr, adapted to BNOS's org-scoped (not pubkey-scoped)
  * folder layout: `<folder>/bnos/<owner|anonymous>/<purpose>`.
@@ -24,7 +25,7 @@
 
 export type MediaProviderId = 'cloudinary' | 's3';
 /** Includes the implicit `'server'` path returned by the fallback endpoint. */
-export type UploadedMediaProviderId = MediaProviderId | 'server';
+export type UploadedMediaProviderId = MediaProviderId | 'blossom' | 'server';
 
 /** Semantic bucket the file belongs to — drives the storage folder + validation. */
 export type UploadPurpose =
@@ -70,7 +71,7 @@ export interface S3Config {
 }
 
 export interface MediaSettings {
-	/** `'none'` routes uploads through the server fallback endpoint. */
+	/** `'none'` routes uploads to the free Blossom server. */
 	defaultProvider: MediaProviderId | 'none';
 	cloudinary: CloudinaryConfig;
 	s3: S3Config;
@@ -84,6 +85,11 @@ export interface UploadedMedia {
 	provider: UploadedMediaProviderId;
 }
 
+/** Free, public Blossom service used when no personal media provider is selected. */
+export const FREE_BLOSSOM_SERVER = 'https://blossom.nostr.build';
+
+export type BlossomAuthorization = (sha256: string) => Promise<string>;
+
 export function classifyMime(mime: string): UploadedMedia['kind'] {
 	if (mime.startsWith('image/')) return 'image';
 	if (mime.startsWith('video/')) return 'video';
@@ -96,6 +102,72 @@ export function humanBytes(n: number): string {
 	const units = ['B', 'KB', 'MB', 'GB'];
 	const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
 	return `${(n / Math.pow(1024, i)).toFixed(i ? 1 : 0)} ${units[i]}`;
+}
+
+/* ========================================================================== *
+   Blossom — authenticated direct PUT (BUD-02 / BUD-11)
+ * ========================================================================== */
+
+/** SHA-256 hex of a file, used both for BUD-11 authorization and the upload header. */
+export async function sha256File(file: File): Promise<string> {
+	return toHex(await crypto.subtle.digest('SHA-256', await file.arrayBuffer()));
+}
+
+/**
+ * Upload a binary file to a Blossom server. The server returns a BUD-02 blob
+ * descriptor, whose URL is the stable, content-addressed URL to store.
+ */
+export async function uploadToBlossom(
+	file: File,
+	createAuthorization: BlossomAuthorization,
+	server = FREE_BLOSSOM_SERVER
+): Promise<UploadedMedia> {
+	if (!file.size) throw new Error('Uploaded file is empty');
+	const baseUrl = server.trim().replace(/\/+$/, '');
+	if (!baseUrl) throw new Error('Blossom server is not configured');
+
+	const sha256 = await sha256File(file);
+	const authorization = await createAuthorization(sha256);
+	const res = await fetch(`${baseUrl}/upload`, {
+		method: 'PUT',
+		headers: {
+			Authorization: authorization,
+			'Content-Type': file.type || 'application/octet-stream',
+			'X-SHA-256': sha256
+		},
+		body: file
+	});
+
+	let payload: { url?: unknown; type?: unknown; size?: unknown; message?: unknown } = {};
+	let responseBody = '';
+	try {
+		responseBody = await res.text();
+		payload = JSON.parse(responseBody) as typeof payload;
+	} catch {
+		// Some Blossom servers return a plain-text diagnostic on failure.
+		payload.message = responseBody || res.statusText;
+	}
+
+	if (!res.ok) {
+		const detail =
+			(res.headers.get('X-Reason') ||
+				(typeof payload.message === 'string' && payload.message) ||
+				`${res.status} ${res.statusText}`) ??
+			`${res.status} ${res.statusText}`;
+		throw new Error(`Blossom upload failed: ${detail}`);
+	}
+	if (typeof payload.url !== 'string' || !payload.url) {
+		throw new Error('Blossom upload succeeded without a blob URL');
+	}
+
+	const mimeType = typeof payload.type === 'string' && payload.type ? payload.type : file.type || 'application/octet-stream';
+	return {
+		url: payload.url,
+		kind: classifyMime(mimeType),
+		mimeType,
+		bytes: typeof payload.size === 'number' ? payload.size : file.size,
+		provider: 'blossom'
+	};
 }
 
 /* ========================================================================== *
@@ -449,7 +521,7 @@ export async function uploadWithProvider(
 	throw new Error(`Unknown media provider: ${provider}`);
 }
 
-/** Whether the configured/default provider would route through the server fallback. */
+/** Whether the configured/default provider would route through the free Blossom default. */
 export function isServerFallback(settings: MediaSettings): boolean {
 	const id = settings.defaultProvider;
 	if (id === 'none') return true;

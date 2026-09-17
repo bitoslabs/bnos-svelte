@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -254,31 +255,31 @@
 	const tabs: { id: Tab; label: string; icon: string; count: () => number }[] = [
 		{
 			id: 'overview',
-			label: 'Overview',
+			label: t('inventory.overview'),
 			icon: 'lucide:layout-dashboard',
 			count: () => trackedProducts.length
 		},
 		{
 			id: 'counts',
-			label: 'Counts',
+			label: t('inventory.counts'),
 			icon: 'lucide:clipboard-check',
 			count: () => countSessions.length
 		},
 		{
 			id: 'adjustments',
-			label: 'Adjustments',
+			label: t('inventory.adjustments'),
 			icon: 'lucide:arrow-up-down',
 			count: () => glo.all(TYPE.adjustment).length
 		},
 		{
 			id: 'suppliers',
-			label: 'Suppliers',
+			label: t('inventory.suppliers'),
 			icon: 'lucide:truck',
 			count: () => glo.all(TYPE.supplier).length
 		},
 		{
 			id: 'orders',
-			label: 'Purchase Orders',
+			label: t('inventory.purchaseOrders'),
 			icon: 'lucide:clipboard-list',
 			count: () => glo.all(TYPE.purchaseOrder).length
 		}
@@ -292,8 +293,8 @@
 		items: () => adjustments,
 		search: (a, q) => (a.data.productName ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'product', label: 'Product', value: (a) => a.data.productName },
-			{ key: 'date', label: 'Date', value: (a) => a.data.occurredAt }
+			{ key: 'product', label: t('common.product'), value: (a) => a.data.productName },
+			{ key: 'date', label: t('common.date'), value: (a) => a.data.occurredAt }
 		],
 		defaultSortKey: 'date',
 		defaultSortDir: 'desc',
@@ -304,8 +305,8 @@
 		items: () => suppliers,
 		search: (s, q) => (s.data.name ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'name', label: 'Name', value: (s) => s.data.name },
-			{ key: 'status', label: 'Status', value: (s) => s.data.status ?? 'active' }
+			{ key: 'name', label: t('common.name'), value: (s) => s.data.name },
+			{ key: 'status', label: t('common.status'), value: (s) => s.data.status ?? 'active' }
 		],
 		defaultSortKey: 'name',
 		defaultViewMode: 'table',
@@ -316,8 +317,8 @@
 		search: (o, q) => (o.data.number ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
 			{ key: 'number', label: 'Number', value: (o) => o.data.number },
-			{ key: 'total', label: 'Total', value: (o) => o.data.total },
-			{ key: 'status', label: 'Status', value: (o) => o.data.status }
+			{ key: 'total', label: t('common.total'), value: (o) => o.data.total },
+			{ key: 'status', label: t('common.status'), value: (o) => o.data.status }
 		],
 		defaultSortKey: 'number',
 		defaultSortDir: 'desc',
@@ -469,12 +470,12 @@
 	});
 </script>
 
-<svelte:head><title>BNOS · Inventory</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.inventory')}</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Inventory</h1>
+			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.inventory')}</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
 				Stock, counts, suppliers & purchase orders
 			</p>
@@ -484,7 +485,7 @@
 				>New adjustment</Button
 			>
 		{:else if tab === 'counts'}
-			<Button color="primary" icon="lucide:plus" onclick={newCount}>New Count</Button>
+			<Button color="primary" icon="lucide:plus" onclick={newCount}>{t('common.new') + ' ' + t('common.count')}</Button>
 		{:else}
 			<Button color="primary" icon="lucide:plus" onclick={() => openCreate(tab)}
 				>New {tab === 'adjustments'
@@ -583,7 +584,7 @@
 		{#if trackedProducts.length === 0}
 			<EmptyState
 				icon="lucide:layout-dashboard"
-				title="No tracked products"
+				title={t('inventory.noTrackedProducts')}
 				description="Enable 'Track inventory' on products to see stock overview."
 			></EmptyState>
 		{:else}
@@ -600,7 +601,7 @@
 				<Select
 					bind:value={overviewFilter}
 					options={[
-						{ value: 'all', label: 'All' },
+						{ value: 'all', label: t('common.all') },
 						{ value: 'in_stock', label: 'In Stock' },
 						{ value: 'low_stock', label: 'Low Stock' },
 						{ value: 'out_of_stock', label: 'Out of Stock' }
@@ -611,8 +612,8 @@
 			{#if overviewList.length === 0}
 				<EmptyState
 					icon="lucide:search-x"
-					title="No products match"
-					description="Try a different search or filter."
+					title={t('catalog.noProductsMatch')}
+					description={t('common.tryDifferentSearch')}
 				/>
 			{:else}
 				<div class="data-panel">
@@ -620,12 +621,12 @@
 						<table class="table-surface w-full text-left">
 							<thead
 								><tr>
-									<th class="px-5 py-2.5">Product</th>
-									<th class="px-5 py-2.5">SKU</th>
-									<th class="px-5 py-2.5 text-right">Price</th>
-									<th class="px-5 py-2.5 text-right">Stock</th>
-									<th class="px-5 py-2.5">Status</th>
-									<th class="px-5 py-2.5 text-right">Value</th>
+									<th class="px-5 py-2.5">{t('common.product')}</th>
+									<th class="px-5 py-2.5">{t('common.sku')}</th>
+									<th class="px-5 py-2.5 text-right">{t('common.price')}</th>
+									<th class="px-5 py-2.5 text-right">{t('common.stock')}</th>
+									<th class="px-5 py-2.5">{t('common.status')}</th>
+									<th class="px-5 py-2.5 text-right">{t('common.value')}</th>
 									<th class="w-10 px-5 py-2.5"></th>
 								</tr></thead
 							>
@@ -695,11 +696,11 @@
 		{#if !activeCountId && countSessions.length === 0}
 			<EmptyState
 				icon="lucide:clipboard-check"
-				title="No stock counts"
+				title={t('inventory.noStockCounts')}
 				description="Start a stocktake session to reconcile inventory."
 			>
 				{#snippet actions()}<Button color="primary" size="sm" icon="lucide:plus" onclick={newCount}
-						>New Count</Button
+						>{t('common.new') + ' ' + t('common.count')}</Button
 					>{/snippet}
 			</EmptyState>
 		{:else if activeCountId && activeCount()}
@@ -715,7 +716,7 @@
 				</div>
 				<div class="flex gap-2">
 					<Button color="neutral" variant="ghost" onclick={() => (activeCountId = null)}
-						>Back</Button
+						>{t('common.back')}</Button
 					>
 					<Button color="primary" icon="lucide:check" onclick={completeCount}>Complete</Button>
 				</div>
@@ -724,10 +725,10 @@
 				<table class="table-surface w-full text-left">
 					<thead
 						><tr>
-							<th class="px-5 py-2.5">Product</th>
-							<th class="px-5 py-2.5 text-right">Expected</th>
-							<th class="px-5 py-2.5 text-right">Counted</th>
-							<th class="px-5 py-2.5 text-right">Diff</th>
+							<th class="px-5 py-2.5">{t('common.product')}</th>
+							<th class="px-5 py-2.5 text-right">{t('common.expected')}</th>
+							<th class="px-5 py-2.5 text-right">{t('common.counted')}</th>
+							<th class="px-5 py-2.5 text-right">{t('common.diff')}</th>
 						</tr></thead
 					>
 					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
@@ -770,10 +771,10 @@
 				<table class="table-surface w-full text-left">
 					<thead
 						><tr>
-							<th class="px-5 py-2.5">Session</th>
-							<th class="px-5 py-2.5">Date</th>
-							<th class="px-5 py-2.5">Status</th>
-							<th class="px-5 py-2.5 text-right">Progress</th>
+							<th class="px-5 py-2.5">{t('common.session')}</th>
+							<th class="px-5 py-2.5">{t('common.date')}</th>
+							<th class="px-5 py-2.5">{t('common.status')}</th>
+							<th class="px-5 py-2.5 text-right">{t('common.progress')}</th>
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
 					>
@@ -833,7 +834,7 @@
 		{#if adjCtrl.list.length === 0}
 			<EmptyState
 				icon="lucide:arrow-up-down"
-				title="No stock adjustments"
+				title={t('inventory.noStockAdjustments')}
 				description="Record increases or decreases to keep stock accurate."
 			>
 				{#snippet actions()}<Button
@@ -852,15 +853,15 @@
 								column="product"
 								active={adjCtrl.sortKey === 'product'}
 								direction={adjCtrl.sortDir}
-								applySort={adjCtrl.applySort}>Product</SortableTh
+								applySort={adjCtrl.applySort}>{t('common.product')}</SortableTh
 							>
-							<th class="px-5 py-2.5">Type</th><th class="px-5 py-2.5 text-right">Qty</th>
+							<th class="px-5 py-2.5">{t('common.type')}</th><th class="px-5 py-2.5 text-right">{t('common.qty')}</th>
 							<SortableTh
 								column="date"
 								active={adjCtrl.sortKey === 'date'}
 								direction={adjCtrl.sortDir}
 								align="right"
-								applySort={adjCtrl.applySort}>When</SortableTh
+								applySort={adjCtrl.applySort}>{t('common.when')}</SortableTh
 							>
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
@@ -888,7 +889,7 @@
 										actions={[
 											[
 												{
-													label: 'View raw',
+													label: t('common.viewRaw'),
 													icon: 'lucide:code',
 													onSelect: () => { rawItem = glo.get(TYPE.adjustment, a.id); rawOpen = true; }
 												}
@@ -927,14 +928,14 @@
 		{#if supCtrl.list.length === 0}
 			<EmptyState
 				icon="lucide:truck"
-				title="No suppliers"
+				title={t('inventory.noSuppliers')}
 				description="Add suppliers to raise purchase orders."
 			>
 				{#snippet actions()}<Button
 						color="primary"
 						size="sm"
 						icon="lucide:plus"
-						onclick={() => openCreate('suppliers')}>Add supplier</Button
+						onclick={() => openCreate('suppliers')}>{t('common.add') + ' ' + t('common.supplier')}</Button
 					>{/snippet}
 			</EmptyState>
 		{:else}
@@ -946,14 +947,14 @@
 								column="name"
 								active={supCtrl.sortKey === 'name'}
 								direction={supCtrl.sortDir}
-								applySort={supCtrl.applySort}>Supplier</SortableTh
+								applySort={supCtrl.applySort}>{t('common.supplier')}</SortableTh
 							>
-							<th class="px-5 py-2.5">Contact</th>
+							<th class="px-5 py-2.5">{t('common.contact')}</th>
 							<SortableTh
 								column="status"
 								active={supCtrl.sortKey === 'status'}
 								direction={supCtrl.sortDir}
-								applySort={supCtrl.applySort}>Status</SortableTh
+								applySort={supCtrl.applySort}>{t('common.status')}</SortableTh
 							>
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
@@ -981,7 +982,7 @@
 										actions={[
 											[
 												{
-													label: 'View raw',
+													label: t('common.viewRaw'),
 													icon: 'lucide:code',
 													onSelect: () => { rawItem = glo.get(TYPE.supplier, s.id); rawOpen = true; }
 												}
@@ -1020,14 +1021,14 @@
 		{#if poCtrl.list.length === 0}
 			<EmptyState
 				icon="lucide:clipboard-list"
-				title="No purchase orders"
+				title={t('inventory.noPurchaseOrders')}
 				description="Raise POs to your suppliers."
 			>
 				{#snippet actions()}<Button
 						color="primary"
 						size="sm"
 						icon="lucide:plus"
-						onclick={() => openCreate('orders')}>New order</Button
+						onclick={() => openCreate('orders')}>{t('common.new') + ' ' + t('common.order')}</Button
 					>{/snippet}
 			</EmptyState>
 		{:else}
@@ -1039,21 +1040,21 @@
 								column="number"
 								active={poCtrl.sortKey === 'number'}
 								direction={poCtrl.sortDir}
-								applySort={poCtrl.applySort}>PO</SortableTh
+								applySort={poCtrl.applySort}>{t('common.po')}</SortableTh
 							>
-							<th class="px-5 py-2.5">Supplier</th>
+							<th class="px-5 py-2.5">{t('common.supplier')}</th>
 							<SortableTh
 								column="status"
 								active={poCtrl.sortKey === 'status'}
 								direction={poCtrl.sortDir}
-								applySort={poCtrl.applySort}>Status</SortableTh
+								applySort={poCtrl.applySort}>{t('common.status')}</SortableTh
 							>
 							<SortableTh
 								column="total"
 								active={poCtrl.sortKey === 'total'}
 								direction={poCtrl.sortDir}
 								align="right"
-								applySort={poCtrl.applySort}>Total</SortableTh
+								applySort={poCtrl.applySort}>{t('common.total')}</SortableTh
 							>
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
@@ -1074,7 +1075,7 @@
 										actions={[
 											[
 												{
-													label: 'View raw',
+													label: t('common.viewRaw'),
 													icon: 'lucide:code',
 													onSelect: () => { rawItem = glo.get(TYPE.purchaseOrder, o.id); rawOpen = true; }
 												}
@@ -1101,7 +1102,7 @@
 </div>
 
 <!-- Quick Adjust Dialog -->
-<Dialog bind:open={adjDlgOpen} title="Quick Adjust">
+<Dialog bind:open={adjDlgOpen} title={t('common.quickAdjust')}>
 	<div class="space-y-3">
 		<div class="text-[13px] font-semibold text-[var(--ui-text-muted)]">{adjProduct.name}</div>
 		{#if adjProduct.id}
@@ -1134,29 +1135,29 @@
 				onclick={() => (adjDir = 'increase')}
 				class="flex-1 rounded-md px-3 py-1.5 text-[12px] font-semibold {adjDir === 'increase'
 					? 'bg-[var(--ui-bg-elevated)]'
-					: 'text-[var(--ui-text-muted)]'}">Increase</button
+					: 'text-[var(--ui-text-muted)]'}">{t('common.increase')}</button
 			>
 			<button
 				type="button"
 				onclick={() => (adjDir = 'decrease')}
 				class="flex-1 rounded-md px-3 py-1.5 text-[12px] font-semibold {adjDir === 'decrease'
 					? 'bg-[var(--ui-bg-elevated)]'
-					: 'text-[var(--ui-text-muted)]'}">Decrease</button
+					: 'text-[var(--ui-text-muted)]'}">{t('common.decrease')}</button
 			>
 		</div>
 		<label class="block"
 			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Quantity</span
+				>{t('common.quantity')}</span
 			><Input bind:value={adjQty} type="number" min="0" class="w-full" /></label
 		>
 		<label class="block"
-			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Reason</span
+			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.reason')}</span
 			><Input bind:value={adjReason} class="w-full" /></label
 		>
 	</div>
 	{#snippet footer()}<Button color="neutral" variant="ghost" onclick={() => (adjDlgOpen = false)}
-			>Cancel</Button
-		><Button color="primary" icon="lucide:check" onclick={saveQuickAdjust}>Save</Button>{/snippet}
+			>{t('common.cancel')}</Button
+		><Button color="primary" icon="lucide:check" onclick={saveQuickAdjust}>{t('common.save')}</Button>{/snippet}
 </Dialog>
 
 <!-- Create Dialog (adjustments / suppliers / orders) -->
@@ -1165,7 +1166,7 @@
 		<div class="space-y-3">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Product</span
+					>{t('common.product')}</span
 				>
 				{#if adjSelectedProduct}
 					<div
@@ -1225,7 +1226,7 @@
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Type</span
+						>{t('common.type')}</span
 					>
 					<div class="segmented flex gap-1 p-1">
 						<button
@@ -1233,44 +1234,44 @@
 							onclick={() => (aType = 'increase')}
 							class="flex-1 rounded-md px-3 py-1.5 text-[12px] font-semibold {aType === 'increase'
 								? 'bg-[var(--ui-bg-elevated)]'
-								: 'text-[var(--ui-text-muted)]'}">Increase</button
+								: 'text-[var(--ui-text-muted)]'}">{t('common.increase')}</button
 						>
 						<button
 							type="button"
 							onclick={() => (aType = 'decrease')}
 							class="flex-1 rounded-md px-3 py-1.5 text-[12px] font-semibold {aType === 'decrease'
 								? 'bg-[var(--ui-bg-elevated)]'
-								: 'text-[var(--ui-text-muted)]'}">Decrease</button
+								: 'text-[var(--ui-text-muted)]'}">{t('common.decrease')}</button
 						>
 					</div>
 				</label>
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Quantity</span
+						>{t('common.quantity')}</span
 					><Input bind:value={aQty} type="number" min="0" class="w-full" /></label
 				>
 			</div>
 			<label class="block"
 				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Reason</span
+					>{t('common.reason')}</span
 				><Input bind:value={aReason} class="w-full" /></label
 			>
 		</div>
 	{:else if dlgKind === 'suppliers'}
 		<div class="space-y-3">
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Name</span
+				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span
 				><Input bind:value={sName} class="w-full" /></label
 			>
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Contact</span
+						>{t('common.contact')}</span
 					><Input bind:value={sContact} class="w-full" /></label
 				>
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Phone</span
+						>{t('common.phone')}</span
 					><Input bind:value={sPhone} class="w-full" /></label
 				>
 			</div>
@@ -1284,7 +1285,7 @@
 		<div class="space-y-3">
 			<label class="block"
 				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Supplier</span
+					>{t('common.supplier')}</span
 				><Input bind:value={poSupplier} list="sups" class="w-full" /><datalist id="sups"
 					>{#each suppliers as s (s.id)}<option value={s.data.name}></option>{/each}</datalist
 				></label
@@ -1302,8 +1303,8 @@
 		</div>
 	{/if}
 	{#snippet footer()}<Button color="neutral" variant="ghost" onclick={() => (dlgOpen = false)}
-			>Cancel</Button
-		><Button color="primary" icon="lucide:check" onclick={save}>Save</Button>{/snippet}
+			>{t('common.cancel')}</Button
+		><Button color="primary" icon="lucide:check" onclick={save}>{t('common.save')}</Button>{/snippet}
 </Dialog>
 
 <RawDataDialog bind:open={rawOpen} data={rawItem} title="Inventory Raw Data" />

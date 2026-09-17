@@ -5,6 +5,7 @@
 	 * same object so the conversation stays with the review.
 	 */
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -84,12 +85,12 @@
 	}
 </script>
 
-<svelte:head><title>Marketplace · Reviews</title></svelte:head>
+<svelte:head><title>{t('nav.marketplace')} · {t('nav.reviews')}</title></svelte:head>
 
 <div class="space-y-5">
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
-			<h2 class="font-display text-lg font-bold tracking-tight">Reviews</h2>
+			<h2 class="font-display text-lg font-bold tracking-tight">{t('nav.reviews')}</h2>
 			<p class="text-[12px] text-[var(--ui-text-muted)]">{reviews.length} reviews · {pendingCount} need attention</p>
 		</div>
 	</div>
@@ -97,7 +98,7 @@
 	{#if reviews.length === 0}
 		<EmptyState
 			icon="lucide:star"
-			title="No reviews yet"
+			title={t('marketplace.noReviews')}
 			description="Customer reviews synced from your channels and captured after purchase will appear here."
 		/>
 	{:else}
@@ -129,7 +130,7 @@
 		<!-- Filters -->
 		<div class="flex flex-wrap items-center gap-2">
 			<div class="flex items-center gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
-				<button type="button" onclick={() => (statusFilter = '__all__')} class="rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all {statusFilter === '__all__' ? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm' : 'text-[var(--ui-text-muted)]'}">All</button>
+				<button type="button" onclick={() => (statusFilter = '__all__')} class="rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all {statusFilter === '__all__' ? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm' : 'text-[var(--ui-text-muted)]'}">{t('common.all')}</button>
 				{#each REVIEW_STATUSES as s (s.value)}
 					<button type="button" onclick={() => (statusFilter = statusFilter === s.value ? '__all__' : s.value)} class="rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {statusFilter === s.value ? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm' : 'text-[var(--ui-text-muted)]'}">{s.label}</button>
 				{/each}
@@ -196,7 +197,7 @@
 								<Icon name={r.data.status === 'hidden' ? 'lucide:eye' : 'lucide:eye-off'} class="size-3.5" />
 							</Button>
 							{#if r.data.status !== 'flagged'}
-								<Button size="sm" color="neutral" variant="ghost" icon="lucide:flag" title="Flag" onclick={() => setStatus(r.id, r.data, 'flagged')} />
+								<Button size="sm" color="neutral" variant="ghost" icon="lucide:flag" title={t('marketplace.flag')} onclick={() => setStatus(r.id, r.data, 'flagged')} />
 							{/if}
 							<Button size="sm" color="primary" variant="subtle" icon="lucide:reply" onclick={() => openReply(r.id, r.data)}>
 								{r.data.reply ? 'Edit reply' : 'Reply'}
@@ -210,7 +211,7 @@
 </div>
 
 <!-- Reply modal -->
-<Dialog bind:open={replyOpen} title="Reply to review" size="md">
+<Dialog bind:open={replyOpen} title={t('common.replyToReview')} size="md">
 	{#if replyId}
 		{@const review = reviews.find((r) => r.id === replyId)?.data}
 		<div class="space-y-3">
@@ -230,7 +231,7 @@
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (replyOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (replyOpen = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" icon="lucide:send" disabled={!replyText.trim() || saving} onclick={saveReply}>{saving ? 'Posting…' : 'Post reply'}</Button>
 	{/snippet}
 </Dialog>

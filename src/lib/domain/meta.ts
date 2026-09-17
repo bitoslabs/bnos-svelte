@@ -3,6 +3,8 @@
  * view-layer constants that depend on the standardized domain unions.
  */
 import type { ExpenseCategory } from './types';
+import { t } from '$lib/i18n/i18n.svelte';
+import { titleCase } from '$lib/utils/format';
 
 export type BadgeColor = 'success' | 'info' | 'warning' | 'error' | 'neutral' | 'primary';
 
@@ -54,6 +56,17 @@ export function statusColor(status: string): 'success' | 'info' | 'warning' | 'n
 	if (c === 'error') return 'info';
 	if (c === 'primary') return 'info';
 	return c ?? 'neutral';
+}
+
+/**
+ * Translated status label for badges. Falls back to title-cased raw value
+ * when no `status.*` dictionary entry exists, so unknown statuses still render
+ * gracefully instead of leaking the dot-path key.
+ */
+export function statusLabel(status: string): string {
+	const key = `status.${String(status ?? '').toLowerCase()}`;
+	const translated = t(key);
+	return translated === key ? titleCase(status) : translated;
 }
 
 export const EXPENSE_CATEGORIES: {

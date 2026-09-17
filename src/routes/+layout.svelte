@@ -9,13 +9,14 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { preferences } from '$lib/theme/preferences.svelte';
 	import { features } from '$lib/features.svelte';
+	import { i18n, t } from '$lib/i18n/i18n.svelte';
 	import { media } from '$lib/media/media.svelte';
 	import { session } from '$nostr/session.svelte';
 	import { relays } from '$nostr/relay.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { warmRelays } from '$nostr/client';
-	import { hasActiveWorkspaceContext, resolveWorkspace } from '$nostr/workspace.svelte';
-	import { memberships } from '$nostr/memberships.svelte';
+	import { bootstrapAuth } from '$nostr/auth-bootstrap';
+	import { hasActiveWorkspaceContext } from '$nostr/workspace.svelte';
 	import { profile } from '$nostr/profile.svelte';
 	import { organizationKey } from '$lib/crypto/organization-key.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
@@ -28,7 +29,9 @@
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import PwaPrompt from '$lib/components/PwaPrompt.svelte';
 	import OfflineBadge from '$lib/components/OfflineBadge.svelte';
+	import BootSplash from '$lib/components/ui/BootSplash.svelte';
 	import { popovers } from '$lib/stores/popovers.svelte';
+	import { startSystemNotifications } from '$lib/stores/notifications.svelte';
 	import { permissionForPath } from '$lib/nav';
 	import { permissions } from '$lib/permissions.svelte';
 	import favicon from '$lib/assets/favicon.svg';
@@ -37,9 +40,11 @@
 	let drawerOpen = $state(false);
 	let workspaceResolutionPending = false;
 	let workspaceResolutionPubkey = '';
+	let tenantStoragePubkey = '';
 
 	const isPublicRoute = $derived(
-		page.url.pathname === '/login' ||
+		page.url.pathname === '/about' ||
+			page.url.pathname === '/login' ||
 			page.url.pathname === '/resolve' ||
 			page.url.pathname.startsWith('/setup') ||
 			page.url.pathname.startsWith('/legal')
@@ -52,14 +57,24 @@
 	loadSidebarCollapsed();
 
 	onMount(() => {
+		// Dismiss the static splash from app.html once the app has mounted.
+		const splash = document.getElementById('boot-splash');
+		if (splash) {
+			splash.classList.add('bs-out');
+			setTimeout(() => splash.remove(), 400);
+		}
 		preferences.load();
 		preferences.apply();
 		features.load();
 		media.load();
 		relays.load();
+		// Wire relay/sync system events into the notification center (idempotent;
+		// the topbar + /notifications page hydrate the persisted feed themselves).
+		startSystemNotifications();
 		session.load();
 		tenant.load();
 		profile.load();
+		i18n.init();
 		if (session.isAuthenticated) void warmRelays();
 	});
 
@@ -86,6 +101,16 @@
 	});
 
 	$effect(() => {
+		if (!session.hydrated) return;
+		const me = session.pubkey ?? '';
+		if (tenantStoragePubkey === me) return;
+		tenantStoragePubkey = me;
+		// Tenant state is identity-scoped. Reload it when the active Nostr key
+		// changes so one account cannot inherit another account's setup flag.
+		tenant.load();
+	});
+
+	$effect(() => {
 		if (isPublicRoute || !session.hydrated || !tenant.hydrated) return;
 		if (workspaceResolutionPubkey !== (session.pubkey ?? '')) {
 			workspaceResolutionPubkey = session.pubkey ?? '';
@@ -93,28 +118,17 @@
 		}
 		if (!session.isAuthenticated) {
 			void goto(resolve('/login'), { replaceState: true });
-		} else if (!tenant.state.setupComplete && !workspaceResolutionPending) {
+		} else if (!workspaceResolutionPending) {
 			workspaceResolutionPending = true;
 			postLoginSyncState = 'checking-workspace';
 			queueMicrotask(async () => {
-				const workspace = await resolveWorkspace();
-				if (workspace.found) {
-					workspaceResolutionPending = false;
-					postLoginSyncDone = false;
-					postLoginSyncState = workspace.source === 'relay' ? 'done' : 'idle';
-					if (workspace.source === 'relay') {
-						setTimeout(() => (postLoginSyncState = 'idle'), 2000);
-					}
-				} else {
-					// Owner path found nothing — a staff member didn't author the
-					// org/location records, so discover the workspace THROUGH their
-					// staff record (kind 30500, #p = me) before giving up.
-					const staffWorkspace = await memberships.resolveStaffWorkspace();
-					workspaceResolutionPending = false;
-					postLoginSyncState = 'idle';
-					if (!staffWorkspace) {
-						void goto(resolve('/resolve'), { replaceState: true });
-					}
+				const result = await bootstrapAuth();
+				workspaceResolutionPending = false;
+				postLoginSyncState = result.source === 'relay' ? 'done' : 'idle';
+				if (result.access === 'setup' || result.access === 'waiting-workspace') {
+					void goto(resolve('/resolve'), { replaceState: true });
+				} else if (result.access === 'blocked') {
+					void goto(resolve('/blocked'), { replaceState: true });
 				}
 			});
 		}
@@ -139,28 +153,13 @@
 		if (!hasActiveWorkspaceContext()) return;
 		postLoginSyncDone = true;
 
-		void warmRelays();
-		dataSync.backgroundOperationalSync();
-		postLoginSyncState = 'idle';
-
-		// Login → staff matching: resolve this user's staff memberships, then
-		// auto-set the active role. First-run owners get an Owner record created
-		// so the permission system has a role to evaluate. Suspended staff are
-		// routed to /blocked. Skips on public/POS-lightweight routes.
-		const path = page.url.pathname;
-		if (path !== '/login' && !path.startsWith('/setup')) {
-			void (async () => {
-				await memberships.resolve();
-				// Ensure the active org has a local AES key (owner/admin mints it;
-				// staff already imported theirs via the grant sync in memberships.resolve).
-				await organizationKey.autoEnsureActiveKey();
-				if (memberships.autoResolve()) return;
-				await memberships.bootstrapOwnerIfMissing();
-				if (tenant.state.activeStaffId) return;
-				const dest = memberships.resolveLoginDestination();
-				if (dest === '/blocked') void goto(resolve('/blocked'), { replaceState: true });
-			})();
-		}
+		void (async () => {
+			// The key must be ready before encrypted records are fetched.
+			await organizationKey.autoEnsureActiveKey();
+			await warmRelays();
+			dataSync.backgroundOperationalSync();
+			postLoginSyncState = 'idle';
+		})();
 	});
 
 	// Global dropdown-menu handling: one menu open at a time, close on outside
@@ -180,7 +179,11 @@
 
 <svelte:window onpointerdown={onGlobalPointerDown} onkeydown={onGlobalKey} />
 
-{#if isPublicRoute}
+{#if !session.hydrated}
+	<!-- Brief boot state while local session state hydrates
+	     (static twin lives in app.html for the pre-JS window). -->
+	<BootSplash />
+{:else if isPublicRoute}
 	{@render children()}
 {:else}
 	<div class="app-shell flex min-h-screen">
@@ -198,7 +201,7 @@
 		{#if drawerOpen && !isPosRoute}
 			<button
 				type="button"
-				aria-label="Close menu"
+				aria-label={t('topbar.closeMenu')}
 				class="animate-fade fixed inset-0 z-40 bg-black/50 backdrop-blur-[3px] transition-opacity lg:hidden"
 				onclick={() => (drawerOpen = false)}
 			></button>
@@ -246,9 +249,9 @@
 				</div>
 			</div>
 			<div class="text-center">
-				<p class="font-display text-[15px] font-bold">Checking workspace</p>
+				<p class="font-display text-[15px] font-bold">{t('layout.checkingWorkspace')}</p>
 				<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
-					Restoring your active workspace and branch…
+					{t('layout.checkingWorkspaceDesc')}
 				</p>
 			</div>
 		</div>

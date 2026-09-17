@@ -1,18 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
-	import Popover from '$lib/components/ui/Popover.svelte';
-	import { findNavItem, navSections, permissionForNavItem, permissionForPath, type NavItem } from '$lib/nav';
+	import BnosMark from '$lib/components/BnosMark.svelte';
+	import { findNavItem, navSections, navSectionLabel, navLabel, permissionForNavItem, permissionForPath, type NavItem } from '$lib/nav';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { session } from '$nostr/session.svelte';
-	import { profile } from '$nostr/profile.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
-	import { glo } from '$nostr/store.svelte';
 	import { permissions } from '$lib/permissions.svelte';
 	import { sidebarState, loadCollapsed, toggleCollapsed } from '$lib/sidebar-state.svelte';
 	import { features } from '$lib/features.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	let { onnavigate }: { onnavigate?: () => void } = $props();
 
@@ -85,99 +82,25 @@
 			}))
 			.filter((section) => section.items.length > 0)
 	);
-
-	let menuOpen = $state(false);
-
-	async function signOut() {
-		menuOpen = false;
-		await session.logout();
-		tenant.reset();
-		glo.clearAll();
-		await goto(resolve('/login'));
-	}
 </script>
 
 <div class="flex h-full flex-col">
-	{#snippet accountCard()}
-		<div class="sidebar-account-card w-64 p-1.5">
-			<div class="sidebar-account-summary mb-2 flex items-center gap-2.5 rounded-lg px-2.5 py-2">
-				<div
-					class="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[12px] font-bold text-white shadow-sm"
-				>
-					{#if profile.hasAvatar}
-						<img
-							src={profile.picture}
-							alt={profile.displayLabel}
-							class="size-9 rounded-full object-cover"
-						/>
-					{:else}
-						{profile.avatarLetter}
-					{/if}
-				</div>
-				<div class="min-w-0 flex-1">
-					<div class="truncate text-[13px] font-semibold">
-						{profile.displayLabel}
-					</div>
-					<div class="truncate font-mono text-[11px] text-[var(--ui-text-dimmed)]">
-						{profile.subtitle}
-					</div>
-					<div class="mt-1 flex items-center gap-1.5">
-						<span class="live-dot"></span>
-						<span
-							class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-text-muted)]"
-						>
-							{session.loginMethod === 'extension' ? 'NIP-07 extension' : 'Private key'}
-						</span>
-					</div>
-				</div>
-			</div>
-			{#if canUseRoute('/settings')}
-				<a
-					href={resolve('/settings')}
-					onclick={() => (menuOpen = false)}
-					class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-				>
-					<Icon name="lucide:sliders-horizontal" class="size-4 text-[var(--ui-text-dimmed)]" />
-					Settings
-				</a>
-			{/if}
-			<a
-				href={resolve('/profile')}
-				onclick={() => (menuOpen = false)}
-				class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-			>
-				<Icon name="lucide:user-circle" class="size-4 text-[var(--ui-text-dimmed)]" />
-				Profile
-			</a>
-			<button
-				type="button"
-				onclick={signOut}
-				class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-[var(--tone-error-text)] transition-colors hover:bg-[var(--tone-error-bg)]"
-			>
-				<Icon name="lucide:log-out" class="size-4" />
-				Sign out
-			</button>
-		</div>
-	{/snippet}
 	<!-- Brand -->
 	<a
 		href={resolve('/')}
-		aria-label="Go to BNOS dashboard"
-		title={sidebarState.collapsed ? 'BNOS Dashboard' : undefined}
+		aria-label={t('sidebar.goDashboard')}
+		title={sidebarState.collapsed ? t('sidebar.bnosDashboard') : undefined}
 		class="app-sidebar-brand flex h-16 items-center {sidebarState.collapsed ? 'justify-center px-0' : 'gap-3 px-5'} border-b border-[var(--glass-border)] transition-all hover:bg-[var(--ui-bg-accented)]"
 		onclick={() => onnavigate?.()}
 	>
-		<div class="relative grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary-400 to-primary-600">
-			<div
-				class="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,.45),transparent_60%)]"
-			></div>
-			<Icon name="lucide:zap" class="relative size-5 text-white" />
+		<div class="relative grid size-10 shrink-0 place-items-center ">
+			<BnosMark class="size-9 text-primary-500" />
 		</div>
 		{#if !sidebarState.collapsed}
 			<div class="leading-tight">
 				<div class="font-display text-[17px] font-bold tracking-tight">BNOS</div>
 				<div class="text-[10px] font-semibold tracking-[0.18em] text-[var(--ui-text-dimmed)] uppercase">
-					Open-source POS
+					{t('common.tagline')}
 				</div>
 			</div>
 		{/if}
@@ -192,7 +115,7 @@
 					<div
 						class="app-nav-section-label px-3 pb-1.5 text-[10px] font-semibold tracking-[0.16em] text-[var(--ui-text-dimmed)] uppercase"
 					>
-						{section.label}
+						{navSectionLabel(section)}
 					</div>
 				{/if}
 				{#each section.items as item (item.to)}
@@ -209,7 +132,7 @@
 							>
 							<a
 								href={resolvedHref(item.to)}
-								title={item.label}
+								title={navLabel(item)}
 								class="sidebar-nav-parent-link flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors {groupActive
 									? 'text-[var(--ui-text)]'
 									: 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
@@ -221,12 +144,12 @@
 										? 'text-primary-500'
 										: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'}"
 								/>
-								<span class="truncate">{item.label}</span>
+								<span class="truncate">{navLabel(item)}</span>
 							</a>
 							<button
 								type="button"
 								onclick={() => toggleGroup(item.to)}
-								aria-label={groupExpanded ? 'Collapse' : 'Expand'}
+								aria-label={groupExpanded ? t('sidebar.collapse') : t('sidebar.expand')}
 								class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 							>
 								<Icon
@@ -243,7 +166,7 @@
 										{@const childActive = isActive(child)}
 										<a
 											href={resolvedHref(child.to)}
-											title={child.label}
+											title={navLabel(child)}
 											class="sidebar-nav-child nav-active group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors {childActive
 												? 'is-active-surface text-[var(--ui-text)]'
 												: 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
@@ -255,7 +178,7 @@
 													? 'text-primary-500'
 													: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'}"
 											/>
-											<span class="truncate">{child.label}</span>
+											<span class="truncate">{navLabel(child)}</span>
 										</a>
 									{/each}
 								</div>
@@ -264,7 +187,7 @@
 					{:else}
 						<a
 							href={resolvedHref(item.to)}
-							title={sidebarState.collapsed ? item.label : undefined}
+							title={sidebarState.collapsed ? navLabel(item) : undefined}
 							class="app-nav-item nav-active group mb-0.5 flex items-center {sidebarState.collapsed ? 'justify-center px-0' : 'gap-3 px-3'} rounded-lg py-2 text-[13.5px] font-medium transition-colors {active
 								? 'nav-active-on is-active-surface'
 								: 'soft-hover text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
@@ -277,7 +200,7 @@
 									: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'}"
 							/>
 							{#if !sidebarState.collapsed}
-								<span class="truncate">{item.label}</span>
+								<span class="truncate">{navLabel(item)}</span>
 							{/if}
 						</a>
 					{/if}
@@ -287,57 +210,16 @@
 		{/each}
 	</nav>
 
-	<!-- Active tenant pill -->
-	{#if tenant.state.organizationName}
-		<div
-			class="app-tenant-pill mx-3 mb-2 flex items-center {sidebarState.collapsed ? 'justify-center' : 'gap-2.5'} rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] {sidebarState.collapsed ? 'px-0' : 'px-3'} py-2"
-			title={sidebarState.collapsed ? tenant.state.organizationName : undefined}
-		>
-			<span
-				class="grid size-7 shrink-0 place-items-center rounded-md bg-primary-500/10 text-[11px] font-bold text-primary-600 dark:text-primary-400"
-			>
-				{tenant.state.organizationName.slice(0, 2).toUpperCase()}
-			</span>
-			{#if !sidebarState.collapsed}
-				<span class="min-w-0 flex-1">
-					<span class="block truncate text-[12.5px] font-semibold">{tenant.state.organizationName}</span>
-					<span class="block truncate text-[11px] text-[var(--ui-text-dimmed)]">
-						{tenant.state.currency} · {tenant.state.locationName ?? 'Main'}
-					</span>
-				</span>
-			{/if}
-		</div>
-	{/if}
-
-	<!-- Collapse toggle + User menu -->
-	<div class="app-user-menu flex items-center {sidebarState.collapsed ? 'flex-col gap-2' : 'gap-1'} p-3">
+	<!-- Collapse toggle -->
+	<div class="app-sidebar-footer flex items-center {sidebarState.collapsed ? 'justify-center' : ''} p-3">
 		<button
 			type="button"
 			onclick={toggleCollapsed}
-			title={sidebarState.collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-			aria-label={sidebarState.collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+			title={sidebarState.collapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')}
+			aria-label={sidebarState.collapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')}
 			class="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 		>
 			<Icon name={sidebarState.collapsed ? 'lucide:chevrons-right' : 'lucide:chevrons-left'} class="size-4" />
 		</button>
-		{#if !sidebarState.collapsed}
-			<Popover bind:open={menuOpen} side="top" align="start">
-				{#snippet trigger()}
-					<Icon name="lucide:user-circle" class="size-5" />
-				{/snippet}
-				{#snippet content()}
-					{@render accountCard()}
-				{/snippet}
-			</Popover>
-		{:else}
-			<Popover bind:open={menuOpen} side="top" align="center">
-				{#snippet trigger()}
-					<Icon name="lucide:user-circle" class="size-5" />
-				{/snippet}
-				{#snippet content()}
-					{@render accountCard()}
-				{/snippet}
-			</Popover>
-		{/if}
 	</div>
 </div>

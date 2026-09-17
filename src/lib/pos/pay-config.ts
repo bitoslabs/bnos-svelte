@@ -20,6 +20,10 @@ export interface PayConfig {
 	bankAccountNumber: string;
 	/** Generic bank: bank name. */
 	bankName: string;
+	/** Use a bank-provided, pre-generated QR image instead of generating EMVCo data. */
+	useStaticBankQr: boolean;
+	/** Public URL of the bank-provided static QR image. */
+	staticBankQrImageUrl: string;
 	/** Show QR on the customer-facing display automatically at checkout. */
 	showOnCustomerDisplay: boolean;
 	/** Auto-confirm the sale when the cashier taps "Mark paid" (vs hold for verify). */
@@ -34,6 +38,8 @@ export const defaultPayConfig: PayConfig = {
 	bankAccountName: '',
 	bankAccountNumber: '',
 	bankName: '',
+	useStaticBankQr: false,
+	staticBankQrImageUrl: '',
 	showOnCustomerDisplay: true,
 	confirmOnPaid: true
 };
@@ -56,6 +62,7 @@ export function savePayConfig(cfg: PayConfig) {
 export function hasQrConfigured(cfg: PayConfig): boolean {
 	if (cfg.qrScheme === 'promptpay') return cfg.promptpayId.trim().length > 0;
 	if (cfg.qrScheme === 'vietqr') return cfg.vietqrAccount.trim().length > 0 && cfg.vietqrBin.trim().length > 0;
+	if (cfg.useStaticBankQr) return cfg.staticBankQrImageUrl.trim().length > 0;
 	return cfg.bankAccountNumber.trim().length > 0;
 }
 

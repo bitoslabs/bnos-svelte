@@ -1,22 +1,22 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { glo } from '$nostr/store.svelte';
-	import { ALL_OPERATIONAL_DATA_TYPES, dataSync } from '$nostr/sync.svelte';
+	import { dataSync } from '$nostr/sync.svelte';
 
 	let syncState = $state<'syncing' | 'done' | 'skipped'>('syncing');
 
 	onMount(async () => {
 		try {
-			await dataSync.syncTypes(ALL_OPERATIONAL_DATA_TYPES, {
-				force: true,
-				scope: 'setup-done',
-				silent: true
-			});
+			// Workspace creation already waits for the primary relay to accept both
+			// events. Confirm those two records here without blocking the first-run
+			// UI on every enabled relay or every operational data type.
+			await dataSync.confirmSetupOnPrimary();
 			// Restore tenant from synced data
 			glo.hydrate('organization');
 			glo.hydrate('location');
@@ -29,13 +29,17 @@
 				});
 			}
 			syncState = 'done';
+			// Fan out reads and retry any secondary publish in an idle task. This is
+			// intentionally not awaited: setup should feel instant once primary is
+			// confirmed, while the normal sync keeps all relays converged.
+			dataSync.backgroundOperationalSync();
 		} catch {
 			syncState = 'skipped';
 		}
 	});
 </script>
 
-<svelte:head><title>Setup · Done</title></svelte:head>
+<svelte:head><title>{t('setup.title')} · {t('setup.done')}</title></svelte:head>
 
 <div class="flex flex-col items-center justify-center py-8 text-center">
 	<div
@@ -49,9 +53,9 @@
 	</div>
 
 	{#if syncState === 'syncing'}
-		<h2 class="font-display text-2xl font-bold tracking-tight">Syncing to Nostr…</h2>
+		<h2 class="font-display text-2xl font-bold tracking-tight">Confirming your workspace…</h2>
 		<p class="mt-2 max-w-sm text-[13.5px] text-[var(--ui-text-muted)]">
-			Publishing <strong>{tenant.state.organizationName}</strong> and your setup data to relays.
+			Saving <strong>{tenant.state.organizationName}</strong> to your primary relay.
 		</p>
 		<a
 			href={resolve('/')}

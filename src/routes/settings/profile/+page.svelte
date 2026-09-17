@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -70,12 +71,12 @@
 
 			profileSaved = true;
 			toast.success(
-				'Profile saved',
-				published ? 'Published to Nostr' : 'Saved locally (offline)'
+				t('settings.toastProfileSaved'),
+				published ? t('settings.toastPublished') : t('settings.toastSavedLocal')
 			);
 			setTimeout(() => (profileSaved = false), 2500);
 		} catch (e) {
-			toast.error('Failed to save profile', e instanceof Error ? e.message : undefined);
+			toast.error(t('settings.toastProfileSaveFailed'), e instanceof Error ? e.message : undefined);
 		} finally {
 			isSaving = false;
 		}
@@ -97,10 +98,10 @@
 				document.body.removeChild(input);
 			}
 			copiedField = field;
-			toast.success('Copied to clipboard');
+			toast.success(t('settings.toastCopied'));
 			setTimeout(() => (copiedField = ''), 2000);
 		} catch (e) {
-			toast.error('Copy failed', e instanceof Error ? e.message : undefined);
+			toast.error(t('settings.toastCopyFailed'), e instanceof Error ? e.message : undefined);
 		}
 	}
 
@@ -112,14 +113,14 @@
 
 	function doImport() {
 		const k = importKey.trim();
-		if (!k) return toast.warning('Paste an nsec or hex key');
+		if (!k) return toast.warning(t('settings.toastPasteKey'));
 		try {
 			const s = session.loginWithNsec(k);
-			toast.success('Signed in', truncateNpub(s.npub, 10, 6));
+			toast.success(t('settings.toastPublished'), truncateNpub(s.npub, 10, 6));
 			importOpen = false;
 			importKey = '';
 		} catch (e) {
-			toast.error('Invalid key', e instanceof Error ? e.message : undefined);
+			toast.error(t('settings.toastInvalidKey'), e instanceof Error ? e.message : undefined);
 		}
 	}
 
@@ -135,9 +136,9 @@
 
 	function confirmCreate() {
 		if (!pending) return;
-		if (!backedUp) return toast.warning('Confirm you saved your key');
+		if (!backedUp) return toast.warning(t('settings.toastConfirmBackup'));
 		session.loginWithNsec(pending.nsec);
-		toast.success('New identity created', truncateNpub(pending.npub, 10, 6));
+		toast.success(t('settings.toastIdentityCreated'), truncateNpub(pending.npub, 10, 6));
 		createOpen = false;
 		pending = null;
 	}
@@ -147,7 +148,7 @@
 		connecting = true;
 		try {
 			const s = await session.loginWithExtension();
-			toast.success('Extension connected', truncateNpub(s.npub, 10, 6));
+			toast.success(t('settings.connected'), truncateNpub(s.npub, 10, 6));
 		} catch (e) {
 			toast.error('Extension sign-in failed', e instanceof Error ? e.message : undefined);
 		} finally {
@@ -159,26 +160,26 @@
 		await session.logout();
 		tenant.reset();
 		glo.clearAll();
-		toast.info('Signed out');
+		toast.info(t('toast.signedOut'));
 		await goto(resolve('/login'), { replaceState: true });
 	}
 </script>
 
-<svelte:head><title>Profile · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.profile')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-5">
 	<!-- Header -->
 	<PageHeader
 		icon="lucide:user"
-		title="Profile"
-		description="Your Nostr identity, display name, and avatar"
+		title={t('settings.profile')}
+		description={t('profile.nostrIdentityDesc')}
 	/>
 
 	<!-- Identity & Avatar -->
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:user-circle" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Nostr identity</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('profile.nostrIdentity')}</h2>
 		</div>
 
 		<!-- Avatar + name preview -->
@@ -203,7 +204,7 @@
 
 				<div class="min-w-0 flex-1">
 					<p class="truncate text-[14px] font-bold">
-						{snap ? displayName || username || 'Unnamed user' : 'Not signed in'}
+						{snap ? displayName || username || t('profile.unnamedUser') : t('profile.notSignedIn')}
 					</p>
 					{#if snap}
 						<p class="mt-0.5 truncate font-mono text-[11px] text-[var(--ui-text-muted)]">
@@ -222,7 +223,7 @@
 						</div>
 					{:else}
 						<p class="mt-0.5 text-[11px] text-[var(--ui-text-dimmed)]">
-							Sign in to manage your identity
+							{t('profile.signInToManage')}
 						</p>
 					{/if}
 				</div>
@@ -232,7 +233,7 @@
 		<!-- npub display + copy -->
 		{#if snap}
 			<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
-				<label class="w-36 shrink-0 text-[13px] font-semibold">Public key</label>
+				<label class="w-36 shrink-0 text-[13px] font-semibold">{t('profile.publicKey')}</label>
 				<div class="flex-1">
 					<div
 						class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2"
@@ -244,7 +245,7 @@
 							type="button"
 							onclick={() => copy(snap.npub, 'npub')}
 							class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-primary-500/10 hover:text-primary-500"
-							title="Copy npub"
+							title={t('settings.copyNpub')}
 						>
 							<Icon
 								name={copiedField === 'npub' ? 'lucide:check-check' : 'lucide:copy'}
@@ -260,7 +261,7 @@
 		{#if snap?.nsec}
 			<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
 				<label class="w-36 shrink-0 text-[13px] font-semibold text-[var(--tone-warning-text)]"
-					>Secret key</label
+					>{t('profile.secretKey')}</label
 				>
 				<div class="flex-1">
 					<div
@@ -275,7 +276,7 @@
 							type="button"
 							onclick={() => (showNsec = !showNsec)}
 							class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--tone-warning-text)] transition-colors hover:bg-[var(--tone-warning-bg)]"
-							title={showNsec ? 'Hide' : 'Reveal'}
+							title={showNsec ? t('profile.hide') : t('profile.reveal')}
 						>
 							<Icon name={showNsec ? 'lucide:eye-off' : 'lucide:eye'} class="size-3.5" />
 						</button>
@@ -286,13 +287,13 @@
 									void copy(snap.nsec, 'nsec');
 								} else {
 									toast.warning(
-										'No secret key available',
-										"Extension login doesn't expose the private key."
+										t('settings.toastConfirmBackupTitle'),
+										t('profile.noSecretKeyDesc')
 									);
 								}
 							}}
 							class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--tone-warning-text)] transition-colors hover:bg-[var(--tone-warning-bg)]"
-							title="Copy nsec"
+							title={t('settings.copyNsec')}
 						>
 							<Icon
 								name={copiedField === 'nsec' ? 'lucide:check-check' : 'lucide:copy'}
@@ -309,13 +310,13 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:id-card" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Profile metadata</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('profile.metadata')}</h2>
 		</div>
 
 		<!-- Display name -->
 		<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
 			<div class="w-36 shrink-0">
-				<label class="text-[13px] font-semibold">Display name</label>
+				<label class="text-[13px] font-semibold">{t('common.displayName')}</label>
 			</div>
 			<div class="flex-1">
 				<Input bind:value={displayName} placeholder="My Store" class="w-full" />
@@ -325,7 +326,7 @@
 		<!-- Username -->
 		<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
 			<div class="w-36 shrink-0">
-				<label class="text-[13px] font-semibold">Username</label>
+				<label class="text-[13px] font-semibold">{t('profile.username')}</label>
 			</div>
 			<div class="flex-1">
 				<Input bind:value={username} placeholder="mystore" class="w-full" />
@@ -335,13 +336,13 @@
 		<!-- About -->
 		<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-start">
 			<div class="w-36 shrink-0">
-				<label class="text-[13px] font-semibold">About</label>
+				<label class="text-[13px] font-semibold">{t('common.bio')}</label>
 			</div>
 			<div class="flex-1">
 				<Input
 					textarea
 					bind:value={about}
-					placeholder="Brief description…"
+					placeholder={t('settings.briefDesc')}
 					rows={3}
 					class="w-full"
 				/>
@@ -351,7 +352,7 @@
 		<!-- Avatar -->
 		<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-start">
 			<div class="w-36 shrink-0">
-				<label class="text-[13px] font-semibold">Avatar</label>
+				<label class="text-[13px] font-semibold">{t('profile.avatar')}</label>
 			</div>
 			<div class="flex-1">
 				<MediaImageInput
@@ -367,7 +368,7 @@
 		<!-- Website -->
 		<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
 			<div class="w-36 shrink-0">
-				<label class="text-[13px] font-semibold">Website</label>
+				<label class="text-[13px] font-semibold">{t('common.website')}</label>
 			</div>
 			<div class="flex-1">
 				<Input bind:value={website} placeholder="https://my-store.com" class="w-full" />
@@ -377,7 +378,7 @@
 		<!-- Lightning address -->
 		<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
 			<div class="w-36 shrink-0">
-				<label class="text-[13px] font-semibold">Lightning address</label>
+				<label class="text-[13px] font-semibold">{t('profile.lightningAddress')}</label>
 			</div>
 			<div class="flex-1">
 				<Input bind:value={lud16} placeholder="user@getalby.com" class="w-full" />
@@ -390,7 +391,7 @@
 				<p
 					class="flex items-center gap-1 text-[12px] font-semibold text-[var(--tone-success-text)]"
 				>
-					<Icon name="lucide:check-check" class="size-3.5" />Saved
+					<Icon name="lucide:check-check" class="size-3.5" />{t('profile.saved')}
 				</p>
 			{/if}
 			<div class="flex-1"></div>
@@ -404,7 +405,11 @@
 				disabled={!snap || isSaving}
 				onclick={saveProfile}
 			>
-				{isSaving ? 'Saving…' : profileSaved ? 'Saved' : 'Save profile'}
+				{isSaving
+					? t('profile.saving')
+					: profileSaved
+						? t('profile.saved')
+						: t('profile.saveProfile')}
 			</Button>
 		</div>
 	</section>
@@ -413,29 +418,29 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:shield-user" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Role & permissions</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('profile.rolePermissions')}</h2>
 		</div>
 		<div class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
 			<div class="flex items-center gap-3 px-5 py-3">
 				<Icon name="lucide:building-2" class="size-4 text-[var(--ui-text-dimmed)]" />
-				<span class="text-[var(--ui-text-muted)]">Organization</span>
+				<span class="text-[var(--ui-text-muted)]">{t('settings.organizationHeading')}</span>
 				<span class="ml-auto font-semibold">{tenant.state.organizationName || '—'}</span>
 			</div>
 			<div class="flex items-center gap-3 px-5 py-3">
 				<Icon name="lucide:map-pin" class="size-4 text-[var(--ui-text-dimmed)]" />
-				<span class="text-[var(--ui-text-muted)]">Branch</span>
+				<span class="text-[var(--ui-text-muted)]">{t('settings.branchLabel')}</span>
 				<span class="ml-auto font-semibold">{tenant.state.locationName || 'Main'}</span>
 			</div>
 			<div class="flex items-center gap-3 px-5 py-3">
 				<Icon name="lucide:store" class="size-4 text-[var(--ui-text-dimmed)]" />
-				<span class="text-[var(--ui-text-muted)]">Business type</span>
+				<span class="text-[var(--ui-text-muted)]">{t('settings.businessType')}</span>
 				<span class="ml-auto font-semibold capitalize">{titleCase(tenant.state.businessType)}</span>
 			</div>
 			<div class="flex items-center gap-3 px-5 py-3">
 				<Icon name="lucide:user-check" class="size-4 text-[var(--ui-text-dimmed)]" />
-				<span class="text-[var(--ui-text-muted)]">Role</span>
+				<span class="text-[var(--ui-text-muted)]">{t('common.role')}</span>
 				<span class="ml-auto">
-					<Badge color="primary">Owner</Badge>
+					<Badge color="primary">{t('staff.roleOwner')}</Badge>
 				</span>
 			</div>
 		</div>
@@ -445,7 +450,7 @@
 	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:repeat-2" class="size-4 text-primary-500" />
-			<h2 class="font-display text-[14px] font-semibold">Switch identity</h2>
+			<h2 class="font-display text-[14px] font-semibold">{t('profile.switchIdentity')}</h2>
 		</div>
 		<div class="grid grid-cols-1 gap-2 p-5 sm:grid-cols-3">
 			<button
@@ -454,9 +459,8 @@
 				class="flex flex-col items-start gap-1 rounded-xl border border-[var(--ui-border)] p-3 text-left transition-colors hover:bg-[var(--ui-bg-accented)]"
 			>
 				<Icon name="lucide:log-in" class="size-4 text-primary-500" />
-				<span class="text-[13px] font-semibold">Import key</span>
-				<span class="text-[11.5px] text-[var(--ui-text-dimmed)]">Sign in with an existing nsec</span
-				>
+				<span class="text-[13px] font-semibold">{t('profile.importKeyCard')}</span>
+				<span class="text-[11.5px] text-[var(--ui-text-dimmed)]">{t('profile.importKeyDesc')}</span>
 			</button>
 			<button
 				type="button"
@@ -464,8 +468,8 @@
 				class="flex flex-col items-start gap-1 rounded-xl border border-[var(--ui-border)] p-3 text-left transition-colors hover:bg-[var(--ui-bg-accented)]"
 			>
 				<Icon name="lucide:user-plus" class="size-4 text-primary-500" />
-				<span class="text-[13px] font-semibold">Create new</span>
-				<span class="text-[11.5px] text-[var(--ui-text-dimmed)]">Generate a fresh keypair</span>
+				<span class="text-[13px] font-semibold">{t('profile.createNew')}</span>
+				<span class="text-[11.5px] text-[var(--ui-text-dimmed)]">{t('profile.createNewDesc')}</span>
 			</button>
 			<button
 				type="button"
@@ -475,10 +479,10 @@
 			>
 				<Icon name="lucide:puzzle" class="size-4 text-primary-500" />
 				<span class="text-[13px] font-semibold"
-					>{connecting ? 'Connecting…' : 'Connect extension'}</span
+					>{connecting ? t('profile.connecting') : t('profile.connectExtension')}</span
 				>
 				<span class="text-[11.5px] text-[var(--ui-text-dimmed)]"
-					>{hasExt ? 'Use your NIP-07 signer' : 'No NIP-07 extension found'}</span
+					>{hasExt ? t('profile.useNip07') : t('profile.noExtension')}</span
 				>
 			</button>
 		</div>
@@ -490,39 +494,40 @@
 			<div class="flex items-center gap-3">
 				<Icon name="lucide:log-out" class="size-5 text-[var(--tone-error-text)]" />
 				<div>
-					<h2 class="font-display text-[14px] font-semibold">Sign out</h2>
-					<p class="text-[12px] text-[var(--ui-text-muted)]">Clear this identity from the device</p>
+					<h2 class="font-display text-[14px] font-semibold">{t('common.signOut')}</h2>
+					<p class="text-[12px] text-[var(--ui-text-muted)]">{t('profile.clearFromDevice')}</p>
 				</div>
 			</div>
 			<Button color="error" variant="subtle" icon="lucide:log-out" onclick={signOut}
-				>Sign out</Button
+				>{t('common.signOut')}</Button
 			>
 		</div>
 	</section>
 </div>
 
 <!-- Import key dialog -->
-<Dialog bind:open={importOpen} title="Import Nostr key" size="sm">
+<Dialog bind:open={importOpen} title={t('settings.importKey')} size="sm">
 	<div class="space-y-3">
 		<Input
 			bind:value={importKey}
 			icon="lucide:key-round"
-			placeholder="nsec1… or hex private key"
+			placeholder={t('settings.nsecHint')}
 			class="w-full font-mono"
 		/>
 		<p class="text-[11.5px] text-[var(--ui-text-muted)]">
-			This replaces the current identity on this device. Make sure you have a backup of the active
-			key first.
+			{t('profile.importReplaceWarn')}
 		</p>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (importOpen = false)}>Cancel</Button>
-		<Button color="primary" icon="lucide:log-in" onclick={doImport}>Sign in</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (importOpen = false)}
+			>{t('common.cancel')}</Button
+		>
+		<Button color="primary" icon="lucide:log-in" onclick={doImport}>{t('common.signIn')}</Button>
 	{/snippet}
 </Dialog>
 
 <!-- Create account → backup dialog -->
-<Dialog bind:open={createOpen} title="Back up your new key" size="md">
+<Dialog bind:open={createOpen} title={t('settings.backUpNewKey')} size="md">
 	{#if pending}
 		{@const p = pending}
 		<div class="space-y-4">
@@ -538,7 +543,7 @@
 				<div
 					class="mb-1.5 text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
 				>
-					Your npub (shareable)
+					{t('profile.npubShareable')}
 				</div>
 				<div
 					class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2 font-mono text-[12px] break-all"
@@ -550,7 +555,7 @@
 				<div
 					class="mb-1.5 text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
 				>
-					Your nsec (secret)
+					{t('profile.nsecSecret')}
 				</div>
 				<div
 					class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2 font-mono text-[12px] break-all"
@@ -564,7 +569,7 @@
 					color="neutral"
 					variant="subtle"
 					icon="lucide:copy"
-					onclick={() => copy(p.nsec, 'nsec')}>Copy nsec</Button
+					onclick={() => copy(p.nsec, 'nsec')}>{t('profile.copyNsec')}</Button
 				>
 				<Button
 					size="sm"
@@ -581,21 +586,23 @@
 						a.download = `bnos-key-${p.npub.slice(0, 12)}.txt`;
 						a.click();
 						URL.revokeObjectURL(url);
-					}}>Download</Button
+					}}>{t('common.download')}</Button
 				>
 			</div>
 			<Checkbox
 				bind:checked={backedUp}
 				size="sm"
-				label="I've saved my key in a safe place"
+				label={t('settings.savedKeySafe')}
 				class="font-semibold"
 			/>
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (createOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (createOpen = false)}
+			>{t('common.cancel')}</Button
+		>
 		<Button color="primary" icon="lucide:check" disabled={!backedUp} onclick={confirmCreate}
-			>Create identity</Button
+			>{t('profile.createIdentity')}</Button
 		>
 	{/snippet}
 </Dialog>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -106,9 +107,9 @@
 			(s.data.role ?? '').toLowerCase().includes(q) ||
 			(s.data.email ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'name', label: 'Name', value: (s) => s.data.name },
-			{ key: 'role', label: 'Role', value: (s) => s.data.role },
-			{ key: 'status', label: 'Status', value: (s) => s.data.status }
+			{ key: 'name', label: t('common.name'), value: (s) => s.data.name },
+			{ key: 'role', label: t('common.role'), value: (s) => s.data.role },
+			{ key: 'status', label: t('common.status'), value: (s) => s.data.status }
 		],
 		defaultSortKey: 'name',
 		defaultViewMode: 'grid',
@@ -166,7 +167,9 @@
 			employeeCode: '',
 			department: '',
 			status: 'active',
-			branchIds: [],
+			// New staff start assigned to the first configured branch. Editing keeps
+			// the saved assignment (including an intentionally empty, company-wide one).
+			branchIds: locations[0] ? [locations[0].id] : [],
 			useCustomPermissions: false,
 			customPermissions: [],
 			pin: '',
@@ -265,7 +268,7 @@
 	function openEventPreview(s: { id: string; data: Staff }) {
 		const object = sanitizedStaffObject(s);
 		const template = createGloEventTemplate(object as never, {
-			client: 'bdgo-os',
+				client: 'bnos',
 			summary: `${TYPE.staff} ${object.id}`
 		});
 		const staffPubkey = object.data.pubkey;
@@ -416,8 +419,8 @@
 	async function remove(id: string, name: string) {
 		if (
 			!(await confirm({
-				title: 'Delete staff member?',
-				message: 'This will remove the staff record from this device.',
+				title: t('common.deleteStaffMember'),
+				message: t('common.staffRemoveMsg'),
 				detail: name,
 				tone: 'danger',
 				confirmText: 'Delete'
@@ -447,12 +450,12 @@
 	}
 </script>
 
-<svelte:head><title>BNOS · Staff</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.staff')}</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Staff</h1>
+			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.staff')}</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
 				{staff.length} member{staff.length === 1 ? '' : 's'} · kind 30500
 			</p>
@@ -465,11 +468,11 @@
 					size="sm"
 					icon="lucide:download"
 					disabled={staff.length === 0}
-					onclick={exportStaff}>Export</Button
+					onclick={exportStaff}>{t('common.export')}</Button
 				>
 			{/if}
 			{#if canWrite}
-				<Button color="primary" icon="lucide:user-plus" onclick={openCreate}>Add staff</Button>
+				<Button color="primary" icon="lucide:user-plus" onclick={openCreate}>{t('common.add') + ' ' + t('common.staff')}</Button>
 			{/if}
 		</div>
 	</div>
@@ -484,7 +487,7 @@
 			</div>
 			<div>
 				<div class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
-					Total
+					{t('common.total')}
 				</div>
 				<div class="font-display text-xl font-bold tabular-nums">{stats.total}</div>
 			</div>
@@ -510,7 +513,7 @@
 			</div>
 			<div>
 				<div class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
-					Inactive
+					{t('common.inactive')}
 				</div>
 				<div class="font-display text-xl font-bold tabular-nums">{stats.inactive}</div>
 			</div>
@@ -560,13 +563,13 @@
 	{#if controls.list.length === 0}
 		<EmptyState
 			icon="lucide:users"
-			title="No staff yet"
-			description="Add your team — cashiers, waiters, chefs — and assign roles."
+			title={t('staff.noStaff')}
+			description={t('staff.noStaffDesc')}
 		>
 			{#snippet actions()}
 				{#if canWrite}
 					<Button color="primary" size="sm" icon="lucide:user-plus" onclick={openCreate}
-						>Add staff</Button
+						>{t('common.add') + ' ' + t('common.staff')}</Button
 					>
 				{/if}
 			{/snippet}
@@ -644,7 +647,7 @@
 								icon="lucide:pencil-line"
 								onclick={() => openEdit(s)}
 							>
-								Edit
+								{t('common.edit')}
 							</Button>
 						{/if}
 						<RowActions actions={staffActions(s)} />
@@ -662,21 +665,21 @@
 							column="name"
 							active={controls.sortKey === 'name'}
 							direction={controls.sortDir}
-							applySort={controls.applySort}>Name</SortableTh
+							applySort={controls.applySort}>{t('common.name')}</SortableTh
 						>
 						<SortableTh
 							column="role"
 							active={controls.sortKey === 'role'}
 							direction={controls.sortDir}
-							applySort={controls.applySort}>Role</SortableTh
+							applySort={controls.applySort}>{t('common.role')}</SortableTh
 						>
-						<th class="px-5 py-2.5">Contact</th>
+						<th class="px-5 py-2.5">{t('common.contact')}</th>
 						<th class="px-5 py-2.5">npub</th>
 						<SortableTh
 							column="status"
 							active={controls.sortKey === 'status'}
 							direction={controls.sortDir}
-							applySort={controls.applySort}>Status</SortableTh
+							applySort={controls.applySort}>{t('common.status')}</SortableTh
 						>
 						<th class="w-10 px-5 py-2.5"></th>
 					</tr>
@@ -711,7 +714,7 @@
 											type="button"
 											class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 											onclick={() => openEdit(s)}
-											aria-label="Edit"
+											aria-label={t('common.edit')}
 										>
 											<Icon name="lucide:pencil-line" class="size-3.5" />
 										</button>
@@ -729,7 +732,7 @@
 </div>
 
 <!-- Add / Edit Dialog -->
-<Dialog bind:open title={editingId ? 'Edit staff member' : 'Add staff member'}>
+<Dialog bind:open title={editingId ? t('common.edit') + ' ' + t('common.staff') : t('common.add') + ' ' + t('common.staff')}>
 	<div class="space-y-3">
 		<!-- Identity / pubkey -->
 		<label class="block">
@@ -790,7 +793,7 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Display name</span
+					>{t('common.displayName')}</span
 				>
 				<Input bind:value={form.displayName} class="w-full" />
 			</label>
@@ -798,7 +801,7 @@
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Role</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.role')}</span>
 				<Select
 					bind:value={form.role}
 					options={STAFF_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
@@ -807,7 +810,7 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Company</span
+					>{t('common.company')}</span
 				>
 				<Input value={tenant.state.organizationName || '—'} disabled class="w-full" />
 			</label>
@@ -815,12 +818,12 @@
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Email</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.email')}</span
 				>
 				<Input bind:value={form.email} icon="lucide:at-sign" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Phone</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.phone')}</span
 				>
 				<Input bind:value={form.phone} icon="lucide:phone" class="w-full" />
 			</label>
@@ -859,7 +862,7 @@
 				{/if}
 				{#if editingId && staff.find((s) => s.id === editingId)?.data.pinHash}
 					<Button color="neutral" variant="subtle" size="sm" icon="lucide:x" onclick={removePin}
-						>Remove</Button
+						>{t('common.remove')}</Button
 					>
 				{/if}
 			</div>
@@ -880,7 +883,7 @@
 
 		<!-- Status -->
 		<div>
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Status</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.status')}</span>
 			<div class="flex flex-wrap gap-2">
 				{#each STATUSES as status (status)}
 					<button
@@ -955,7 +958,7 @@
 		</div>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (open = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (open = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" icon="lucide:check" disabled={!canSave} onclick={save}>
 			{editingId ? 'Update' : 'Save'}
 		</Button>

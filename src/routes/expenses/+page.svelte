@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -65,9 +66,9 @@
 			(e.data.description ?? '').toLowerCase().includes(q) ||
 			(e.data.payee ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'date', label: 'Date', value: (e) => e.data.occurredAt },
-			{ key: 'amount', label: 'Amount', value: (e) => e.data.amount },
-			{ key: 'category', label: 'Category', value: (e) => e.data.category }
+			{ key: 'date', label: t('common.date'), value: (e) => e.data.occurredAt },
+			{ key: 'amount', label: t('common.amount'), value: (e) => e.data.amount },
+			{ key: 'category', label: t('common.category'), value: (e) => e.data.category }
 		],
 		defaultSortKey: 'date',
 		defaultSortDir: 'desc',
@@ -211,15 +212,15 @@
 	);
 </script>
 
-<svelte:head><title>BNOS · Expenses</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.expenses')}</title></svelte:head>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Expenses</h1>
+			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.expenses')}</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Outgoing costs · kind 30802</p>
 		</div>
-		<Button color="primary" icon="lucide:plus" onclick={openCreate}>Add expense</Button>
+		<Button color="primary" icon="lucide:plus" onclick={openCreate}>{t('common.add') + ' ' + t('common.expense')}</Button>
 	</div>
 
 	<div class="grid grid-cols-3 gap-3">
@@ -307,7 +308,7 @@
 							class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 						>
 							<Icon name="lucide:x" class="size-3.5" />
-							Clear
+							{t('common.clear')}
 						</button>
 					{/if}
 				</div>
@@ -318,12 +319,12 @@
 	{#if controls.list.length === 0}
 		<EmptyState
 			icon="lucide:wallet"
-			title="No expenses"
-			description="Record rent, supplies, salaries and more."
+			title={t('expenses.noExpenses')}
+			description={t('expenses.noExpensesDesc')}
 		>
 			{#snippet actions()}
 				<Button color="primary" size="sm" icon="lucide:plus" onclick={openCreate}
-					>Add expense</Button
+					>{t('common.add') + ' ' + t('common.expense')}</Button
 				>
 			{/snippet}
 		</EmptyState>
@@ -336,23 +337,23 @@
 							column="date"
 							active={controls.sortKey === 'date'}
 							direction={controls.sortDir}
-							applySort={controls.applySort}>Date</SortableTh
+							applySort={controls.applySort}>{t('common.date')}</SortableTh
 						>
-						<th class="px-5 py-2.5">Description</th>
+						<th class="px-5 py-2.5">{t('common.description')}</th>
 						<SortableTh
 							column="category"
 							active={controls.sortKey === 'category'}
 							direction={controls.sortDir}
-							applySort={controls.applySort}>Category</SortableTh
+							applySort={controls.applySort}>{t('common.category')}</SortableTh
 						>
-						<th class="px-5 py-2.5">Status</th>
-						<th class="px-5 py-2.5">Receipt</th>
+						<th class="px-5 py-2.5">{t('common.status')}</th>
+						<th class="px-5 py-2.5">{t('settings.receipt')}</th>
 						<SortableTh
 							column="amount"
 							active={controls.sortKey === 'amount'}
 							direction={controls.sortDir}
 							align="right"
-							applySort={controls.applySort}>Amount</SortableTh
+							applySort={controls.applySort}>{t('common.amount')}</SortableTh
 						>
 						<th class="w-10 px-5 py-2.5"></th>
 					</tr>
@@ -390,7 +391,7 @@
 										class="inline-flex items-center gap-1 text-[12px] font-medium text-primary-600 hover:underline dark:text-primary-400"
 									>
 										<Icon name="lucide:paperclip" class="size-3.5" />
-										View
+										{t('common.view')}
 									</a>
 								{:else}
 									<span class="text-[var(--ui-text-dimmed)]">—</span>
@@ -411,7 +412,7 @@
 												onSelect: () => openEdit({ id: e.id, data: e.data })
 											},
 											{
-												label: 'View raw',
+												label: t('common.viewRaw'),
 												icon: 'lucide:code',
 												onSelect: () => {
 													rawItem = glo.get('expense', e.id);
@@ -443,11 +444,11 @@
 </div>
 
 <!-- Create Dialog -->
-<Dialog bind:open title="Add expense" size="lg">
+<Dialog bind:open title={t('common.add') + ' ' + t('common.expense')} size="lg">
 	<div class="space-y-3">
 		<label class="block">
 			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Description</span
+				>{t('common.description')}</span
 			>
 			<Input bind:value={desc} class="w-full" />
 		</label>
@@ -460,7 +461,7 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Category</span
+					>{t('common.category')}</span
 				>
 				<Select
 					bind:value={cat}
@@ -477,7 +478,7 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Method</span
+					>{t('common.method')}</span
 				>
 				<Select
 					bind:value={method}
@@ -493,7 +494,7 @@
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Date</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.date')}</span>
 				<input
 					type="date"
 					bind:value={expDate}
@@ -502,16 +503,16 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Status</span
+					>{t('common.status')}</span
 				>
 				<Select
 					bind:value={expStatus}
 					options={[
-						{ value: 'draft', label: 'Draft' },
+						{ value: 'draft', label: t('status.draft') },
 						{ value: 'submitted', label: 'Submitted' },
-						{ value: 'approved', label: 'Approved' },
-						{ value: 'paid', label: 'Paid' },
-						{ value: 'cancelled', label: 'Cancelled' }
+						{ value: 'approved', label: t('status.approved') },
+						{ value: 'paid', label: t('status.paid') },
+						{ value: 'cancelled', label: t('status.cancelled') }
 					]}
 					class="w-full"
 				/>
@@ -530,17 +531,17 @@
 		</label>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (open = false)}>Cancel</Button>
-		<Button color="primary" icon="lucide:check" onclick={save}>Save</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (open = false)}>{t('common.cancel')}</Button>
+		<Button color="primary" icon="lucide:check" onclick={save}>{t('common.save')}</Button>
 	{/snippet}
 </Dialog>
 
 <!-- Edit Dialog -->
-<Dialog bind:open={editOpen} title="Edit expense" size="lg">
+<Dialog bind:open={editOpen} title={t('common.edit') + ' ' + t('common.expense')} size="lg">
 	<div class="space-y-3">
 		<label class="block">
 			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Description</span
+				>{t('common.description')}</span
 			>
 			<Input bind:value={editDesc} class="w-full" />
 		</label>
@@ -553,7 +554,7 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Category</span
+					>{t('common.category')}</span
 				>
 				<Select
 					bind:value={editCat}
@@ -570,7 +571,7 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Method</span
+					>{t('common.method')}</span
 				>
 				<Select
 					bind:value={editMethod}
@@ -586,7 +587,7 @@
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Date</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.date')}</span>
 				<input
 					type="date"
 					bind:value={editDate}
@@ -595,16 +596,16 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Status</span
+					>{t('common.status')}</span
 				>
 				<Select
 					bind:value={editStatus}
 					options={[
-						{ value: 'draft', label: 'Draft' },
+						{ value: 'draft', label: t('status.draft') },
 						{ value: 'submitted', label: 'Submitted' },
-						{ value: 'approved', label: 'Approved' },
-						{ value: 'paid', label: 'Paid' },
-						{ value: 'cancelled', label: 'Cancelled' }
+						{ value: 'approved', label: t('status.approved') },
+						{ value: 'paid', label: t('status.paid') },
+						{ value: 'cancelled', label: t('status.cancelled') }
 					]}
 					class="w-full"
 				/>
@@ -623,9 +624,9 @@
 		</label>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (editOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (editOpen = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" icon="lucide:check" onclick={saveEdit}>Save changes</Button>
 	{/snippet}
 </Dialog>
 
-<RawDataDialog bind:open={rawOpen} data={rawItem} title="Expense Raw Data" />
+<RawDataDialog bind:open={rawOpen} data={rawItem} title={t('expenses.rawData')} />

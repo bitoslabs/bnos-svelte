@@ -81,7 +81,7 @@ class MembershipsStore {
 		this.resolving = true;
 		try {
 			// 1. Owner-operated records authored by this device's key.
-			await glo.sync(TYPE.staff);
+			await glo.sync(TYPE.staff, { relayStrategy: 'primary-first' });
 			// 2. Records authored by other owners where this user is the staff member.
 			await this.fetchMembershipsByPTag();
 			// 3. Pull NIP-44 company key grants addressed to this user (kind 30512) so
@@ -123,7 +123,7 @@ class MembershipsStore {
 			}
 
 			// Configure tenant — prefer the full org record, else staff-record fallback.
-			if (!restoreTenantFromWorkspace()) {
+			if (!restoreTenantFromWorkspace({ organizationId: me.data.companyId })) {
 				tenant.configure({
 					organizationId: me.data.companyId ?? tenant.state.organizationId,
 					organizationName: me.data.companyName ?? tenant.state.organizationName,
@@ -147,6 +147,10 @@ class MembershipsStore {
 		const owners = [...new Set(authors.filter((a) => !!a && a !== me))];
 		if (!owners.length) return;
 		try {
+			// Workspace configuration is replaceable data. Query every readable relay
+			// here so a stale primary cannot hide a newer organization or branch update
+			// that has already reached another relay. `batchUpsert` keeps the newest
+			// version using the record update timestamp.
 			const [orgEvents, locEvents] = await Promise.all([
 				fetchEvents({ kinds: [30078], authors: owners }),
 				fetchEvents({ kinds: [30600], authors: owners })
@@ -176,6 +180,7 @@ class MembershipsStore {
 		if (!me) return;
 		this._ownerPubkeys = [];
 		try {
+			// Membership updates may also arrive at a non-primary relay first.
 			const events = await fetchEvents({ kinds: [30500], '#p': [me] });
 			if (!events.length) return;
 			// Remember who authored these staff records (the org owners) so a

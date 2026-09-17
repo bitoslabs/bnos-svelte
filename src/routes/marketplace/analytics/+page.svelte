@@ -5,6 +5,7 @@
 	 * shared dashboard metrics engine (no chart library added).
 	 */
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { formatMoney, formatInt, titleCase } from '$lib/utils/format';
@@ -86,7 +87,7 @@
 	const isEmpty = $derived(mpRows.length === 0 && listings.length === 0);
 </script>
 
-<svelte:head><title>Marketplace · Analytics</title></svelte:head>
+<svelte:head><title>{t('nav.marketplace')} · {t('nav.analytics')}</title></svelte:head>
 
 <div class="space-y-5">
 	<div>
@@ -158,7 +159,7 @@
 					<h3 class="font-display text-[14px] font-semibold">Conversion funnel</h3>
 				</div>
 				<div class="space-y-3">
-					{#each [{ label: 'Views', value: funnel.views, icon: 'lucide:eye', color: 'bg-blue-500' }, { label: 'Clicks', value: funnel.clicks, icon: 'lucide:mouse-pointer-click', color: 'bg-violet-500' }, { label: 'Orders', value: funnel.conv, icon: 'lucide:shopping-bag', color: 'bg-emerald-500' }] as f (f.label)}
+					{#each [{ label: t('common.views'), value: funnel.views, icon: 'lucide:eye', color: 'bg-blue-500' }, { label: 'Clicks', value: funnel.clicks, icon: 'lucide:mouse-pointer-click', color: 'bg-violet-500' }, { label: 'Orders', value: funnel.conv, icon: 'lucide:shopping-bag', color: 'bg-emerald-500' }] as f (f.label)}
 						<div>
 							<div class="mb-1 flex items-center justify-between text-[11.5px]">
 								<span class="inline-flex items-center gap-1 font-medium text-[var(--ui-text-muted)]">

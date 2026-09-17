@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
+	import { onDestroy, onMount, untrack } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -10,6 +11,7 @@
 	import MenuDivider from '$lib/components/ui/MenuDivider.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
+	import RelayStatusPopover from '$lib/components/RelayStatusPopover.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -21,28 +23,55 @@
 		TYPE,
 		statusColor,
 		type Product,
+		type CatalogCategory,
 		type ProductVariant,
 		type ModifierGroup,
 		type GloObject,
 		type Order,
+		type Customer,
+		type Coupon,
+		type LoyaltyPoints,
 		type PaymentMethod
 	} from '$lib/domain';
-	import { cart, type OrderType, type CartModifier } from '$lib/pos/cart.svelte';
+	import { newRecordId } from '$lib/utils/record-id';
+	import CustomerPicker from '$lib/components/pos/CustomerPicker.svelte';
+	import { loadLoyaltySettings, type LoyaltySettings } from '$lib/settings/local';
+	import { pointsForSpend, maxRedeem, buildLoyaltyTx } from '$lib/pos/loyalty';
+	import { logActivity } from '$lib/audit.svelte';
+	import { permissions } from '$lib/permissions.svelte';
+	import {
+		cart,
+		type OrderType,
+		type CartModifier,
+		type CompletedSale
+	} from '$lib/pos/cart.svelte';
+	import PaymentSuccessHeader from '$lib/pos/PaymentSuccessHeader.svelte';
+	import {
+		isAutoApplicable,
+		isPromotionEligible,
+		isPromoLive,
+		promoCoversProduct,
+		shouldAutoApply,
+		normalizeType,
+		promoValue,
+		promoName,
+		promoValueLabel,
+		promoIcon,
+		promoSavings,
+		type PromoCtx,
+		type PromoData
+	} from '$lib/pos/promotions';
 	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
+	import { startBarcodeScanner } from '$lib/pos/barcode-scanner';
 	import { computeStock, availableFor, canSell } from '$lib/pos/stock';
 	import { printPosReceipt } from '$lib/pos/pos-receipt';
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
-	import {
-		buildPaymentQr,
-		isQrMethod,
-		type PaymentQrResult
-	} from '$lib/pos/payment-qr';
+	import { buildPaymentQr, isQrMethod, type PaymentQrResult } from '$lib/pos/payment-qr';
 	import { loadPayConfig } from '$lib/pos/pay-config';
-	import { getMerchantLightning } from '$lib/pos/lightning';
-	import {
-		getActiveLightningProvider,
-		type LightningProvider
-	} from '$lib/pos/lightning-providers';
+	import { getMerchantLightning, loadBitcoinLightningSettings } from '$lib/pos/lightning';
+	import { PaymentQrFlowStore } from '$lib/pos/payment-qr-flow.svelte';
+	import { resolveInvoiceMemo } from '$lib/pos/invoice-memo';
+	import PaymentQrDialog from '$lib/components/pos/PaymentQrDialog.svelte';
 	import QrCode from '$lib/components/ui/QrCode.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -56,8 +85,11 @@
 	} from '$lib/settings/local';
 
 	interface PromotionData {
+		code?: string;
+		isCoupon?: boolean;
 		status?: string;
 		isActive?: boolean;
+		active?: boolean;
 		startDate?: string;
 		endDate?: string;
 		usageLimit?: number;
@@ -74,11 +106,13 @@
 	let generalSettings = $state<GeneralSettings>(loadGeneralSettings());
 	let hardwareSettings = $state<HardwareSettings>(loadHardwareSettings());
 	let receiptSettings = $state<ReceiptSettings>(loadReceiptSettings());
+	let loyaltySettings = $state<LoyaltySettings>(loadLoyaltySettings());
 
 	function refreshLocalSettings() {
 		generalSettings = loadGeneralSettings();
 		hardwareSettings = loadHardwareSettings();
 		receiptSettings = loadReceiptSettings(tenant.state.organizationName || 'BNOS');
+		loyaltySettings = loadLoyaltySettings();
 	}
 
 	onMount(() => {
@@ -87,6 +121,9 @@
 			? generalSettings.defaultPayment
 			: 'cash';
 		splitMethod = method;
+		// Auto-focus the scan/search field when a scanner is enabled so the cashier
+		// can start scanning immediately without reaching for the mouse.
+		if (loadHardwareSettings().barcodeScanner) focusSearch();
 
 		dataSync.pageSync(
 			[
@@ -96,7 +133,10 @@
 				TYPE.adjustment,
 				TYPE.shift,
 				TYPE.order,
-				TYPE.promotion
+				TYPE.promotion,
+				TYPE.coupon,
+				TYPE.refund,
+				TYPE.loyaltyPoints
 			],
 			{ scope: 'pos' }
 		);
@@ -120,52 +160,304 @@
 		};
 	});
 
-	// Active promotions
-	const activePromotions = $derived(
-		glo.all<PromotionData, typeof TYPE.promotion>(TYPE.promotion).filter((p) => {
-			const d = p.data;
-			const now = new Date();
-			const active = d.status === 'active' || d.isActive !== false;
-			const notExpired = !d.endDate || new Date(d.endDate) >= now;
-			const started = !d.startDate || new Date(d.startDate) <= now;
-			const notExhausted = !d.usageLimit || (d.currentUsage ?? 0) < d.usageLimit;
-			return active && notExpired && started && notExhausted;
-		})
-	);
+	// ── Promotions ──
+	// All broadly-active promotions (status check only). Per-cart eligibility
+	// (date / time window / min-spend / targeting / usage) is evaluated by the
+	// promo engine so the cart rail can auto-suggest offers the current sale
+	// actually qualifies for. See ./promotions.ts.
+	const allPromotions = $derived([
+		...glo
+			.all<PromotionData, typeof TYPE.promotion>(TYPE.promotion)
+			.filter(
+				(p) => p.data.status === 'active' || p.data.isActive !== false || p.data.active !== false
+			),
+		...glo
+			.all<Coupon, typeof TYPE.coupon>(TYPE.coupon)
+			.filter((p) => p.data.status === 'active' && p.data.active !== false)
+			.map((p) => ({
+				...p,
+				data: {
+					name: p.data.code,
+					code: p.data.code,
+					isCoupon: true,
+					description: p.data.description,
+					type: p.data.type === 'percent' || p.data.type === 'fixed' || p.data.type === 'bogo' ? p.data.type : 'manual',
+					value: p.data.value,
+					minimumSpend: p.data.minSpend,
+					maxUsage: p.data.maxUses,
+					currentUsage: p.data.uses,
+					startsAt: p.data.validFrom,
+					endsAt: p.data.validUntil,
+					productIds: p.data.productIds,
+					categoryIds: p.data.categoryIds,
+					status: p.data.status,
+					active: p.data.active
+				}
+			}))
+	]);
 
 	let promoOpen = $state(false);
-	let selectedPromoId = $state<string | null>(null);
+	// Pause auto-apply after a manual removal (cashier intent wins) + remember
+	// the id of the promo most recently auto-applied (drives the "Auto" tag).
+	let autoApplySuppressed = $state(false);
+	let autoAppliedId = $state<string | null>(null);
 
 	function applyPromotion(promoId: string | null) {
-		selectedPromoId = promoId;
 		if (promoId) {
-			const promo = activePromotions.find((p) => p.id === promoId);
+			const promo = allPromotions.find((p) => p.id === promoId);
 			if (promo) {
 				const d = promo.data;
-				if (d.type === 'percent' || d.discountType === 'percent') {
-					cart.setDiscount({ type: 'percent', value: d.value ?? d.discountValue ?? 0 });
-				} else if (d.type === 'fixed' || d.discountType === 'fixed') {
-					cart.setDiscount({ type: 'fixed', value: d.value ?? d.discountValue ?? 0 });
-				}
+				const kind = normalizeType(d.type ?? d.discountType);
+				if (kind === 'percent') cart.setDiscount({ type: 'percent', value: promoValue(d) });
+				else if (kind === 'fixed') cart.setDiscount({ type: 'fixed', value: promoValue(d) });
+				// manual types (BOGO / bundle) → tag the order only, no auto discount
 				cart.setPromotion(promoId);
-				toast.success('Promotion applied: ' + (d.name ?? 'Discount'));
+				autoAppliedId = null; // cashier chose this manually → no longer “auto”
+				toast.success('Promotion applied', promoName(d, currency));
+				void logActivity({
+					action: 'promotion',
+					resource: 'promotion',
+					resourceId: promoId,
+					summary: `Applied promotion ${promoName(d, currency)}`
+				});
 			}
 		} else {
+			// Manual removal → pause auto-apply for the rest of this sale so we don't
+			// immediately re-apply (or swap in a different one) against the cashier's intent.
+			if (cart.appliedPromotionId) autoApplySuppressed = true;
 			cart.setDiscount({ type: 'percent', value: 0 });
 			cart.setPromotion(null);
-			selectedPromoId = null;
+			autoAppliedId = null;
+			toast.info('Promotion removed');
+			void logActivity({
+				action: 'promotion',
+				resource: 'promotion',
+				summary: 'Removed promotion'
+			});
 		}
 		promoOpen = false;
 	}
 
+	let couponCode = $state('');
+
+	function applyCouponCode() {
+		const code = couponCode.trim().toUpperCase();
+		const coupon = allPromotions.find((p) => p.data.isCoupon && p.data.code === code);
+		if (!coupon) {
+			toast.error('Coupon not found', code || 'Enter a coupon code');
+			return;
+		}
+		const elig = isPromotionEligible(coupon.data, promoCtx);
+		if (!elig.ok) {
+			toast.warning('Coupon cannot be applied', elig.reason);
+			return;
+		}
+		applyPromotion(coupon.id);
+		couponCode = '';
+	}
+
 	const currency = $derived(tenant.state.currency);
 	const products = $derived(glo.all<Product, typeof TYPE.product>(TYPE.product));
+
+	function productImage(product: Product): string {
+		return product.images?.[0] ?? product.image ?? '';
+	}
+
 	const modifiers = $derived(glo.all<ModifierGroup, typeof TYPE.modifierGroup>(TYPE.modifierGroup));
 	const branchId = $derived(tenant.state.locationId ?? undefined);
 	const stockMap = $derived(computeStock(glo.all(TYPE.adjustment), branchId));
 
+	// Promotion eligibility context for the live cart (product/category targeting
+	// + subtotal for minimum-spend checks).
+	const productCategoryMap = $derived(
+		new Map(products.map((p) => [p.id, (p.data.categoryId as string | undefined) ?? undefined]))
+	);
+	const cartProductIds = $derived(cart.items.map((i) => i.productId));
+	const cartCategoryIds = $derived(
+		Array.from(
+			new Set(
+				cart.items.map((i) => productCategoryMap.get(i.productId)).filter((v): v is string => !!v)
+			)
+		)
+	);
+	const promoCtx = $derived<PromoCtx>({
+		subtotal: cart.totals.subtotal,
+		currency,
+		now,
+		cartProductIds,
+		cartCategoryIds
+	});
+	// Offers the current cart qualifies for AND the cart can apply automatically.
+	const eligiblePromotions = $derived(
+		allPromotions.filter(
+			(p) => isAutoApplicable(p.data) && isPromotionEligible(p.data, promoCtx).ok
+		)
+	);
+	// The promotion currently linked to the cart (drives the "applied" banner).
+	const appliedPromoObj = $derived(
+		cart.appliedPromotionId
+			? (allPromotions.find((p) => p.id === cart.appliedPromotionId) ?? null)
+			: null
+	);
+	// Auto-release a promotion that is no longer valid for this cart — e.g. the
+	// customer removed items and the subtotal dropped below the minimum spend, or
+	// a happy-hour window just ended.
+	$effect(() => {
+		const id = cart.appliedPromotionId;
+		if (!id) return;
+		const promo = allPromotions.find((p) => p.id === id);
+		if (!promo) return;
+		const elig = isPromotionEligible(promo.data, promoCtx);
+		if (!elig.ok) {
+			cart.setPromotion(null);
+			cart.setDiscount({ type: 'percent', value: 0 });
+			toast.info(
+				'Promotion removed',
+				`${promoName(promo.data, currency)} — ${elig.reason.toLowerCase()}`
+			);
+		}
+	});
+
+	// Was the currently-applied promo applied automatically? (drives the “Auto” tag)
+	const isAutoApplied = $derived(
+		cart.appliedPromotionId !== null && cart.appliedPromotionId === autoAppliedId
+	);
+
+	// Auto-apply the best eligible offer when the cart qualifies — but only when:
+	//  • the merchant enabled it (General settings)
+	//  • no promo is applied yet
+	//  • the cashier hasn't set a manual discount (their intent wins)
+	//  • the offer wasn't dismissed this sale
+	// Picks the highest-saving qualifying offer; manual types never auto-apply.
+	$effect(() => {
+		if (!generalSettings.autoApplyPromotions) return;
+		if (autoApplySuppressed) return;
+		if (cart.appliedPromotionId || cart.isEmpty) return;
+		if (cart.discount.value > 0) return; // a manual discount is active
+		let best: { id: string; data: PromoData; savings: number } | null = null;
+		for (const promo of eligiblePromotions) {
+			if (!shouldAutoApply(promo.data)) continue;
+			const savings = promoSavings(promo.data, cart.totals.subtotal);
+			if (savings <= 0) continue;
+			if (!best || savings > best.savings) best = { id: promo.id, data: promo.data, savings };
+		}
+		if (best) {
+			const kind = normalizeType(best.data.type ?? best.data.discountType);
+			if (kind === 'percent') cart.setDiscount({ type: 'percent', value: promoValue(best.data) });
+			else if (kind === 'fixed') cart.setDiscount({ type: 'fixed', value: promoValue(best.data) });
+			cart.setPromotion(best.id);
+			autoAppliedId = best.id;
+		}
+	});
+
+	// Fresh sale (empty cart) → forget dismissal + auto-apply state.
+	$effect(() => {
+		if (cart.isEmpty) {
+			autoApplySuppressed = false;
+			autoAppliedId = null;
+		}
+	});
+
+	// Best live promotion per product — drives the "on offer" badge + effective
+	// (discounted) price on each product card. Ignores cart state so the badge is
+	// stable; the cart rail handles actual eligibility + apply.
+	type ProductPromo = { data: PromoData; savings: number; newPrice: number; label: string };
+	const productPromoMap = $derived.by(() => {
+		const map: Record<string, ProductPromo> = {};
+		if (allPromotions.length === 0) return map;
+		for (const prod of products) {
+			const price = prod.data.price ?? 0;
+			if (price <= 0) continue;
+			const cat = prod.data.categoryId as string | undefined;
+			let best: { data: PromoData; savings: number } | null = null;
+			for (const promo of allPromotions) {
+				const d = promo.data;
+				if (!isAutoApplicable(d) || !isPromoLive(d, now).ok) continue;
+				if (!promoCoversProduct(d, prod.id, cat)) continue;
+				const savings = promoSavings(d, price);
+				if (savings <= 0) continue;
+				if (!best || savings > best.savings) best = { data: d, savings };
+			}
+			if (best) {
+				map[prod.id] = {
+					data: best.data,
+					savings: best.savings,
+					newPrice: Math.max(0, price - best.savings),
+					label: promoValueLabel(best.data, currency)
+				};
+			}
+		}
+		return map;
+	});
+	const offersCount = $derived(Object.keys(productPromoMap).length);
+	let offersOnly = $state(false);
+
 	let query = $state('');
+
+	// ── Scan-or-search ──
+	// The product search field doubles as a barcode scanner target: an exact
+	// barcode/SKU match is the "scan to add" target. Typing a code + Enter (or a
+	// USB scanner that types into the focused field + sends Enter) adds the
+	// product instantly. Scanners firing while the field isn't focused are still
+	// caught by the global HID capture (`barcode-scanner.ts`).
+	const scanMatch = $derived.by(() => {
+		const code = query.trim();
+		if (code.length < 2) return null;
+		return products.find((p) => p.data.barcode === code || p.data.sku === code) ?? null;
+	});
+
+	function focusSearch() {
+		requestAnimationFrame(() => document.getElementById('pos-search')?.focus());
+	}
+
+	function onSearchKeydown(e: KeyboardEvent) {
+		if (e.key !== 'Enter') return;
+		const match = scanMatch;
+		if (match) {
+			e.preventDefault();
+			query = '';
+			tapProduct(match); // opens variant/modifier picker if needed, else adds
+			toast.success('Added', (match.data.name as string) ?? 'Item');
+			focusSearch();
+		}
+	}
+
+	// ── Auto-add on exact code match after a brief typing pause ──
+	// Tier-3 of the scan UX: type a full barcode/SKU on the keyboard and pause
+	// (~600ms) → the product is added automatically, no Enter needed. Safe because
+	// it only fires on an EXACT match against a product's barcode/SKU field (never
+	// a name search). Enter still adds instantly; scanner bursts are caught
+	// globally. Re-checks the input before adding so it never double-adds with
+	// the Enter handler.
+	let scanDebounce: ReturnType<typeof setTimeout> | null = null;
+	$effect(() => {
+		const code = query.trim();
+		const match =
+			code.length >= 4
+				? (products.find((p) => p.data.barcode === code || p.data.sku === code) ?? null)
+				: null;
+		if (scanDebounce) clearTimeout(scanDebounce);
+		if (match) {
+			scanDebounce = setTimeout(() => {
+				if (query.trim() !== code) return; // input changed → abort
+				query = '';
+				tapProduct(match);
+				toast.success('Added', (match.data.name as string) ?? 'Item');
+				focusSearch();
+			}, 600);
+		}
+		return () => {
+			if (scanDebounce) clearTimeout(scanDebounce);
+		};
+	});
+
 	let activeCat = $state<string>('all');
+	const catalogCategories = $derived(
+		glo.all<CatalogCategory, typeof TYPE.category>(TYPE.category)
+	);
+	const categoryNames = $derived(
+		new Map(catalogCategories.map((category) => [category.id, category.data.name]))
+	);
 	const categories = $derived.by(() => {
 		const categories: string[] = [];
 		for (const p of products) {
@@ -174,13 +466,17 @@
 		}
 		return ['all', ...categories];
 	});
+	function categoryLabel(categoryId: string): string {
+		return categoryId === 'all' ? 'All items' : (categoryNames.get(categoryId) ?? categoryId);
+	}
 	const filtered = $derived(
 		products.filter((p) => {
 			const matchesCat = activeCat === 'all' || p.data.categoryId === activeCat;
 			const q = query.trim().toLowerCase();
 			const matchesQuery = !q || (p.data.name ?? '').toLowerCase().includes(q);
 			const sellable = p.data.status !== 'inactive' && p.data.status !== 'archived';
-			return matchesCat && matchesQuery && sellable;
+			const matchesOffers = !offersOnly || !!productPromoMap[p.id];
+			return matchesCat && matchesQuery && sellable && matchesOffers;
 		})
 	);
 	const trackedProducts = $derived(products.filter((p) => p.data.trackInventory).length);
@@ -226,6 +522,16 @@
 	type SelProduct = { obj: GloObject<Product, typeof TYPE.product>; data: Product };
 	let sizeSel = $state<SelProduct | null>(null);
 	let modSel = $state<SelProduct | null>(null);
+	// Open state is tracked separately from the data so that closing the dialog
+	// (backdrop / X / Esc) reliably reopens it on the next tap. Binding
+	// `open={!!sizeSel}` one-way left the Dialog's internal open stuck `false`
+	// after a close because `sizeSel` was never cleared.
+	let sizeOpen = $state(false);
+	let modOpen = $state(false);
+	$effect(() => {
+		if (!sizeOpen) sizeSel = null;
+		if (!modOpen) modSel = null;
+	});
 	let chosenVariant = $state<string>('');
 	let chosenMods = $state<Record<string, string[]>>({});
 	let pendingNote = $state('');
@@ -245,12 +551,14 @@
 			sizeSel = { obj: p, data };
 			chosenVariant = '';
 			pendingNote = '';
+			sizeOpen = true;
 			return;
 		}
 		if (groupsFor(data).length) {
 			modSel = { obj: p, data };
 			chosenMods = {};
 			pendingNote = '';
+			modOpen = true;
 			return;
 		}
 		addPlain(p);
@@ -287,11 +595,12 @@
 		const obj = sizeSel.obj;
 		const variantId = v.id;
 		const variantName = v.name;
-		sizeSel = null;
+		sizeOpen = false;
 		if (groupsFor(obj.data).length) {
 			modSel = { obj, data: obj.data };
 			chosenMods = {};
 			pendingModVariant = { variantId, variantName, unitPrice: price };
+			modOpen = true;
 			return;
 		}
 		cart.add({ productId: obj.id, name: obj.data.name, unitPrice: price, variantId, variantName });
@@ -332,7 +641,7 @@
 		const ctx = pendingModVariant;
 		pendingModVariant = null;
 		const obj = modSel.obj;
-		modSel = null;
+		modOpen = false;
 		cart.add({
 			productId: obj.id,
 			name: obj.data.name,
@@ -349,6 +658,11 @@
 	let method = $state<string>('cash');
 	let tendered = $state<number | ''>('');
 	let processing = $state(false);
+	let checkoutProgressStage = $state<'saving' | 'syncing' | 'synced'>('saving');
+
+	function updateCheckoutProgress(stage: 'saving' | 'syncing' | 'synced') {
+		checkoutProgressStage = stage;
+	}
 
 	// Tip
 	let tipAmount = $state(0);
@@ -358,6 +672,123 @@
 
 	// Grand total includes tip
 	const grandTotal = $derived(cart.totals.total + tipAmount);
+
+	// ── Loyalty ──
+	const customers = $derived(glo.all<Customer, typeof TYPE.customer>(TYPE.customer));
+	const cartCustomer = $derived(
+		cart.customerId ? (customers.find((c) => c.id === cart.customerId) ?? null) : null
+	);
+	const customerPoints = $derived(cartCustomer?.data.loyaltyPoints ?? 0);
+	// Largest redemption possible for this cart (capped at the subtotal).
+	const loyaltyRedeem = $derived(
+		loyaltySettings.enabled &&
+			loyaltySettings.redeemEnabled &&
+			cartCustomer &&
+			cart.discount.value <= 0
+			? maxRedeem(customerPoints, loyaltySettings.pointValue, cart.totals.subtotal)
+			: { credit: 0, points: 0, remainderPoints: 0 }
+	);
+	const loyaltyEarnPreview = $derived(
+		loyaltySettings.enabled && cartCustomer
+			? pointsForSpend(grandTotal, loyaltySettings.pointsPerCurrency)
+			: 0
+	);
+	let loyaltyRedeemOn = $state(false);
+
+	function toggleLoyaltyRedeem() {
+		if (!loyaltyRedeemOn) {
+			if (cart.totals.discountAmount > 0) {
+				toast.warning('Cannot combine loyalty with another discount');
+				return;
+			}
+			if (loyaltyRedeem.credit <= 0) {
+				toast.info('No points to redeem yet');
+				return;
+			}
+			cart.setDiscount({ type: 'fixed', value: loyaltyRedeem.credit });
+			loyaltyRedeemOn = true;
+		} else {
+			cart.setDiscount({ type: 'percent', value: 0 });
+			loyaltyRedeemOn = false;
+		}
+	}
+
+	// Award / deduct loyalty points after a completed sale.
+	async function processLoyalty(sale: CompletedSale) {
+		if (!loyaltySettings.enabled) return;
+		const custId = sale.customerId ?? cart.customerId;
+		if (!custId) return;
+		const cust = glo.get(TYPE.customer, custId) as
+			GloObject<Customer, typeof TYPE.customer> | undefined;
+		if (!cust) return;
+		const balanceBefore = cust.data.loyaltyPoints ?? 0;
+		const redeemed = loyaltyRedeemOn ? loyaltyRedeem.points : 0;
+		const earned = pointsForSpend(sale.totals.total, loyaltySettings.pointsPerCurrency);
+		if (redeemed === 0 && earned === 0) return;
+		const afterRedeem = Math.max(0, balanceBefore - redeemed);
+		const balanceAfter = afterRedeem + earned;
+		try {
+			await glo.upsert(
+				TYPE.customer,
+				{ ...cust.data, loyaltyPoints: balanceAfter },
+				{ id: cust.id }
+			);
+			if (redeemed > 0) {
+				await glo.upsert<LoyaltyPoints>(
+					TYPE.loyaltyPoints,
+					buildLoyaltyTx({
+						customerId: custId,
+						type: 'redeem',
+						points: redeemed,
+						balanceAfter: afterRedeem,
+						reason: 'Checkout redemption',
+						orderId: sale.number
+					}),
+					{ id: newRecordId('loyalty') }
+				);
+			}
+			if (earned > 0) {
+				await glo.upsert<LoyaltyPoints>(
+					TYPE.loyaltyPoints,
+					buildLoyaltyTx({
+						customerId: custId,
+						type: 'earn',
+						points: earned,
+						balanceAfter,
+						reason: 'Sale reward',
+						orderId: sale.number
+					}),
+					{ id: newRecordId('loyalty') }
+				);
+			}
+			loyaltyRedeemOn = false;
+			const net = earned - redeemed;
+			if (redeemed > 0) {
+				void logActivity({
+					action: 'loyalty_redeem',
+					resource: 'customer',
+					resourceId: custId,
+					summary: `Redeemed ${redeemed} pts (${cust.data.name ?? 'Customer'})`,
+					amount: loyaltyRedeem.credit,
+					currency
+				});
+			}
+			if (earned > 0) {
+				void logActivity({
+					action: 'loyalty_earn',
+					resource: 'customer',
+					resourceId: custId,
+					summary: `Awarded ${earned} pts (${cust.data.name ?? 'Customer'})`
+				});
+			}
+			toast.success(
+				net >= 0 ? `+${earned} points` : `−${redeemed} points`,
+				`${cust.data.name ?? 'Customer'} · balance ${balanceAfter}`
+			);
+		} catch (e) {
+			console.warn('[pos] loyalty update failed', e);
+		}
+	}
 	const change = $derived(Math.max(0, (typeof tendered === 'number' ? tendered : 0) - grandTotal));
 	const underPayment = $derived(
 		typeof tendered === 'number' && tendered > 0 && tendered < grandTotal
@@ -422,33 +853,57 @@
 		splitMode = false;
 	}
 
-	// Payment success visual feedback
-	let showSuccessOverlay = $state(false);
+	// Payment success visual feedback — holds the just-completed sale + context
+	// so the celebration overlay can show amount, change due, tip, method, etc.
+	let successTip = $state(0);
+	let successTendered = $state(0);
 
 	// ── QR / Lightning checkout flow ──
-	// When the cashier taps Charge on a QR/Lightning method we open a payment-QR
-	// dialog (shown on POS + pushed to the customer display) instead of completing
-	// instantly. The sale completes when the cashier taps "Mark paid".
-	let payQrOpen = $state(false);
-	let payQrResult = $state<PaymentQrResult | null>(null);
-	let payQrAmount = $state(0);
-	let payQrMethod = $state('');
-	let payQrNote = $state('');
-	let payQrExpiresAt = $state(0);
-	let payQrSecondsLeft = $state(0);
-	let payQrTimer: ReturnType<typeof setInterval> | null = null;
-	let payQrLoading = $state(false);
-	// True while fetching a real Lightning invoice (LNURL-pay).
-	let payQrFetching = $state(false);
-	// Holds the live BOLT11 invoice so we can regenerate on expiry.
-	let payQrInvoice = $state<{ pr: string; amountSats: number } | null>(null);
-	// Whether the shown QR is a real amount-locked invoice vs a static fallback.
-	let payQrIsInvoice = $state(false);
-	// The active Lightning provider (for header label + auto-confirm polling).
-	let payQrProvider = $state<LightningProvider | null>(null);
-	// Auto-confirm polling.
-	let payQrPaid = $state(false);
-	let payQrPollTimer: ReturnType<typeof setInterval> | null = null;
+	// Mechanics (invoice fetch, countdown, payment detection) live in the
+	// PaymentQrFlow store; this page supplies cart context + sale completion.
+	// Optional human-readable description sent as the Lightning invoice memo.
+	let invoiceMemo = $state('');
+
+	/** Effective default invoice memo: cashier input > Settings default memo >
+	 *  sale context (customer or items). Used as the BOLT11 description. */
+	function defaultInvoiceMemo() {
+		return resolveInvoiceMemo({
+			settingsMemo: loadBitcoinLightningSettings().defaultMemo,
+			customerName: cart.customerName || undefined,
+			items: cart.items.map((l) => ({ name: l.name, quantity: l.quantity }))
+		});
+	}
+
+	const payFlow = new PaymentQrFlowStore({
+		satsFromAmount: (a) => btcRate.satsFromAmount(a, currency),
+		defaultMemo: defaultInvoiceMemo,
+		showOnCustomerDisplay: () => loadPayConfig().showOnCustomerDisplay,
+		broadcastQr: broadcastPayQr,
+		broadcastQrClear: broadcastClearPayQr,
+		onAutoPaid: onQrAutoPaid,
+		notify: payFlowNotify
+	});
+
+	// Tear down countdown + payment watchers when the POS unmounts.
+	onDestroy(() => payFlow.destroy());
+
+	/** Map store notifications to toasts (UI stays out of the store). */
+	function payFlowNotify(kind: 'no-provider' | 'fallback' | 'invoice-error' | 'no-rate', detail?: string) {
+		if (kind === 'no-provider')
+			toast.warning(
+				'No Lightning provider',
+				'Select & configure a Lightning provider in Settings → Bitcoin (Lightning Address, Blink, NWC, …).'
+			);
+		else if (kind === 'fallback')
+			toast.warning('Live invoice unavailable', `Showing static address. ${detail ?? ''}`.trim());
+		else if (kind === 'invoice-error') toast.error('Invoice request failed', detail);
+	}
+
+	/** A payment was detected automatically — celebrate and complete the sale. */
+	function onQrAutoPaid() {
+		toast.success('Lightning payment received', 'Auto-confirming the sale…');
+		setTimeout(() => confirmQrPaid(), 600);
+	}
 
 	async function openQrCheckout() {
 		if (cart.isEmpty) return;
@@ -456,12 +911,16 @@
 			toast.info('Open a shift first to process sales.');
 			return;
 		}
+		// Keep the checkout flow single-surface: never leave the receipt mounted
+		// underneath the QR / Lightning dialog.
+		receiptOpen = false;
 		const cfg = loadPayConfig();
 		const amount = grandTotal;
 
-		// Lightning path: fetch a real amount-locked BOLT11 invoice (LNURL-pay).
+		// Lightning path: live amount-locked BOLT11 invoice (LNURL-pay / NWC).
 		if (method === 'lightning') {
-			await openLightningCheckout(amount, cfg);
+			payFlow.openLightning(amount, invoiceMemo.trim() || defaultInvoiceMemo());
+			invoiceMemo = payFlow.note;
 			return;
 		}
 
@@ -477,177 +936,24 @@
 			toast.warning('Pay QR not configured', result.hint ?? 'Set it up in Settings → Pay QR.');
 			return;
 		}
-		showQrDialog(result, amount, method, 'qr-static');
-	}
-
-	async function openLightningCheckout(amount: number, cfg: ReturnType<typeof loadPayConfig>) {
-		const provider = getActiveLightningProvider();
-		if (!provider) {
-			toast.warning(
-				'No Lightning provider',
-				'Select & configure a Lightning provider in Settings → Bitcoin (Lightning Address, Blink, NWC, …).'
-			);
-			return;
-		}
-		payQrProvider = provider;
-		// Pre-open the dialog in a fetching state so the UI feels instant.
-		payQrResult = {
-			payload: '',
-			kind: 'lightning',
-			configured: true,
-			badge: 'lightning'
-		};
-		payQrAmount = amount;
-		payQrMethod = 'lightning';
-		payQrNote = cart.customerName || '';
-		payQrInvoice = null;
-		payQrIsInvoice = false;
-		payQrPaid = false;
-		payQrFetching = true;
-		payQrExpiresAt = Date.now() + 15 * 60 * 1000;
-		payQrSecondsLeft = Math.floor((payQrExpiresAt - Date.now()) / 1000);
-		payQrOpen = true;
-		startQrCountdown();
-		await fetchLightningInvoice(amount, provider);
-	}
-
-	async function fetchLightningInvoice(amount: number, provider: LightningProvider) {
-		payQrFetching = true;
-		try {
-			const sats = btcRate.satsFromAmount(amount, currency);
-			if (sats <= 0) throw new Error('No BTC rate available for ' + currency);
-			const invoice = await provider.makeInvoice(sats * 1000, cart.customerName || 'BNOS sale');
-			payQrInvoice = { pr: invoice.pr, amountSats: invoice.amountSats };
-			payQrIsInvoice = true;
-			payQrResult = {
-				payload: invoice.pr,
-				kind: 'lightning',
-				configured: true,
-				badge: 'lightning'
-			};
-			// Re-broadcast the real invoice to the customer display.
-			if (loadPayConfig().showOnCustomerDisplay) {
-				broadcastPayQr(invoice.pr, amount, 'lightning', 'lightning', 'lightning');
-			}
-			// Auto-confirm: poll the provider for payment status (NWC/Blink/Alby).
-			startPaymentPolling(provider, invoice.pr);
-		} catch (e) {
-			// Graceful fallback: static address QR (only for the Lightning Address path).
-			const wallet = getMerchantLightning();
-			if (wallet) {
-				const fallback = `lightning:${wallet.address}`;
-				payQrIsInvoice = false;
-				payQrResult = { payload: fallback, kind: 'lightning', configured: true, badge: 'lightning' };
-				toast.warning(
-					'Live invoice unavailable',
-					`Showing static address. ${e instanceof Error ? e.message : ''}`.trim()
-				);
-				if (loadPayConfig().showOnCustomerDisplay) {
-					broadcastPayQr(fallback, amount, 'lightning', 'lightning', 'lightning');
-				}
-			} else {
-				// No static fallback for node providers — surface the real error.
-				payQrIsInvoice = false;
-				payQrResult = {
-					payload: '',
-					kind: 'lightning',
-					configured: true,
-					badge: 'lightning'
-				};
-				toast.error('Invoice request failed', e instanceof Error ? e.message : undefined);
-			}
-		} finally {
-			payQrFetching = false;
-		}
-	}
-
-	function startPaymentPolling(provider: LightningProvider, pr: string) {
-		stopPaymentPolling();
-		if (!provider.getPaymentStatus || !provider.autoConfirms) return;
-		let cancelled = false;
-		payQrPollTimer = setInterval(async () => {
-			if (cancelled || !payQrOpen) {
-				stopPaymentPolling();
-				return;
-			}
-			const status = await provider.getPaymentStatus!(pr).catch(() => 'unknown' as const);
-			if (status === 'paid') {
-				payQrPaid = true;
-				stopPaymentPolling();
-				toast.success('Lightning payment received', 'Auto-confirming the sale…');
-				setTimeout(() => confirmQrPaid(), 600);
-			}
-		}, 4000);
-	}
-	function stopPaymentPolling() {
-		if (payQrPollTimer) {
-			clearInterval(payQrPollTimer);
-			payQrPollTimer = null;
-		}
-	}
-
-	function regenerateInvoice() {
-		if (!payQrOpen || payQrMethod !== 'lightning' || !payQrProvider) return;
-		void fetchLightningInvoice(payQrAmount, payQrProvider);
-	}
-
-	function showQrDialog(
-		result: PaymentQrResult,
-		amount: number,
-		payMethod: string,
-		_source: string
-	) {
-		payQrResult = result;
-		payQrAmount = amount;
-		payQrMethod = payMethod;
-		payQrNote = cart.customerName || '';
-		payQrIsInvoice = false;
-		payQrInvoice = null;
-		payQrExpiresAt = Date.now() + 15 * 60 * 1000;
-		payQrSecondsLeft = Math.floor((payQrExpiresAt - Date.now()) / 1000);
-		payQrOpen = true;
-		if (loadPayConfig().showOnCustomerDisplay) {
-			broadcastPayQr(result.payload, amount, payMethod, result.kind, result.badge);
-		}
-		startQrCountdown();
-	}
-
-	function startQrCountdown() {
-		if (payQrTimer) clearInterval(payQrTimer);
-		payQrTimer = setInterval(() => {
-			payQrSecondsLeft = Math.max(0, Math.floor((payQrExpiresAt - Date.now()) / 1000));
-			if (payQrSecondsLeft <= 0) {
-				clearInterval(payQrTimer!);
-				payQrTimer = null;
-			}
-		}, 1000);
-	}
-
-	function closeQrCheckout() {
-		payQrOpen = false;
-		payQrResult = null;
-		stopPaymentPolling();
-		if (payQrTimer) {
-			clearInterval(payQrTimer);
-			payQrTimer = null;
-		}
-		broadcastClearPayQr();
+		payFlow.openStatic(result, amount, method, cart.customerName || '');
 	}
 
 	async function confirmQrPaid() {
-		if (payQrLoading) return;
-		payQrLoading = true;
-		const paidMethod = payQrMethod as PaymentMethod;
-		const paidAmount = payQrAmount;
-		closeQrCheckout();
+		if (payFlow.loading) return;
+		payFlow.loading = true;
+		const paidMethod = payFlow.method as PaymentMethod;
+		const paidAmount = payFlow.amount;
+		payFlow.close();
 		processing = true;
 		try {
 			const sale = await cart.checkout(paidMethod, 0);
 			if (sale) {
 				playSuccessChime();
-				showSuccessOverlay = true;
-				setTimeout(() => (showSuccessOverlay = false), 1500);
+				successTip = tipAmount;
+				successTendered = 0;
 				broadcastCheckoutSuccess(paidAmount, paidMethod);
+				await processLoyalty(sale);
 				toast.success('Payment received', `${formatMoney(paidAmount, currency)} · ${sale.number}`);
 				tendered = '';
 				tipAmount = 0;
@@ -657,17 +963,11 @@
 				if (generalSettings.autoPrint && hardwareSettings.printerType !== 'none') printReceipt();
 			}
 		} catch (e) {
-			toast.error('Checkout failed', e instanceof Error ? e.message : undefined);
+			toast.error(t('pos.checkoutFailed'), e instanceof Error ? e.message : undefined);
 		} finally {
 			processing = false;
-			payQrLoading = false;
+			payFlow.loading = false;
 		}
-	}
-
-	function fmtQrCountdown(s: number): string {
-		const m = Math.floor(s / 60);
-		const sec = s % 60;
-		return `${m}:${sec.toString().padStart(2, '0')}`;
 	}
 
 	async function checkout() {
@@ -676,17 +976,22 @@
 			toast.info('Open a shift first to process sales.');
 			return;
 		}
+		payFlow.close();
 		processing = true;
+		checkoutProgressStage = 'saving';
+		receiptOpen = true;
 		try {
 			const sale = await cart.checkout(
 				method as PaymentMethod,
-				typeof tendered === 'number' ? tendered : 0
+				typeof tendered === 'number' ? tendered : 0,
+				updateCheckoutProgress
 			);
 			if (sale) {
 				playSuccessChime();
-				showSuccessOverlay = true;
-				setTimeout(() => (showSuccessOverlay = false), 1500);
+				successTip = tipAmount;
+				successTendered = typeof tendered === 'number' ? tendered : 0;
 				broadcastCheckoutSuccess(grandTotal, method);
+				await processLoyalty(sale);
 				toast.success('Sale complete', `${formatMoney(grandTotal, currency)} · ${sale.number}`);
 				tendered = '';
 				tipAmount = 0;
@@ -696,6 +1001,7 @@
 				if (generalSettings.autoPrint && hardwareSettings.printerType !== 'none') printReceipt();
 			}
 		} catch (e) {
+			receiptOpen = false;
 			toast.error('Checkout failed', e instanceof Error ? e.message : undefined);
 		} finally {
 			processing = false;
@@ -712,15 +1018,19 @@
 			toast.info('Open a shift first to process sales.');
 			return;
 		}
+		payFlow.close();
 		processing = true;
+		checkoutProgressStage = 'saving';
+		receiptOpen = true;
 		try {
 			const primary = splitPayments[0];
-			const sale = await cart.checkout(primary.method as PaymentMethod, primary.amount);
+			const sale = await cart.checkout(primary.method as PaymentMethod, primary.amount, updateCheckoutProgress);
 			if (sale) {
 				playSuccessChime();
-				showSuccessOverlay = true;
-				setTimeout(() => (showSuccessOverlay = false), 1500);
+				successTip = tipAmount;
+				successTendered = splitPayments.reduce((s, p) => s + p.amount, 0);
 				broadcastCheckoutSuccess(grandTotal, splitPayments[0].method);
+				await processLoyalty(sale);
 				toast.success(
 					'Sale complete',
 					`${formatMoney(grandTotal, currency)} · ${sale.number} · ${splitPayments.length} payments`
@@ -733,6 +1043,7 @@
 				if (generalSettings.autoPrint && hardwareSettings.printerType !== 'none') printReceipt();
 			}
 		} catch (e) {
+			receiptOpen = false;
 			toast.error('Checkout failed', e instanceof Error ? e.message : undefined);
 		} finally {
 			processing = false;
@@ -790,12 +1101,18 @@
 	let discountOpen = $state(false);
 	let dType = $state<'percent' | 'fixed'>('percent');
 	let dValue = $state<number | ''>('');
+	const canDiscount = $derived(permissions.can('discounts', 'write'));
 	function applyDiscount() {
-		cart.setDiscount({
-			type: dType,
-			value: typeof dValue === 'number' ? dValue : Number(dValue) || 0
-		});
+		const value = typeof dValue === 'number' ? dValue : Number(dValue) || 0;
+		cart.setDiscount({ type: dType, value });
 		discountOpen = false;
+		if (value > 0) {
+			void logActivity({
+				action: 'discount',
+				resource: 'cart',
+				summary: `Manual ${dType} discount of ${dType === 'percent' ? value + '%' : formatMoney(value, currency)}`
+			});
+		}
 	}
 
 	// ── held orders + receipt modals ──
@@ -862,11 +1179,11 @@
 		if (
 			generalSettings.confirmClear &&
 			!(await confirm({
-				title: 'Clear cart?',
-				message: 'This removes every item from the current sale.',
+				title: t('pos.confirmClearCart'),
+				message: t('pos.confirmClearCartMsg'),
 				tone: 'danger',
 				icon: 'lucide:cart-x',
-				confirmText: 'Clear cart'
+				confirmText: t('pos.clearCart')
 			}))
 		)
 			return;
@@ -908,6 +1225,8 @@
 	// Track whether shifts have been hydrated from IndexedDB.
 	// glo.version is $state — it bumps when hydration completes.
 	let shiftsLoaded = $state(false);
+	let shiftRelayRefreshAttempted = $state(false);
+	let shiftRefreshBranch = $state<string | null | undefined>(undefined);
 	$effect(() => {
 		const trackedVersion = glo.version;
 		const trackedShiftCount = shiftStore.all.length;
@@ -920,6 +1239,24 @@
 			// Not hydrated yet — kick off hydration.
 			glo.hydrate(TYPE.shift);
 		}
+	});
+	// A device can have an empty/stale local shift cache while another terminal
+	// has already opened a shift. Once local hydration finishes, make one fresh
+	// branch-scoped relay request before showing the open-shift gate.
+	$effect(() => {
+		const branchId = tenant.state.locationId;
+		if (shiftRefreshBranch !== branchId) {
+			shiftRefreshBranch = branchId;
+			shiftRelayRefreshAttempted = false;
+		}
+		if (!shiftsLoaded || openShift || shiftRelayRefreshAttempted) return;
+		shiftRelayRefreshAttempted = true;
+		void dataSync.syncTypes([TYPE.shift], {
+			force: true,
+			scope: `pos:shift:${branchId ?? 'main'}`,
+			locationId: branchId,
+			silent: true
+		});
 	});
 	let shiftOpeningCash = $state<number | ''>('');
 	let shiftStaffName = $state('');
@@ -1066,12 +1403,18 @@
 	const recentOrders = $derived.by(() => {
 		const all = glo.all<Order, typeof TYPE.order>(TYPE.order);
 		return all
+			.filter((order) => {
+				const status = String(recordValue(order.data).status ?? '');
+				return status === 'completed' || status === 'paid';
+			})
 			.slice()
 			.sort((a, b) => {
-				const aCreatedAt = recordValue(a.data).createdAt;
-				const bCreatedAt = recordValue(b.data).createdAt;
-				const aTime = typeof aCreatedAt === 'string' ? aCreatedAt : '';
-				const bTime = typeof bCreatedAt === 'string' ? bCreatedAt : '';
+				const aData = recordValue(a.data);
+				const bData = recordValue(b.data);
+				const aTimestamp = aData.occurredAt ?? aData.createdAt;
+				const bTimestamp = bData.occurredAt ?? bData.createdAt;
+				const aTime = typeof aTimestamp === 'string' ? aTimestamp : '';
+				const bTime = typeof bTimestamp === 'string' ? bTimestamp : '';
 				return bTime.localeCompare(aTime);
 			})
 			.slice(0, 10);
@@ -1085,6 +1428,125 @@
 	}
 
 	// ── E) More menu (header dropdown) ──
+
+	// ── E2) Keyboard shortcuts + HID barcode scanner ──
+	// True when any modal/dialog is open (suppresses shortcuts + scanning so they
+	// don't fight with typing inside a dialog). Popovers + the mobile cart panel
+	// are intentionally excluded (scanning while the cart is open is fine).
+	let shortcutsOpen = $state(false);
+	const anyDialogOpen = $derived(
+		!!sizeSel ||
+			!!modSel ||
+			discountOpen ||
+			promoOpen ||
+			customOpen ||
+			receiptOpen ||
+			payFlow.open ||
+			heldOpen ||
+			historyOpen ||
+			shiftModalOpen ||
+			noteOpen ||
+			orderContextOpen ||
+			shortcutsOpen
+	);
+
+	const POS_SHORTCUTS: { key: string; label: string; icon: string }[] = [
+		{ key: '/', label: t('pos.searchProducts'), icon: 'lucide:search' },
+		{ key: 'F2', label: t('common.new') + ' ' + t('common.sale'), icon: 'lucide:plus' },
+		{ key: 'F3', label: 'Custom item', icon: 'lucide:plus-circle' },
+		{ key: 'F4', label: 'Discount', icon: 'lucide:tag' },
+		{ key: 'F6', label: t('orders.heldOrders'), icon: 'lucide:pause' },
+		{ key: 'F7', label: 'Last receipt', icon: 'lucide:receipt' },
+		{ key: 'F9', label: 'Charge', icon: 'lucide:zap' },
+		{ key: 'Esc', label: 'Close / clear', icon: 'lucide:x' }
+	];
+
+	function isTyping(): boolean {
+		const el = document.activeElement as HTMLElement | null;
+		return (
+			!!el &&
+			(el instanceof HTMLInputElement ||
+				el instanceof HTMLTextAreaElement ||
+				el instanceof HTMLSelectElement ||
+				el.isContentEditable)
+		);
+	}
+
+	function onKeydown(e: KeyboardEvent) {
+		// Escape: let an open Dialog close itself; otherwise blur/clear search.
+		if (e.key === 'Escape') {
+			if (anyDialogOpen) return;
+			const el = document.activeElement as HTMLElement | null;
+			if (el && isTyping()) el.blur();
+			else if (query) query = '';
+			return;
+		}
+		// '/' focuses search (only when idle).
+		if (e.key === '/' && !isTyping() && !anyDialogOpen) {
+			e.preventDefault();
+			document.getElementById('pos-search')?.focus();
+			return;
+		}
+		// Help
+		if (e.key === '?' && !isTyping() && !anyDialogOpen) {
+			e.preventDefault();
+			shortcutsOpen = true;
+			return;
+		}
+		if (isTyping() || anyDialogOpen || e.ctrlKey || e.metaKey || e.altKey) return;
+
+		switch (e.key) {
+			case 'F2':
+				e.preventDefault();
+				void startNewSale();
+				break;
+			case 'F3':
+				e.preventDefault();
+				openCustom();
+				break;
+			case 'F4':
+				e.preventDefault();
+				dType = cart.discount.type;
+				dValue = cart.discount.value || '';
+				discountOpen = true;
+				break;
+			case 'F6':
+				e.preventDefault();
+				heldOpen = true;
+				break;
+			case 'F7':
+				e.preventDefault();
+				if (cart.lastCompleted) receiptOpen = true;
+				break;
+			case 'F9':
+				e.preventDefault();
+				if (!cart.isEmpty) {
+					if (isQrMethod(method)) openQrCheckout();
+					else checkout();
+				}
+				break;
+		}
+	}
+
+	// HID barcode scanner → look up product by barcode/SKU and add to the cart.
+	function handleScan(code: string) {
+		const match = products.find((p) => p.data.barcode === code || p.data.sku === code);
+		if (query) query = ''; // clear any scanner text that landed in search
+		if (match) {
+			tapProduct(match); // opens variant/modifier picker if needed, else adds
+			toast.success('Scanned', (match.data.name as string) ?? code);
+		} else {
+			toast.warning('No product for barcode', code);
+		}
+	}
+
+	// Attach the scanner only when the hardware setting is on; re-evaluated if it
+	// changes. Gated by `anyDialogOpen` so scans don't interfere with dialog input.
+	$effect(() => {
+		if (!hardwareSettings.barcodeScanner) return;
+		const stop = startBarcodeScanner(handleScan, { enabled: () => !anyDialogOpen });
+		return stop;
+	});
 
 	// ── F) BroadcastChannel for customer display ──
 	let displayChannel: BroadcastChannel | null = null;
@@ -1120,14 +1582,27 @@
 		});
 	});
 	function broadcastCheckoutSuccess(total: number, payMethod: string) {
-		displayChannel?.postMessage({ type: 'checkout-success', total, method: payMethod, currency });
+		const s = cart.lastCompleted;
+		displayChannel?.postMessage({
+			type: 'checkout-success',
+			total,
+			method: payMethod,
+			currency,
+			number: s?.number,
+			change: s?.change ?? 0,
+			itemCount: s?.items.reduce((n, i) => n + i.quantity, 0) ?? 0,
+			orderType: s?.orderType,
+			totalSats: s?.totalSats,
+			tip: successTip
+		});
 	}
 	function broadcastPayQr(
 		payload: string,
 		total: number,
 		payMethod: string,
 		kind: string,
-		badge: string
+		badge: string,
+		imageUrl?: string
 	) {
 		displayChannel?.postMessage({
 			type: 'pay-qr',
@@ -1136,7 +1611,8 @@
 			method: payMethod,
 			currency,
 			kind,
-			badge
+			badge,
+			imageUrl
 		});
 	}
 	function broadcastClearPayQr() {
@@ -1144,7 +1620,8 @@
 	}
 </script>
 
-<svelte:head><title>BNOS · Point of Sale</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.pos')}</title></svelte:head>
+<svelte:window onkeydown={onKeydown} />
 
 <div class="flex h-dvh min-h-0 flex-col overflow-hidden bg-[var(--ui-bg)]">
 	<header class="app-chrome border-b border-[var(--glass-border)] px-4 py-3 sm:px-5 lg:px-6">
@@ -1152,26 +1629,29 @@
 			<div class="flex min-w-0 items-center gap-3">
 				<a
 					href={resolve('/')}
-					aria-label="Back to dashboard"
+					aria-label={t('pos.backToDashboard')}
 					class="grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-sm shadow-primary-500/25"
 				>
 					<Icon name="lucide:scan-line" class="size-5" />
 				</a>
 				<div class="min-w-0">
 					<div class="flex items-center gap-2">
-						<h1 class="font-display text-lg font-bold tracking-tight sm:text-xl">POS Terminal</h1>
+						<h1 class="font-display text-lg font-bold tracking-tight sm:text-xl">{t('pos.terminal')}</h1>
 						<Badge color={cart.isEmpty ? 'neutral' : 'primary'}>
-							{cart.isEmpty ? 'Ready' : `${cart.itemCount} items`}
+							{cart.isEmpty ? t('pos.ready') : t('pos.itemsCount', { count: cart.itemCount })}
 						</Badge>
 					</div>
 					<p class="truncate text-[12.5px] text-[var(--ui-text-muted)]">
-						{tenant.state.organizationName || 'BNOS'} · {tenant.state.locationName || 'Main branch'} ·
+						{tenant.state.organizationName || 'BNOS'} · {tenant.state.locationName || t('pos.mainBranch')} ·
 						{dateLabel} · {clockLabel}
 					</p>
 				</div>
 			</div>
 
 			<div class="flex flex-wrap items-center gap-2">
+				<!-- Relay connectivity and quick relay management -->
+				<RelayStatusPopover />
+
 				<!-- Shift status → quick-view popover (sales, drawer, close) -->
 				<Popover
 					bind:open={shiftPopoverOpen}
@@ -1189,10 +1669,10 @@
 								></span>
 								<span class="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
 							</span>
-							<span>Shift · {shiftElapsedLabel}</span>
+							<span>{t('shifts.shift')} · {shiftElapsedLabel}</span>
 						{:else}
 							<Icon name="lucide:unlock" class="size-3.5" />
-							<span>No shift</span>
+							<span>{t('shifts.noShift')}</span>
 						{/if}
 						<Icon name="lucide:chevron-down" class="size-3 opacity-60" />
 					{/snippet}
@@ -1215,22 +1695,22 @@
 												{openShift.data.number}
 											</div>
 											<div class="text-[10.5px] text-[var(--ui-text-dimmed)]">
-												Open · {shiftElapsedLabel}
+												{t('common.open')} · {shiftElapsedLabel}
 											</div>
 										</div>
 									</div>
-									<Badge color="success">Live</Badge>
+									<Badge color="success">{t('common.live')}</Badge>
 								</div>
 								<div class="space-y-3 px-3.5 py-3">
 									<div class="grid grid-cols-2 gap-2 text-[11px]">
 										<div class="min-w-0">
-											<div class="text-[var(--ui-text-dimmed)]">Cashier</div>
+											<div class="text-[var(--ui-text-dimmed)]">{t('staff.roleCashier')}</div>
 											<div class="truncate font-semibold">
 												{openShift.data.staffName || tenant.state.activeStaffInfo?.name || '—'}
 											</div>
 										</div>
 										<div>
-											<div class="text-[var(--ui-text-dimmed)]">Opened</div>
+											<div class="text-[var(--ui-text-dimmed)]">{t('shifts.opened')}</div>
 											<div class="font-semibold">{openedTimeLabel}</div>
 										</div>
 									</div>
@@ -1239,9 +1719,9 @@
 										<div class="flex items-center justify-between">
 											<span
 												class="text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
-												>Total sales</span
+												>{t('pos.totalSales')}</span
 											>
-											<Badge color="primary">{formatInt(shiftSummary.totalOrders)} orders</Badge>
+											<Badge color="primary">{t('pos.ordersCount', { count: formatInt(shiftSummary.totalOrders) })}</Badge>
 										</div>
 										<div class="mt-1 font-display text-2xl font-bold tabular-nums">
 											{formatMoney(shiftSummary.totalSales, currency)}
@@ -1252,11 +1732,11 @@
 										<div
 											class="text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
 										>
-											Tenders
+											{t('pos.tenders')}
 										</div>
 										{#if tenderRows.length === 0}
 											<p class="py-1 text-center text-[11.5px] text-[var(--ui-text-dimmed)]">
-												No sales recorded yet
+												{t('pos.noSalesRecorded')}
 											</p>
 										{:else}
 											{#each tenderRows as t (t.label)}
@@ -1274,14 +1754,14 @@
 
 									<div class="space-y-1 rounded-xl border border-[var(--ui-border-muted)] p-3">
 										<div class="flex items-center justify-between text-[12px]">
-											<span class="text-[var(--ui-text-muted)]">Opening cash</span><span
+											<span class="text-[var(--ui-text-muted)]">{t('shifts.openingCash')}</span><span
 												class="tabular-nums"
 												>{formatMoney(openShift.data.openingCash ?? 0, currency)}</span
 											>
 										</div>
 										{#if shiftSummary.totalCashIn > 0}
 											<div class="flex items-center justify-between text-[12px]">
-												<span class="text-[var(--ui-text-muted)]">Cash in</span><span
+												<span class="text-[var(--ui-text-muted)]">{t('shifts.cashIn')}</span><span
 													class="text-[var(--tone-success-text)] tabular-nums"
 													>+{formatMoney(shiftSummary.totalCashIn, currency)}</span
 												>
@@ -1289,7 +1769,7 @@
 										{/if}
 										{#if shiftSummary.totalCashOut > 0}
 											<div class="flex items-center justify-between text-[12px]">
-												<span class="text-[var(--ui-text-muted)]">Cash out</span><span
+												<span class="text-[var(--ui-text-muted)]">{t('shifts.cashOut')}</span><span
 													class="text-[var(--tone-error-text)] tabular-nums"
 													>−{formatMoney(shiftSummary.totalCashOut, currency)}</span
 												>
@@ -1298,7 +1778,7 @@
 										<div
 											class="flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-1.5 text-[12.5px] font-bold"
 										>
-											<span>Expected drawer</span><span
+											<span>{t('shifts.expectedDrawer')}</span><span
 												class="text-primary-600 tabular-nums dark:text-primary-400"
 												>{formatMoney(shiftSummary.expectedCash, currency)}</span
 											>
@@ -1314,14 +1794,14 @@
 										variant="subtle"
 										icon="lucide:line-chart"
 										href={resolve('/transactions/shifts')}
-										onclick={() => (shiftPopoverOpen = false)}>Report</Button
+										onclick={() => (shiftPopoverOpen = false)}>{t('shifts.report')}</Button
 									>
 									<Button
 										size="sm"
 										color="neutral"
 										variant="soft"
 										icon="lucide:lock"
-										onclick={closeShiftFromPopover}>Close shift</Button
+										onclick={closeShiftFromPopover}>{t('shifts.closeShift')}</Button
 									>
 								</div>
 							{:else}
@@ -1331,9 +1811,9 @@
 									>
 										<Icon name="lucide:lock" class="size-5" />
 									</div>
-									<div class="text-[13px] font-bold">No active shift</div>
+									<div class="text-[13px] font-bold">{t('pos.noActiveShift')}</div>
 									<p class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">
-										Open a shift to start processing sales and track the drawer.
+										{t('pos.openShiftHint')}
 									</p>
 									<Button
 										class="mt-3"
@@ -1341,7 +1821,7 @@
 										size="sm"
 										block
 										icon="lucide:unlock"
-										onclick={openShiftFromPopover}>Open shift</Button
+										onclick={openShiftFromPopover}>{t('shifts.openShift')}</Button
 									>
 								</div>
 							{/if}
@@ -1360,9 +1840,9 @@
 					{#snippet trigger()}
 						<Icon name="lucide:boxes" class="size-3.5" />
 						{#if lowStockCount > 0}
-							<span>{formatInt(lowStockCount)} low</span>
+							<span>{t('pos.lowCount', { count: formatInt(lowStockCount) })}</span>
 						{:else}
-							<span>{formatInt(trackedProducts)} tracked</span>
+							<span>{t('pos.trackedCount', { count: formatInt(trackedProducts) })}</span>
 						{/if}
 						<Icon name="lucide:chevron-down" class="size-3 opacity-60" />
 					{/snippet}
@@ -1373,13 +1853,13 @@
 							>
 								<div class="flex items-center gap-2">
 									<Icon name="lucide:boxes" class="size-4 text-[var(--ui-text-muted)]" />
-									<span class="text-[13px] font-bold">Inventory</span>
+									<span class="text-[13px] font-bold">{t('nav.inventory')}</span>
 								</div>
 								<a
 									href={resolve('/catalog')}
 									onclick={() => (stockPopoverOpen = false)}
 									class="text-[11.5px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
-									>Manage</a
+									>{t('common.manage')}</a
 								>
 							</div>
 							<div class="px-3.5 py-3">
@@ -1388,16 +1868,16 @@
 										class="flex items-center gap-2.5 rounded-xl bg-[var(--tone-success-bg)] px-3 py-2.5 text-[var(--tone-success-text)]"
 									>
 										<Icon name="lucide:check-circle-2" class="size-4 shrink-0" />
-										<span class="text-[12px] font-semibold">All tracked items stocked</span>
+										<span class="text-[12px] font-semibold">{t('pos.allStocked')}</span>
 									</div>
 									<p class="mt-2 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
-										{formatInt(trackedProducts)} products tracked
+										{t('pos.productsTracked', { count: formatInt(trackedProducts) })}
 									</p>
 								{:else}
 									<div
 										class="mb-2 text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
 									>
-										{formatInt(lowStockCount)} low · {formatInt(trackedProducts)} tracked
+										{t('pos.lowCount', { count: formatInt(lowStockCount) })} · {t('pos.trackedCount', { count: formatInt(trackedProducts) })}
 									</div>
 									<ul class="space-y-1">
 										{#each lowStockItems as p (p.id)}
@@ -1420,7 +1900,7 @@
 									</ul>
 									{#if lowStockCount > lowStockItems.length}
 										<p class="mt-2 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
-											+{formatInt(lowStockCount - lowStockItems.length)} more
+											{t('pos.moreCount', { count: formatInt(lowStockCount - lowStockItems.length) })}
 										</p>
 									{/if}
 								{/if}
@@ -1437,9 +1917,9 @@
 					icon="lucide:badge-plus"
 					disabled={cart.isEmpty}
 					onclick={startNewSale}
-					title="Start new sale"
+					title={t('common.new') + ' ' + t('common.sale')}
 				>
-					New sale
+					{t('common.new')} {t('common.sale')}
 				</Button>
 				<Button
 					color="neutral"
@@ -1447,16 +1927,16 @@
 					size="sm"
 					icon="lucide:plus-circle"
 					onclick={openCustom}
-					title="Add custom item"
+					title={t('common.add') + ' ' + t('common.customItem')}
 				>
-					Custom
+					{t('pos.custom')}
 				</Button>
 				{#if cart.held.length > 0}
 					<button
 						type="button"
 						onclick={() => (heldOpen = true)}
 						class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--ui-border)] px-2.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-						title="Held orders"
+						title={t('orders.heldOrders')}
 					>
 						<Icon name="lucide:pause" class="size-3.5" />
 						{formatInt(cart.held.length)}
@@ -1465,34 +1945,53 @@
 				<a
 					href={resolve('/pos/customer-display')}
 					target="_blank"
-					title="Open customer display"
+					title={t('pos.customerDisplay')}
 					class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
 				>
 					<Icon name="lucide:monitor" class="size-3.5" />
-					Display
+					{t('pos.display')}
 				</a>
+
+				<!-- Scanner status + keyboard shortcuts -->
+				{#if hardwareSettings.barcodeScanner}
+					<span
+						title={t('pos.scannerReady')}
+						class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 text-[11.5px] font-semibold text-emerald-700 dark:text-emerald-300"
+					>
+						<Icon name="lucide:scan-barcode" class="size-3.5" />
+						<span class="hidden sm:inline">{t('pos.scanner')}</span>
+					</span>
+				{/if}
+				<button
+					type="button"
+					onclick={() => (shortcutsOpen = true)}
+					title={t('pos.keyboardShortcuts')}
+					class="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--ui-border)] px-2 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+				>
+					<Icon name="lucide:keyboard" class="size-4" />
+				</button>
 
 				<!-- More options dropdown -->
 				<Menu id="pos-header-more" placement="bottom-end" width="md">
 					{#snippet trigger()}<Icon name="lucide:more-horizontal" class="size-4" />{/snippet}
-					<MenuItem icon="lucide:history" onclick={openHistory}>Recent orders</MenuItem>
+					<MenuItem icon="lucide:history" onclick={openHistory}>{t('orders.recentOrders')}</MenuItem>
 					<MenuItem
 						icon="lucide:pause"
 						onclick={() => {
 							heldOpen = true;
-						}}>Held orders ({formatInt(cart.held.length)})</MenuItem
+						}}>{t('orders.heldOrders')} ({formatInt(cart.held.length)})</MenuItem
 					>
 					{#if cart.lastCompleted}
 						<MenuItem
 							icon="lucide:receipt"
 							onclick={() => {
 								receiptOpen = true;
-							}}>Last receipt</MenuItem
+							}}>{t('pos.lastReceipt')}</MenuItem
 						>
 					{/if}
 					<MenuDivider />
-					<MenuItem icon="lucide:list-ordered" href={resolve('/orders')}>All orders</MenuItem>
-					<MenuItem icon="lucide:package" href={resolve('/catalog')}>Catalog</MenuItem>
+					<MenuItem icon="lucide:list-ordered" href={resolve('/orders')}>{t('orders.allOrders')}</MenuItem>
+					<MenuItem icon="lucide:package" href={resolve('/catalog')}>{t('nav.catalog')}</MenuItem>
 				</Menu>
 			</div>
 		</div>
@@ -1500,9 +1999,7 @@
 
 	<div class="min-h-0 flex-1 overflow-hidden">
 		<div
-			class="grid h-full min-h-0 gap-4 {cart.isEmpty
-				? 'lg:grid-cols-1'
-				: 'lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem]'}"
+			class="grid h-full min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem]"
 		>
 			<!-- Product browser -->
 			<section class="flex min-h-0 min-w-0 flex-col overflow-hidden">
@@ -1510,10 +2007,27 @@
 					<div class="flex flex-wrap items-center gap-2">
 						<Input
 							bind:value={query}
-							icon="lucide:search"
-							placeholder="Search products..."
+							id="pos-search"
+							icon={hardwareSettings.barcodeScanner ? 'lucide:scan-barcode' : 'lucide:search'}
+							placeholder={hardwareSettings.barcodeScanner
+								? t('pos.searchScan')
+								: t('pos.searchProducts')+'…'}
+							onkeydown={onSearchKeydown}
 							class="min-w-[12rem] flex-1"
-						/>
+						>
+							{#snippet trailing()}
+								{#if scanMatch}
+									<span
+										class="inline-flex items-center gap-1 rounded-md bg-[var(--tone-success-bg)] px-1.5 py-0.5 text-[10.5px] font-bold text-[var(--tone-success-text)]"
+										title={t('pos.exactMatch')}
+									>
+										<Icon name="lucide:corner-down-left" class="size-3" />{t('common.add')}
+									</span>
+								{:else if hardwareSettings.barcodeScanner}
+									<span class="text-[10px] font-semibold text-[var(--ui-text-dimmed)]">↵ add</span>
+								{/if}
+							{/snippet}
+						</Input>
 						<Button
 							color="neutral"
 							variant="soft"
@@ -1535,9 +2049,25 @@
 										? 'bg-primary-500 text-white'
 										: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
 								>
-									{cat}
+									{categoryLabel(cat)}
 								</button>
 							{/each}
+							{#if offersCount > 0}
+								<button
+									type="button"
+									onclick={() => (offersOnly = !offersOnly)}
+									class="flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[12.5px] font-semibold transition-colors {offersOnly
+										? 'bg-primary-500 text-white'
+										: 'bg-primary-500/10 text-primary-700 hover:bg-primary-500/15 dark:text-primary-300'}"
+								>
+									<Icon name="lucide:ticket-percent" class="size-3.5" />
+									Offers
+									<span
+										class="rounded-full bg-black/10 px-1.5 text-[10px] tabular-nums dark:bg-white/25"
+										>{formatInt(offersCount)}</span
+									>
+								</button>
+							{/if}
 						</div>
 						<div class="flex items-center gap-2 text-[12px] text-[var(--ui-text-dimmed)]">
 							<span>{formatInt(filtered.length)} visible</span>
@@ -1547,7 +2077,7 @@
 					</div>
 				</div>
 
-				<div class="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-5 sm:pb-5 lg:px-6 lg:pb-6">
+				<div class="min-h-0 flex-1 overflow-y-auto px-4 pt-1 pb-4 sm:px-5 sm:pb-5 lg:px-6 lg:pb-6">
 					{#if filtered.length === 0}
 						<EmptyState
 							icon="lucide:package"
@@ -1556,15 +2086,13 @@
 						>
 							{#snippet actions()}
 								<Button color="primary" size="sm" icon="lucide:plus" href={resolve('/catalog')}
-									>Add product</Button
+									>{t('common.add') + ' ' + t('common.product')}</Button
 								>
 							{/snippet}
 						</EmptyState>
 					{:else}
 						<div
-							class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-5 {cart.isEmpty
-								? 'lg:grid-cols-6 xl:grid-cols-7'
-								: ''}"
+							class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-5"
 							class:pb-24={!cart.isEmpty}
 						>
 							{#each filtered as p (p.id)}
@@ -1578,16 +2106,36 @@
 									p.data.inventory?.denySaleWhenOutOfStock &&
 									!p.data.inventory.allowBackorder &&
 									avail <= 0}
+								{@const promo = productPromoMap[p.id]}
 								<button
 									type="button"
 									onclick={() => tapProduct(p)}
 									disabled={outOfStock as boolean}
-									class="surface-card group relative flex flex-col gap-2 p-2.5 text-left transition-all enabled:hover:-translate-y-0.5 enabled:hover:border-primary-500/40 enabled:active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
+									class="surface-card group relative flex flex-col gap-2 p-2.5 text-left transition-all enabled:hover:-translate-y-0.5 enabled:hover:border-primary-500/40 enabled:active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 {promo
+										? 'ring-1 ring-primary-500/40'
+										: ''}"
 								>
 									<div
 										class="relative grid aspect-square w-full place-items-center rounded-xl bg-[var(--ui-bg-accented)] text-[var(--ui-text-dimmed)]"
 									>
 										<Icon name="lucide:cup-soda" class="size-6 sm:size-7" />
+										{#if productImage(p.data)}
+											<img
+												src={productImage(p.data)}
+												alt={p.data.name}
+												class="absolute inset-0 size-full rounded-xl object-cover"
+												onerror={(event) => {
+													(event.currentTarget as HTMLImageElement).style.display = 'none';
+												}}
+											/>
+										{/if}
+										{#if promo}
+											<span
+												class="absolute top-1.5 left-1.5 inline-flex items-center gap-0.5 rounded-full bg-primary-500 px-1.5 py-0.5 text-[8.5px] font-bold text-white shadow-sm"
+											>
+												<Icon name={promoIcon(promo.data)} class="size-2.5" />{promo.label}
+											</span>
+										{/if}
 										{#if p.data.variants?.length}
 											<span
 												class="absolute top-1.5 right-1.5 rounded-full bg-black/45 px-1.5 py-0.5 text-[8.5px] font-bold text-white"
@@ -1608,15 +2156,30 @@
 									</div>
 									<div class="min-w-0">
 										<div class="truncate text-[12.5px] font-semibold">{p.data.name}</div>
-										<div class="text-[12.5px] font-bold text-primary-600 dark:text-primary-400">
-											{formatMoney(p.data.price ?? 0, p.data.currency ?? currency)}
-										</div>
+										{#if promo && promo.savings > 0}
+											<div class="flex items-baseline gap-1">
+												<span
+													class="text-[10.5px] font-medium text-[var(--ui-text-dimmed)] line-through"
+													>{formatMoney(p.data.price ?? 0, p.data.currency ?? currency)}</span
+												>
+												<span class="text-[12.5px] font-bold text-[var(--tone-success-text)]"
+													>{formatMoney(promo.newPrice, p.data.currency ?? currency)}</span
+												>
+											</div>
+										{:else}
+											<div class="text-[12.5px] font-bold text-primary-600 dark:text-primary-400">
+												{formatMoney(p.data.price ?? 0, p.data.currency ?? currency)}
+											</div>
+										{/if}
 										{#if showSats && (p.data.price ?? 0) > 0}
 											<div
 												class="flex items-center gap-0.5 text-[10px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
 											>
 												<Icon name="lucide:zap" class="size-2.5" />{formatInt(
-													btcRate.satsFromAmount(p.data.price ?? 0, p.data.currency ?? currency)
+													btcRate.satsFromAmount(
+														promo?.newPrice ?? p.data.price ?? 0,
+														p.data.currency ?? currency
+													)
 												)} sats
 											</div>
 										{/if}
@@ -1638,37 +2201,56 @@
 				</div>
 			</section>
 
-			<!-- Desktop cart sidebar (lg+) — hidden when empty for full-width browsing -->
-			{#if !cart.isEmpty}
-				<aside
-					class="hidden min-h-0 flex-col overflow-hidden border-l border-[var(--ui-border-muted)] bg-[var(--surface-bg)] lg:flex"
+			<!-- Desktop cart sidebar (lg+) — always present; empty-state when no items -->
+			<aside
+				class="hidden min-h-0 flex-col overflow-hidden border-l border-[var(--ui-border-muted)] bg-[var(--surface-bg)] lg:flex"
+			>
+				<header
+					class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-4 py-3"
 				>
-					<header
-						class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-4 py-3"
-					>
-						<div class="flex items-center gap-2">
-							<Icon name="lucide:shopping-cart" class="size-4 text-primary-500" />
-							<h2 class="font-display text-[15px] font-semibold tracking-tight">Current sale</h2>
-							{#if cart.itemCount}<Badge color="primary">{cart.itemCount}</Badge>{/if}
-						</div>
-						{#if !cart.isEmpty}
-							<button
-								type="button"
-								class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
-								onclick={clearCart}>Clear</button
-							>
-						{/if}
-					</header>
-					{#if cart.isEmpty}
-						<!-- sidebar is hidden when empty; this never shows -->
-					{:else}
-						<div class="min-h-0 flex-1 overflow-y-auto">
-							{@render cartContent()}
-						</div>
-						{@render tenderBlock()}
+					<div class="flex items-center gap-2">
+						<Icon name="lucide:shopping-cart" class="size-4 text-primary-500" />
+						<h2 class="font-display text-[15px] font-semibold tracking-tight">Current sale</h2>
+						{#if cart.itemCount}<Badge color="primary">{cart.itemCount}</Badge>{/if}
+					</div>
+					{#if !cart.isEmpty}
+						<button
+							type="button"
+							class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
+							onclick={clearCart}>{t('common.clear')}</button
+						>
 					{/if}
-				</aside>
-			{/if}
+				</header>
+				{#if cart.isEmpty}
+					<div
+						class="animate-fade flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 text-center"
+					>
+						<div
+							class="grid size-14 place-items-center rounded-2xl bg-[var(--ui-bg-muted)] text-[var(--ui-text-dimmed)]"
+						>
+							<Icon name="lucide:shopping-cart" class="size-7" />
+						</div>
+						<div>
+							<p class="text-[13.5px] font-bold text-[var(--ui-text)]">{t('pos.emptyCart')}</p>
+							<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
+								{t('pos.emptyCartDesc')}
+							</p>
+						</div>
+						<button
+							type="button"
+							onclick={openCustom}
+							class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--ui-bg-muted)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+						>
+							<Icon name="lucide:plus-circle" class="size-3.5" /> {t('pos.custom')}
+						</button>
+					</div>
+				{:else}
+					<div class="min-h-0 flex-1 overflow-y-auto">
+						{@render cartContent()}
+					</div>
+					{@render tenderBlock()}
+				{/if}
+			</aside>
 		</div>
 	</div>
 
@@ -1685,7 +2267,7 @@
 				>
 					<Icon name="lucide:lock" class="size-6" />
 				</div>
-				<h3 class="font-display text-lg font-bold">No active shift</h3>
+				<h3 class="font-display text-lg font-bold">{t('pos.noActiveShift')}</h3>
 				<p class="mt-1 text-[12.5px] text-[var(--ui-text-muted)]">
 					Open a shift to start processing sales.
 				</p>
@@ -1699,25 +2281,12 @@
 						shiftStaffName = '';
 					}}
 				>
-					Open shift
+					{t('shifts.openShift')}
 				</Button>
 			</div>
 		</div>
 	{/if}
 </div>
-
-<!-- Payment success overlay -->
-{#if showSuccessOverlay}
-	<div class="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center">
-		<div class="rounded-full bg-green-500/20 p-6">
-			<div
-				class="grid size-20 place-items-center rounded-full bg-green-500 text-white shadow-lg shadow-green-500/50"
-			>
-				<Icon name="lucide:check" class="size-10" />
-			</div>
-		</div>
-	</div>
-{/if}
 
 <!-- Mobile floating "view cart" bar (sits above the bottom tab bar) -->
 {#if !cart.isEmpty}
@@ -1765,7 +2334,7 @@
 					type="button"
 					onclick={() => (cartOpen = false)}
 					class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-					aria-label="Close"
+					aria-label={t('common.close')}
 				>
 					<Icon name="lucide:x" class="size-4" />
 				</button>
@@ -1776,7 +2345,7 @@
 				<button
 					type="button"
 					class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
-					onclick={clearCart}>Clear</button
+					onclick={clearCart}>{t('common.clear')}</button
 				>
 			{/if}
 		</header>
@@ -1821,7 +2390,7 @@
 								type="button"
 								onclick={() => cart.dec(line.key)}
 								class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-								aria-label="Decrease"><Icon name="lucide:minus" class="size-3.5" /></button
+								aria-label={t('common.decrease')}><Icon name="lucide:minus" class="size-3.5" /></button
 							>
 							<span class="w-6 text-center text-[13px] font-semibold tabular-nums"
 								>{line.quantity}</span
@@ -1830,7 +2399,7 @@
 								type="button"
 								onclick={() => cart.inc(line.key)}
 								class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-								aria-label="Increase"><Icon name="lucide:plus" class="size-3.5" /></button
+								aria-label={t('common.increase')}><Icon name="lucide:plus" class="size-3.5" /></button
 							>
 						</div>
 						<div class="flex items-center gap-1">
@@ -1841,7 +2410,7 @@
 								type="button"
 								onclick={() => cart.remove(line.key)}
 								class="grid size-6 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
-								aria-label="Remove"><Icon name="lucide:x" class="size-3.5" /></button
+								aria-label={t('common.remove')}><Icon name="lucide:x" class="size-3.5" /></button
 							>
 							<Menu
 								id={`cart-line-${line.key}`}
@@ -1899,18 +2468,61 @@
 							>
 						{/each}
 					</div>
-					<Input
-						bind:value={cart.customerName}
-						icon="lucide:user"
-						placeholder="Customer name (optional)"
-						class="w-full"
+					<CustomerPicker
+						selected={cartCustomer
+							? {
+									id: cartCustomer.id,
+									name: (cartCustomer.data.name as string) || cart.customerName || 'Customer',
+									segment: cartCustomer.data.segment,
+									points: customerPoints
+								}
+							: cart.customerName
+								? { id: '', name: cart.customerName }
+								: null}
+						{customers}
+						onPick={(id, name) => cart.setCustomer(name, id || undefined)}
+						onClear={() => cart.setCustomer('')}
 					/>
+					{#if loyaltySettings.enabled && cartCustomer}
+						<!-- Loyalty: earn preview + redeem toggle -->
+						<div
+							class="flex items-center justify-between rounded-lg bg-[var(--tone-warning-bg)] px-2.5 py-1.5"
+						>
+							<div
+								class="flex min-w-0 items-center gap-1.5 text-[11.5px] font-semibold text-[var(--tone-warning-text)]"
+							>
+								<Icon name="lucide:award" class="size-4 shrink-0" />
+								<span class="truncate">{formatInt(customerPoints)} pts</span>
+								{#if loyaltyEarnPreview > 0}
+									<span class="font-normal text-[var(--ui-text-muted)]"
+										>· earn ~{formatInt(loyaltyEarnPreview)}</span
+									>
+								{/if}
+							</div>
+							{#if loyaltyRedeem.credit > 0}
+								<button
+									type="button"
+									onclick={toggleLoyaltyRedeem}
+									class="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-[10.5px] font-bold transition-colors {loyaltyRedeemOn
+										? 'bg-[var(--tone-warning-text)] text-white'
+										: 'bg-[var(--tone-warning-text)]/15 text-[var(--tone-warning-text)] hover:bg-[var(--tone-warning-text)]/25'}"
+								>
+									<Icon
+										name={loyaltyRedeemOn ? 'lucide:check' : 'lucide:sparkles'}
+										class="size-3"
+									/>{loyaltyRedeemOn
+										? '−' + formatMoney(loyaltyRedeem.credit, currency)
+										: 'Use ' + formatInt(loyaltyRedeem.points) + ' pts'}
+								</button>
+							{/if}
+						</div>
+					{/if}
 					{#if cart.orderType === 'dine_in'}
 						<div class="grid grid-cols-2 gap-2">
 							<Input
 								bind:value={cart.tableId}
 								icon="lucide:layout-grid"
-								placeholder="Table"
+								placeholder={t('common.table')}
 								class="w-full"
 							/>
 							<Input
@@ -1926,32 +2538,119 @@
 					{/if}
 					<button
 						type="button"
+						disabled={!canDiscount}
+						title={canDiscount ? 'Cart discount' : 'Requires discount permission (manager+)'}
 						onclick={() => {
+							if (!canDiscount) return;
 							dType = cart.discount.type;
 							dValue = cart.discount.value || '';
 							discountOpen = true;
 						}}
-						class="flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--ui-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
+						class="flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--ui-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-50"
 					>
-						<span><Icon name="lucide:tag" class="mr-1 inline size-3.5" />Discount</span>
+						<span><Icon name="lucide:tag" class="mr-1 inline size-3.5" />{t('common.discount')}</span>
 						{#if cart.totals.discountAmount > 0}<span class="text-[var(--tone-success-text)]"
 								>−{formatMoney(cart.totals.discountAmount, currency)}</span
-							>{:else}<span class="text-[var(--ui-text-dimmed)]">None</span>{/if}
+							>{:else}<span class="text-[var(--ui-text-dimmed)]">{t('common.none')}</span>{/if}
 					</button>
-					{#if activePromotions.length > 0}
-						<button
-							type="button"
-							onclick={() => (promoOpen = true)}
-							class="flex items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3 py-1.5 text-[12px] font-semibold text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-800 dark:bg-primary-950 dark:text-primary-300 dark:hover:bg-primary-900"
-						>
-							<Icon name="lucide:ticket-percent" class="size-3.5" />
-							{selectedPromoId ? 'Promo applied' : 'Promotions'}
-							{#if activePromotions.length > 1}
-								<span class="rounded-full bg-primary-200 px-1.5 text-[10px] dark:bg-primary-800"
-									>{formatInt(activePromotions.length)}</span
+					{#if allPromotions.length > 0}
+						<div class="space-y-1.5">
+							{#if appliedPromoObj}
+								{@const pd = appliedPromoObj.data}
+								{@const savings = promoSavings(pd, cart.totals.subtotal)}
+								<div
+									class="flex items-center gap-2 rounded-lg border border-[var(--tone-success-text)]/30 bg-[var(--tone-success-bg)] px-2.5 py-1.5"
 								>
+									<Icon
+										name={promoIcon(pd)}
+										class="size-4 shrink-0 text-[var(--tone-success-text)]"
+									/>
+									<button
+										type="button"
+										onclick={() => (promoOpen = true)}
+										class="min-w-0 flex-1 text-left"
+									>
+										<div class="flex min-w-0 items-center gap-1">
+											<span class="truncate text-[12px] font-bold text-[var(--tone-success-text)]"
+												>{promoName(pd, currency)}</span
+											>
+											{#if isAutoApplied}
+												<span
+													class="shrink-0 rounded bg-[var(--tone-success-text)]/15 px-1 py-0.5 text-[8.5px] font-bold text-[var(--tone-success-text)]"
+													>AUTO</span
+												>
+											{/if}
+										</div>
+										<div
+											class="truncate text-[10.5px] font-semibold text-[var(--tone-success-text)]/80"
+										>
+											{#if savings > 0}−{formatMoney(savings, currency)} · {promoValueLabel(
+													pd,
+													currency
+												)}{:else}{promoValueLabel(pd, currency)}{/if}
+										</div>
+									</button>
+									<button
+										type="button"
+										onclick={() => applyPromotion(null)}
+										aria-label="Remove promotion"
+										class="grid size-6 shrink-0 place-items-center rounded-md text-[var(--tone-success-text)] transition-colors hover:bg-[var(--tone-success-text)]/10"
+									>
+										<Icon name="lucide:x" class="size-3.5" />
+									</button>
+								</div>
+							{:else if eligiblePromotions.length > 0}
+								<div
+									class="flex items-center gap-1 px-0.5 text-[9.5px] font-bold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+								>
+									<Icon name="lucide:sparkles" class="size-3 text-primary-500" />
+									<span>Available offers</span>
+								</div>
+								{#each eligiblePromotions.slice(0, 3) as promo (promo.id)}
+									{@const pd = promo.data}
+									{@const savings = promoSavings(pd, cart.totals.subtotal)}
+									<button
+										type="button"
+										onclick={() => applyPromotion(promo.id)}
+										class="flex w-full items-center gap-2 rounded-lg border border-primary-500/25 bg-primary-500/5 px-2.5 py-1.5 text-left transition-colors hover:border-primary-500/50 hover:bg-primary-500/10"
+									>
+										<Icon
+											name={promoIcon(pd)}
+											class="size-4 shrink-0 text-primary-600 dark:text-primary-400"
+										/>
+										<div class="min-w-0 flex-1">
+											<div class="truncate text-[12px] font-bold text-[var(--ui-text)]">
+												{promoName(pd, currency)}
+											</div>
+											<div
+												class="truncate text-[10.5px] font-semibold text-primary-600 dark:text-primary-400"
+											>
+												{#if savings > 0}Save {formatMoney(
+														savings,
+														currency
+													)}{:else}{promoValueLabel(pd, currency)}{/if}
+											</div>
+										</div>
+										<span
+											class="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-primary-500/15 px-1.5 py-0.5 text-[10px] font-bold text-primary-700 dark:text-primary-300"
+										>
+											<Icon name="lucide:plus" class="size-3" />Apply
+										</span>
+									</button>
+								{/each}
 							{/if}
-						</button>
+							<button
+								type="button"
+								onclick={() => (promoOpen = true)}
+								class="flex w-full items-center justify-center gap-1 pt-0.5 text-[10.5px] font-semibold text-[var(--ui-text-dimmed)] transition-colors hover:text-[var(--ui-text-muted)]"
+							>
+								<Icon name="lucide:ticket" class="size-3" />
+								{appliedPromoObj ? 'Change promotion' : 'View all'}
+								<span class="rounded-full bg-[var(--ui-bg-muted)] px-1.5 text-[9.5px]"
+									>{formatInt(allPromotions.length)}</span
+								>
+							</button>
+						</div>
 					{/if}
 				</div>
 			{/if}
@@ -1960,13 +2659,13 @@
 		<!-- totals -->
 		<div class="space-y-1.5 border-t border-[var(--ui-border-muted)] pt-3 text-[13px]">
 			<div class="flex justify-between text-[var(--ui-text-muted)]">
-				<span>Subtotal</span><span class="tabular-nums"
+				<span>{t('common.subtotal')}</span><span class="tabular-nums"
 					>{formatMoney(cart.totals.subtotal, currency)}</span
 				>
 			</div>
 			{#if cart.totals.discountAmount > 0}
 				<div class="flex justify-between text-[var(--tone-success-text)]">
-					<span>Discount</span><span class="tabular-nums"
+					<span>{t('common.discount')}</span><span class="tabular-nums"
 						>−{formatMoney(cart.totals.discountAmount, currency)}</span
 					>
 				</div>
@@ -1979,7 +2678,7 @@
 				><span class="tabular-nums">{formatMoney(cart.totals.tax, currency)}</span>
 			</div>
 			<div class="flex justify-between pt-1 font-display text-[17px] font-bold">
-				<span>Total</span><span class="text-primary-600 tabular-nums dark:text-primary-400"
+				<span>{t('common.total')}</span><span class="text-primary-600 tabular-nums dark:text-primary-400"
 					>{formatMoney(cart.totals.total, currency)}</span
 				>
 			</div>
@@ -2017,6 +2716,24 @@
 				</button>
 			{/each}
 		</div>
+
+		{#if method === 'lightning' && !splitMode}
+			<label class="block">
+				<span class="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ui-text-muted)]">
+					<Icon name="lucide:notebook-pen" class="size-3.5" />Invoice description / memo
+				</span>
+				<Input
+					bind:value={invoiceMemo}
+					icon="lucide:message-square-text"
+					placeholder={defaultInvoiceMemo()}
+					maxlength={120}
+					class="w-full"
+				/>
+				<span class="mt-1 block text-[10px] leading-snug text-[var(--ui-text-dimmed)]">
+					Shown to the customer in supported Lightning wallets. Leave blank to use the sale items.
+				</span>
+			</label>
+		{/if}
 
 		<!-- Split payment toggle -->
 		<button
@@ -2098,7 +2815,7 @@
 						min="0"
 						step="0.01"
 						icon="lucide:banknote"
-						placeholder="Amount"
+						placeholder={t('common.amount')}
 						class="flex-1"
 					/>
 					<button
@@ -2114,14 +2831,14 @@
 						variant="subtle"
 						size="sm"
 						icon="lucide:plus"
-						onclick={addSplitPayment}>Add</Button
+						onclick={addSplitPayment}>{t('common.add')}</Button
 					>
 				</div>
 			{/if}
 
 			<!-- Complete split checkout -->
 			<div class="grid grid-cols-2 gap-2">
-				<Button color="neutral" variant="subtle" icon="lucide:x" onclick={resetSplit}>Cancel</Button
+				<Button color="neutral" variant="subtle" icon="lucide:x" onclick={resetSplit}>{t('common.cancel')}</Button
 				>
 				<Button
 					color="primary"
@@ -2218,7 +2935,7 @@
 							class="rounded-lg bg-[var(--tone-success-bg)] px-3 py-2 text-center text-[var(--tone-success-text)]"
 						>
 							<span class="text-[11px] font-semibold tracking-wide uppercase opacity-70"
-								>Change</span
+								>{t('pos.change')}</span
 							>
 							<div class="font-display text-2xl font-bold tabular-nums">
 								{formatMoney(change, currency)}
@@ -2252,7 +2969,7 @@
 						type="button"
 						onclick={() => (tendered = grandTotal)}
 						class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2.5 py-1.5 text-[10.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
-						title="Set exact amount">Exact</button
+						title={t('common.setExactAmount')}>Exact</button
 					>
 				</div>
 			{/if}
@@ -2263,20 +2980,22 @@
 					variant="subtle"
 					icon="lucide:pause"
 					disabled={processing}
-					onclick={() => cart.hold()}>Hold</Button
+					onclick={() => cart.hold()}>{t('pos.hold')}</Button
 				>
-				<Button color="primary" disabled={processing}
+				<Button
+					color="primary"
+					disabled={processing}
 					onclick={() => (isQrMethod(method) ? openQrCheckout() : checkout())}
 					>{#if processing}<Icon
 							name="lucide:loader-circle"
 							class="size-4 animate-spin"
-						/>…{:else if isQrMethod(method)}<Icon
-								name="lucide:qr-code"
-								class="size-4"
-							/>{method === 'lightning' ? 'Invoice' : 'Show QR'}{:else}<Icon
-								name="lucide:check-circle"
-								class="size-4"
-							/>Charge{/if}</Button
+						/>…{:else if isQrMethod(method)}<Icon name="lucide:qr-code" class="size-4" />{method ===
+						'lightning'
+							? 'Invoice'
+							: 'Show QR'}{:else}<Icon
+							name="lucide:check-circle"
+							class="size-4"
+						/>Charge{/if}</Button
 				>
 			</div>
 		{/if}
@@ -2284,7 +3003,7 @@
 {/snippet}
 
 <!-- Size / variant selector -->
-<Dialog open={!!sizeSel} title={sizeSel?.data.name ?? 'Select'} size="sm">
+<Dialog bind:open={sizeOpen} title={sizeSel?.data.name ?? 'Select'} size="sm">
 	{#if sizeSel}
 		<div class="space-y-2">
 			{#each variants(sizeSel.data) as v (v.id)}
@@ -2305,13 +3024,13 @@
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (sizeSel = null)}>Cancel</Button>
-		<Button color="primary" icon="lucide:check" onclick={confirmVariant}>Add</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (sizeOpen = false)}>{t('common.cancel')}</Button>
+		<Button color="primary" icon="lucide:check" onclick={confirmVariant}>{t('common.add')}</Button>
 	{/snippet}
 </Dialog>
 
 <!-- Modifier selector -->
-<Dialog open={!!modSel} title={modSel?.data.name ?? 'Options'} size="md">
+<Dialog bind:open={modOpen} title={modSel?.data.name ?? 'Options'} size="md">
 	{#if modSel}
 		<div class="space-y-4">
 			{#each groupsFor(modSel.data) as g (g.name)}
@@ -2369,25 +3088,25 @@
 			color="neutral"
 			variant="ghost"
 			onclick={() => {
-				modSel = null;
+				modOpen = false;
 				pendingModVariant = null;
-			}}>Cancel</Button
+			}}>{t('common.cancel')}</Button
 		>
 		<Button color="primary" icon="lucide:check" onclick={confirmModifiers}>Add to sale</Button>
 	{/snippet}
 </Dialog>
 
 <!-- Line note -->
-<Dialog bind:open={noteOpen} title="Line note" size="sm">
+<Dialog bind:open={noteOpen} title={t('pos.lineNote')} size="sm">
 	<Input bind:value={noteText} placeholder="e.g. extra hot, no onions" class="w-full" />
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (noteOpen = false)}>Cancel</Button>
-		<Button color="primary" icon="lucide:check" onclick={saveNote}>Save</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (noteOpen = false)}>{t('common.cancel')}</Button>
+		<Button color="primary" icon="lucide:check" onclick={saveNote}>{t('common.save')}</Button>
 	{/snippet}
 </Dialog>
 
 <!-- Discount -->
-<Dialog bind:open={discountOpen} title="Cart discount" size="sm">
+<Dialog bind:open={discountOpen} title={t('pos.cartDiscount')} size="sm">
 	<div class="space-y-3">
 		<div class="grid grid-cols-2 gap-2">
 			{#each [['percent', 'Percent'], ['fixed', 'Fixed']] as [v, lbl] (v)}
@@ -2433,67 +3152,117 @@
 		{/if}
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (discountOpen = false)}>Cancel</Button>
-		<Button color="primary" icon="lucide:check" onclick={applyDiscount}>Apply</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (discountOpen = false)}>{t('common.cancel')}</Button>
+		<Button color="primary" icon="lucide:check" onclick={applyDiscount}>{t('common.apply')}</Button>
 	{/snippet}
 </Dialog>
 
 <!-- Promotion picker -->
-<Dialog bind:open={promoOpen} title="Active promotions" size="md">
+<Dialog bind:open={promoOpen} title={t('nav.promotions')} size="md">
 	<div class="space-y-2">
-		{#if selectedPromoId}
+		<div class="flex gap-2">
+			<Input
+				bind:value={couponCode}
+				placeholder="Enter coupon code"
+				class="font-mono uppercase w-full"
+				onkeydown={(e) => e.key === 'Enter' && applyCouponCode()}
+			/>
+			<Button color="primary" icon="lucide:ticket-check" onclick={applyCouponCode}>Apply</Button>
+		</div>
+		{#if cart.appliedPromotionId}
 			<button
 				type="button"
 				onclick={() => applyPromotion(null)}
 				class="flex w-full items-center gap-3 rounded-lg border border-[var(--tone-error-bg)] bg-[var(--tone-error-bg)]/50 p-3 text-left transition-colors hover:bg-[var(--tone-error-bg)]"
 			>
-				<Icon name="lucide:x-circle" class="size-5 text-[var(--tone-error-text)]" />
-				<div>
+				<Icon name="lucide:x-circle" class="size-5 shrink-0 text-[var(--tone-error-text)]" />
+				<div class="min-w-0">
 					<p class="text-[13px] font-semibold text-[var(--tone-error-text)]">Remove promotion</p>
-					<p class="text-[11px] text-[var(--ui-text-muted)]">Clear active promotion & discount</p>
+					<p class="truncate text-[11px] text-[var(--ui-text-muted)]">
+						{#if appliedPromoObj}{promoName(appliedPromoObj.data, currency)} — clears the discount too{/if}
+					</p>
 				</div>
 			</button>
 		{/if}
-		{#each activePromotions as promo (promo.id)}
+		{#each allPromotions as promo (promo.id)}
 			{@const d = promo.data}
+			{@const elig = isPromotionEligible(d, promoCtx)}
+			{@const savings = promoSavings(d, cart.totals.subtotal)}
+			{@const applied = cart.appliedPromotionId === promo.id}
+			{@const auto = isAutoApplicable(d)}
 			<button
 				type="button"
-				onclick={() => applyPromotion(promo.id)}
-				class="flex w-full items-center gap-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-3 text-left transition-colors hover:bg-[var(--ui-bg-accented)]"
+				disabled={!applied && !elig.ok}
+				onclick={() => applyPromotion(applied ? null : promo.id)}
+				class="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors {applied
+					? 'border-primary-500 bg-primary-500/10'
+					: elig.ok
+						? 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] hover:bg-[var(--ui-bg-accented)]'
+						: 'cursor-not-allowed border-dashed border-[var(--ui-border-muted)] opacity-55'}"
 			>
 				<div
-					class="grid size-10 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 text-white"
+					class="grid size-10 shrink-0 place-items-center rounded-lg text-white {applied
+						? 'bg-gradient-to-br from-primary-400 to-primary-600'
+						: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]'}"
 				>
-					<Icon name="lucide:ticket-percent" class="size-5" />
+					<Icon name={promoIcon(d)} class="size-5" />
 				</div>
 				<div class="min-w-0 flex-1">
-					<p class="truncate text-[13px] font-bold">{d.name ?? 'Unnamed promotion'}</p>
+					<div class="flex items-center gap-1.5">
+						<p class="truncate text-[13px] font-bold">{promoName(d, currency)}</p>
+						{#if applied}
+							<span
+								class="rounded-full px-1.5 py-0.5 text-[9.5px] font-bold {isAutoApplied
+									? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+									: 'bg-primary-500/15 text-primary-700 dark:text-primary-300'}"
+								>{isAutoApplied ? 'AUTO' : 'APPLIED'}</span
+							>
+						{/if}
+					</div>
 					<p class="truncate text-[11.5px] text-[var(--ui-text-muted)]">
-						{d.type === 'percent' || d.discountType === 'percent'
-							? `${d.value ?? d.discountValue ?? 0}% off`
-							: d.type === 'fixed' || d.discountType === 'fixed'
-								? formatMoney(d.value ?? d.discountValue ?? 0, currency)
-								: (d.description ?? 'Special offer')}
+						{promoValueLabel(d, currency)}{#if savings > 0}
+							· save {formatMoney(savings, currency)}{/if}
 					</p>
 				</div>
-				{#if selectedPromoId === promo.id}
-					<Icon name="lucide:check-circle-2" class="size-5 text-primary-500" />
+				{#if applied}
+					<Icon name="lucide:check-circle-2" class="size-5 shrink-0 text-primary-500" />
+				{:else if !elig.ok}
+					<span
+						class="shrink-0 rounded-full bg-[var(--tone-warning-bg)] px-2 py-0.5 text-[10px] font-semibold text-[var(--tone-warning-text)]"
+						>{elig.reason}</span
+					>
+				{:else if !auto}
+					<span
+						class="shrink-0 rounded-full bg-[var(--ui-bg-accented)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ui-text-muted)]"
+						>Manual</span
+					>
+				{:else}
+					<Icon name="lucide:plus-circle" class="size-5 shrink-0 text-primary-500" />
 				{/if}
 			</button>
 		{/each}
+		{#if allPromotions.length === 0}
+			<p class="py-6 text-center text-[12.5px] text-[var(--ui-text-muted)]">
+				No active promotions. Create some in
+				<a
+					class="font-semibold text-primary-600 hover:underline dark:text-primary-400"
+					href={resolve('/promotions')}>{t('nav.promotions')}</a
+				>.
+			</p>
+		{/if}
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (promoOpen = false)}>Close</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (promoOpen = false)}>{t('common.close')}</Button>
 	{/snippet}
 </Dialog>
 
 <!-- Held orders -->
-<Dialog bind:open={heldOpen} title="Held orders" size="md">
+<Dialog bind:open={heldOpen} title={t('orders.heldOrders')} size="md">
 	{#if cart.held.length === 0}
 		<EmptyState
 			icon="lucide:pause"
-			title="No held orders"
-			description="Park a sale with Hold to finish it later."
+			title={t('orders.noHeldOrders')}
+			description={t('orders.parkSale')}
 		/>
 	{:else}
 		<ul class="divide-y divide-[var(--ui-border-muted)]">
@@ -2511,7 +3280,7 @@
 							{h.orderType.replace('_', '-')} · {formatInt(h.items.length)} items
 						</div>
 						<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
-							{h.customerName ?? 'Walk-in'} · {formatMoney(heldTotal, currency)}
+							{h.customerName ?? t('pos.walkIn')} · {formatMoney(heldTotal, currency)}
 						</div>
 					</div>
 					<div class="flex gap-1.5">
@@ -2531,7 +3300,7 @@
 							variant="ghost"
 							icon="lucide:trash-2"
 							onclick={() => cart.deleteHeld(h.id)}
-							aria-label="Delete"
+							aria-label={t('common.delete')}
 						/>
 					</div>
 				</li>
@@ -2541,25 +3310,47 @@
 </Dialog>
 
 <!-- Receipt -->
-<Dialog bind:open={receiptOpen} title="Sale complete" size="sm">
-	{#if cart.lastCompleted}
-		{@const s = cart.lastCompleted}
-		<div class="text-center">
-			<div
-				class="mx-auto grid size-12 place-items-center rounded-full bg-[var(--tone-success-bg)] text-[var(--tone-success-text)]"
-			>
-				<Icon name="lucide:check" class="size-6" />
+{#if !payFlow.open}
+	<Dialog bind:open={receiptOpen} size="sm" dismissible={!processing}>
+	{#if processing}
+		<div class="space-y-3 py-1">
+			<div class="relative text-center">
+				<div class="mx-auto grid size-16 place-items-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/25">
+					<Icon name={checkoutProgressStage === 'synced' ? 'lucide:check' : 'lucide:loader-circle'} class="size-8 {checkoutProgressStage === 'synced' ? '' : 'animate-spin'}" />
+				</div>
+				<h2 class="mt-3 font-display text-xl font-black tracking-tight text-[var(--ui-text)]">{checkoutProgressStage === 'synced' ? 'Payment received' : 'Pending payment'}</h2>
+				<p class="mt-0.5 font-mono text-[11px] font-semibold text-[var(--ui-text-dimmed)]">ORDER · PROCESSING</p>
+				<p class="mt-1 font-display text-[2.2rem] leading-none font-black tabular-nums text-[var(--ui-text)]">{formatMoney(grandTotal, currency)}</p>
+				<div class="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-semibold">
+					<span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-emerald-600 dark:text-emerald-400"><Icon name={method === 'cash' ? 'lucide:banknote' : 'lucide:credit-card'} class="size-3.5" />{method}</span>
+					<span class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[var(--ui-text-muted)]"><Icon name="lucide:shopping-bag" class="size-3.5" />{cart.orderType.replace('_', ' ')}</span>
+					<span class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[var(--ui-text-muted)]"><Icon name="lucide:hash" class="size-3.5" />{cart.itemCount} items</span>
+				</div>
 			</div>
-			<div class="mt-2 font-mono text-[14px] font-bold">{s.number}</div>
-			<div class="font-display text-2xl font-bold tabular-nums">
-				{formatMoney(s.totals.total, currency)}
+
+			<div class="rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.06] p-4 text-left">
+				<div class="mb-2 flex items-center justify-between text-[10px] font-bold tracking-[0.12em] text-emerald-700 uppercase dark:text-emerald-300"><span>{checkoutProgressStage === 'synced' ? 'Payment received' : 'Syncing receipt'}</span><span>{checkoutProgressStage === 'saving' ? '35%' : checkoutProgressStage === 'syncing' ? '70%' : '100%'}</span></div>
+				<div class="h-2 overflow-hidden rounded-full bg-emerald-500/15"><div class="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-500 {checkoutProgressStage === 'saving' ? 'w-1/3' : checkoutProgressStage === 'syncing' ? 'w-2/3' : 'w-full'}"></div></div>
+				<div class="mt-3 grid grid-cols-3 gap-2 text-[10px] font-semibold">
+					<div class="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300"><Icon name="lucide:check-circle-2" class="size-3.5" />Order</div>
+					<div class="flex items-center gap-1.5 {checkoutProgressStage === 'synced' ? 'text-emerald-700 dark:text-emerald-300' : 'text-[var(--ui-text-dimmed)]'}"><Icon name={checkoutProgressStage === 'synced' ? 'lucide:check-circle-2' : 'lucide:loader-circle'} class="size-3.5 {checkoutProgressStage === 'syncing' ? 'animate-spin' : ''}" />Relay</div>
+					<div class="flex items-center gap-1.5 {checkoutProgressStage === 'synced' ? 'text-emerald-700 dark:text-emerald-300' : 'text-[var(--ui-text-dimmed)]'}"><Icon name={checkoutProgressStage === 'synced' ? 'lucide:check-circle-2' : 'lucide:circle'} class="size-3.5" />Complete</div>
+				</div>
 			</div>
-			<div class="text-[11.5px] text-[var(--ui-text-muted)] capitalize">
-				{s.method} · {s.orderType.replace('_', '-')}{#if s.change > 0}
-					· change {formatMoney(s.change, currency)}{/if}
-			</div>
+			<p class="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[var(--ui-text-dimmed)]"><Icon name="lucide:shield-check" class="size-3.5" />Do not close or click again while processing.</p>
 		</div>
-		<ul class="mt-3 divide-y divide-[var(--ui-border-muted)] text-[12.5px]">
+	{:else if cart.lastCompleted}
+		{@const s = cart.lastCompleted}
+		<PaymentSuccessHeader
+			sale={s}
+			{currency}
+			tip={successTip}
+			tendered={successTendered}
+			onClose={() => (receiptOpen = false)}
+		/>
+		<ul
+			class="mt-4 divide-y divide-[var(--ui-border-muted)] border-t border-[var(--ui-border-muted)] pt-3 text-[12.5px]"
+		>
 			{#each s.items as it (it.key)}
 				<li class="flex justify-between py-1.5">
 					<span class="min-w-0 truncate"
@@ -2577,7 +3368,7 @@
 		</ul>
 		<dl class="mt-2 space-y-1 border-t border-[var(--ui-border-muted)] pt-2 text-[12px]">
 			<div class="flex justify-between text-[var(--ui-text-muted)]">
-				<span>Subtotal</span><span class="tabular-nums"
+				<span>{t('common.subtotal')}</span><span class="tabular-nums"
 					>{formatMoney(s.totals.subtotal, currency)}</span
 				>
 			</div>
@@ -2596,7 +3387,7 @@
 				</div>
 			{/if}
 			<div class="flex justify-between text-[var(--ui-text-muted)]">
-				<span>Tax</span><span class="tabular-nums">{formatMoney(s.totals.tax, currency)}</span>
+				<span>{t('common.tax')}</span><span class="tabular-nums">{formatMoney(s.totals.tax, currency)}</span>
 			</div>
 			{#if s.totalSats}
 				<div
@@ -2612,9 +3403,9 @@
 	{#snippet footer()}
 		<div class="flex gap-2">
 			<Button color="neutral" variant="subtle" icon="lucide:printer" onclick={printReceipt}
-				>Print</Button
+				>{t('common.print')}</Button
 			>
-			<Button color="primary" block onclick={() => (receiptOpen = false)}>New sale</Button>
+			<Button color="primary" block onclick={() => (receiptOpen = false)}>{t('common.new') + ' ' + t('common.sale')}</Button>
 		</div>
 	{/snippet}
 </Dialog>
@@ -2635,7 +3426,7 @@
 		</label>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Price</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.price')}</span
 				>
 				<Input
 					bind:value={customPrice}
@@ -2649,7 +3440,7 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Quantity</span
+					>{t('common.quantity')}</span
 				>
 				<Input
 					bind:value={customQty}
@@ -2663,7 +3454,7 @@
 		</div>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (customOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (customOpen = false)}>{t('common.cancel')}</Button>
 		<Button color="primary" icon="lucide:plus" onclick={addCustomItem}>Add to sale</Button>
 	{/snippet}
 </Dialog>
@@ -2704,7 +3495,7 @@
 				class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2.5 text-[12.5px] text-[var(--ui-text-muted)]"
 			>
 				<Icon name="lucide:info" class="mr-1 inline size-3.5" />
-				No active shift. Open one to start processing sales.
+				{t('pos.noActiveShift')}.
 			</div>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
@@ -2724,22 +3515,22 @@
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 					>Cashier name (optional)</span
 				>
-				<Input bind:value={shiftStaffName} icon="lucide:user" placeholder="Name" class="w-full" />
+				<Input bind:value={shiftStaffName} icon="lucide:user" placeholder={t('common.name')} class="w-full" />
 			</label>
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (shiftModalOpen = false)}>Cancel</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (shiftModalOpen = false)}>{t('common.cancel')}</Button>
 		{#if openShift}
-			<Button color="neutral" icon="lucide:lock" onclick={closeShift}>Close shift</Button>
+			<Button color="neutral" icon="lucide:lock" onclick={closeShift}>{t('shifts.closeShift')}</Button>
 		{:else}
-			<Button color="primary" icon="lucide:unlock" onclick={openShiftAction}>Open shift</Button>
+			<Button color="primary" icon="lucide:unlock" onclick={openShiftAction}>{t('shifts.openShift')}</Button>
 		{/if}
 	{/snippet}
 </Dialog>
 
 <!-- History Quick Access Modal -->
-<Dialog bind:open={historyOpen} title="Recent orders" size="md">
+<Dialog bind:open={historyOpen} title={t('dashboard.recentOrders')} size="md">
 	{#if recentOrders.length === 0}
 		<EmptyState
 			icon="lucide:receipt"
@@ -2751,9 +3542,15 @@
 			{#each recentOrders as o (o.id)}
 				{@const orderData = recordValue(o.data)}
 				{@const total =
+					(typeof orderData.total === 'number' ? orderData.total : undefined) ??
 					(orderData.totals as { total?: number } | undefined)?.total ??
 					(typeof orderData.amount === 'number' ? orderData.amount : 0)}
-				{@const rawDate = typeof orderData.createdAt === 'string' ? orderData.createdAt : ''}
+				{@const rawDate =
+					typeof orderData.occurredAt === 'string'
+						? orderData.occurredAt
+						: typeof orderData.createdAt === 'string'
+							? orderData.createdAt
+							: ''}
 				{@const orderTime = rawDate
 					? new Intl.DateTimeFormat('en-US', {
 							hour: 'numeric',
@@ -2790,137 +3587,46 @@
 			{/each}
 		</ul>
 	{/if}
-</Dialog>
+	</Dialog>
+{/if}
 
-<!-- Payment QR checkout (QR / Lightning / bank methods) -->
-<Dialog bind:open={payQrOpen} title="Scan to pay" size="md">
-	{#if payQrResult}
-		<div class="flex flex-col items-center gap-4 py-2">
-			<div class="flex items-center gap-2">
-				<Icon
-					name={payQrResult.badge === 'lightning' ? 'lucide:zap' : 'lucide:qr-code'}
-					class="size-4 {payQrResult.badge === 'lightning'
-						? 'text-amber-500'
-						: 'text-primary-500'}"
-				/>
-				<span class="text-[12px] font-bold capitalize text-[var(--ui-text-muted)]">
-					{payQrResult.kind}
-				</span>
-				{#if payQrIsInvoice}
-					<span class="rounded-full bg-amber-500/10 px-2 py-0.5 text-[9.5px] font-bold text-amber-600 dark:text-amber-400">amount-locked invoice</span>
-				{/if}
-				{#if payQrProvider?.label}
-					<span class="rounded-full bg-[var(--ui-bg-accented)] px-2 py-0.5 text-[9.5px] font-bold text-[var(--ui-text-muted)]">{payQrProvider.label}</span>
-				{/if}
-			</div>
+<!-- Payment QR checkout (QR / Lightning / bank methods) — see PaymentQrDialog -->
+<PaymentQrDialog
+	flow={payFlow}
+	{currency}
+	showSats={showSats}
+	satsFromAmount={(a) => btcRate.satsFromAmount(a, currency)}
+	onclose={() => payFlow.close()}
+	onconfirm={confirmQrPaid}
+/>
 
-			<div class="rounded-2xl border border-[var(--ui-border)] bg-white p-3 shadow-sm">
-				{#if payQrFetching}
-					<div class="flex size-[224px] flex-col items-center justify-center gap-3 text-[var(--ui-text-dimmed)]">
-						<Icon name="lucide:loader-circle" class="size-8 animate-spin text-amber-500" />
-						<span class="text-[11.5px] font-semibold">Generating Lightning invoice…</span>
-						<span class="text-[10px] text-[var(--ui-text-dimmed)]">Contacting wallet provider</span>
-					</div>
-				{:else if payQrResult.payload}
-					<QrCode value={payQrResult.payload} size={224} badge={payQrResult.badge} />
-				{:else}
-					<div class="flex size-[224px] items-center justify-center text-[var(--ui-text-dimmed)]">
-						<Icon name="lucide:qr-code" class="size-8" />
-					</div>
-				{/if}
-			</div>
-
-			{#if payQrMethod === 'lightning' && !payQrFetching}
-				<button type="button" onclick={regenerateInvoice}
-					class="flex items-center gap-1 text-[11px] font-semibold text-amber-600 hover:underline dark:text-amber-400"
-				>
-					<Icon name="lucide:refresh-cw" class="size-3.5" />{payQrIsInvoice ? 'New invoice' : 'Try live invoice again'}
-				</button>
-			{/if}
-
-			<div class="text-center">
-				<p class="text-[10.5px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-					Amount due
-				</p>
-				<p class="font-display text-3xl font-black tabular-nums">
-					{formatMoney(payQrAmount, currency)}
-				</p>
-				{#if showSats && payQrMethod !== 'lightning'}
-					<p
-						class="mt-0.5 flex items-center justify-center gap-1 text-[11px] font-semibold text-[var(--tone-warning-text)]"
-					>
-						<Icon name="lucide:zap" class="size-3" />≈ {formatInt(
-							btcRate.satsFromAmount(payQrAmount, currency)
-						)} sats
-					</p>
-				{/if}
-			</div>
-
+<!-- Keyboard shortcuts help -->
+<Dialog bind:open={shortcutsOpen} title="Keyboard shortcuts" size="sm">
+	<div class="space-y-1.5">
+		{#each POS_SHORTCUTS as s (s.key)}
 			<div
-				class="flex items-center gap-1.5 text-[11.5px] font-semibold {payQrSecondsLeft < 60
-					? 'text-[var(--tone-error-text)]'
-					: 'text-[var(--ui-text-muted)]'}"
+				class="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-[var(--ui-bg-accented)]"
 			>
-				<Icon name="lucide:clock" class="size-3.5" />
-				{payQrSecondsLeft > 0 ? `Expires in ${fmtQrCountdown(payQrSecondsLeft)}` : 'Expired — regenerate'}
-			</div>
-
-			{#if payQrIsInvoice && payQrProvider?.autoConfirms}
-				<div class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold {payQrPaid
-					? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-					: 'bg-amber-500/5 text-amber-700 dark:text-amber-300'}">
-					{#if payQrPaid}
-						<Icon name="lucide:check-circle-2" class="size-3.5" />Payment received — completing…
-					{:else}
-						<span class="relative flex size-2">
-							<span class="absolute inline-flex size-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
-							<span class="relative inline-flex size-2 rounded-full bg-amber-500"></span>
-						</span>
-						Watching wallet — will auto-complete on payment
-					{/if}
-				</div>
-			{/if}
-
-			<div
-				class="mt-1 flex items-center gap-2 rounded-lg bg-[var(--ui-bg-muted)] px-3 py-2 text-[11px] text-[var(--ui-text-muted)]"
-			>
-				<Icon name="lucide:info" class="size-3.5 shrink-0" />
-				<span>
-					Ask the customer to scan with their wallet. When payment is received, tap
-					<span class="font-semibold text-[var(--ui-text)]">Mark paid</span> to complete.
+				<span class="flex items-center gap-2 text-[12.5px] font-medium">
+					<Icon name={s.icon} class="size-4 text-[var(--ui-text-dimmed)]" />
+					{s.label}
 				</span>
-			</div>
-
-			<div class="flex w-full items-center justify-center gap-2">
-				<button
-					type="button"
-					class="flex items-center gap-1 text-[11px] font-semibold text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-					onclick={() =>
-						navigator.clipboard
-							?.writeText(payQrResult?.payload ?? '')
-							.then(() => toast.success('Payment link copied'))}
+				<kbd
+					class="rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--ui-text-muted)]"
+					>{s.key}</kbd
 				>
-					<Icon name="lucide:copy" class="size-3.5" />Copy link
-				</button>
-				{#if payQrResult.payload.startsWith('lightning:')}
-					<a
-						href={payQrResult.payload}
-						class="flex items-center gap-1 text-[11px] font-semibold text-amber-600 hover:underline dark:text-amber-400"
-					>
-						<Icon name="lucide:external-link" class="size-3.5" />Open in wallet
-					</a>
-				{/if}
 			</div>
-		</div>
-	{/if}
+		{/each}
+		{#if hardwareSettings.barcodeScanner}
+			<div
+				class="mt-2 flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-[11.5px] font-medium text-emerald-700 dark:text-emerald-300"
+			>
+				<Icon name="lucide:scan-barcode" class="size-4 shrink-0" />
+				Barcode scanner is on — scan any product barcode to add it instantly.
+			</div>
+		{/if}
+	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="subtle" icon="lucide:x" onclick={closeQrCheckout}
-			>Cancel</Button
-		>
-		<Button color="primary" icon="lucide:check" onclick={confirmQrPaid} disabled={payQrLoading || payQrFetching}
-			>{#if payQrLoading}<Icon name="lucide:loader-circle" class="size-4 animate-spin" />…{:else}
-				Mark paid
-			{/if}</Button
-		>
+		<Button color="primary" block onclick={() => (shortcutsOpen = false)}>Got it</Button>
 	{/snippet}
 </Dialog>

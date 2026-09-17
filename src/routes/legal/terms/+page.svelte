@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { site } from '$lib/site';
 
 	const effective = 'August 5, 2025';
 </script>
 
-<svelte:head><title>Terms of Service · {site.name}</title></svelte:head>
+<svelte:head><title>{t('legal.terms')} · {site.name}</title></svelte:head>
 
 <div class="prose prose-sm max-w-none dark:prose-invert
 	prose-headings:font-display prose-headings:tracking-tight

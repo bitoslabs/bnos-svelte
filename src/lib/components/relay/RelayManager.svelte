@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -64,7 +65,7 @@
 				placeholder="wss://relay.example.com"
 				class="flex-1"
 			/>
-			<Button type="submit" color="primary" variant="solid" icon="lucide:plus">Add</Button>
+			<Button type="submit" color="primary" variant="solid" icon="lucide:plus">{t('common.add')}</Button>
 		</form>
 	{/if}
 
@@ -133,9 +134,9 @@
 							class:hover:bg-[var(--interactive-hover-bg)]={!isPrimary}
 							class:hover:text-[var(--ui-text)]={!isPrimary}
 							onclick={() => relays.setPrimary(url)}
-							aria-label="Set primary relay"
+							aria-label={t('common.setPrimary')}
 							aria-pressed={isPrimary}
-							title="Set primary relay"
+							title={t('common.setPrimary')}
 						>
 							<Icon name="lucide:star" class="size-3.5" />
 						</button>
@@ -149,7 +150,7 @@
 							onclick={() => toggleRead(url)}
 							aria-label="Toggle read for {url}"
 							aria-pressed={relays.canRead(url)}
-							title="Read access"
+							title={t('common.readAccess')}
 						>
 							R
 						</button>
@@ -163,7 +164,7 @@
 							onclick={() => toggleWrite(url)}
 							aria-label="Toggle write for {url}"
 							aria-pressed={relays.canWrite(url)}
-							title="Write access"
+							title={t('common.writeAccess')}
 						>
 							W
 						</button>
@@ -173,7 +174,7 @@
 							onclick={() => runTest(url)}
 							disabled={state?.status === 'testing'}
 							aria-label="Test connection for {url}"
-							title="Test connection"
+							title={t('common.testConnection')}
 						>
 							<Icon
 								name={state?.status === 'testing'
@@ -198,7 +199,7 @@
 							relayTests = rest;
 						}}
 						aria-label="Remove {url}"
-						title="Remove relay"
+						title={t('common.removeRelay')}
 					>
 						<Icon name="lucide:x" class="size-4" />
 					</button>

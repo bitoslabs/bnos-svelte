@@ -13,9 +13,9 @@ export default defineConfig({
 			registerType: 'prompt',
 			manifest: {
 				name: 'BNOS OS',
-				short_name: 'BNOS',
-				description: 'BNOS point-of-sale & commerce platform',
-				theme_color: '#ff3e00',
+				short_name: 'BNOS Lite',
+				description: 'Bitcoin Nostr Operating System - Open-source point of sale & commerce on Nostr.',
+				theme_color: '#f97316',
 				background_color: '#0f0f0f',
 				display: 'standalone',
 				orientation: 'portrait',

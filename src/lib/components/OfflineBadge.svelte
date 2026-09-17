@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	let isOffline = $state(false);
 
@@ -23,6 +24,6 @@
 	<div
 		class="pointer-events-none fixed left-1/2 top-2 z-[60] -translate-x-1/2 rounded-full bg-amber-500/90 px-3 py-1 text-xs font-medium text-white shadow-md backdrop-blur"
 	>
-		⚠ Offline — changes saved locally
+		⚠ {t('offline.banner')}
 	</div>
 {/if}

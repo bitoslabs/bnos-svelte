@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { flip } from 'svelte/animate';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
@@ -13,6 +14,8 @@
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { hasQrConfigured, loadPayConfig } from '$lib/pos/pay-config';
 	import { isLightningReady } from '$lib/pos/lightning';
+	import { syncPaymentSettingsToNostr, PAYMENT_SETTINGS_SYNC_EVENT } from '$nostr/payment-settings';
+	import { dataSync } from '$nostr/sync.svelte';
 
 	// ── Types ──────────────────────────────────────────────
 	type PaymentType =
@@ -106,12 +109,12 @@
 		{ label: 'Wallet', value: 'lucide:wallet' },
 		{ label: 'Bank', value: 'lucide:landmark' },
 		{ label: 'Mobile', value: 'lucide:smartphone' },
-		{ label: 'Phone', value: 'lucide:phone' },
+		{ label: t('common.phone'), value: 'lucide:phone' },
 		{ label: 'Gift', value: 'lucide:gift' },
 		{ label: 'Star', value: 'lucide:star' },
 		{ label: 'Bitcoin', value: 'lucide:bitcoin' },
 		{ label: 'Coins', value: 'lucide:coins' },
-		{ label: 'Receipt', value: 'lucide:receipt' },
+		{ label: t('settings.receipt'), value: 'lucide:receipt' },
 		{ label: 'Ticket', value: 'lucide:ticket' }
 	];
 
@@ -173,6 +176,16 @@
 	function persist() {
 		if (!browser) return;
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(methods));
+		void syncPaymentSettingsToNostr('settings.payment-method', methods);
+	}
+
+	function onPaymentSettingsSync() {
+		load();
+	}
+
+	async function loadFromRelay() {
+		await dataSync.manualPaymentSettingsSync();
+		if (dataSync.status === 'done') toast.success('Settings loaded from relay');
 	}
 
 	// ── CRUD ───────────────────────────────────────────────
@@ -248,8 +261,8 @@
 		}
 		if (
 			!(await confirm({
-				title: 'Delete payment method?',
-				message: 'This cannot be undone.',
+				title: t('common.deletePaymentMethod'),
+				message: t('common.cannotBeUndone'),
 				detail: m.label,
 				tone: 'danger',
 				confirmText: 'Delete'
@@ -272,8 +285,8 @@
 	async function handleReset() {
 		if (
 			!(await confirm({
-				title: 'Reset payment methods?',
-				message: 'All custom payment methods will be lost and defaults restored.',
+				title: t('common.resetPaymentMethods'),
+				message: t('common.paymentResetMsg'),
 				tone: 'danger',
 				icon: 'lucide:rotate-ccw',
 				confirmText: 'Reset all'
@@ -291,7 +304,9 @@
 
 	// ── Cross-page readiness ───────────────────────
 	// Tells the merchant whether the enabled method will actually work at the POS.
-	function methodReadiness(m: PaymentMethod):
+	function methodReadiness(
+		m: PaymentMethod
+	):
 		| { state: 'ready'; detail: string }
 		| { state: 'config'; detail: string; href: string }
 		| { state: 'ok' } {
@@ -313,28 +328,39 @@
 	// ── Lifecycle ──────────────────────────────────────────
 	$effect(() => {
 		load();
+		if (!browser) return;
+		window.addEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
+		return () => window.removeEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
 	});
 </script>
 
-<svelte:head><title>Payment methods · Settings</title></svelte:head>
+<svelte:head><title>{t('settings.paymentMethods')} · {t('common.settings')}</title></svelte:head>
 
 <div class="space-y-4">
 	<!-- Header -->
 	<PageHeader
 		icon="lucide:credit-card"
-		title="Payment methods"
-		description="Methods available at checkout"
+		title={t('settings.paymentMethods')}
+		description={t('settings.paymentMethodsDesc')}
 	>
 		{#snippet actions()}
 			<Button
 				variant="ghost"
 				color="neutral"
 				size="sm"
+				icon="lucide:cloud-download"
+				onclick={loadFromRelay}
+				disabled={dataSync.status === 'syncing'}>Load from relay</Button
+			>
+			<Button
+				variant="ghost"
+				color="neutral"
+				size="sm"
 				icon="lucide:rotate-ccw"
-				onclick={handleReset}>Reset</Button
+				onclick={handleReset}>{t('common.reset')}</Button
 			>
 			<Button variant="solid" color="primary" size="sm" icon="lucide:plus" onclick={openAdd}
-				>Add method</Button
+				>{t('settings.addMethod')}</Button
 			>
 		{/snippet}
 	</PageHeader>
@@ -343,12 +369,12 @@
 	{#if loaded && sortedMethods.length === 0}
 		<EmptyState
 			icon="lucide:credit-card"
-			title="No payment methods"
-			description="Add your first payment method to start accepting payments."
+			title={t('settings.noPaymentMethods')}
+			description={t('settings.addPaymentMethodDesc')}
 		>
 			{#snippet actions()}
 				<Button variant="solid" color="primary" size="sm" icon="lucide:plus" onclick={openAdd}>
-					Add method
+					{t('settings.addMethod')}
 				</Button>
 			{/snippet}
 		</EmptyState>
@@ -378,17 +404,27 @@
 								<Badge color="error">disabled</Badge>
 							{/if}
 							{#if m.builtin}
-								<Badge color="neutral" variant="outline">built-in</Badge>
+								<Badge color="neutral" variant="outline">{t('settings.builtIn')}</Badge>
 							{/if}
 						</div>
 						<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">ID: {m.id}</p>
 						{#if methodReadiness(m).state === 'ready'}
-							<span class="mt-1 inline-flex items-center gap-1 text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400">
-								<Icon name="lucide:check-circle-2" class="size-3" />{(methodReadiness(m) as { state: 'ready'; detail: string }).detail}
+							<span
+								class="mt-1 inline-flex items-center gap-1 text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400"
+							>
+								<Icon name="lucide:check-circle-2" class="size-3" />{(
+									methodReadiness(m) as { state: 'ready'; detail: string }
+								).detail}
 							</span>
 						{:else if methodReadiness(m).state === 'config'}
-							<a href={(methodReadiness(m) as { state: 'config'; detail: string; href: string }).href} class="mt-1 inline-flex items-center gap-1 text-[10.5px] font-semibold text-amber-600 hover:underline dark:text-amber-400">
-								<Icon name="lucide:triangle-alert" class="size-3" />{(methodReadiness(m) as { state: 'config'; detail: string; href: string }).detail} · set up
+							<a
+								href={(methodReadiness(m) as { state: 'config'; detail: string; href: string })
+									.href}
+								class="mt-1 inline-flex items-center gap-1 text-[10.5px] font-semibold text-amber-600 hover:underline dark:text-amber-400"
+							>
+								<Icon name="lucide:triangle-alert" class="size-3" />{(
+									methodReadiness(m) as { state: 'config'; detail: string; href: string }
+								).detail} · set up
 							</a>
 						{/if}
 					</div>
@@ -407,7 +443,7 @@
 							type="button"
 							onclick={() => openEdit(m)}
 							class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-muted)] transition hover:bg-[var(--ui-bg-accented)] hover:text-primary-500"
-							title="Edit"
+							title={t('common.edit')}
 						>
 							<Icon name="lucide:pencil" class="size-4" />
 						</button>
@@ -416,7 +452,7 @@
 								type="button"
 								onclick={() => handleDelete(m)}
 								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-muted)] transition hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
-								title="Delete"
+								title={t('common.delete')}
 							>
 								<Icon name="lucide:trash-2" class="size-4" />
 							</button>
@@ -429,14 +465,17 @@
 </div>
 
 <!-- Add / Edit Dialog -->
-<Dialog bind:open={showDialog} title={editing ? 'Edit payment method' : 'Add payment method'}>
+<Dialog
+	bind:open={showDialog}
+	title={editing ? t('settings.editPaymentMethod') : t('settings.addPaymentMethod')}
+>
 	<div class="space-y-4">
 		<!-- Label -->
 		<div class="space-y-1.5">
 			<label
 				class="block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
 			>
-				Label
+				{t('settings.label')}
 			</label>
 			<Input bind:value={formLabel} placeholder="e.g. Cash, Card, Bank Transfer" class="w-full" />
 		</div>
@@ -451,12 +490,12 @@
 				</label>
 				<Input
 					bind:value={formId}
-					placeholder="auto-generated from label if blank"
+					placeholder={t('settings.autoSlug')}
 					class="w-full"
 					{...editing ? { disabled: true } : {}}
 				/>
 				<p class="text-[10px] text-[var(--ui-text-dimmed)]">
-					Unique identifier used internally. Leave blank to auto-generate.
+					{t('settings.methodIdDesc')}
 				</p>
 			</div>
 		{/if}
@@ -466,7 +505,7 @@
 			<label
 				class="block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
 			>
-				Icon
+				{t('settings.icon')}
 			</label>
 			<div class="flex flex-wrap gap-2">
 				{#each ICON_OPTIONS as opt (opt.value)}
@@ -500,7 +539,7 @@
 			<label
 				class="block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
 			>
-				Type
+				{t('common.type')}
 			</label>
 			<div class="flex flex-wrap gap-1.5">
 				{#each TYPE_OPTIONS as opt (opt.value)}
@@ -520,15 +559,17 @@
 
 		<!-- Enabled toggle -->
 		<div class="flex items-center justify-between py-1">
-			<span class="text-[13.5px] font-medium">Enabled</span>
+			<span class="text-[13.5px] font-medium">{t('common.enabled')}</span>
 			<Switch checked={formEnabled} onCheckedChange={(v) => (formEnabled = v)} />
 		</div>
 	</div>
 
 	{#snippet footer()}
-		<Button variant="ghost" color="neutral" onclick={() => (showDialog = false)}>Cancel</Button>
+		<Button variant="ghost" color="neutral" onclick={() => (showDialog = false)}
+			>{t('common.cancel')}</Button
+		>
 		<Button variant="solid" color="primary" onclick={handleSave}>
-			{editing ? 'Save changes' : 'Add method'}
+			{editing ? t('common.saveChanges') : t('settings.addMethod')}
 		</Button>
 	{/snippet}
 </Dialog>

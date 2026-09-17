@@ -1,16 +1,19 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import BnosMark from '$lib/components/BnosMark.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { setupSteps, stepIndex } from './steps';
 	import { relays } from '$nostr/relay.svelte';
 	import { session } from '$nostr/session.svelte';
-	import { tenant } from '$nostr/tenant.svelte';
-	import { glo } from '$nostr/store.svelte';
+import { tenant } from '$nostr/tenant.svelte';
+import { glo } from '$nostr/store.svelte';
+import { createSetupWorkspace } from '$nostr/setup-workspace';
 	import { resolveWorkspace } from '$nostr/workspace.svelte';
 	import { memberships } from '$nostr/memberships.svelte';
 	import { preferences } from '$lib/theme/preferences.svelte';
@@ -21,6 +24,7 @@
 
 	let quickOpen = $state(false);
 	let resolvingWorkspace = $state(false);
+	let creatingWorkspace = $state(false);
 
 	onMount(() => {
 		session.load();
@@ -85,11 +89,26 @@
 		return '';
 	});
 	const canProceed = $derived(!blockedReason && idx >= 0 && idx < setupSteps.length - 1);
-	const nextLabel = $derived(currentSlug === 'catalog' ? 'Review setup' : 'Next');
+	const nextLabel = $derived(
+		currentSlug === 'catalog' ? 'Review setup' : currentSlug === 'review' ? 'Create workspace' : 'Next'
+	);
 
 	async function go(delta: number) {
 		if (delta > 0 && blockedReason) {
 			toast.warning('Setup step incomplete', blockedReason);
+			return;
+		}
+		if (delta > 0 && currentSlug === 'review') {
+			if (creatingWorkspace) return;
+			creatingWorkspace = true;
+			try {
+				await createSetupWorkspace();
+				await goto(resolve('/setup/done'));
+			} catch (e) {
+				toast.error('Could not create workspace', e instanceof Error ? e.message : undefined);
+			} finally {
+				creatingWorkspace = false;
+			}
 			return;
 		}
 		const next = setupSteps[idx + delta];
@@ -104,7 +123,7 @@
 			<div
 				class="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-primary-400 to-primary-600"
 			>
-				<Icon name="lucide:zap" class="size-5 text-white" />
+				<BnosMark class="size-5 text-white" />
 			</div>
 			<span class="font-display text-lg font-bold tracking-tight">BNOS</span>
 		</a>
@@ -119,8 +138,8 @@
 				onclick={manualResolve}
 				disabled={resolvingWorkspace}
 				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:opacity-50"
-				aria-label="Resolve workspace"
-				title="Resolve workspace"
+				aria-label={t('common.resolveWorkspace')}
+				title={t('common.resolveWorkspace')}
 			>
 				<Icon name={resolvingWorkspace ? 'lucide:loader' : 'lucide:refresh-cw'} class="size-[18px] {resolvingWorkspace ? 'animate-spin' : ''}" />
 			</button>
@@ -130,8 +149,8 @@
 				type="button"
 				onclick={() => setMode(mode.current === 'dark' ? 'light' : 'dark')}
 				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-				aria-label="Toggle theme"
-				title="Toggle theme"
+				aria-label={t('common.toggleTheme')}
+				title={t('common.toggleTheme')}
 			>
 				<Icon name={mode.current === 'dark' ? 'lucide:sun' : 'lucide:moon'} class="size-[18px]" />
 			</button>
@@ -153,8 +172,8 @@
 				type="button"
 				onclick={signOut}
 				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
-				aria-label="Sign out"
-				title="Sign out"
+				aria-label={t('common.signOut')}
+				title={t('common.signOut')}
 			>
 				<Icon name="lucide:log-out" class="size-[18px]" />
 			</button>
@@ -249,7 +268,7 @@
 							type="button"
 							class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-[13px] font-semibold text-white hover:bg-primary-400 disabled:opacity-40"
 							onclick={() => go(1)}
-							disabled={!canProceed}
+						disabled={!canProceed || creatingWorkspace}
 						>
 							{nextLabel}
 							<Icon name="lucide:arrow-right" class="size-4" />

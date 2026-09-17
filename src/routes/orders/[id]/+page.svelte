@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -15,15 +16,37 @@
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { formatMoney, formatInt, relativeTime, titleCase } from '$lib/utils/format';
 	import { newRecordId } from '$lib/utils/record-id';
-	import { TYPE, statusColor, type Order, type Payment, type GloObject } from '$lib/domain';
+	import {
+		TYPE,
+		statusColor,
+		statusLabel,
+		type Order,
+		type Payment,
+		type Refund,
+		type GloObject
+	} from '$lib/domain';
 	import { sourceLabel, SHIPPING_STATUSES, shippingStatusLabel } from '$lib/domain/order-sources';
-	import { printReceiptForOrder, printPackingSlip, buildWhatsAppLink } from '$lib/pos/print';
+	import {
+		printReceiptForOrder,
+		printPackingSlip,
+		buildWhatsAppLink,
+		printRefundReceipt
+	} from '$lib/pos/print';
+	import RefundDialog from '$lib/components/refund/RefundDialog.svelte';
+	import {
+		orderRefundState,
+		isOrderRefundable,
+		refundReasonLabel,
+		refundReasonIcon
+	} from '$lib/pos/refund';
+	import { logActivity } from '$lib/audit.svelte';
+	import { permissions } from '$lib/permissions.svelte';
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
 
 	const id = $derived(page.params.id);
 
 	onMount(() => {
-		dataSync.pageSync([TYPE.order, TYPE.payment], { scope: 'order-detail' });
+		dataSync.pageSync([TYPE.order, TYPE.payment, TYPE.refund], { scope: 'order-detail' });
 	});
 
 	const order = $derived(
@@ -33,6 +56,19 @@
 		glo.all<Payment, typeof TYPE.payment>(TYPE.payment).filter((p) => p.data.orderId === id)
 	);
 	const currency = $derived(tenant.state.currency);
+
+	// ── Refunds for this order (reactive) ──
+	const orderRefunds = $derived(
+		glo.all<Refund, typeof TYPE.refund>(TYPE.refund).filter((r) => r.data.orderId === id)
+	);
+	const refundState = $derived(order ? orderRefundState(order, orderRefunds) : null);
+	const canRefund = $derived(
+		!!order && !!refundState && order.data.status !== 'cancelled' && isOrderRefundable(refundState)
+	);
+	// Action permissions (RBAC). Cashiers can't refund or void — only managers+.
+	const canIssueRefund = $derived(permissions.can('refunds', 'write'));
+	const canVoid = $derived(permissions.can('orders', 'delete'));
+	let refundOpen = $state(false);
 
 	// Keep a BTC rate for the merchant currency loaded so the printed receipt's
 	// sats line works for orders that have no persisted snapshot.
@@ -235,24 +271,32 @@
 		if (!order) return;
 		if (
 			!(await confirm({
-				title: 'Cancel this order?',
-				message: 'The order will be marked as cancelled.',
+				title: t('common.cancelThisOrder'),
+				message: t('common.orderCancelledMsg'),
 				tone: 'warning',
 				icon: 'lucide:ban',
-				confirmText: 'Cancel order'
+				confirmText: t('common.confirmCancelOrder')
 			}))
 		)
 			return;
 		await updateStatus('cancelled');
 		toast.info('Order cancelled');
+		void logActivity({
+			action: 'void',
+			resource: 'order',
+			resourceId: id ?? '',
+			summary: `Voided order ${order.data.orderNumber ?? id?.slice(0, 8)}`,
+			amount: order.data.total,
+			currency: order.data.currency
+		});
 	}
 
 	async function deleteOrder() {
 		if (!order) return;
 		if (
 			!(await confirm({
-				title: 'Delete this order?',
-				message: 'This permanently removes the order record. This cannot be undone.',
+				title: t('common.deleteThisOrder'),
+				message: t('common.orderPermanentMsg'),
 				tone: 'danger',
 				confirmText: 'Delete'
 			}))
@@ -330,7 +374,7 @@
 {#if !order}
 	<EmptyState
 		icon="lucide:receipt-text"
-		title="Order not found"
+		title={t('orders.notFound')}
 		description="This order may have been deleted or hasn't synced yet."
 	>
 		{#snippet actions()}<Button
@@ -358,7 +402,17 @@
 						<h1 class="font-display text-xl font-bold tracking-tight">
 							{order.data.orderNumber ?? '#' + (id ?? '').slice(0, 8)}
 						</h1>
-						<Badge color={statusColor(order.data.status)}>{titleCase(order.data.status)}</Badge>
+						<Badge color={statusColor(order.data.status)}>{statusLabel(order.data.status)}</Badge>
+						{#if refundState && refundState.refundedAmount > 0}
+							<Badge color={refundState.isFullyRefunded ? 'error' : 'warning'}>
+								<span class="inline-flex items-center gap-1">
+									<Icon name="lucide:undo-2" class="size-3" />
+									{refundState.isFullyRefunded
+										? 'Refunded'
+										: `Refunded ${formatMoney(refundState.refundedAmount, currency)}`}
+								</span>
+							</Badge>
+						{/if}
 						{#if orderType}
 							<Badge color={typeBadgeColor(orderType)}>
 								<span class="inline-flex items-center gap-1">
@@ -384,14 +438,14 @@
 					variant="subtle"
 					size="sm"
 					icon="lucide:pencil"
-					href="/orders/{id}/edit">Edit</Button
+					href="/orders/{id}/edit">{t('common.edit')}</Button
 				>
 				<Button
 					color="neutral"
 					variant="subtle"
 					size="sm"
 					icon="lucide:printer"
-					onclick={printReceipt}>Print</Button
+					onclick={printReceipt}>{t('common.print')}</Button
 				>
 				<Button
 					color="neutral"
@@ -408,7 +462,7 @@
 						class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--ui-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:border-[var(--ui-text-dimmed)]"
 					>
 						<Icon name="lucide:share-2" class="size-3.5" />
-						Share
+						{t('common.share')}
 					</a>
 				{/if}
 				<Button
@@ -417,11 +471,28 @@
 					size="sm"
 					icon="lucide:code"
 					onclick={() => (rawOpen = true)}
-					title="View raw data"
+					title={t('common.viewRaw')}
 				></Button>
+				{#if canRefund}
+					<Button
+						color="error"
+						variant="subtle"
+						size="sm"
+						icon={canIssueRefund ? 'lucide:undo-2' : 'lucide:lock'}
+						disabled={!canIssueRefund}
+						title={canIssueRefund ? 'Refund' : 'Requires refund permission (manager+)'}
+						onclick={() => canIssueRefund && (refundOpen = true)}>Refund</Button
+					>
+				{/if}
 				{#if order.data.status !== 'cancelled' && order.data.status !== 'completed'}
-					<Button color="error" variant="subtle" size="sm" icon="lucide:x" onclick={cancelOrder}
-						>Cancel</Button
+					<Button
+						color="error"
+						variant="subtle"
+						size="sm"
+						icon={canVoid ? 'lucide:x' : 'lucide:lock'}
+						disabled={!canVoid}
+						title={canVoid ? 'Cancel order' : 'Requires delete permission (manager+)'}
+						onclick={() => canVoid && cancelOrder()}>{t('common.cancel')}</Button
 					>
 				{/if}
 				<Button color="error" variant="ghost" size="sm" icon="lucide:trash-2" onclick={deleteOrder}
@@ -429,6 +500,62 @@
 			</div>
 		</div>
 
+		<!-- ═══ Refunds ═══ -->
+		{#if refundState && refundState.refunds.length > 0}
+			<div class="surface-card overflow-hidden">
+				<div
+					class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-5 py-3"
+				>
+					<div class="flex items-center gap-2">
+						<Icon name="lucide:undo-2" class="size-4 text-[var(--tone-error-text)]" />
+						<h3 class="text-[14px] font-bold">Refunds</h3>
+						<Badge color="error">{formatMoney(refundState.refundedAmount, currency)}</Badge>
+					</div>
+					{#if refundState.refundableRemaining > 0.001}
+						<Button
+							color="error"
+							variant="subtle"
+							size="sm"
+							icon="lucide:undo-2"
+							onclick={() => (refundOpen = true)}>Refund more</Button
+						>
+					{/if}
+				</div>
+				<ul class="divide-y divide-[var(--ui-border-muted)]">
+					{#each refundState.refunds as r (r.id)}
+						<li class="flex items-center gap-3 px-5 py-2.5">
+							<div
+								class="grid size-8 place-items-center rounded-lg bg-[var(--tone-error-bg)] text-[var(--tone-error-text)]"
+							>
+								<Icon name={refundReasonIcon(r.data.reason)} class="size-4" />
+							</div>
+							<div class="min-w-0 flex-1">
+								<div class="text-[12.5px] font-semibold">
+									{formatMoney(r.data.totalAmount ?? 0, currency)} · {titleCase(
+										r.data.refundMethod ?? ''
+									)}
+								</div>
+								<div class="truncate text-[11px] text-[var(--ui-text-muted)]">
+									{refundReasonLabel(r.data.reason)} · {relativeTime(
+										r.data.completedAt ?? ''
+									)}{#if r.data.approvedBy}
+										· {r.data.approvedBy}{/if}
+								</div>
+							</div>
+							<button
+								type="button"
+								onclick={() => printRefundReceipt(order as any, r.data, { currency })}
+								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+								title={t('common.printRefundReceipt')}
+								aria-label={t('common.printRefundReceipt')}
+							>
+								<Icon name="lucide:printer" class="size-4" />
+							</button>
+						</li>
+					{/each}
+				</ul>
+			</div>
+		{/if}
 		<!-- ═══ Status Flow / Progress ═══ -->
 		{#if order.data.status !== 'cancelled' && currentIndex >= 0}
 			<div class="surface-card p-5">
@@ -503,7 +630,7 @@
 							class="rounded-lg border border-red-300 px-2.5 py-1 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-500/10"
 							onclick={() => updateStatus('cancelled')}
 						>
-							Cancel
+							{t('common.cancel')}
 						</button>
 					</div>
 				{/if}
@@ -529,7 +656,7 @@
 					<div class="flex items-center justify-between px-5 py-3">
 						<div class="flex items-center gap-2">
 							<Icon name="lucide:shopping-cart" class="size-4 text-primary-500" />
-							<h2 class="font-display text-[14px] font-semibold">Items</h2>
+							<h2 class="font-display text-[14px] font-semibold">{t('common.items')}</h2>
 							<span
 								class="inline-flex items-center justify-center rounded-md bg-[var(--ui-bg-muted)] px-1.5 py-0.5 text-[10px] font-bold"
 							>
@@ -540,10 +667,10 @@
 					<table class="w-full text-left text-[13px]">
 						<thead>
 							<tr>
-								<th class="px-5 py-2.5">Item</th>
-								<th class="px-5 py-2.5 text-center">Qty</th>
-								<th class="px-5 py-2.5 text-right">Price</th>
-								<th class="px-5 py-2.5 text-right">Total</th>
+								<th class="px-5 py-2.5">{t('common.item')}</th>
+								<th class="px-5 py-2.5 text-center">{t('common.qty')}</th>
+								<th class="px-5 py-2.5 text-right">{t('common.price')}</th>
+								<th class="px-5 py-2.5 text-right">{t('common.total')}</th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-[var(--ui-border-muted)]">
@@ -603,7 +730,7 @@
 									<Icon name="lucide:phone" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 									<div>
 										<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-											Phone
+											{t('common.phone')}
 										</p>
 										<p class="font-medium">{shipping.phone}</p>
 									</div>
@@ -617,7 +744,7 @@
 									/>
 									<div>
 										<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-											Address
+											{t('common.address')}
 										</p>
 										<p class="font-medium">
 											{shipping.address}{#if shipping.city}, {shipping.city}{/if}
@@ -630,7 +757,7 @@
 									<Icon name="lucide:truck" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 									<div>
 										<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-											Provider
+											{t('common.provider')}
 										</p>
 										<p class="font-medium">{shipping.deliveryProvider}</p>
 									</div>
@@ -708,7 +835,7 @@
 								</label>
 								<label class="block">
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-										>Provider</span
+										>{t('common.provider')}</span
 									>
 									<Input
 										bind:value={trackProvider}
@@ -726,7 +853,7 @@
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 										>Driver name</span
 									>
-									<Input bind:value={trackDriver} placeholder="Driver / courier" class="w-full" />
+									<Input bind:value={trackDriver} placeholder={t('common.driverCourier')} class="w-full" />
 								</label>
 								<label class="block sm:col-span-2">
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
@@ -762,7 +889,7 @@
 									<Icon name="lucide:user" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 									<div>
 										<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-											Name
+											{t('common.name')}
 										</p>
 										<p class="font-medium">{pickup.pickupName}</p>
 									</div>
@@ -773,7 +900,7 @@
 									<Icon name="lucide:phone" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 									<div>
 										<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-											Phone
+											{t('common.phone')}
 										</p>
 										<p class="font-medium">{pickup.phone}</p>
 									</div>
@@ -813,7 +940,7 @@
 					<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
 						<div class="flex items-center gap-2 px-5 py-3">
 							<Icon name="lucide:file-text" class="size-4 text-primary-500" />
-							<h2 class="font-display text-[14px] font-semibold">Notes</h2>
+							<h2 class="font-display text-[14px] font-semibold">{t('common.notes')}</h2>
 						</div>
 						<div class="px-5 py-3">
 							<p class="text-[13px] whitespace-pre-wrap text-[var(--ui-text-muted)]">
@@ -861,7 +988,7 @@
 					</div>
 					<div class="space-y-2 px-5 py-4 text-[13px]">
 						<div class="flex justify-between">
-							<span class="text-[var(--ui-text-muted)]">Subtotal</span><span class="tabular-nums"
+							<span class="text-[var(--ui-text-muted)]">{t('common.subtotal')}</span><span class="tabular-nums"
 								>{formatMoney((order.data as any).subtotal ?? 0, currency)}</span
 							>
 						</div>
@@ -922,7 +1049,7 @@
 						{/if}
 						{#if order.data.taxAmount}
 							<div class="flex justify-between">
-								<span class="text-[var(--ui-text-muted)]">Tax</span><span class="tabular-nums"
+								<span class="text-[var(--ui-text-muted)]">{t('common.tax')}</span><span class="tabular-nums"
 									>{formatMoney((order.data.taxAmount as number | undefined) ?? 0, currency)}</span
 								>
 							</div>
@@ -937,7 +1064,7 @@
 						<div
 							class="flex justify-between border-t border-[var(--ui-border-muted)] pt-2 font-display text-[15px] font-bold"
 						>
-							<span>Total</span><span class="tabular-nums"
+							<span>{t('common.total')}</span><span class="tabular-nums"
 								>{formatMoney(totalAmount, currency)}</span
 							>
 						</div>
@@ -1017,7 +1144,7 @@
 									min="0"
 									step="0.01"
 									class="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5 text-right text-[13px] focus:outline-none"
-									placeholder="Amount"
+									placeholder={t('common.amount')}
 								/>
 								<div class="flex gap-2">
 									<Button
@@ -1025,9 +1152,9 @@
 										color="neutral"
 										variant="ghost"
 										block
-										onclick={() => (showAddPayment = false)}>Cancel</Button
+										onclick={() => (showAddPayment = false)}>{t('common.cancel')}</Button
 									>
-									<Button size="sm" color="primary" block onclick={addPayment}>Add</Button>
+									<Button size="sm" color="primary" block onclick={addPayment}>{t('common.add')}</Button>
 								</div>
 							</div>
 						{:else}
@@ -1052,7 +1179,7 @@
 				<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
 					<div class="flex items-center gap-2 px-5 py-3">
 						<Icon name="lucide:user" class="size-4 text-primary-500" />
-						<h2 class="font-display text-[14px] font-semibold">Details</h2>
+						<h2 class="font-display text-[14px] font-semibold">{t('common.details')}</h2>
 					</div>
 					<div class="space-y-3 px-5 py-3 text-[13px]">
 						{#if customerDisplayName}
@@ -1060,7 +1187,7 @@
 								<Icon name="lucide:user" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 								<div>
 									<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-										Customer
+										{t('common.customer')}
 									</p>
 									<p class="font-medium">{customerDisplayName}</p>
 								</div>
@@ -1071,7 +1198,7 @@
 								<Icon name="lucide:coffee" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 								<div>
 									<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-										Table
+										{t('common.table')}
 									</p>
 									<p class="font-medium">{tableId}</p>
 								</div>
@@ -1093,7 +1220,7 @@
 								<Icon name="lucide:globe" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 								<div>
 									<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-										Source
+										{t('common.source')}
 									</p>
 									<p class="font-medium">{sourceLabel(orderSource)}</p>
 								</div>
@@ -1106,7 +1233,7 @@
 							<Icon name="lucide:calendar" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
 							<div>
 								<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-									Created
+									{t('toast.created')}
 								</p>
 								<p class="text-[12px] text-[var(--ui-text-muted)]">
 									{relativeTime((order.data as any).occurredAt ?? '')}
@@ -1121,7 +1248,7 @@
 								/>
 								<div>
 									<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
-										Completed
+										{t('status.completed')}
 									</p>
 									<p class="text-[12px] text-[var(--ui-text-muted)]">
 										{relativeTime((order.data as any).completedAt ?? '')}
@@ -1154,4 +1281,13 @@
 	</div>
 {/if}
 
-<RawDataDialog bind:open={rawOpen} data={order} title="Order Raw Data" />
+<RawDataDialog bind:open={rawOpen} data={order} title={t('orders.rawData')} />
+{#if order && refundState}
+	<RefundDialog
+		bind:open={refundOpen}
+		{order}
+		{currency}
+		alreadyRefunded={refundState.refundedAmount}
+		originalMethod={(payments[0]?.data.method as string) ?? 'cash'}
+	/>
+{/if}

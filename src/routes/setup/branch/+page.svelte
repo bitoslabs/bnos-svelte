@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 
@@ -15,7 +16,7 @@
 	});
 </script>
 
-<svelte:head><title>Setup · Branch</title></svelte:head>
+<svelte:head><title>{t('setup.title')} · {t('setup.branch')}</title></svelte:head>
 
 <div class="space-y-5">
 	<div>

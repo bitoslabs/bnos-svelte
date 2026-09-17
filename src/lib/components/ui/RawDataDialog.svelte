@@ -6,7 +6,7 @@
 	import { kindForType } from '$lib/domain/kind';
 	import { glo } from '$nostr/store.svelte';
 	import { verifyEvent } from 'nostr-tools/pure';
-
+	import { t } from '$lib/i18n/i18n.svelte';
 	let {
 		open = $bindable(),
 		data,
@@ -238,7 +238,7 @@
 							<dd class="font-mono text-[11.5px]">{liveEvent?.kind ?? (isGlo ? kindForType(obj.type) : '—')}</dd>
 						</div>
 						<div class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2">
-							<dt class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">Created</dt>
+							<dt class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">{t('toast.created')}</dt>
 							<dd class="text-[11.5px]">{timeOf(liveEvent?.created_at ?? obj.__eventCreatedAt)}</dd>
 						</div>
 						<div class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2">

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -56,7 +57,7 @@
 	function handleBack() { goto('/setup/branch'); }
 </script>
 
-<svelte:head><title>Setup · POS</title></svelte:head>
+<svelte:head><title>{t('setup.title')} · {t('setup.pos')}</title></svelte:head>
 
 <div class="space-y-6">
 	<div>
@@ -68,7 +69,7 @@
 
 	<!-- Receipt Settings -->
 	<div class="space-y-4">
-		<h3 class="text-[12px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">Receipt</h3>
+		<h3 class="text-[12px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">{t('settings.receipt')}</h3>
 		<label class="block">
 			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Store name on receipt</span>
 			<Input bind:value={receiptStoreName} icon="lucide:store" placeholder="My Store" class="w-full" />
@@ -76,7 +77,7 @@
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Header text</span>
-				<Input bind:value={receiptHeader} placeholder="Welcome!" class="w-full" />
+				<Input bind:value={receiptHeader} placeholder={t('common.welcomeMsg')} class="w-full" />
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Footer text</span>
@@ -96,7 +97,7 @@
 				<div class="flex justify-between"><span>Item 2</span><span>$0.00</span></div>
 			</div>
 			<hr class="my-2 border-dashed border-[var(--ui-border)]" />
-			<div class="flex justify-between font-bold"><span>Total</span><span>$0.00</span></div>
+			<div class="flex justify-between font-bold"><span>{t('common.total')}</span><span>$0.00</span></div>
 			<hr class="my-2 border-dashed border-[var(--ui-border)]" />
 			{#if receiptFooter}<p class="text-[var(--ui-text-dimmed)]">{receiptFooter}</p>{/if}
 		</div>
@@ -127,7 +128,7 @@
 
 	<!-- Hardware -->
 	<div class="space-y-4">
-		<h3 class="text-[12px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">Hardware</h3>
+		<h3 class="text-[12px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">{t('settings.grpHardware')}</h3>
 		<div class="grid grid-cols-2 gap-4">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Paper size</span>
@@ -135,13 +136,13 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Printer</span>
-				<Select bind:value={printerType} options={[{ value: 'browser', label: 'Browser' }, { value: 'usb', label: 'USB' }, { value: 'network', label: 'Network' }, { value: 'none', label: 'None' }]} class="w-full" />
+				<Select bind:value={printerType} options={[{ value: 'browser', label: 'Browser' }, { value: 'usb', label: 'USB' }, { value: 'network', label: 'Network' }, { value: 'none', label: t('common.none') }]} class="w-full" />
 			</label>
 		</div>
 	</div>
 
 	<div class="flex justify-between">
-		<Button color="neutral" variant="ghost" icon="lucide:arrow-left" onclick={handleBack}>Back</Button>
-		<Button color="primary" icon="lucide:arrow-right" onclick={handleContinue}>Continue</Button>
+		<Button color="neutral" variant="ghost" icon="lucide:arrow-left" onclick={handleBack}>{t('common.back')}</Button>
+		<Button color="primary" icon="lucide:arrow-right" onclick={handleContinue}>{t('common.continue')}</Button>
 	</div>
 </div>

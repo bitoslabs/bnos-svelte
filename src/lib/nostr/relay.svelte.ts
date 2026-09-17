@@ -4,20 +4,43 @@
  * store to query/publish Nostr events via @bitos/bnos-core's relay helpers.
  */
 import { browser } from '$app/environment';
+import { env } from '$env/dynamic/public';
 import { normalizeRelayUrls } from '@bitos/bnos-core';
 
 const STORAGE_KEY = 'bnos-os:relays';
+
+const BUILTIN_RELAYS = [
+	'wss://nostr-01.yakihonne.com',
+	'wss://nos.lol',
+	'wss://yabu.me',
+	'wss://relay.nostr.band',
+	'wss://nostr.wine',
+	'wss://relay.damus.io',
+	'wss://relay.bitos.space'
+];
+
+function relaysFromEnv(value: string | undefined): string[] {
+	const raw = value?.trim();
+	if (!raw) return [];
+
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (Array.isArray(parsed)) return normalizeRelayUrls(parsed.filter((url): url is string => typeof url === 'string'));
+	} catch {
+		/* Treat non-JSON values as a comma-separated list. */
+	}
+
+	return normalizeRelayUrls(raw.split(',').map((url) => url.trim()).filter(Boolean));
+}
 
 export interface RelayPermissions {
 	read: boolean;
 	write: boolean;
 }
 
-export const DEFAULT_RELAYS = [
-	'wss://relay.damus.io',
-	'wss://nos.lol',
-	'wss://relay.nostr.band'
-];
+/** Defaults can be overridden with the browser-safe `PUBLIC_RELAYS` env var. */
+const configuredRelays = relaysFromEnv(env.PUBLIC_RELAYS);
+export const DEFAULT_RELAYS = configuredRelays.length ? [...configuredRelays, ...BUILTIN_RELAYS] : BUILTIN_RELAYS;
 
 class RelayStore {
 	/** Canonical list of relay URLs (no trailing slash, wss://). */

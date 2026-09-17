@@ -10,6 +10,7 @@ import { createGloObject, type GloOrganization } from '@bitos/bnos-core/glo';
 import type { UserRole } from '$lib/domain';
 
 const STORAGE_KEY = 'bnos-os:tenant';
+const AUTH_PUBKEY_KEY = 'nostr_pubkey';
 
 export type BusinessModel =
 	| 'single'
@@ -85,7 +86,22 @@ class TenantStore {
 		if (!browser) return;
 		try {
 			const raw = localStorage.getItem(STORAGE_KEY);
-			if (raw) this.state = { ...DEFAULT_TENANT, ...JSON.parse(raw) };
+			const authPubkey = localStorage.getItem(AUTH_PUBKEY_KEY)?.trim().toLowerCase() ?? '';
+			if (raw) {
+				const parsed = JSON.parse(raw) as unknown;
+				if (
+					parsed &&
+					typeof parsed === 'object' &&
+					'ownerPubkey' in parsed &&
+					typeof parsed.ownerPubkey === 'string' &&
+					parsed.ownerPubkey.toLowerCase() === authPubkey &&
+					'state' in parsed &&
+					parsed.state &&
+					typeof parsed.state === 'object'
+				) {
+					this.state = { ...DEFAULT_TENANT, ...parsed.state };
+				}
+			}
 		} catch {
 			/* ignore */
 		}
@@ -94,7 +110,13 @@ class TenantStore {
 
 	persist = () => {
 		if (!browser) return;
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+		localStorage.setItem(
+			STORAGE_KEY,
+			JSON.stringify({
+				ownerPubkey: localStorage.getItem(AUTH_PUBKEY_KEY)?.trim().toLowerCase() ?? '',
+				state: this.state
+			})
+		);
 	};
 
 	/** Configure the tenant during/after setup. */

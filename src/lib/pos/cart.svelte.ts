@@ -66,6 +66,8 @@ export interface CompletedSale {
 	completedAt: string;
 	/** Customer name captured at checkout, if any. */
 	customerName?: string;
+	/** Customer id linked to the sale, if any (for loyalty / history). */
+	customerId?: string;
 	/** Cart-level discount applied (percent/fixed), if any. */
 	discount?: { type: 'percent' | 'fixed'; value: number };
 	/** Promotion/coupon snapshot captured at checkout, if any. Lets the receipt
@@ -294,8 +296,13 @@ class PosCart {
 	}
 
 	// ── checkout ──
-	async checkout(method: PaymentMethod, tendered = 0): Promise<CompletedSale | null> {
+	async checkout(
+		method: PaymentMethod,
+		tendered = 0,
+		onProgress?: (stage: 'saving' | 'syncing' | 'synced') => void
+	): Promise<CompletedSale | null> {
 		if (this.isEmpty) return null;
+		onProgress?.('saving');
 		const orderId = newRecordId('order');
 		const number = nextReadableNumber({ prefix: 'ORD', scope: tenant.state.locationId });
 		const currency = tenant.state.currency;
@@ -355,6 +362,7 @@ class PosCart {
 		});
 
 		try {
+			onProgress?.('syncing');
 			await glo.upsert<Order>(TYPE.order, order, { id: orderId });
 			await glo.upsert<Payment>(
 				TYPE.payment,
@@ -365,6 +373,7 @@ class PosCart {
 			console.warn('[pos] checkout persist failed', e);
 			toast.error('Sale saved locally', 'Relay sync will retry.');
 		}
+		onProgress?.('synced');
 
 		// ── Post-checkout data flows ──
 
@@ -426,17 +435,20 @@ class PosCart {
 		if (this.appliedPromotionId) {
 			try {
 				const promo = glo.get(TYPE.promotion, this.appliedPromotionId);
-				if (promo) {
-					const promoData = promo.data as Record<string, unknown>;
+				const coupon = glo.get(TYPE.coupon, this.appliedPromotionId);
+				const offer = promo ?? coupon;
+				if (offer) {
+					const offerData = offer.data as Record<string, unknown>;
+					const usageField = coupon ? 'uses' : 'currentUsage';
 					const currentUsage =
-						typeof promoData.currentUsage === 'number' ? promoData.currentUsage : 0;
+						typeof offerData[usageField] === 'number' ? offerData[usageField] : 0;
 					await glo.upsert(
-						TYPE.promotion,
+						coupon ? TYPE.coupon : TYPE.promotion,
 						{
-							...promoData,
-							currentUsage: currentUsage + 1
+							...offerData,
+							[usageField]: currentUsage + 1
 						},
-						{ id: promo.id }
+						{ id: offer.id }
 					);
 				}
 			} catch (e) {
@@ -448,10 +460,11 @@ class PosCart {
 		// even after the cart is cleared below.
 		let promotion: CompletedSale['promotion'];
 		if (this.appliedPromotionId) {
-			const promoObj = glo.get(TYPE.promotion, this.appliedPromotionId);
+			const promoObj = glo.get(TYPE.promotion, this.appliedPromotionId) ?? glo.get(TYPE.coupon, this.appliedPromotionId);
 			const pd = promoObj?.data as
 				| {
 						name?: string;
+						code?: string;
 						type?: string;
 						discountType?: string;
 						value?: number;
@@ -460,7 +473,7 @@ class PosCart {
 				| undefined;
 			if (pd) {
 				promotion = {
-					name: pd.name ?? 'Promotion',
+					name: pd.name ?? pd.code ?? 'Promotion',
 					type: pd.type ?? pd.discountType ?? 'percent',
 					value: pd.value ?? pd.discountValue ?? 0
 				};
@@ -476,6 +489,7 @@ class PosCart {
 			change,
 			completedAt,
 			customerName: this.customerName || undefined,
+			customerId: this.customerId ?? undefined,
 			discount:
 				this.discount.value > 0
 					? { type: this.discount.type, value: this.discount.value }

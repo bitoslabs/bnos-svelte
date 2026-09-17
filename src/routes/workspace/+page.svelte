@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -11,10 +12,10 @@
 	onMount(() => { session.load(); tenant.load(); });
 </script>
 
-<svelte:head><title>BNOS · Workspace</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('settings.workspace')}</title></svelte:head>
 
 <div class="mx-auto max-w-2xl space-y-5">
-	<div><h1 class="font-display text-xl font-bold tracking-tight">Workspace</h1><p class="text-[12.5px] text-[var(--ui-text-muted)]">The organization this device is operating under</p></div>
+	<div><h1 class="font-display text-xl font-bold tracking-tight">{t('settings.workspace')}</h1><p class="text-[12.5px] text-[var(--ui-text-muted)]">The organization this device is operating under</p></div>
 
 	<div class="surface-card accent-bar p-6" style="--accent:var(--ui-color-primary-500);">
 		<div class="flex items-start gap-4">
@@ -34,7 +35,7 @@
 	<div class="surface-card divide-y divide-[var(--ui-border-muted)] text-[13px]">
 		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:fingerprint" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">Owner identity</span><span class="ml-auto font-mono text-[12px]">{truncateNpub(session.npub ?? '', 14, 8)}</span></div>
 		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:network" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">Business model</span><span class="ml-auto font-semibold capitalize">{tenant.state.businessModel.replace(/_/g, ' ')}</span></div>
-		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:percent" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">Tax</span><span class="ml-auto font-semibold">{tenant.state.defaultTaxRate}% {tenant.state.taxIncludedInPrice ? 'incl.' : 'excl.'}</span></div>
+		<div class="flex items-center gap-3 px-4 py-3"><Icon name="lucide:percent" class="size-4 text-[var(--ui-text-dimmed)]" /><span class="text-[var(--ui-text-muted)]">{t('common.tax')}</span><span class="ml-auto font-semibold">{tenant.state.defaultTaxRate}% {tenant.state.taxIncludedInPrice ? 'incl.' : 'excl.'}</span></div>
 	</div>
 
 	<div class="flex flex-wrap gap-2">

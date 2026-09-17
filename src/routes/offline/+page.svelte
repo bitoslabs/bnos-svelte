@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 
 	function reload() { window.location.reload(); }
 </script>
 
-<svelte:head><title>BNOS · Offline</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('common.offline')}</title></svelte:head>
 
 <div class="flex min-h-screen items-center justify-center px-4 py-10">
 	<div class="flex min-h-[70vh] w-full max-w-xl flex-col justify-center">

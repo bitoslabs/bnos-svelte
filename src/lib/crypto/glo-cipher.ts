@@ -52,6 +52,9 @@ export const ENCRYPTED_DOMAIN_BY_TYPE: Record<string, SensitiveDataDomain> = {
 	'identity.staff': 'staff',
 	shift: 'shift',
 	'cash-event': 'cash_event',
+	'settings.bitcoin': 'settings',
+	'settings.payment-method': 'settings',
+	'settings.pay-config': 'settings',
 	// Marketplace channel connections carry API keys/credentials in `config` →
 	// org-internal, must be encrypted. (Listings/reviews stay plaintext.)
 	'marketplace.connection': 'settings'

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { glo } from '$nostr/store.svelte';
@@ -11,7 +11,9 @@
 
 	let count = $state(0);
 
-	onMount(() => {
+	// `glo.all()` hydrates IndexedDB asynchronously; keep the count reactive so
+	// existing products appear after hydration instead of showing a false zero.
+	$effect(() => {
 		count = glo.all<GloProduct, 'catalog.product'>('catalog.product').length;
 	});
 
@@ -26,15 +28,13 @@
 	async function seedSamples() {
 		for (const data of SAMPLE)
 			await glo.upsert<GloProduct>('catalog.product', data, { id: newRecordId('product') });
-		count = glo.all<GloProduct, 'catalog.product'>('catalog.product').length;
 	}
 	function clear() {
 		for (const p of glo.all('catalog.product')) glo.remove('catalog.product', p.id);
-		count = 0;
 	}
 </script>
 
-<svelte:head><title>Setup · Catalog</title></svelte:head>
+<svelte:head><title>{t('setup.title')} · {t('setup.catalog')}</title></svelte:head>
 
 <div class="space-y-5">
 	<div>
@@ -59,7 +59,7 @@
 		</div>
 		<div class="flex gap-2">
 			<Button color="neutral" variant="ghost" size="sm" onclick={clear} disabled={count === 0}
-				>Clear</Button
+				>{t('common.clear')}</Button
 			>
 			<Button color="primary" size="sm" icon="lucide:sparkles" onclick={seedSamples}
 				>Add samples</Button

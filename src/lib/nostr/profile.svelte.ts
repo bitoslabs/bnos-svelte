@@ -180,8 +180,7 @@ class ProfileStore {
 			}
 			return ok;
 		} catch (e) {
-			console.warn('[profile] publish failed', e);
-			return false;
+				return false;
 		} finally {
 			this.publishing = false;
 		}
@@ -214,7 +213,6 @@ class ProfileStore {
 			this.persist();
 			return true;
 		} catch (e) {
-			console.warn('[profile] fetch failed', e);
 			return false;
 		} finally {
 			this.loading = false;

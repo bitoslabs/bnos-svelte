@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { cn } from '$lib/utils/cn';
 	import Icon from './Icon.svelte';
 
@@ -55,7 +56,7 @@
 					type="button"
 					onclick={() => (open = false)}
 					class="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-					aria-label="Close"
+					aria-label={t('common.close')}
 				>
 					<Icon name="lucide:x" class="size-4" />
 				</button>

@@ -48,7 +48,7 @@ import { get as idbGet, set as idbSet } from 'idb-keyval';
 import { session } from './session.svelte';
 import { relays } from './relay.svelte';
 import { tenant } from './tenant.svelte';
-import { fetchEvents, sendEvent } from './client';
+import { fetchEvents, fetchEventsPrimaryFirst, sendEvent } from './client';
 import { verifyEvent } from 'nostr-tools/pure';
 import { encryptGloObject, decryptGloEvent, shouldEncryptType } from '$lib/crypto/glo-cipher';
 
@@ -82,6 +82,12 @@ type QueuedPublish = {
 	object: AnyGloObject;
 	queuedAt: number;
 };
+
+/** Remove the in-memory Nostr event before serializing a GLO object. */
+function withoutEphemeralEvent(object: AnyGloObject): AnyGloObject {
+	const { __event: _event, __eventId: _eventId, __eventCreatedAt: _createdAt, ...plain } = object;
+	return plain;
+}
 
 function toTimestamp(value: unknown): number {
 	if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -240,7 +246,7 @@ async function writeLocal(type: string, items: AnyGloObject[]) {
 		const plain = JSON.parse(JSON.stringify(items, (k, v) => (k === '__event' ? undefined : v)));
 		await idbSet(STORAGE_PREFIX + type, plain);
 	} catch (e) {
-		console.warn('[glo] IndexedDB write failed', type, e);
+		/* best effort */
 	}
 }
 
@@ -259,9 +265,15 @@ async function readPublishQueue(): Promise<QueuedPublish[]> {
 async function writePublishQueue(items: QueuedPublish[]) {
 	if (!browser) return;
 	try {
-		await idbSet(PUBLISH_QUEUE_KEY, JSON.parse(JSON.stringify(items)));
+		// A failed publish may already have an in-memory event attached. Never
+		// persist it: retrying such an item would nest the previous event inside
+		// its next GLO content and grow exponentially on repeated failures.
+		await idbSet(
+			PUBLISH_QUEUE_KEY,
+			JSON.parse(JSON.stringify(items, (key, value) => (key === '__event' ? undefined : value)))
+		);
 	} catch (e) {
-		console.warn('[glo] publish queue write failed', e);
+		/* best effort */
 	}
 }
 
@@ -305,14 +317,12 @@ class ReactiveCollections {
 				if (this._hydrated.has(type)) return;
 				this._hydrated.add(type);
 				this._map[type] = items;
-				console.debug(`[glo] hydrated "${type}" → ${items.length} items`);
 				// Bump version to signal hydration completed (for components
 				// that need to know when initial data has arrived).
 				if (gloInstance) gloInstance.bump();
 			})
-			.catch((e) => {
-				this._hydrating.delete(type);
-				console.warn(`[glo] hydration failed for "${type}"`, e);
+				.catch((e) => {
+					this._hydrating.delete(type);
 				this._hydrated.add(type);
 				if (gloInstance) gloInstance.bump();
 			});
@@ -404,10 +414,9 @@ class ReactiveCollections {
 				}
 			}
 			if (migrated > 0) {
-				console.info(`[glo] Migrated ${migrated} collection(s) from localStorage to IndexedDB`);
-			}
+				}
 		} catch (e) {
-			console.warn('[glo] Migration failed', e);
+			/* best effort */
 		}
 	}
 
@@ -448,7 +457,7 @@ class GloStore {
 		const queued = await readPublishQueue();
 		const key = `${type}:${object.id}`;
 		const next = [
-			{ type, object: object as AnyGloObject, queuedAt: Date.now() },
+			{ type, object: withoutEphemeralEvent(object as AnyGloObject), queuedAt: Date.now() },
 			...queued.filter((item) => `${item.type}:${item.object.id}` !== key)
 		];
 		await writePublishQueue(next);
@@ -528,6 +537,40 @@ class GloStore {
 		return object;
 	};
 
+	/** Create/update a GLO object and expose whether its Nostr publish succeeded. */
+	upsertWithStatus = async <TData>(
+		type: string,
+		data: TData,
+		opts: {
+			id?: string;
+			visibility?: GloVisibility;
+			extensions?: Record<string, unknown>;
+			scope?: Partial<GloScope>;
+		} = {}
+	): Promise<{ object: GloObject<TData, string>; published: boolean }> => {
+		const id = opts.id ?? uid();
+		const existing = this.collections.find(type, id);
+		const object = createGloObject<TData, string>({
+			type,
+			id,
+			scope: {
+				...tenant.scope,
+				...(opts.scope ?? {}),
+				ownerPubkey: opts.scope?.ownerPubkey ?? session.pubkey ?? undefined
+			},
+			visibility: opts.visibility ?? existing?.visibility ?? 'organization',
+			data: stampData(data, existing),
+			extensions: opts.extensions as never
+		});
+
+		this.collections.upsert(type, object as AnyGloObject);
+		this.bump();
+		getBroadcastChannel()?.postMessage({ type: 'upsert', collectionType: type });
+
+		const published = await this.publish(type, object);
+		return { object, published };
+	};
+
 	/** Remove a GLO object locally. */
 	remove = (type: string, id: string) => {
 		this.collections.remove(type, id);
@@ -566,9 +609,13 @@ class GloStore {
 			return false;
 		}
 		try {
-			const template = createAppGloEventTemplate(object, {
-				client: 'bdgo-os',
-				summary: `${type} ${object.id}`
+			// Queued objects and objects received from relay sync can carry an
+			// ephemeral full event for the Raw Data viewer. It must never become
+			// part of the next event's GLO content.
+			const publishObject = withoutEphemeralEvent(object as AnyGloObject);
+			const template = createAppGloEventTemplate(publishObject, {
+					client: 'bnos',
+				summary: `${type} ${publishObject.id}`
 			});
 
 			// Encryption (opt-in, per SECURITY.md): for sensitive types, swap the
@@ -577,14 +624,13 @@ class GloStore {
 			// cache keeps the plaintext object; only the wire event is encrypted.
 			if (shouldEncryptType(type)) {
 				try {
-					const enc = await encryptGloObject(object);
+					const enc = await encryptGloObject(publishObject);
 					if (enc) {
 						template.content = enc.content;
 						template.tags = [...template.tags, ...enc.encryptionTags];
 					}
 				} catch (e) {
 					// No company key yet (e.g. staff awaiting a grant) → publish plaintext.
-					console.debug('[glo] encryption skipped', type, e);
 				}
 			}
 
@@ -604,7 +650,6 @@ class GloStore {
 			if (!published && queueOnFailure) await this.queuePublish(type, object);
 			return published;
 		} catch (e) {
-			console.warn('[glo] publish failed', e);
 			if (queueOnFailure) await this.queuePublish(type, object);
 			return false;
 		}
@@ -662,9 +707,14 @@ class GloStore {
 	 *  - `limit`: relay result cap. */
 	sync = async (
 		type: string,
-		options: { locationId?: string | null; authors?: string[]; limit?: number } = {}
+		options: {
+			locationId?: string | null;
+			authors?: string[];
+			limit?: number;
+			relayStrategy?: 'all' | 'primary-first';
+		} = {}
 	) => {
-		const { locationId, authors, limit = 200 } = options;
+		const { locationId, authors, limit = 200, relayStrategy = 'all' } = options;
 		if (!session.pubkey || !relays.online || !relays.readableNormalized.length) return;
 		if (this.syncing.has(type)) return;
 		this.syncing.add(type);
@@ -686,7 +736,10 @@ class GloStore {
 				limit
 			});
 			filter.kinds = [...new Set([...filter.kinds, appKindForType(type)])];
-			const events = await fetchEvents(filter as Parameters<typeof fetchEvents>[0]);
+			const events =
+				relayStrategy === 'primary-first'
+					? await fetchEventsPrimaryFirst(filter as Parameters<typeof fetchEvents>[0])
+					: await fetchEvents(filter as Parameters<typeof fetchEvents>[0]);
 			const incoming: AnyGloObject[] = [];
 			for (const ev of events) {
 				try {

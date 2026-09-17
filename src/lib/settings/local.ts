@@ -3,6 +3,7 @@ import { browser } from '$app/environment';
 export const RECEIPT_SETTINGS_KEY = 'bnos-os:receipt';
 export const GENERAL_SETTINGS_KEY = 'bnos-os:settings-general';
 export const HARDWARE_SETTINGS_KEY = 'bnos-os:settings-hardware';
+export const LOYALTY_SETTINGS_KEY = 'bnos-os:settings-loyalty';
 
 export interface ReceiptSettings {
 	storeName: string;
@@ -34,6 +35,9 @@ export interface GeneralSettings {
 	confirmClear: boolean;
 	compactMode: boolean;
 	language: string;
+	/** Auto-apply the best eligible promotion when the cart qualifies.
+	 *  Respects cashier overrides (manual discounts + dismissals). */
+	autoApplyPromotions: boolean;
 }
 
 export interface HardwareSettings {
@@ -75,7 +79,8 @@ export const defaultGeneralSettings: GeneralSettings = {
 	autoPrint: false,
 	confirmClear: true,
 	compactMode: false,
-	language: 'en'
+	language: 'en',
+	autoApplyPromotions: true
 };
 
 export const defaultHardwareSettings: HardwareSettings = {
@@ -127,4 +132,29 @@ export function loadHardwareSettings(): HardwareSettings {
 
 export function saveHardwareSettings(settings: HardwareSettings) {
 	writeJson(HARDWARE_SETTINGS_KEY, settings);
+}
+
+export interface LoyaltySettings {
+	enabled: boolean;
+	/** Points earned per 1 unit of currency spent (e.g. 1 = 1 pt/$). */
+	pointsPerCurrency: number;
+	/** Currency value of a single point when redeemed (e.g. 0.01 → 100 pts = $1). */
+	pointValue: number;
+	/** Allow redeeming points as a credit at checkout. */
+	redeemEnabled: boolean;
+}
+
+export const defaultLoyaltySettings: LoyaltySettings = {
+	enabled: false,
+	pointsPerCurrency: 1,
+	pointValue: 0.01,
+	redeemEnabled: true
+};
+
+export function loadLoyaltySettings(): LoyaltySettings {
+	return readJson(LOYALTY_SETTINGS_KEY, defaultLoyaltySettings);
+}
+
+export function saveLoyaltySettings(settings: LoyaltySettings) {
+	writeJson(LOYALTY_SETTINGS_KEY, settings);
 }

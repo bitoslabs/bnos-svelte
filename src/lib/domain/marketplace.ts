@@ -53,6 +53,25 @@ export function channelIcon(t?: string | null): string {
 	return channelMeta(t).icon;
 }
 
+// ── Native web store (always-on) ────────────────────────────────────────────
+
+/**
+ * The merchant's own BNOS web storefront (market.bnos.space). An implicit,
+ * always-on sales channel: every published listing is live here by default,
+ * with NO external channel connection required. The consumer storefront reads
+ * listings by `status === 'active'`, never by `channelIds`, so this needs no
+ * DB record — it is rendered explicitly wherever a listing's destinations are
+ * shown. `channelIds` on a listing tracks *additional* external platforms only.
+ */
+export const NATIVE_STORE = {
+	id: 'web-store',
+	label: 'Web Store',
+	icon: 'lucide:globe',
+	/** Stable Tailwind utility pair for chips/badges (kept literal so it is not purged). */
+	color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+	storefront: 'market.bnos.space'
+} as const;
+
 // ── Listing status ──────────────────────────────────────────────────────────
 
 export interface ListingStatusMeta {

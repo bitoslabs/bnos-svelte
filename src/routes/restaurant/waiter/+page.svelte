@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
@@ -135,7 +136,7 @@
 	})());
 </script>
 
-<svelte:head><title>BNOS · Waiter</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.waiter')}</title></svelte:head>
 
 <div class="space-y-4">
 	<!-- Header -->
@@ -170,8 +171,8 @@
 	<!-- Stats bar -->
 	<div class="flex flex-wrap items-center gap-3">
 		{#each [
-			{ label: 'Open', value: stats.total, color: 'bg-[var(--ui-text-dimmed)]' },
-			{ label: 'Pending', value: stats.pending, color: 'bg-amber-500' },
+			{ label: t('common.open'), value: stats.total, color: 'bg-[var(--ui-text-dimmed)]' },
+			{ label: t('status.pending'), value: stats.pending, color: 'bg-amber-500' },
 			{ label: 'Cooking', value: stats.preparing, color: 'bg-blue-500' },
 			{ label: 'Ready', value: stats.ready, color: 'bg-emerald-500' }
 		] as stat (stat.label)}
@@ -216,7 +217,7 @@
 
 		<!-- Order list -->
 		{#if filteredOrders.length === 0}
-			<EmptyState icon="lucide:concierge-bell" title="No open tabs" description="Orders started from the POS that aren't yet completed show up here." />
+			<EmptyState icon="lucide:concierge-bell" title={t('common.noOpenTabs')} description="Orders started from the POS that aren't yet completed show up here." />
 		{:else}
 			<ul class="space-y-2">
 				{#each filteredOrders as o (o.id)}
@@ -272,7 +273,7 @@
 	{:else if viewMode === 'waiters'}
 		<!-- Waiter group view -->
 		{#if wg.length === 0 || (wg.length === 1 && wg[0][0] === 'Unassigned')}
-			<EmptyState icon="lucide:user-cog" title="No waiter assignments" description="Assign waiters to orders from the Orders view." />
+			<EmptyState icon="lucide:user-cog" title={t('restaurant.noWaiterAssignments')} description="Assign waiters to orders from the Orders view." />
 		{:else}
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				{#each wg as [waiterName, orders] (waiterName)}
