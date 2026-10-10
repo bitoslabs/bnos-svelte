@@ -26,7 +26,7 @@
 	<div class="flex flex-col items-center gap-4">
 		<!-- Hex badge (regular flat-top hexagon, warm/orange gradient). -->
 		<div
-			class="hex-clip bs-pulse-soft grid size-[60px] place-items-center bg-[linear-gradient(135deg,#FBBF24,#F97316)] shadow-[0_4px_18px_rgb(249_115_22_/_0.5)]"
+			class="hex-clip bs-pulse-soft grid size-[60px] place-items-center bg-[linear-gradient(135deg,#FFC107,#F7931A)] shadow-[0_4px_18px_rgb(247_147_26_/_0.5)]"
 			aria-hidden="true"
 		>
 			<!-- A single perimeter trace gives the mark a compact "system online" moment. -->

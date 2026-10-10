@@ -39,6 +39,65 @@ const brandScale: Scale = {
 	'950': '#042f2e'
 };
 
+/**
+ * Primary — Bitcoin orange. Anchored on #F7931A (500), with smoother warm
+ * steps than a stock orange so 400 stays in-orange (not gold) and the 600+ end
+ * keeps enough depth for text on light surfaces.
+ */
+const bitcoinScale: Scale = {
+	'50': '#fff6e9',
+	'100': '#ffe9c7',
+	'200': '#ffd08a',
+	'300': '#ffb84d',
+	'400': '#ffa31a',
+	'500': '#f7931a',
+	'600': '#db7c0a',
+	'700': '#b45f05',
+	'800': '#8f4a04',
+	'900': '#6b3702',
+	'950': '#3d1e01'
+};
+
+/**
+ * Secondary — Bitcoin gold. Anchored on the bee's #FFC107; a restrained
+ * highlight/support colour that sits beside the orange without competing.
+ * Also selectable as an accent ("Gold").
+ */
+const goldScale: Scale = {
+	'50': '#fffbe6',
+	'100': '#fff4c2',
+	'200': '#ffe88a',
+	'300': '#ffdd52',
+	'400': '#ffd11a',
+	'500': '#ffc107',
+	'600': '#e0a800',
+	'700': '#b88800',
+	'800': '#8f6a00',
+	'900': '#6b4f00',
+	'950': '#3d2d00'
+};
+
+export const secondaryScale: Scale = goldScale;
+
+/**
+ * Ink — near-black accent (#0B0B0B at 500). A monochrome "Mono/Ink" theme
+ * built from the brand grays; 300 stays light for dark-mode text, 700 deep
+ * for light-mode text.
+ */
+const inkScale: Scale = {
+	'50': '#f5f6f7',
+	'100': '#e6e8ea',
+	'200': '#cfd2d6',
+	'300': '#a0a0a0',
+	'400': '#6b6d70',
+	'500': '#0b0b0b',
+	'600': '#090909',
+	'700': '#070707',
+	'800': '#050505',
+	'900': '#030303',
+	'950': '#000000'
+};
+
 /** Standard Tailwind color scales (the same data Nuxt UI derived accents from). */
 const tailwind: Record<string, Scale> = {
 	red: {
@@ -251,9 +310,29 @@ const tailwind: Record<string, Scale> = {
 	}
 };
 
-export const accentScale: Record<string, Scale> = { brand: brandScale, ...tailwind };
+export const accentScale: Record<string, Scale> = {
+	bitcoin: bitcoinScale,
+	gold: goldScale,
+	ink: inkScale,
+	brand: brandScale,
+	...tailwind
+};
 
 export const neutralScale = {
+	/** BNOS brand neutrals — off-white #F8F9FA, grey #A0A0A0, near-black #0B0B0B. */
+	bitcoin: {
+		'50': '#f8f9fa',
+		'100': '#f0f1f3',
+		'200': '#e2e4e7',
+		'300': '#cbced2',
+		'400': '#a0a0a0',
+		'500': '#7a7c80',
+		'600': '#5a5c60',
+		'700': '#404245',
+		'800': '#26272a',
+		'900': '#161719',
+		'950': '#0b0b0b'
+	},
 	slate: {
 		'50': '#f8fafc',
 		'100': '#f1f5f9',
@@ -324,6 +403,9 @@ export const neutralScale = {
 export type NeutralKey = keyof typeof neutralScale;
 
 export const accentOptions: AccentOption[] = [
+	{ key: 'bitcoin', label: 'Bitcoin', hex: '#f7931a' },
+	{ key: 'gold', label: 'Gold', hex: '#ffc107' },
+	{ key: 'ink', label: 'Ink', hex: '#0b0b0b' },
 	{ key: 'brand', label: 'Teal', hex: '#0d9488' },
 	{ key: 'red', label: 'Red', hex: '#ef4444' },
 	{ key: 'orange', label: 'Orange', hex: '#f97316' },
@@ -344,6 +426,7 @@ export const accentOptions: AccentOption[] = [
 ];
 
 export const neutralOptions: NeutralOption[] = [
+	{ key: 'bitcoin', label: 'Ink', hex: '#a0a0a0' },
 	{ key: 'slate', label: 'Slate', hex: '#64748b' },
 	{ key: 'gray', label: 'Gray', hex: '#6b7280' },
 	{ key: 'zinc', label: 'Zinc', hex: '#71717a' },

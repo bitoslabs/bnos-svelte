@@ -33,8 +33,8 @@ export interface Preferences {
 
 export const STORAGE_KEY = 'bnos-os:prefs';
 export const DEFAULTS: Preferences = {
-	accent: 'orange',
-	neutral: 'zinc',
+	accent: 'bitcoin',
+	neutral: 'bitcoin',
 	surface: 'macos',
 	surfaceTint: 'balanced',
 	fontSize: 'md',
@@ -44,7 +44,7 @@ export const DEFAULTS: Preferences = {
 
 function applyAccent(accent: string) {
 	if (!browser) return;
-	const scale = accentScale[accent] ?? accentScale.orange;
+	const scale = accentScale[accent] ?? accentScale.bitcoin;
 	const root = document.documentElement;
 	(Object.keys(scale) as (keyof typeof scale)[]).forEach((shade) => {
 		root.style.setProperty(`--color-primary-${shade}`, scale[shade]);

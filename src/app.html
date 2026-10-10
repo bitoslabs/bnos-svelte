@@ -8,7 +8,7 @@
 		<!-- Default tab title: present before hydration (SSR is disabled), then
 		     refined per-route by each page's <svelte:head>. -->
 		<title>BNOS — Bitcoin Network Operations System</title>
-		<meta name="theme-color" content="#f97316" />
+		<meta name="theme-color" content="#f7931a" />
 		<meta name="color-scheme" content="light dark" />
 		<meta
 			name="description"
@@ -116,9 +116,9 @@
 					position: relative;
 					isolation: isolate;
 					overflow: hidden;
-					background: linear-gradient(135deg, #fbbf24, #f97316);
+					background: linear-gradient(135deg, #ffc107, #f7931a);
 					clip-path: polygon(25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%, 0% 50%);
-					filter: drop-shadow(0 4px 18px rgb(249 115 22 / 0.5));
+					filter: drop-shadow(0 4px 18px rgb(247 147 26 / 0.5));
 				}
 				.bs-boot-orbit {
 					position: absolute;
@@ -202,7 +202,7 @@
 					width: 3px;
 					height: 9px;
 					border-radius: 1px;
-					background: #f97316; /* primary-500 — orange, matches the app accent */
+					background: #f7931a; /* primary-500 — orange, matches the app accent */
 					opacity: 0.18;
 					animation: bs-sweep 1.2s ease-in-out infinite;
 				}
@@ -219,11 +219,11 @@
 					0%,
 					100% {
 						opacity: 0.18;
-						box-shadow: 0 0 6px rgb(249 115 22 / 0);
+						box-shadow: 0 0 6px rgb(247 147 26 / 0);
 					}
 					35% {
 						opacity: 1;
-						box-shadow: 0 0 6px rgb(249 115 22 / 0.55);
+						box-shadow: 0 0 6px rgb(247 147 26 / 0.55);
 					}
 				}
 				@keyframes bs-orbit-trace {
