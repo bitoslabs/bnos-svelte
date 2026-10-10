@@ -36,7 +36,7 @@ export interface NavSection {
 	/** i18n key for the localised section label. */
 	labelKey?: string;
 	items: NavItem[];
-	feature?: 'restaurant' | 'marketplace';
+	feature?: 'restaurant' | 'marketplace' | 'obp';
 }
 
 /** Resolve the localised label for a nav item (i18n key, else raw label). */
@@ -78,6 +78,7 @@ export const routePermissions: Record<string, RoutePermission> = {
 	'/transactions': { resource: 'payments', action: 'read' },
 	'/catalog': { resource: 'products', action: 'read' },
 	'/inventory': { resource: 'inventory', action: 'read' },
+	'/obp': { resource: 'inventory', action: 'write' },
 	'/promotions': { resource: 'discounts', action: 'read' },
 	'/memberships': { resource: 'customers', action: 'read' },
 	'/restaurant': { resource: 'orders', action: 'read' },
@@ -143,6 +144,17 @@ export const navSections: NavSection[] = [
 				label: 'Inventory',
 				labelKey: 'nav.inventory',
 				types: ['inventory.adjustment']
+			}
+		]
+	},
+	{
+		label: 'OBP Purchasing',
+		feature: 'obp',
+		items: [
+			{
+				to: '/obp',
+				icon: 'lucide:file-signature',
+				label: 'OBP Documents'
 			}
 		]
 	},

@@ -170,7 +170,7 @@
 	const hasActiveCart = $derived(cartItems.length > 0);
 </script>
 
-<svelte:head><title>{t('pos.customerDisplay')} · {t('common.appName')}</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('pos.customerDisplay')}</title></svelte:head>
 
 <div
 	class="flex h-screen w-screen flex-col overflow-hidden bg-[#0B0E14] font-sans text-white select-none"

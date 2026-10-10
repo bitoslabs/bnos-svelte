@@ -107,7 +107,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('nav.activity')} · {t('common.appName')}</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('nav.activity')}</title></svelte:head>
 
 <div class="space-y-5">
 	<PageHeader

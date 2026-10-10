@@ -31,12 +31,21 @@
 	import {
 		TYPE,
 		statusColor,
+		parseBrowseCatalog,
+		applyCatalogPreset,
+		CATALOG_KIT_KIND,
+		CATALOG_KIT_TAG,
+		latestActiveCatalogKits,
+		kitToBrowseItem,
+		type RawNostrEvent,
+		type BrowseCatalogItem,
 		type Product,
 		type ProductVariant,
 		type CatalogCategory,
 		type CatalogUnit,
 		type ModifierGroup
 	} from '$lib/domain';
+	import { fetchEvents } from '$nostr/client';
 
 	type Tab = 'products' | 'categories' | 'units' | 'modifiers' | 'bundles';
 	let tab = $state<Tab>('products');
@@ -753,6 +762,141 @@
 		};
 		input.click();
 	}
+
+	// ── Import from templates (BNOS catalog presets) ──
+	const TEMPLATES_CATALOG_URL =
+		import.meta.env.VITE_TEMPLATES_CATALOG_URL ?? 'http://localhost:8080/bnos-presets.json';
+	let tmplOpen = $state(false);
+	let tmplUrl = $state(TEMPLATES_CATALOG_URL);
+	let tmplPaste = $state('');
+	let tmplItems = $state<BrowseCatalogItem[]>([]);
+	let tmplSelected = $state<Set<string>>(new Set());
+	let tmplLoading = $state(false);
+	let tmplRelayLoading = $state(false);
+	let tmplApplying = $state(false);
+	let tmplError = $state('');
+	let tmplLoaded = $state(false);
+
+	function openTemplateImport() {
+		tmplOpen = true;
+		tmplError = '';
+		if (!tmplLoaded) loadTemplateCatalog();
+	}
+
+	function ingestTemplateCatalog(text: string, label: string) {
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(text);
+		} catch {
+			tmplError = `That is not valid JSON (${label}).`;
+			return;
+		}
+		const result = parseBrowseCatalog(parsed);
+		if (!result.ok) {
+			tmplError = result.errors.slice(0, 3).join(' ');
+			return;
+		}
+		mergeTemplateItems(result.data.items);
+	}
+
+	function mergeTemplateItems(items: BrowseCatalogItem[]) {
+		const byId = new Map(tmplItems.map((item) => [item.presetId, item]));
+		for (const item of items) byId.set(item.presetId, item);
+		tmplItems = [...byId.values()];
+		tmplSelected = new Set([...tmplSelected, ...items.map((item) => item.presetId)]);
+		tmplLoaded = true;
+		tmplError = '';
+	}
+
+	async function loadTemplateCatalog() {
+		tmplLoading = true;
+		tmplError = '';
+		try {
+			const response = await fetch(tmplUrl, { headers: { accept: 'application/json' } });
+			if (!response.ok) throw new Error(`HTTP ${response.status}`);
+			ingestTemplateCatalog(await response.text(), tmplUrl);
+		} catch (error) {
+			tmplError = `Could not load ${tmplUrl} — ${error instanceof Error ? error.message : 'network error'}. Paste the catalog JSON instead.`;
+		} finally {
+			tmplLoading = false;
+		}
+	}
+
+	function loadPastedCatalog() {
+		ingestTemplateCatalog(tmplPaste, 'pasted');
+	}
+
+	async function loadTemplateCatalogFromRelays() {
+		tmplRelayLoading = true;
+		tmplError = '';
+		try {
+			const events = await fetchEvents({
+				kinds: [CATALOG_KIT_KIND],
+				'#t': [CATALOG_KIT_TAG],
+				limit: 50
+			});
+			const kits = latestActiveCatalogKits(events as RawNostrEvent[]);
+			if (!kits.length) {
+				tmplError = 'No published kits found on your relays yet.';
+				return;
+			}
+			mergeTemplateItems(kits.map((kit) => kitToBrowseItem(kit)));
+		} catch (error) {
+			tmplError = `Relay lookup failed — ${error instanceof Error ? error.message : 'offline'}.`;
+		} finally {
+			tmplRelayLoading = false;
+		}
+	}
+
+	function toggleTemplateItem(presetId: string) {
+		const next = new Set(tmplSelected);
+		if (next.has(presetId)) next.delete(presetId);
+		else next.add(presetId);
+		tmplSelected = next;
+	}
+
+	function toggleAllTemplates() {
+		tmplSelected =
+			tmplSelected.size === tmplItems.length
+				? new Set()
+				: new Set(tmplItems.map((item) => item.presetId));
+	}
+
+	async function applySelectedTemplates() {
+		const chosen = tmplItems.filter((item) => tmplSelected.has(item.presetId));
+		if (!chosen.length) return;
+		tmplApplying = true;
+		tmplError = '';
+		const totals = { categories: 0, units: 0, modifierGroups: 0, products: 0 };
+		try {
+			for (const item of chosen) {
+				const result = await applyCatalogPreset(
+					item.preset,
+					(type, data, options) => glo.upsert(type as never, data as never, options),
+					{ currency }
+				);
+				if (!result.ok) {
+					tmplError = result.errors.join(' ');
+					return;
+				}
+				totals.categories += result.counts.categories;
+				totals.units += result.counts.units;
+				totals.modifierGroups += result.counts.modifierGroups;
+				totals.products += result.counts.products;
+			}
+			toast.success(
+				'Templates applied',
+				`${totals.products} products · ${totals.categories} categories · ${totals.units} units · ${totals.modifierGroups} modifiers`
+			);
+			tmplOpen = false;
+			tab = 'products';
+		} catch (error) {
+			tmplError = error instanceof Error ? error.message : 'Apply failed';
+		} finally {
+			tmplApplying = false;
+		}
+	}
+
 	function catName(id: string): string {
 		const c = glo.get(TYPE.category, id);
 		return (c?.data as any)?.name ?? id;
@@ -885,6 +1029,9 @@
 				{/snippet}
 				<MenuItem icon="lucide:download" onclick={exportCatalog}>Export catalog</MenuItem>
 				<MenuItem icon="lucide:upload" onclick={importCatalog}>Import catalog</MenuItem>
+				<MenuItem icon="lucide:layout-template" onclick={openTemplateImport}
+					>From templates…</MenuItem
+				>
 				<MenuDivider />
 				<MenuItem icon="lucide:package-open" onclick={() => openBundleCreate()}
 					>Quick add bundle</MenuItem
@@ -2079,4 +2226,112 @@
 			variant="ghost"
 			onclick={() => (quickAdjustOpen = false)}>{t('common.cancel')}</Button
 		><Button color="primary" icon="lucide:check" onclick={saveQuickAdjust}>{t('common.save')}</Button>{/snippet}
+</Dialog>
+
+<!-- Import starter kits from the templates marketplace -->
+<Dialog bind:open={tmplOpen} title="From templates — BNOS catalog presets" size="lg">
+	<div class="space-y-3">
+		<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+			Browse starter-kit product items published by the <span class="font-semibold">templates</span>
+			marketplace and apply them to this catalog. Load the bundled catalog by URL, search your
+			relays for kits published by creators, or paste the JSON. Each kit is namespaced, so re-applying
+			updates its records instead of duplicating them.
+		</p>
+		<div class="flex items-end gap-2">
+			<label class="min-w-0 flex-1">
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Preset catalog URL</span
+				>
+				<Input bind:value={tmplUrl} placeholder="https://bnos.market/bnos-presets.json" class="w-full" />
+			</label>
+			<Button color="neutral" variant="subtle" icon="lucide:refresh-cw" onclick={loadTemplateCatalog}
+				>{tmplLoading ? 'Loading…' : 'Load'}</Button
+			>
+			<Button
+				color="neutral"
+				variant="subtle"
+				icon="lucide:radio"
+				onclick={loadTemplateCatalogFromRelays}
+				>{tmplRelayLoading ? 'Searching…' : 'From relays'}</Button
+			>
+		</div>
+		{#if tmplError}
+			<p
+				class="rounded-lg bg-[var(--tone-error-bg)] px-3 py-2 text-[12px] text-[var(--tone-error-text)]"
+			>
+				{tmplError}
+			</p>
+		{/if}
+		{#if tmplItems.length}
+			<div class="flex items-center justify-between">
+				<span class="text-[12px] text-[var(--ui-text-muted)]"
+					>{tmplItems.length} kits · {tmplSelected.size} selected</span
+				>
+				<button
+					type="button"
+					class="text-[12px] font-semibold text-[var(--ui-text)] underline"
+					onclick={toggleAllTemplates}
+					>{tmplSelected.size === tmplItems.length ? 'Clear all' : 'Select all'}</button
+				>
+			</div>
+			<ul class="divide-y divide-[var(--ui-border-muted)] rounded-xl border border-[var(--ui-border)]">
+				{#each tmplItems as item (item.presetId)}
+					<li class="flex items-start gap-3 p-3">
+						<Checkbox
+							size="sm"
+							checked={tmplSelected.has(item.presetId)}
+							onCheckedChange={() => toggleTemplateItem(item.presetId)}
+						/>
+						<div class="min-w-0 flex-1">
+							<div class="flex items-center gap-2">
+								<span class="truncate text-[13px] font-semibold">{item.name}</span>
+								{#if item.version}
+									<span class="text-[11px] text-[var(--ui-text-dimmed)]">v{item.version}</span>
+								{/if}
+							</div>
+							{#if item.summary}
+								<p class="text-[12px] text-[var(--ui-text-muted)]">{item.summary}</p>
+							{/if}
+							<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+								{item.counts.products} products · {item.counts.categories} categories · {item.counts
+									.units} units · {item.counts.modifierGroups} modifiers{item.publisher
+									? ` · ${item.publisher}`
+									: ''}
+							</p>
+						</div>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<label class="block">
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>…or paste the catalog JSON (bnos-presets.json)</span
+				>
+				<Input
+					textarea
+					rows={5}
+					bind:value={tmplPaste}
+					placeholder="Paste the contents of bnos-presets.json here"
+				/>
+			</label>
+			<Button
+				color="neutral"
+				variant="subtle"
+				size="sm"
+				icon="lucide:clipboard-paste"
+				onclick={loadPastedCatalog}
+				disabled={!tmplPaste.trim()}>Use pasted JSON</Button
+			>
+		{/if}
+	</div>
+	{#snippet footer()}
+		<Button color="neutral" variant="ghost" onclick={() => (tmplOpen = false)}>Close</Button>
+		<Button
+			color="primary"
+			icon="lucide:download"
+			onclick={applySelectedTemplates}
+			disabled={tmplApplying || tmplSelected.size === 0}
+			>{tmplApplying ? 'Applying…' : `Apply ${tmplSelected.size || ''}`.trim()}</Button
+		>
+	{/snippet}
 </Dialog>

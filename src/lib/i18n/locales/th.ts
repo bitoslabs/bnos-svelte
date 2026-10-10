@@ -331,7 +331,8 @@ export const th = {
 	},
 	topbar: {
 		searchPlaceholder: 'ค้นหา…',
-		searchCommands: 'ค้นหาและคำสั่ง (⌘K)',
+		searchCommands: 'ค้นหาและคำสั่ง',
+		quickSettings: 'การตั้งค่าด่วน',
 		manageRelays: 'จัดการรีเลย์',
 		syncingAllData: 'กำลังซิงค์ข้อมูลทั้งหมด…',
 		syncing: 'กำลังซิงค์…',

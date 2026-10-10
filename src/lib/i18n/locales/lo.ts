@@ -331,7 +331,8 @@ export const lo = {
 	},
 	topbar: {
 		searchPlaceholder: 'ຄົ້ນຫາ…',
-		searchCommands: 'ຄົ້ນຫາແລະຄຳສັ່ງຊື້ (⌘K)',
+		searchCommands: 'ຄົ້ນຫາແລະຄຳສັ່ງຊື້',
+		quickSettings: 'ການຕັ້ງຄ່າດ່ວນ',
 		manageRelays: 'ຈັດການຣິເລ',
 		syncingAllData: 'ກຳລັງຊິງຂໍ້ມູນທັງໝົດ…',
 		syncing: 'ກຳລັງຊິງ…',

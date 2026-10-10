@@ -87,9 +87,9 @@
 
 			<div class="relative">
 				<div
-					class="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 shadow-lg shadow-primary-500/25"
+					class="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-[linear-gradient(135deg,#16141f,#0a0a0f)] shadow-lg shadow-black/30 ring-1 ring-white/10"
 				>
-					<BnosMark class="size-12 text-white" />
+					<BnosMark class="size-12" />
 				</div>
 				<h2 class="font-display text-xl font-bold tracking-tight">{site.name}</h2>
 				<p class="mx-auto mt-1 max-w-md text-[12.5px] text-[var(--ui-text-muted)]">

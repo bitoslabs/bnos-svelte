@@ -40,7 +40,7 @@
 	);
 </script>
 
-<svelte:head><title>Transaction {(id ?? '').slice(0, 8)} · BNOS</title></svelte:head>
+<svelte:head><title>BNOS · Transaction {(id ?? '').slice(0, 8)}</title></svelte:head>
 
 {#if !txType}
 	<EmptyState icon="lucide:search-x" title={t('transactions.notFound')} description="This transaction may have been deleted or hasn't synced yet.">

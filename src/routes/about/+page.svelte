@@ -17,7 +17,7 @@
 
 <main class="mx-auto min-h-screen w-full max-w-3xl px-5 py-10 sm:py-16">
 	<section class="text-center">
-		<div class="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 shadow-lg shadow-primary-500/25"><BnosMark class="size-12 text-white" /></div>
+		<div class="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-[linear-gradient(135deg,#16141f,#0a0a0f)] shadow-lg shadow-black/30 ring-1 ring-white/10"><BnosMark class="size-12" /></div>
 		<h1 class="font-display text-3xl font-extrabold tracking-tight">{site.name}</h1>
 		<p class="mx-auto mt-3 max-w-xl text-[14px] leading-relaxed text-[var(--ui-text-muted)]">{site.fullName} — {site.tagline}</p>
 		<div class="mt-5 flex flex-wrap justify-center gap-2"><a href={resolve('/login')} class="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-4 py-2.5 text-[13px] font-bold text-white"><Icon name="lucide:arrow-right" class="size-4" />Open BNOS</a><a href={site.website.url} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-xl border border-[var(--ui-border)] px-4 py-2.5 text-[13px] font-bold text-[var(--ui-text)]"><Icon name="lucide:globe" class="size-4" />{site.website.label}</a></div>

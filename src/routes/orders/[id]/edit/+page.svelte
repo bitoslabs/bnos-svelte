@@ -313,7 +313,7 @@
 	];
 </script>
 
-<svelte:head><title>{t('common.edit') + ' ' + t('common.order')} · {t('common.appName')}</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('common.edit') + ' ' + t('common.order')}</title></svelte:head>
 
 {#if !order}
 	<div class="py-12 text-center text-[var(--ui-text-dimmed)]">

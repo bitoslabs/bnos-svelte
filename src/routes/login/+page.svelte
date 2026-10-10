@@ -8,6 +8,8 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
+	import Popover from '$lib/components/ui/Popover.svelte';
+	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import RelayStatusPopover from '$lib/components/RelayStatusPopover.svelte';
 	import { session, hasNip07Extension } from '$nostr/session.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -104,6 +106,8 @@
 	}
 </script>
 
+<svelte:head><title>{t('common.appName')} · {t('auth.welcomeBack')}</title></svelte:head>
+
 <div class="relative flex min-h-dvh items-center justify-center overflow-hidden p-4">
 	<!-- ambient backdrop -->
 	<div class="pointer-events-none absolute inset-0 overflow-hidden">
@@ -112,8 +116,23 @@
 		<div class="absolute -bottom-40 right-1/4 size-96 rounded-full bg-primary-500/5 blur-3xl"></div>
 	</div>
 
-	<!-- Top-right: theme + relay status -->
+	<!-- Top-right: language + theme + relay status -->
 	<div class="absolute right-4 top-4 z-20 flex items-center gap-1.5">
+		<Popover
+			side="bottom"
+			align="end"
+			title={t('settings.language')}
+			class="w-44"
+			triggerClass="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+		>
+			{#snippet trigger()}
+				<Icon name="lucide:languages" class="size-[18px]" />
+			{/snippet}
+			{#snippet content()}
+				<LanguageSwitcher orientation="column" />
+			{/snippet}
+		</Popover>
+
 		<button
 			type="button"
 			onclick={() => setMode(mode.current === 'dark' ? 'light' : 'dark')}
@@ -133,7 +152,7 @@
 			<div
 				class="mx-auto mb-5 grid size-14 place-items-center "
 			>
-				<BnosMark class="size-12 text-primary-500" />
+				<BnosMark class="size-12" />
 			</div>
 			<h1 class="font-display text-2xl font-bold tracking-tight">{t('auth.welcomeBack')}</h1>
 			<p class="mt-1.5 text-sm text-[var(--ui-text-muted)]">{t('auth.signInDesc')}</p>

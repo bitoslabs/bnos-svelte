@@ -29,7 +29,13 @@
 		class?: string;
 	} = $props();
 
+	const panelId = $props.id();
 	let root = $state<HTMLElement>();
+	let triggerEl = $state<HTMLButtonElement>();
+	let panelEl = $state<HTMLElement>();
+
+	const FOCUSABLE =
+		'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 	const sideClass = $derived(
 		{
@@ -45,17 +51,53 @@
 
 	$effect(() => {
 		if (!open) return;
+		const panel = panelEl;
+		const focusables = () =>
+			panel
+				? Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+						(el) => el.offsetParent !== null || el === document.activeElement
+					)
+				: [];
+
+		// Move focus into the panel so keyboard users land on its content.
+		(focusables()[0] ?? panel)?.focus();
+
 		const onDoc = (e: PointerEvent) => {
 			if (root && !root.contains(e.target as Node)) open = false;
 		};
 		const onKey = (e: KeyboardEvent) => {
-			if (e.key === 'Escape') open = false;
+			if (e.key === 'Escape') {
+				open = false;
+				return;
+			}
+			if (e.key !== 'Tab' || !panel) return;
+			const items = focusables();
+			if (items.length === 0) {
+				e.preventDefault();
+				panel.focus();
+				return;
+			}
+			const first = items[0];
+			const last = items[items.length - 1];
+			const active = document.activeElement;
+			if (e.shiftKey && (active === first || !panel.contains(active))) {
+				e.preventDefault();
+				last.focus();
+			} else if (!e.shiftKey && active === last) {
+				e.preventDefault();
+				first.focus();
+			}
 		};
 		document.addEventListener('pointerdown', onDoc);
 		document.addEventListener('keydown', onKey);
 		return () => {
 			document.removeEventListener('pointerdown', onDoc);
 			document.removeEventListener('keydown', onKey);
+			// Return focus to the trigger on keyboard/Escape close, but not when
+			// the user moved focus elsewhere via an outside click.
+			if (triggerEl?.isConnected && root?.contains(document.activeElement)) {
+				triggerEl.focus();
+			}
 		};
 	});
 </script>
@@ -63,6 +105,9 @@
 <div bind:this={root} class="relative inline-block">
 	<button
 		type="button"
+		bind:this={triggerEl}
+		aria-haspopup="dialog"
+		aria-controls={open ? panelId : undefined}
 		aria-expanded={open}
 		{title}
 		class={cn(
@@ -76,6 +121,9 @@
 
 	{#if open}
 		<div
+			bind:this={panelEl}
+			id={panelId}
+			tabindex="-1"
 			class={cn(
 				'animate-rise absolute z-50 rounded-xl border border-[var(--ui-border)] bg-[var(--surface-bg)] p-1.5 text-[var(--ui-text)] shadow-[var(--shadow-pop)] outline-none',
 				sideClass,
