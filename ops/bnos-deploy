@@ -30,7 +30,17 @@ fi
 
 ln -s "$release" "$base/.current-next"
 mv -Tf "$base/.current-next" "$current"
-if ! sudo /usr/bin/systemctl restart bnos-svelte.service || ! curl -g -fsS --retry 8 --retry-delay 1 -o /dev/null 'http://[::1]:5174/'; then
+healthy=false
+if sudo /usr/bin/systemctl restart bnos-svelte.service; then
+  for attempt in {1..30}; do
+    if curl -g -fsS --max-time 2 -o /dev/null 'http://[::1]:5174/' 2>/dev/null; then
+      healthy=true
+      break
+    fi
+    sleep 1
+  done
+fi
+if [[ "$healthy" != true ]]; then
   ln -s "$previous" "$base/.current-rollback"
   mv -Tf "$base/.current-rollback" "$current"
   sudo /usr/bin/systemctl restart bnos-svelte.service
