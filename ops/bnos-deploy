@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+sha="${1:-}"
+if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+  echo 'Expected a full Git commit SHA' >&2
+  exit 2
+fi
+
+export PATH=/opt/node/v22.21.1/bin:/usr/bin:/bin
+export COREPACK_HOME=/home/deploy/.cache/corepack
+base=/srv/apps/bnos-svelte
+release="$base/releases/$sha"
+current="$base/current"
+previous=$(readlink "$current")
+
+if [[ ! -d "$release" ]]; then
+  staging="$base/releases/.staging-$sha"
+  rm -rf "$staging"
+  mkdir "$staging"
+  trap 'rm -rf "$staging"' EXIT
+  git -C "$staging" init -q
+  git -C "$staging" fetch -q --depth=1 https://github.com/bitoslabs/bnos-svelte.git "$sha"
+  git -C "$staging" checkout -q --detach FETCH_HEAD
+  [[ "$(git -C "$staging" rev-parse HEAD)" == "$sha" ]]
+  (cd "$staging" && corepack yarn install --frozen-lockfile --non-interactive && corepack yarn build)
+  mv "$staging" "$release"
+  trap - EXIT
+fi
+
+ln -s "$release" "$base/.current-next"
+mv -Tf "$base/.current-next" "$current"
+if ! sudo /usr/bin/systemctl restart bnos-svelte.service || ! curl -g -fsS --retry 8 --retry-delay 1 -o /dev/null 'http://[::1]:5174/'; then
+  ln -s "$previous" "$base/.current-rollback"
+  mv -Tf "$base/.current-rollback" "$current"
+  sudo /usr/bin/systemctl restart bnos-svelte.service
+  echo 'Deployment failed; previous release restored' >&2
+  exit 1
+fi
+
+echo "Deployed $sha"
