@@ -1,0 +1,22 @@
+[Unit]
+Description=BNOS Svelte console
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=deploy
+Group=deploy
+WorkingDirectory=/srv/apps/bnos-svelte/current
+Environment=PATH=/opt/node/v22.21.1/bin:/usr/bin:/bin
+ExecStart=/opt/node/v22.21.1/bin/node node_modules/vite/bin/vite.js preview --host ::1 --port 5174 --strictPort
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/srv/apps/bnos-svelte/releases
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
