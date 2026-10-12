@@ -6,22 +6,22 @@ const moneyFormatters = new Map<string, Intl.NumberFormat>();
 const numberFormatters = new Map<string, Intl.NumberFormat>();
 const relativeFormatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 const CURRENCY_ALIAS: Record<string, string> = {
-	'$': 'USD',
-	'US$': 'USD',
-	'USD': 'USD',
+	$: 'USD',
+	US$: 'USD',
+	USD: 'USD',
 	'₭': 'LAK',
-	'LAK': 'LAK',
+	LAK: 'LAK',
 	'฿': 'THB',
-	'THB': 'THB',
+	THB: 'THB',
 	'¥': 'JPY',
-	'JPY': 'JPY',
-	'CNY': 'CNY',
+	JPY: 'JPY',
+	CNY: 'CNY',
 	'€': 'EUR',
-	'EUR': 'EUR',
+	EUR: 'EUR',
 	'£': 'GBP',
-	'GBP': 'GBP',
-	'BTC': 'BTC',
-	'SATS': 'SATS'
+	GBP: 'GBP',
+	BTC: 'BTC',
+	SATS: 'SATS'
 };
 
 export function normalizeCurrencyCode(currency = 'USD'): string {

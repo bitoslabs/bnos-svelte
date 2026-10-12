@@ -13,14 +13,7 @@ import { browser } from '$app/environment';
 const KEY = 'bnos-os:features';
 
 export type FeatureKey =
-	| 'restaurant'
-	| 'retail'
-	| 'loyalty'
-	| 'crm'
-	| 'multiBranch'
-	| 'marketplace'
-	| 'ai'
-	| 'obp';
+	'restaurant' | 'retail' | 'loyalty' | 'crm' | 'multiBranch' | 'marketplace' | 'ai' | 'obp';
 
 export const FEATURE_KEYS: FeatureKey[] = [
 	'restaurant',

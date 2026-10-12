@@ -127,13 +127,15 @@ export class SimplePoolNostrClient implements ObpNostrClient {
 			const { SimplePool } = await import('nostr-tools/pool');
 			if (this.closed) return;
 			const pool = (this.pool ??= new SimplePool() as never);
-			sub = (pool as unknown as {
-				subscribeMany: (
-					relays: string[],
-					filters: unknown[],
-					params: { onevent: (e: Event) => void }
-				) => { close: () => void };
-			}).subscribeMany(this.relays, [filter], { onevent: onEvent });
+			sub = (
+				pool as unknown as {
+					subscribeMany: (
+						relays: string[],
+						filters: unknown[],
+						params: { onevent: (e: Event) => void }
+					) => { close: () => void };
+				}
+			).subscribeMany(this.relays, [filter], { onevent: onEvent });
 		})();
 		return () => {
 			this.closed = true;

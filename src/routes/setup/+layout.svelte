@@ -11,9 +11,9 @@
 	import { setupSteps, stepIndex } from './steps';
 	import { relays } from '$nostr/relay.svelte';
 	import { session } from '$nostr/session.svelte';
-import { tenant } from '$nostr/tenant.svelte';
-import { glo } from '$nostr/store.svelte';
-import { createSetupWorkspace } from '$nostr/setup-workspace';
+	import { tenant } from '$nostr/tenant.svelte';
+	import { glo } from '$nostr/store.svelte';
+	import { createSetupWorkspace } from '$nostr/setup-workspace';
 	import { resolveWorkspace } from '$nostr/workspace.svelte';
 	import { memberships } from '$nostr/memberships.svelte';
 	import { preferences } from '$lib/theme/preferences.svelte';
@@ -62,7 +62,10 @@ import { createSetupWorkspace } from '$nostr/setup-workspace';
 				await goto(resolve('/'), { replaceState: true });
 				return;
 			}
-			toast.warning('No synced workspace found', 'Continue setup or try again after relay sync completes.');
+			toast.warning(
+				'No synced workspace found',
+				'Continue setup or try again after relay sync completes.'
+			);
 		} catch (e) {
 			toast.error('Could not resolve workspace', e instanceof Error ? e.message : undefined);
 		} finally {
@@ -90,7 +93,11 @@ import { createSetupWorkspace } from '$nostr/setup-workspace';
 	});
 	const canProceed = $derived(!blockedReason && idx >= 0 && idx < setupSteps.length - 1);
 	const nextLabel = $derived(
-		currentSlug === 'catalog' ? 'Review setup' : currentSlug === 'review' ? 'Create workspace' : 'Next'
+		currentSlug === 'catalog'
+			? 'Review setup'
+			: currentSlug === 'review'
+				? 'Create workspace'
+				: 'Next'
 	);
 
 	async function go(delta: number) {
@@ -129,7 +136,9 @@ import { createSetupWorkspace } from '$nostr/setup-workspace';
 		</a>
 
 		<div class="flex items-center gap-1.5">
-			<span class="mr-2 hidden text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase sm:inline">
+			<span
+				class="mr-2 hidden text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase sm:inline"
+			>
 				Setup · step {idx + 1} of {setupSteps.length}
 			</span>
 
@@ -141,7 +150,10 @@ import { createSetupWorkspace } from '$nostr/setup-workspace';
 				aria-label={t('common.resolveWorkspace')}
 				title={t('common.resolveWorkspace')}
 			>
-				<Icon name={resolvingWorkspace ? 'lucide:loader' : 'lucide:refresh-cw'} class="size-[18px] {resolvingWorkspace ? 'animate-spin' : ''}" />
+				<Icon
+					name={resolvingWorkspace ? 'lucide:loader' : 'lucide:refresh-cw'}
+					class="size-[18px] {resolvingWorkspace ? 'animate-spin' : ''}"
+				/>
 			</button>
 
 			<!-- Theme toggle -->
@@ -156,15 +168,15 @@ import { createSetupWorkspace } from '$nostr/setup-workspace';
 			</button>
 
 			<!-- Quick settings -->
-		<Popover bind:open={quickOpen} align="end" side="bottom">
+			<Popover bind:open={quickOpen} align="end" side="bottom">
 				{#snippet trigger()}
 					<Icon name="lucide:sliders-horizontal" class="size-[18px]" />
 				{/snippet}
 				{#snippet content()}
 					<div class="w-72 p-1">
-					<AppearanceControls />
-				</div>
-			{/snippet}
+						<AppearanceControls />
+					</div>
+				{/snippet}
 			</Popover>
 
 			<!-- Sign out -->
@@ -268,7 +280,7 @@ import { createSetupWorkspace } from '$nostr/setup-workspace';
 							type="button"
 							class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-[13px] font-semibold text-white hover:bg-primary-400 disabled:opacity-40"
 							onclick={() => go(1)}
-						disabled={!canProceed || creatingWorkspace}
+							disabled={!canProceed || creatingWorkspace}
 						>
 							{nextLabel}
 							<Icon name="lucide:arrow-right" class="size-4" />

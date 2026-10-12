@@ -83,7 +83,10 @@ export class DefaultObpPolicy implements ObpPolicyEngine {
 
 		if (documentType === 'purchase_order' && action === 'issue') {
 			const limit = grant.scope.maxAmountMinor;
-			if (limit !== undefined && envelope.currency !== (grant.scope.currency ?? envelope.currency)) {
+			if (
+				limit !== undefined &&
+				envelope.currency !== (grant.scope.currency ?? envelope.currency)
+			) {
 				return {
 					decision: 'deny',
 					error: {
@@ -104,7 +107,11 @@ export class DefaultObpPolicy implements ObpPolicyEngine {
 							? `purchase order ${envelope.totalsMinor} exceeds grant limit ${limit}; owner approval required`
 							: `purchase orders require human approval in v0.1 (signer ${grant.grantId})`
 					},
-					record: { ...base, decision: 'requires_approval', reason: overLimit ? 'over-limit' : 'human-approval' }
+					record: {
+						...base,
+						decision: 'requires_approval',
+						reason: overLimit ? 'over-limit' : 'human-approval'
+					}
 				};
 			}
 			return { decision: 'allow', record: { ...base, decision: 'allow', reason: 'within-policy' } };
@@ -135,7 +142,10 @@ export class DefaultObpPolicy implements ObpPolicyEngine {
 					record: { ...base, decision: 'requires_approval', reason: 'payment-approval' }
 				};
 			}
-			return { decision: 'allow', record: { ...base, decision: 'allow', reason: 'payment-approved' } };
+			return {
+				decision: 'allow',
+				record: { ...base, decision: 'allow', reason: 'payment-approved' }
+			};
 		}
 
 		return { decision: 'allow', record: { ...base, decision: 'allow', reason: 'within-policy' } };

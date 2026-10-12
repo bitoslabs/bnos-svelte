@@ -22,7 +22,9 @@
 <div class={cn('space-y-4', cls)}>
 	<!-- Theme cards -->
 	<div>
-		<p class="mb-2 px-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">
+		<p
+			class="mb-2 px-0.5 text-[10px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+		>
 			{t('settings.colorMode')}
 		</p>
 		<div class="grid grid-cols-3 gap-1.5">
@@ -42,14 +44,22 @@
 					<span
 						class={cn(
 							'grid size-7 place-items-center rounded-md transition-colors',
-							m.key === 'light' ? 'bg-[var(--ui-bg-muted)]' : m.key === 'dark' ? 'bg-[var(--ui-bg-inverse)]' : 'bg-[var(--ui-bg-accented)]'
+							m.key === 'light'
+								? 'bg-[var(--ui-bg-muted)]'
+								: m.key === 'dark'
+									? 'bg-[var(--ui-bg-inverse)]'
+									: 'bg-[var(--ui-bg-accented)]'
 						)}
 					>
 						<Icon
 							name={m.icon}
 							class={cn(
 								'size-4',
-								m.key === 'dark' ? 'text-white' : active ? 'text-primary-600 dark:text-primary-400' : 'text-[var(--ui-text-muted)]'
+								m.key === 'dark'
+									? 'text-white'
+									: active
+										? 'text-primary-600 dark:text-primary-400'
+										: 'text-[var(--ui-text-muted)]'
 							)}
 						/>
 					</span>
@@ -57,8 +67,8 @@
 						class={cn(
 							'text-[11px] font-semibold',
 							active ? 'text-primary-700 dark:text-primary-300' : 'text-[var(--ui-text-muted)]'
-						)}
-					>{m.label}</span>
+						)}>{m.label}</span
+					>
 				</button>
 			{/each}
 		</div>
@@ -66,7 +76,9 @@
 
 	<!-- Accent -->
 	<div>
-		<p class="mb-2 px-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">
+		<p
+			class="mb-2 px-0.5 text-[10px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+		>
 			{t('settings.accentColor')}
 		</p>
 		<div class="flex flex-wrap gap-2 px-0.5">
@@ -93,7 +105,9 @@
 
 	<!-- Density -->
 	<div>
-		<p class="mb-2 px-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ui-text-dimmed)]">
+		<p
+			class="mb-2 px-0.5 text-[10px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+		>
 			{t('settings.density')}
 		</p>
 		<div class="segmented flex gap-1">
@@ -104,8 +118,8 @@
 					onclick={() => preferences.setDensity(opt.key)}
 					class="flex-1 rounded-md px-3 py-1.5 text-[12px] font-semibold capitalize transition-colors {active
 						? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-						: 'text-[var(--ui-text-muted)]'}"
-				>{opt.label}</button>
+						: 'text-[var(--ui-text-muted)]'}">{opt.label}</button
+				>
 			{/each}
 		</div>
 	</div>

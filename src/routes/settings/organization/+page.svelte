@@ -579,9 +579,8 @@
 			<div class="flex items-center gap-2">
 				<Icon name="lucide:building-2" class="size-4 text-primary-500" />
 				<h2 class="font-display text-[14px] font-semibold">
-					{t('settings.companies')} <span class="text-[10px] font-normal text-[var(--ui-text-dimmed)]"
-						>({companyCount})</span
-					>
+					{t('settings.companies')}
+					<span class="text-[10px] font-normal text-[var(--ui-text-dimmed)]">({companyCount})</span>
 				</h2>
 			</div>
 			<Button variant="subtle" size="sm" icon="lucide:plus" onclick={() => openCompanyModal()}>
@@ -658,9 +657,8 @@
 							<p
 								class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
 							>
-								{t('settings.branchesSection')} <span class="font-normal"
-									>({getBranchesForCompany(company.id).length})</span
-								>
+								{t('settings.branchesSection')}
+								<span class="font-normal">({getBranchesForCompany(company.id).length})</span>
 							</p>
 							<button
 								type="button"

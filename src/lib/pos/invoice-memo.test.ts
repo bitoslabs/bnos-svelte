@@ -20,12 +20,18 @@ describe('resolveInvoiceMemo', () => {
 
 	it('settings memo is used when the cashier leaves it blank', () => {
 		expect(
-			resolveInvoiceMemo({ cashierMemo: '   ', settingsMemo: 'Café BNOS · Vientiane', items: ITEMS })
+			resolveInvoiceMemo({
+				cashierMemo: '   ',
+				settingsMemo: 'Café BNOS · Vientiane',
+				items: ITEMS
+			})
 		).toBe('Café BNOS · Vientiane');
 	});
 
 	it("the untouched 'Payment' placeholder counts as unset → falls through to sale context", () => {
-		expect(resolveInvoiceMemo({ settingsMemo: 'Payment', items: ITEMS })).toBe('Latte × 2, Croissant');
+		expect(resolveInvoiceMemo({ settingsMemo: 'Payment', items: ITEMS })).toBe(
+			'Latte × 2, Croissant'
+		);
 		expect(resolveInvoiceMemo({ settingsMemo: 'payment', items: ITEMS })).toBe(
 			'Latte × 2, Croissant'
 		);

@@ -230,7 +230,8 @@
 		if (!order || !loaded) return [];
 		const d = order.data as any;
 		const list: { label: string; oldVal: any; newVal: any }[] = [];
-		if (status !== d.status) list.push({ label: t('common.status'), oldVal: d.status, newVal: status });
+		if (status !== d.status)
+			list.push({ label: t('common.status'), oldVal: d.status, newVal: status });
 		if (orderType !== (d.type ?? 'takeaway'))
 			list.push({ label: t('common.type'), oldVal: d.type, newVal: orderType });
 		if (total !== (d.total ?? 0))
@@ -240,7 +241,11 @@
 				newVal: formatMoney(total, currency)
 			});
 		if (customerName !== (d.customerName ?? ''))
-			list.push({ label: t('common.customer'), oldVal: d.customerName ?? '—', newVal: customerName || '—' });
+			list.push({
+				label: t('common.customer'),
+				oldVal: d.customerName ?? '—',
+				newVal: customerName || '—'
+			});
 		if (notes !== (d.notes ?? ''))
 			list.push({ label: t('common.notes'), oldVal: d.notes ?? '', newVal: notes });
 		if (priority !== (d.priority ?? 'normal'))
@@ -313,7 +318,9 @@
 	];
 </script>
 
-<svelte:head><title>{t('common.appName')} · {t('common.edit') + ' ' + t('common.order')}</title></svelte:head>
+<svelte:head
+	><title>{t('common.appName')} · {t('common.edit') + ' ' + t('common.order')}</title></svelte:head
+>
 
 {#if !order}
 	<div class="py-12 text-center text-[var(--ui-text-dimmed)]">
@@ -602,7 +609,11 @@
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 										>State</span
 									>
-									<Input bind:value={shipping.state} placeholder={t('common.province')} class="w-full" />
+									<Input
+										bind:value={shipping.state}
+										placeholder={t('common.province')}
+										class="w-full"
+									/>
 								</label>
 								<label class="block">
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
@@ -994,8 +1005,8 @@
 					</div>
 					<div class="space-y-2.5 px-5 py-4 text-[13px]">
 						<div class="flex justify-between">
-							<span class="text-[var(--ui-text-muted)]">{t('common.subtotal')}</span><span class="tabular-nums"
-								>{formatMoney(subtotal, currency ?? 'USD')}</span
+							<span class="text-[var(--ui-text-muted)]">{t('common.subtotal')}</span><span
+								class="tabular-nums">{formatMoney(subtotal, currency ?? 'USD')}</span
 							>
 						</div>
 						<div class="flex items-center justify-between gap-3">

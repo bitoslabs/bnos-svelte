@@ -58,9 +58,7 @@ describe('LightningPreimageVerifier', () => {
 
 	it('never auto-verifies manual or bank methods', async () => {
 		for (const method of ['manual', 'bank_transfer', 'mobile_payment']) {
-			const result = await verifier.verify(
-				evidence({ method, externalId: 'rcpt-1' })
-			);
+			const result = await verifier.verify(evidence({ method, externalId: 'rcpt-1' }));
 			expect(result.status).toBe('pending');
 		}
 	});

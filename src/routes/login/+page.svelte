@@ -113,11 +113,11 @@
 	<div class="pointer-events-none absolute inset-0 overflow-hidden">
 		<div class="absolute -top-40 -right-40 size-96 rounded-full bg-primary-500/10 blur-3xl"></div>
 		<div class="absolute top-1/3 -left-40 size-80 rounded-full bg-cyan-accent/10 blur-3xl"></div>
-		<div class="absolute -bottom-40 right-1/4 size-96 rounded-full bg-primary-500/5 blur-3xl"></div>
+		<div class="absolute right-1/4 -bottom-40 size-96 rounded-full bg-primary-500/5 blur-3xl"></div>
 	</div>
 
 	<!-- Top-right: language + theme + relay status -->
-	<div class="absolute right-4 top-4 z-20 flex items-center gap-1.5">
+	<div class="absolute top-4 right-4 z-20 flex items-center gap-1.5">
 		<Popover
 			side="bottom"
 			align="end"
@@ -149,9 +149,7 @@
 	<div class="relative z-10 w-full max-w-sm">
 		<!-- Brand -->
 		<div class="mb-8 text-center" in:fly={{ y: 8, duration: 300 }}>
-			<div
-				class="mx-auto mb-5 grid size-14 place-items-center "
-			>
+			<div class="mx-auto mb-5 grid size-14 place-items-center">
 				<BnosMark class="size-12" />
 			</div>
 			<h1 class="font-display text-2xl font-bold tracking-tight">{t('auth.welcomeBack')}</h1>
@@ -164,7 +162,13 @@
 				<div class="space-y-5 p-6 sm:p-7">
 					<!-- NIP-07 extension -->
 					<div class="space-y-3">
-						<Button color="primary" block size="lg" disabled={loadingExt || !hasExtension} onclick={handleExtension}>
+						<Button
+							color="primary"
+							block
+							size="lg"
+							disabled={loadingExt || !hasExtension}
+							onclick={handleExtension}
+						>
 							{#if loadingExt}
 								<Icon name="lucide:loader-circle" class="size-4 animate-spin" />
 								{t('auth.connecting')}
@@ -174,10 +178,17 @@
 							{/if}
 						</Button>
 						{#if !hasExtension}
-							<p class="flex items-center justify-center gap-1.5 text-center text-xs text-[var(--tone-warning-text)]">
+							<p
+								class="flex items-center justify-center gap-1.5 text-center text-xs text-[var(--tone-warning-text)]"
+							>
 								<Icon name="lucide:info" class="size-3.5 shrink-0" />
 								{t('auth.noExtension')}
-								<a href="https://getalby.com" target="_blank" rel="noopener" class="font-semibold underline">
+								<a
+									href="https://getalby.com"
+									target="_blank"
+									rel="noopener"
+									class="font-semibold underline"
+								>
 									{t('auth.installAlby')}</a
 								>
 							</p>
@@ -186,7 +197,9 @@
 
 					<div class="flex items-center gap-3">
 						<div class="h-px flex-1 bg-[var(--ui-border)]"></div>
-						<span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-text-dimmed)]">
+						<span
+							class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+						>
 							{t('auth.or')}
 						</span>
 						<div class="h-px flex-1 bg-[var(--ui-border)]"></div>
@@ -218,7 +231,13 @@
 								{/snippet}
 							</Input>
 						</label>
-						<Button type="submit" color="neutral" variant="subtle" block disabled={loading || !nsec.trim()}>
+						<Button
+							type="submit"
+							color="neutral"
+							variant="subtle"
+							block
+							disabled={loading || !nsec.trim()}
+						>
 							{#if loading}
 								<Icon name="lucide:loader-circle" class="size-4 animate-spin" />
 							{:else}
@@ -239,7 +258,13 @@
 							{t('auth.generateFresh')}
 						</p>
 					</div>
-					<Button color="primary" variant="soft" size="sm" icon="lucide:user-plus" onclick={handleCreate}>
+					<Button
+						color="primary"
+						variant="soft"
+						size="sm"
+						icon="lucide:user-plus"
+						onclick={handleCreate}
+					>
 						Create account
 					</Button>
 				</div>
@@ -253,21 +278,32 @@
 							<Icon name="lucide:triangle-alert" class="size-5" />
 						</div>
 						<div>
-							<h2 class="font-display text-[15px] font-semibold tracking-tight">{t('auth.backUpSecretKey')}</h2>
+							<h2 class="font-display text-[15px] font-semibold tracking-tight">
+								{t('auth.backUpSecretKey')}
+							</h2>
 							<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
-								This is the <strong>only</strong> time we can show your <code>nsec</code>. Store it somewhere safe — it
-								controls your account and cannot be recovered.
+								This is the <strong>only</strong> time we can show your <code>nsec</code>. Store it
+								somewhere safe — it controls your account and cannot be recovered.
 							</p>
 						</div>
 					</div>
 
 					<label class="block">
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('auth.publicKey')}</span>
-						<Input value={generated?.npub ?? ''} icon="lucide:user" readonly class="w-full font-mono text-[11.5px]" />
+						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>{t('auth.publicKey')}</span
+						>
+						<Input
+							value={generated?.npub ?? ''}
+							icon="lucide:user"
+							readonly
+							class="w-full font-mono text-[11.5px]"
+						/>
 					</label>
 
 					<label class="block">
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('auth.secretKey')}</span>
+						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>{t('auth.secretKey')}</span
+						>
 						<Input
 							value={generated?.nsec ?? ''}
 							icon="lucide:key-round"
@@ -287,10 +323,7 @@
 						</Input>
 					</label>
 
-					<Checkbox
-						bind:checked={backedUp}
-						label={t('auth.savedKey')}
-					/>
+					<Checkbox bind:checked={backedUp} label={t('auth.savedKey')} />
 
 					<Button color="primary" block size="lg" disabled={!backedUp} onclick={confirmCreate}>
 						<Icon name="lucide:rocket" class="size-4" />
@@ -313,26 +346,52 @@
 
 		<!-- Footer links: legal + open source -->
 		<div class="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px]">
-			<a href={resolve('/about')} class="inline-flex items-center gap-1 font-semibold text-primary-600 hover:text-primary-500 dark:text-primary-400">
+			<a
+				href={resolve('/about')}
+				class="inline-flex items-center gap-1 font-semibold text-primary-600 hover:text-primary-500 dark:text-primary-400"
+			>
 				<Icon name="lucide:info" class="size-3" />About {site.name}
 			</a>
 			<span class="text-[var(--ui-text-dimmed)]">·</span>
-			<a href={resolve('/legal/privacy')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">{t('legal.privacy')}</a>
+			<a
+				href={resolve('/legal/privacy')}
+				class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+				>{t('legal.privacy')}</a
+			>
 			<span class="text-[var(--ui-text-dimmed)]">·</span>
-			<a href={resolve('/legal/terms')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">{t('legal.terms')}</a>
+			<a
+				href={resolve('/legal/terms')}
+				class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+				>{t('legal.terms')}</a
+			>
 			<span class="text-[var(--ui-text-dimmed)]">·</span>
-			<a href={resolve('/legal/license')} class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">{t('legal.license')}</a>
+			<a
+				href={resolve('/legal/license')}
+				class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+				>{t('legal.license')}</a
+			>
 			<span class="text-[var(--ui-text-dimmed)]">·</span>
-			<a href={site.source.url} target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">
+			<a
+				href={site.source.url}
+				target="_blank"
+				rel="noopener"
+				class="inline-flex items-center gap-1 font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+			>
 				<Icon name="lucide:github" class="size-3" />{t('common.source')}
 			</a>
 			<span class="text-[var(--ui-text-dimmed)]">·</span>
-			<a href={site.website.url} target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">
+			<a
+				href={site.website.url}
+				target="_blank"
+				rel="noopener"
+				class="inline-flex items-center gap-1 font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+			>
 				<Icon name="lucide:globe" class="size-3" />{site.website.label}
 			</a>
 		</div>
 		<p class="mt-2 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
-			© {new Date().getFullYear()} {site.name} contributors · {site.license}
+			© {new Date().getFullYear()}
+			{site.name} contributors · {site.license}
 		</p>
 	</div>
 </div>

@@ -42,7 +42,9 @@
 					var locale = localStorage.getItem('bnos-os:locale');
 					if (!locale) {
 						try {
-							locale = JSON.parse(localStorage.getItem('bnos-os:settings-general') || '{}').language;
+							locale = JSON.parse(
+								localStorage.getItem('bnos-os:settings-general') || '{}'
+							).language;
 						} catch (_) {}
 					}
 					if (locale === 'lo' || locale === 'th' || locale === 'en') root.dataset.locale = locale;
@@ -80,8 +82,8 @@
 				</div>
 				<p class="bs-logo">BNOS</p>
 				<div class="bs-pow" aria-hidden="true">
-					<span></span><span></span><span></span><span></span><span></span><span></span
-					><span></span><span></span><span></span>
+					<span></span><span></span><span></span><span></span><span></span><span></span><span></span
+					><span></span><span></span>
 				</div>
 				<noscript><p class="bs-noscript">BNOS needs JavaScript to run.</p></noscript>
 			</div>
@@ -206,15 +208,33 @@
 					opacity: 0.18;
 					animation: bs-sweep 1.2s ease-in-out infinite;
 				}
-				.bs-pow span:nth-child(1) { animation-delay: 0s; }
-				.bs-pow span:nth-child(2) { animation-delay: 0.12s; }
-				.bs-pow span:nth-child(3) { animation-delay: 0.24s; }
-				.bs-pow span:nth-child(4) { animation-delay: 0.36s; }
-				.bs-pow span:nth-child(5) { animation-delay: 0.48s; }
-				.bs-pow span:nth-child(6) { animation-delay: 0.6s; }
-				.bs-pow span:nth-child(7) { animation-delay: 0.72s; }
-				.bs-pow span:nth-child(8) { animation-delay: 0.84s; }
-				.bs-pow span:nth-child(9) { animation-delay: 0.96s; }
+				.bs-pow span:nth-child(1) {
+					animation-delay: 0s;
+				}
+				.bs-pow span:nth-child(2) {
+					animation-delay: 0.12s;
+				}
+				.bs-pow span:nth-child(3) {
+					animation-delay: 0.24s;
+				}
+				.bs-pow span:nth-child(4) {
+					animation-delay: 0.36s;
+				}
+				.bs-pow span:nth-child(5) {
+					animation-delay: 0.48s;
+				}
+				.bs-pow span:nth-child(6) {
+					animation-delay: 0.6s;
+				}
+				.bs-pow span:nth-child(7) {
+					animation-delay: 0.72s;
+				}
+				.bs-pow span:nth-child(8) {
+					animation-delay: 0.84s;
+				}
+				.bs-pow span:nth-child(9) {
+					animation-delay: 0.96s;
+				}
 				@keyframes bs-sweep {
 					0%,
 					100% {

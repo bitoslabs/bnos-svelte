@@ -3,12 +3,7 @@
  * failures (offline, relay timeout) resolve to empty/error instead of throwing
  * into the UI. The GLO collection store uses these to sync.
  */
-import {
-	queryRelays,
-	publishToRelays,
-	preconnectRelays,
-	type NostrEvent
-} from '@bitos/bnos-core';
+import { queryRelays, publishToRelays, preconnectRelays, type NostrEvent } from '@bitos/bnos-core';
 import { relays } from './relay.svelte';
 
 /** Preconnect to relays before a foreground read/write. */
@@ -21,7 +16,8 @@ export async function warmRelays(strategy: 'all' | 'primary-first' = 'all') {
 		const primaryTargets = relays.primaryReadableNormalized.length
 			? relays.primaryReadableNormalized
 			: relays.primaryWritableNormalized;
-		const targets = strategy === 'primary-first' && primaryTargets.length ? primaryTargets : allTargets;
+		const targets =
+			strategy === 'primary-first' && primaryTargets.length ? primaryTargets : allTargets;
 		await preconnectRelays(targets);
 	} catch {
 		/* best effort */

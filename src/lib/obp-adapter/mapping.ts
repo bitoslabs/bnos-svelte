@@ -10,7 +10,13 @@
  * - shadow (read-only) first: these helpers *compose OBP inputs from*
  *   GLO records; they never write back into GLO stores.
  */
-import type { IssueInput, ObpDocumentProjection, ObpLineItem, ObpOrganization, ObpSettlement } from '$lib/obp';
+import type {
+	IssueInput,
+	ObpDocumentProjection,
+	ObpLineItem,
+	ObpOrganization,
+	ObpSettlement
+} from '$lib/obp';
 import { CURRENCY_MINOR_UNITS } from '$lib/obp';
 import type { Payment, PurchaseOrder, Supplier } from '$lib/domain/types';
 
@@ -76,7 +82,8 @@ export function rfqInputFromPurchaseOrder(
 		recipient: opts.recipient,
 		currency: po.currency.toUpperCase(),
 		lines: rfqLinesFromPurchaseOrder(po),
-		shippingMinor: po.shippingCost !== undefined ? toMinorUnits(po.shippingCost, po.currency) : undefined,
+		shippingMinor:
+			po.shippingCost !== undefined ? toMinorUnits(po.shippingCost, po.currency) : undefined,
 		taxMinor: po.taxAmount !== undefined ? toMinorUnits(po.taxAmount, po.currency) : undefined,
 		note: po.notes,
 		expiresAt: new Date(

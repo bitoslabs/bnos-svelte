@@ -396,7 +396,8 @@
 			<div class="max-h-[55vh] overflow-y-auto p-1.5">
 				{#if results.length === 0}
 					<div class="px-3 py-10 text-center text-[13px] text-[var(--ui-text-dimmed)]">
-						{t('command.noMatches')} <span class="font-semibold text-[var(--ui-text-muted)]">"{query}"</span>
+						{t('command.noMatches')}
+						<span class="font-semibold text-[var(--ui-text-muted)]">"{query}"</span>
 					</div>
 				{:else}
 					{#each results as c, i (c.id)}

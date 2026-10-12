@@ -23,11 +23,7 @@ import {
 	type SettlementVerifier
 } from '../node/business-node';
 import { LoopbackNetwork, type ObpTransport } from '../node/transport';
-import {
-	bindNostrInbox,
-	NostrTransport,
-	type NostrInboxBinding
-} from '../node/nostr-transport';
+import { bindNostrInbox, NostrTransport, type NostrInboxBinding } from '../node/nostr-transport';
 import { MemoryRelayHub } from './memory-relay';
 
 export interface PilotSigner {
@@ -142,7 +138,9 @@ function nodeFor(
  */
 export function createTwoNodePilot(
 	options: {
-		settlementDecide?: (evidence: { settlement?: { externalId: string } }) => 'verified' | 'pending' | 'failed';
+		settlementDecide?: (evidence: {
+			settlement?: { externalId: string };
+		}) => 'verified' | 'pending' | 'failed';
 		now?: () => Date;
 	} = {}
 ): TwoNodePilot {

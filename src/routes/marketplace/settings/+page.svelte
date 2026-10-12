@@ -64,7 +64,11 @@
 	onMount(() => {
 		if (!browser) return;
 		try {
-			s = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? '{}'), storeName: s.storeName || tenant.state.organizationName };
+			s = {
+				...DEFAULTS,
+				...JSON.parse(localStorage.getItem(KEY) ?? '{}'),
+				storeName: s.storeName || tenant.state.organizationName
+			};
 		} catch {
 			/* */
 		}
@@ -96,56 +100,114 @@
 <div class="space-y-5">
 	<div>
 		<h2 class="font-display text-lg font-bold tracking-tight">{t('nav.storeSettings')}</h2>
-		<p class="text-[12px] text-[var(--ui-text-muted)]">Storefront, fulfillment & sync preferences</p>
+		<p class="text-[12px] text-[var(--ui-text-muted)]">
+			Storefront, fulfillment & sync preferences
+		</p>
 	</div>
 
 	<!-- Storefront -->
-	<SettingsSection title={t('marketplace.storefront')} description="How your marketplace store appears to buyers" icon="lucide:store">
+	<SettingsSection
+		title={t('marketplace.storefront')}
+		description="How your marketplace store appears to buyers"
+		icon="lucide:store"
+	>
 		<div class="space-y-4 px-5 py-4">
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Store name</span>
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Store name</span
+					>
 					<Input bind:value={s.storeName} oninput={touch} class="w-full" />
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Support email</span>
-					<Input bind:value={s.supportEmail} type="email" oninput={touch} placeholder="help@mystore.com" class="w-full" />
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Support email</span
+					>
+					<Input
+						bind:value={s.supportEmail}
+						type="email"
+						oninput={touch}
+						placeholder="help@mystore.com"
+						class="w-full"
+					/>
 				</label>
 			</div>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Tagline</span>
-				<Input bind:value={s.tagline} oninput={touch} placeholder="Quality goods, shipped fast" class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Tagline</span
+				>
+				<Input
+					bind:value={s.tagline}
+					oninput={touch}
+					placeholder="Quality goods, shipped fast"
+					class="w-full"
+				/>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Support phone</span>
-				<Input bind:value={s.supportPhone} oninput={touch} placeholder="+1 555 0100" class="w-full" />
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Support phone</span
+				>
+				<Input
+					bind:value={s.supportPhone}
+					oninput={touch}
+					placeholder="+1 555 0100"
+					class="w-full"
+				/>
 			</label>
 		</div>
 	</SettingsSection>
 
 	<!-- Fulfillment -->
-	<SettingsSection title="Fulfillment" description={t('marketplace.defaultShipping')} icon="lucide:truck">
+	<SettingsSection
+		title="Fulfillment"
+		description={t('marketplace.defaultShipping')}
+		icon="lucide:truck"
+	>
 		<SettingRow title={t('marketplace.autoFulfill')} description={t('marketplace.autoFulfillDesc')}>
 			<Switch bind:checked={s.autoFulfill} onCheckedChange={touch} />
 		</SettingRow>
-		<SettingRow title={t('marketplace.defaultHandlingTime')} description={t('marketplace.flagThresholdDesc')}>
+		<SettingRow
+			title={t('marketplace.defaultHandlingTime')}
+			description={t('marketplace.flagThresholdDesc')}
+		>
 			<div class="flex items-center gap-2">
-				<Input bind:value={s.handlingTimeDays} type="number" min="0" max="30" oninput={touch} class="w-20 text-center" />
+				<Input
+					bind:value={s.handlingTimeDays}
+					type="number"
+					min="0"
+					max="30"
+					oninput={touch}
+					class="w-20 text-center"
+				/>
 				<span class="text-[11.5px] text-[var(--ui-text-muted)]">days</span>
 			</div>
 		</SettingRow>
 		<div class="space-y-3 px-5 py-4">
 			<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Shipping origin</span>
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-				<Input bind:value={s.originCity} oninput={touch} placeholder={t('common.city')} class="w-full" />
-				<Input bind:value={s.originZip} oninput={touch} placeholder={t('common.zipPostal')} class="w-full" />
+				<Input
+					bind:value={s.originCity}
+					oninput={touch}
+					placeholder={t('common.city')}
+					class="w-full"
+				/>
+				<Input
+					bind:value={s.originZip}
+					oninput={touch}
+					placeholder={t('common.zipPostal')}
+					class="w-full"
+				/>
 				<Input bind:value={s.originCountry} oninput={touch} placeholder="Country" class="w-full" />
 			</div>
 		</div>
 	</SettingsSection>
 
 	<!-- Sync -->
-	<SettingsSection title={t('common.sync')} description="How channels exchange data" icon="lucide:refresh-cw">
+	<SettingsSection
+		title={t('common.sync')}
+		description="How channels exchange data"
+		icon="lucide:refresh-cw"
+	>
 		<SettingRow title={t('common.syncInventory')} description={t('marketplace.pushStock')}>
 			<Switch bind:checked={s.syncInventory} onCheckedChange={touch} />
 		</SettingRow>
@@ -168,22 +230,55 @@
 	</SettingsSection>
 
 	<!-- Reviews -->
-	<SettingsSection title={t('nav.reviews')} description={t('marketplace.reputation')} icon="lucide:star">
-		<SettingRow title={t('marketplace.flagThreshold')} description={t('marketplace.flagThresholdDesc')}>
+	<SettingsSection
+		title={t('nav.reviews')}
+		description={t('marketplace.reputation')}
+		icon="lucide:star"
+	>
+		<SettingRow
+			title={t('marketplace.flagThreshold')}
+			description={t('marketplace.flagThresholdDesc')}
+		>
 			<div class="flex items-center gap-2">
-				<Input bind:value={s.flagRatingThreshold} type="number" min="1" max="5" oninput={touch} class="w-20 text-center" />
+				<Input
+					bind:value={s.flagRatingThreshold}
+					type="number"
+					min="1"
+					max="5"
+					oninput={touch}
+					class="w-20 text-center"
+				/>
 				<span class="text-[11.5px] text-[var(--ui-text-muted)]">★ & below</span>
 			</div>
 		</SettingRow>
 		<div class="space-y-2 px-5 py-4">
-			<span class="block text-[12px] font-semibold text-[var(--ui-text-muted)]">Auto-reply template (optional)</span>
-			<Input bind:value={s.autoReply} textarea rows={2} oninput={touch} placeholder="Thanks for your feedback! Our team will respond shortly." class="w-full" />
+			<span class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Auto-reply template (optional)</span
+			>
+			<Input
+				bind:value={s.autoReply}
+				textarea
+				rows={2}
+				oninput={touch}
+				placeholder="Thanks for your feedback! Our team will respond shortly."
+				class="w-full"
+			/>
 		</div>
 	</SettingsSection>
 
 	<!-- Danger zone -->
-	<SettingsSection title="Module" description="Marketplace module availability" icon="lucide:power" danger>
-		<SettingRow title="Marketplace module" description={features.isEnabled('marketplace') ? 'Currently enabled for this workspace' : 'Disabled'}>
+	<SettingsSection
+		title="Module"
+		description="Marketplace module availability"
+		icon="lucide:power"
+		danger
+	>
+		<SettingRow
+			title="Marketplace module"
+			description={features.isEnabled('marketplace')
+				? 'Currently enabled for this workspace'
+				: 'Disabled'}
+		>
 			<Button
 				color={features.isEnabled('marketplace') ? 'error' : 'primary'}
 				variant="subtle"
@@ -191,7 +286,9 @@
 				onclick={async () => {
 					features.toggle('marketplace');
 					await syncWorkspaceSettingsToOrganization();
-					toast.success(`Marketplace ${features.isEnabled('marketplace') ? 'enabled' : 'disabled'}`);
+					toast.success(
+						`Marketplace ${features.isEnabled('marketplace') ? 'enabled' : 'disabled'}`
+					);
 				}}
 			>
 				{features.isEnabled('marketplace') ? 'Disable' : 'Enable'}
@@ -200,7 +297,9 @@
 	</SettingsSection>
 
 	<div class="flex justify-end">
-		<Button color="neutral" variant="ghost" size="sm" icon="lucide:rotate-ccw" onclick={reset}>Reset to defaults</Button>
+		<Button color="neutral" variant="ghost" size="sm" icon="lucide:rotate-ccw" onclick={reset}
+			>Reset to defaults</Button
+		>
 	</div>
 </div>
 

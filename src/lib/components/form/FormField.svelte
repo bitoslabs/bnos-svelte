@@ -13,7 +13,9 @@
 </script>
 
 <label class="block">
-	<span class="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[var(--ui-text-muted)]">
+	<span
+		class="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[var(--ui-text-muted)]"
+	>
 		{label}{#if required}<span class="text-[var(--tone-error-text)]">*</span>{/if}
 	</span>
 	{@render children()}

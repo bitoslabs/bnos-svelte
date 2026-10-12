@@ -118,18 +118,52 @@ export const navSections: NavSection[] = [
 		label: 'Overview',
 		labelKey: 'nav.sectionOverview',
 		items: [
-			{ to: '/', icon: 'lucide:layout-dashboard', label: 'Dashboard', labelKey: 'nav.dashboard', exact: true },
-			{ to: '/pos', icon: 'lucide:scan-line', label: 'Point of Sale', labelKey: 'nav.pos', types: ['commerce.order'] }
+			{
+				to: '/',
+				icon: 'lucide:layout-dashboard',
+				label: 'Dashboard',
+				labelKey: 'nav.dashboard',
+				exact: true
+			},
+			{
+				to: '/pos',
+				icon: 'lucide:scan-line',
+				label: 'Point of Sale',
+				labelKey: 'nav.pos',
+				types: ['commerce.order']
+			}
 		]
 	},
 	{
 		label: 'Sales',
 		labelKey: 'nav.sectionSales',
 		items: [
-			{ to: '/orders', icon: 'lucide:receipt-text', label: 'Orders', labelKey: 'nav.orders', types: ['commerce.order'] },
-			{ to: '/customers', icon: 'lucide:users', label: 'Customers', labelKey: 'nav.customers', types: ['crm.customer'] },
-			{ to: '/transactions', icon: 'lucide:arrow-left-right', label: 'Transactions', labelKey: 'nav.transactions' },
-			{ to: '/transactions/shifts', icon: 'lucide:lock-open', label: 'Shifts', labelKey: 'nav.shifts' },
+			{
+				to: '/orders',
+				icon: 'lucide:receipt-text',
+				label: 'Orders',
+				labelKey: 'nav.orders',
+				types: ['commerce.order']
+			},
+			{
+				to: '/customers',
+				icon: 'lucide:users',
+				label: 'Customers',
+				labelKey: 'nav.customers',
+				types: ['crm.customer']
+			},
+			{
+				to: '/transactions',
+				icon: 'lucide:arrow-left-right',
+				label: 'Transactions',
+				labelKey: 'nav.transactions'
+			},
+			{
+				to: '/transactions/shifts',
+				icon: 'lucide:lock-open',
+				label: 'Shifts',
+				labelKey: 'nav.shifts'
+			},
 			{ to: '/activity', icon: 'lucide:shield-check', label: 'Activity', labelKey: 'nav.activity' }
 		]
 	},
@@ -137,7 +171,13 @@ export const navSections: NavSection[] = [
 		label: 'Catalog & Inventory',
 		labelKey: 'nav.sectionCatalog',
 		items: [
-			{ to: '/catalog', icon: 'lucide:package', label: 'Products', labelKey: 'nav.products', types: ['catalog.product'] },
+			{
+				to: '/catalog',
+				icon: 'lucide:package',
+				label: 'Products',
+				labelKey: 'nav.products',
+				types: ['catalog.product']
+			},
 			{
 				to: '/inventory',
 				icon: 'lucide:warehouse',
@@ -169,14 +209,54 @@ export const navSections: NavSection[] = [
 				label: 'Marketplace',
 				labelKey: 'nav.marketplace',
 				children: [
-					{ to: '/marketplace/listings', icon: 'lucide:tags', label: 'Listings', labelKey: 'nav.listings' },
-					{ to: '/marketplace/channels', icon: 'lucide:radio', label: 'Sales Channels', labelKey: 'nav.salesChannels' },
-					{ to: '/marketplace/orders', icon: 'lucide:shopping-bag', label: 'Orders', labelKey: 'nav.marketplaceOrders' },
-					{ to: '/marketplace/shipping', icon: 'lucide:truck', label: 'Shipping', labelKey: 'nav.shipping' },
-					{ to: '/marketplace/promotions', icon: 'lucide:megaphone', label: 'Promotions', labelKey: 'nav.promotions' },
-					{ to: '/marketplace/reviews', icon: 'lucide:star', label: 'Reviews', labelKey: 'nav.reviews' },
-					{ to: '/marketplace/analytics', icon: 'lucide:chart-column', label: 'Analytics', labelKey: 'nav.analytics' },
-					{ to: '/marketplace/settings', icon: 'lucide:settings', label: 'Store Settings', labelKey: 'nav.storeSettings' }
+					{
+						to: '/marketplace/listings',
+						icon: 'lucide:tags',
+						label: 'Listings',
+						labelKey: 'nav.listings'
+					},
+					{
+						to: '/marketplace/channels',
+						icon: 'lucide:radio',
+						label: 'Sales Channels',
+						labelKey: 'nav.salesChannels'
+					},
+					{
+						to: '/marketplace/orders',
+						icon: 'lucide:shopping-bag',
+						label: 'Orders',
+						labelKey: 'nav.marketplaceOrders'
+					},
+					{
+						to: '/marketplace/shipping',
+						icon: 'lucide:truck',
+						label: 'Shipping',
+						labelKey: 'nav.shipping'
+					},
+					{
+						to: '/marketplace/promotions',
+						icon: 'lucide:megaphone',
+						label: 'Promotions',
+						labelKey: 'nav.promotions'
+					},
+					{
+						to: '/marketplace/reviews',
+						icon: 'lucide:star',
+						label: 'Reviews',
+						labelKey: 'nav.reviews'
+					},
+					{
+						to: '/marketplace/analytics',
+						icon: 'lucide:chart-column',
+						label: 'Analytics',
+						labelKey: 'nav.analytics'
+					},
+					{
+						to: '/marketplace/settings',
+						icon: 'lucide:settings',
+						label: 'Store Settings',
+						labelKey: 'nav.storeSettings'
+					}
 				]
 			}
 		]
@@ -186,7 +266,12 @@ export const navSections: NavSection[] = [
 		labelKey: 'nav.sectionMarketing',
 		items: [
 			{ to: '/promotions', icon: 'lucide:tags', label: 'Promotions', labelKey: 'nav.promotions' },
-			{ to: '/memberships', icon: 'lucide:crown', label: 'Memberships', labelKey: 'nav.memberships' }
+			{
+				to: '/memberships',
+				icon: 'lucide:crown',
+				label: 'Memberships',
+				labelKey: 'nav.memberships'
+			}
 		]
 	},
 	{
@@ -194,10 +279,30 @@ export const navSections: NavSection[] = [
 		labelKey: 'nav.sectionRestaurant',
 		feature: 'restaurant',
 		items: [
-			{ to: '/restaurant/tables', icon: 'lucide:armchair', label: 'Tables', labelKey: 'nav.tables' },
-			{ to: '/restaurant/waiter', icon: 'lucide:concierge-bell', label: 'Waiter', labelKey: 'nav.waiter' },
-			{ to: '/restaurant/kitchen', icon: 'lucide:chef-hat', label: 'Kitchen', labelKey: 'nav.kitchen' },
-			{ to: '/restaurant/queue', icon: 'lucide:clipboard-list', label: 'Order Queue', labelKey: 'nav.orderQueue' }
+			{
+				to: '/restaurant/tables',
+				icon: 'lucide:armchair',
+				label: 'Tables',
+				labelKey: 'nav.tables'
+			},
+			{
+				to: '/restaurant/waiter',
+				icon: 'lucide:concierge-bell',
+				label: 'Waiter',
+				labelKey: 'nav.waiter'
+			},
+			{
+				to: '/restaurant/kitchen',
+				icon: 'lucide:chef-hat',
+				label: 'Kitchen',
+				labelKey: 'nav.kitchen'
+			},
+			{
+				to: '/restaurant/queue',
+				icon: 'lucide:clipboard-list',
+				label: 'Order Queue',
+				labelKey: 'nav.orderQueue'
+			}
 		]
 	},
 	{
@@ -212,7 +317,13 @@ export const navSections: NavSection[] = [
 		label: 'Administration',
 		labelKey: 'nav.sectionAdministration',
 		items: [
-			{ to: '/staff', icon: 'lucide:users-round', label: 'Staff', labelKey: 'nav.staff', types: ['identity.staff'] },
+			{
+				to: '/staff',
+				icon: 'lucide:users-round',
+				label: 'Staff',
+				labelKey: 'nav.staff',
+				types: ['identity.staff']
+			},
 			{ to: '/settings', icon: 'lucide:settings', label: 'Settings', labelKey: 'nav.settings' }
 		]
 	}

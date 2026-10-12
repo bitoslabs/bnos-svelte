@@ -138,8 +138,20 @@
 			desc: 'Strike API key',
 			detect: 'manual'
 		},
-		{ id: 'lnd', label: 'LND (REST)', icon: 'lucide:server', desc: 'Self-hosted node', detect: 'manual' },
-		{ id: 'phoenixd', label: 'PhoenixD', icon: 'lucide:flame', desc: 'Self-hosted daemon', detect: 'manual' }
+		{
+			id: 'lnd',
+			label: 'LND (REST)',
+			icon: 'lucide:server',
+			desc: 'Self-hosted node',
+			detect: 'manual'
+		},
+		{
+			id: 'phoenixd',
+			label: 'PhoenixD',
+			icon: 'lucide:flame',
+			desc: 'Self-hosted daemon',
+			detect: 'manual'
+		}
 	];
 
 	// ── Rate fetching ───────────────────────────
@@ -274,7 +286,8 @@
 			if (lightningProvider === 'lnd' && !lndUrl) throw new Error('Enter LND REST URL');
 			if (lightningProvider === 'phoenixd' && !phoenixdUrl) throw new Error('Enter PhoenixD URL');
 			if (lightningProvider === 'alby' && !albyApiKey) throw new Error('Enter Alby API key');
-			if (lightningProvider === 'nwc' && !nwcUrl) throw new Error('Enter the NWC connection string');
+			if (lightningProvider === 'nwc' && !nwcUrl)
+				throw new Error('Enter the NWC connection string');
 			if (lightningProvider === 'blink' && !blinkApiKey) throw new Error('Enter Blink API key');
 			if (lightningProvider === 'strike' && !strikeApiKey) throw new Error('Enter Strike API key');
 
@@ -307,7 +320,9 @@
 				const alias = info.alias || 'NWC wallet';
 				const methods = info.methods ?? [];
 				if (!methods.includes('make_invoice'))
-					throw new Error('This NWC connection cannot create invoices — re-connect it with receive permission');
+					throw new Error(
+						'This NWC connection cannot create invoices — re-connect it with receive permission'
+					);
 				const notif = info.notifications ?? [];
 				const balance = await nwcGetBalanceSats().catch(() => null);
 				nodePubkey = c.walletPubkey.slice(0, 8) + '…';
@@ -393,9 +408,11 @@
 	}
 
 	/** Chip descriptor for a detection capability. */
-	function capChip(
-		mode: 'instant' | 'poll' | 'manual' | 'auto' | 'varies' | null
-	): { icon: string; label: string; cls: string } {
+	function capChip(mode: 'instant' | 'poll' | 'manual' | 'auto' | 'varies' | null): {
+		icon: string;
+		label: string;
+		cls: string;
+	} {
 		switch (mode) {
 			case 'instant':
 			case 'auto':
@@ -475,24 +492,24 @@
 	async function save() {
 		if (!browser) return;
 		const settings = {
-				rateSource,
-				manualRate,
-				lightningProvider,
-				lightningAddress,
-				lndUrl,
-				lndMacaroon,
-				phoenixdUrl,
-				phoenixdPass,
-				albyApiKey,
-				nwcUrl,
-				blinkApiKey,
-				blinkWalletId,
-				strikeApiKey,
-				defaultMemo,
-				defaultExpiry,
-				minAmount,
-				maxAmount,
-				receiptShowSats,
+			rateSource,
+			manualRate,
+			lightningProvider,
+			lightningAddress,
+			lndUrl,
+			lndMacaroon,
+			phoenixdUrl,
+			phoenixdPass,
+			albyApiKey,
+			nwcUrl,
+			blinkApiKey,
+			blinkWalletId,
+			strikeApiKey,
+			defaultMemo,
+			defaultExpiry,
+			minAmount,
+			maxAmount,
+			receiptShowSats,
 			currency
 		};
 		localStorage.setItem(KEY, JSON.stringify(settings));
@@ -523,7 +540,9 @@
 			if (s.maxAmount !== undefined) maxAmount = s.maxAmount;
 			if (s.receiptShowSats !== undefined) receiptShowSats = s.receiptShowSats;
 			if (s.currency !== undefined) currency = s.currency;
-		} catch { /* keep current form values */ }
+		} catch {
+			/* keep current form values */
+		}
 	}
 
 	async function loadFromRelay() {
@@ -585,8 +604,8 @@
 	<PageHeader
 		icon="lucide:bitcoin"
 		accent="amber"
-		 title={t('settings.bitcoin')}
-		 description={t('settings.bitcoinDesc')}
+		title={t('settings.bitcoin')}
+		description={t('settings.bitcoinDesc')}
 	>
 		{#snippet actions()}
 			<Button
@@ -743,19 +762,22 @@
 				class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
 				>{t('settings.selectProvider')}</label
 			>
-			<div class="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label={t('settings.selectProvider')}>
+			<div
+				class="grid gap-2 sm:grid-cols-2"
+				role="radiogroup"
+				aria-label={t('settings.selectProvider')}
+			>
 				{#each providerOptions as opt (opt.id)}
 					{@const chip = capChip(
 						opt.detect === 'varies' && connectionVerified && lightningProvider === 'lnaddress'
-							? testCapMode ?? 'varies'
+							? (testCapMode ?? 'varies')
 							: opt.detect
 					)}
 					<button
 						type="button"
 						role="radio"
 						aria-checked={lightningProvider === opt.id}
-						class="rounded-xl border p-3 text-left transition-all {lightningProvider ===
-						opt.id
+						class="rounded-xl border p-3 text-left transition-all {lightningProvider === opt.id
 							? 'border-amber-500 bg-amber-500/10'
 							: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
 						onclick={() => (lightningProvider = opt.id)}
@@ -850,7 +872,7 @@
 				<div>
 					<label
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-						>{t('common.password' , undefined)}</label
+						>{t('common.password', undefined)}</label
 					>
 					<Input bind:value={phoenixdPass} type="password" placeholder="••••••••" class="w-full" />
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Phoenix daemon HTTP password</p>
@@ -875,8 +897,8 @@
 				>
 				<Input bind:value={nwcUrl} placeholder="nostr+walletconnect://…" class="w-full" />
 				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
-					Nostr Wallet Connect string from your wallet — paid invoices are detected
-					automatically (NIP-47 push + polling)
+					Nostr Wallet Connect string from your wallet — paid invoices are detected automatically
+					(NIP-47 push + polling)
 				</p>
 			</div>
 		{:else if lightningProvider === 'lnaddress'}
@@ -917,10 +939,15 @@
 						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
 						>{t('settings.blinkApiKey')}</label
 					>
-					<Input bind:value={blinkApiKey} type="password" placeholder="blink-api-key" class="w-full" />
+					<Input
+						bind:value={blinkApiKey}
+						type="password"
+						placeholder="blink-api-key"
+						class="w-full"
+					/>
 					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
-						Blink (Galoy) API access token — “Test connection” checks it live and can auto-fill
-						the wallet id below
+						Blink (Galoy) API access token — “Test connection” checks it live and can auto-fill the
+						wallet id below
 					</p>
 				</div>
 				<div>
@@ -973,7 +1000,10 @@
 								</span>
 							{/if}
 						{:else if connPill === 'unverified'}
-							<Icon name="lucide:circle-dashed" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
+							<Icon
+								name="lucide:circle-dashed"
+								class="size-4 shrink-0 text-[var(--ui-text-dimmed)]"
+							/>
 							<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]"
 								>Not verified yet</span
 							>

@@ -27,7 +27,12 @@
 
 	const COLUMNS: { status: TicketStatus; label: string; color: string; dotColor: string }[] = [
 		{ status: 'new', label: 'New', color: 'border-t-amber-400', dotColor: 'bg-amber-400' },
-		{ status: 'preparing', label: 'Preparing', color: 'border-t-blue-400', dotColor: 'bg-blue-400' },
+		{
+			status: 'preparing',
+			label: 'Preparing',
+			color: 'border-t-blue-400',
+			dotColor: 'bg-blue-400'
+		},
 		{ status: 'ready', label: 'Ready', color: 'border-t-emerald-400', dotColor: 'bg-emerald-400' },
 		{ status: 'served', label: 'Served', color: 'border-t-gray-400', dotColor: 'bg-gray-400' }
 	];
@@ -37,7 +42,7 @@
 
 	onMount(() => {
 		glo.hydrate('commerce.order');
-		timer = setInterval(() => (tick++), 30_000); // refresh elapsed times
+		timer = setInterval(() => tick++, 30_000); // refresh elapsed times
 	});
 	onDestroy(() => clearInterval(timer));
 
@@ -57,23 +62,31 @@
 			else if (status === 'served') ticketStatus = 'served';
 			else continue;
 
-			const priority: Priority = (o.data as { tags?: string[] }).tags?.includes('rush') ? 'rush'
-				: (o.data as { tags?: string[] }).tags?.includes('vip') ? 'vip'
-				: 'normal';
+			const priority: Priority = (o.data as { tags?: string[] }).tags?.includes('rush')
+				? 'rush'
+				: (o.data as { tags?: string[] }).tags?.includes('vip')
+					? 'vip'
+					: 'normal';
 
 			tickets.push({
 				id: o.id,
 				orderId: o.id,
 				orderNumber: String(o.data.number ?? o.id.slice(0, 6)),
 				tableId: (o.data as { tableId?: string }).tableId,
-				items: lines.map((l: GloOrderLine) => ({ name: l.name ?? 'Item', quantity: l.quantity, notes: l.notes })),
+				items: lines.map((l: GloOrderLine) => ({
+					name: l.name ?? 'Item',
+					quantity: l.quantity,
+					notes: l.notes
+				})),
 				status: ticketStatus,
 				priority,
 				createdAt: o.data.occurredAt ?? new Date().toISOString(),
 				orderType: (o.data as { type?: string }).type
 			});
 		}
-		return tickets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+		return tickets.sort(
+			(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+		);
 	}
 
 	const tickets = $derived(buildTickets());
@@ -121,13 +134,20 @@
 			ready: 'served',
 			served: 'served'
 		};
-		await glo.upsert('commerce.order', { ...(order.data as Record<string, unknown>), status: statusMap[next] }, { id: order.id });
+		await glo.upsert(
+			'commerce.order',
+			{ ...(order.data as Record<string, unknown>), status: statusMap[next] },
+			{ id: order.id }
+		);
 		toast.success(`#${ticket.orderNumber} → ${next}`);
 	}
 
 	function playBeep() {
 		try {
-			const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+			const ctx = new (
+				window.AudioContext ||
+				(window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+			)();
 			const osc = ctx.createOscillator();
 			const gain = ctx.createGain();
 			osc.connect(gain);
@@ -138,7 +158,9 @@
 			gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
 			osc.start();
 			osc.stop(ctx.currentTime + 0.4);
-		} catch { /* noop */ }
+		} catch {
+			/* noop */
+		}
 	}
 
 	// Beep when new ticket arrives
@@ -152,10 +174,13 @@
 	});
 
 	const orderTypeBadge = (t?: string) =>
-		t === 'dine_in' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-		: t === 'takeaway' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
-		: t === 'delivery' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-		: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
+		t === 'dine_in'
+			? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+			: t === 'takeaway'
+				? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+				: t === 'delivery'
+					? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+					: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
 </script>
 
 <svelte:head><title>{t('common.appName')} · {t('nav.kitchen')}</title></svelte:head>
@@ -165,30 +190,49 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">Kitchen display</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Prep tickets from active orders · kind 30211</p>
+			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+				Prep tickets from active orders · kind 30211
+			</p>
 		</div>
 		<div class="flex items-center gap-3 text-[10px] text-[var(--ui-text-dimmed)]">
-			<span class="flex items-center gap-1"><span class="size-2 rounded-full bg-emerald-400"></span> &lt;10min</span>
-			<span class="flex items-center gap-1"><span class="size-2 rounded-full bg-amber-400"></span> 10–20min</span>
-			<span class="flex items-center gap-1"><span class="size-2 rounded-full bg-red-400"></span> &gt;20min</span>
+			<span class="flex items-center gap-1"
+				><span class="size-2 rounded-full bg-emerald-400"></span> &lt;10min</span
+			>
+			<span class="flex items-center gap-1"
+				><span class="size-2 rounded-full bg-amber-400"></span> 10–20min</span
+			>
+			<span class="flex items-center gap-1"
+				><span class="size-2 rounded-full bg-red-400"></span> &gt;20min</span
+			>
 		</div>
 	</div>
 
 	{#if tickets.length === 0}
-		<EmptyState icon="lucide:chef-hat" title={t('restaurant.noActiveTickets')} description={t('restaurant.kitchenDesc')} />
+		<EmptyState
+			icon="lucide:chef-hat"
+			title={t('restaurant.noActiveTickets')}
+			description={t('restaurant.kitchenDesc')}
+		/>
 	{:else}
 		<!-- Kanban board -->
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
 			{#each COLUMNS as col (col.status)}
 				{@const list = tickets.filter((t) => t.status === col.status)}
-				<div class="flex flex-col rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]">
+				<div
+					class="flex flex-col rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+				>
 					<!-- Column header -->
-					<div class="flex items-center justify-between border-t-4 rounded-t-xl {col.color} px-3 py-2.5">
+					<div
+						class="flex items-center justify-between rounded-t-xl border-t-4 {col.color} px-3 py-2.5"
+					>
 						<div class="flex items-center gap-2">
 							<span class="size-2 rounded-full {col.dotColor}"></span>
 							<span class="text-[13px] font-bold">{col.label}</span>
 						</div>
-						<span class="rounded-md bg-[var(--ui-bg-accented)] px-1.5 py-0.5 text-[11px] font-bold tabular-nums">{list.length}</span>
+						<span
+							class="rounded-md bg-[var(--ui-bg-accented)] px-1.5 py-0.5 text-[11px] font-bold tabular-nums"
+							>{list.length}</span
+						>
 					</div>
 
 					<!-- Column body -->
@@ -201,23 +245,39 @@
 							>
 								<!-- Ticket header -->
 								<div class="mb-2 flex items-center justify-between">
-									<div class="flex items-center gap-1.5 flex-wrap">
+									<div class="flex flex-wrap items-center gap-1.5">
 										<span class="text-[12px] font-bold">#{t.orderNumber}</span>
 										{#if t.orderType}
-											<span class="rounded-full px-1.5 py-0.5 text-[9px] font-bold {orderTypeBadge(t.orderType)}">
-												{t.orderType === 'dine_in' ? 'Dine In' : t.orderType === 'takeaway' ? 'Takeaway' : t.orderType}
+											<span
+												class="rounded-full px-1.5 py-0.5 text-[9px] font-bold {orderTypeBadge(
+													t.orderType
+												)}"
+											>
+												{t.orderType === 'dine_in'
+													? 'Dine In'
+													: t.orderType === 'takeaway'
+														? 'Takeaway'
+														: t.orderType}
 											</span>
 										{/if}
 										{#if t.tableId}
-											<span class="rounded bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-[9px] font-bold text-blue-700 dark:text-blue-400">
+											<span
+												class="rounded bg-blue-100 px-1.5 py-0.5 text-[9px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+											>
 												T:{t.tableId}
 											</span>
 										{/if}
 										{#if t.priority === 'rush'}
-											<span class="animate-pulse rounded bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 text-[9px] font-bold text-red-700 dark:text-red-400">RUSH</span>
+											<span
+												class="animate-pulse rounded bg-red-100 px-1.5 py-0.5 text-[9px] font-bold text-red-700 dark:bg-red-900/30 dark:text-red-400"
+												>RUSH</span
+											>
 										{/if}
 										{#if t.priority === 'vip'}
-											<span class="rounded bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:text-amber-400">VIP</span>
+											<span
+												class="rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+												>VIP</span
+											>
 										{/if}
 									</div>
 									<span class="font-mono text-[10px] tabular-nums {timerColor(t.createdAt)}">
@@ -233,7 +293,9 @@
 											<span class="flex-1">{item.name}</span>
 										</li>
 										{#if item.notes}
-											<li class="ml-5 text-[11px] italic text-[var(--ui-text-muted)]">"{item.notes}"</li>
+											<li class="ml-5 text-[11px] text-[var(--ui-text-muted)] italic">
+												"{item.notes}"
+											</li>
 										{/if}
 									{/each}
 								</ul>
@@ -251,7 +313,9 @@
 								{/if}
 							</div>
 						{:else}
-							<div class="py-6 text-center text-[12px] text-[var(--ui-text-dimmed)]">No tickets</div>
+							<div class="py-6 text-center text-[12px] text-[var(--ui-text-dimmed)]">
+								No tickets
+							</div>
 						{/each}
 					</div>
 				</div>

@@ -85,7 +85,10 @@ export function checkGrant(
 	if (grant.validUntil && Date.parse(grant.validUntil) <= at.getTime()) {
 		return { code: 'OBP-E05', message: `grant ${grant.grantId} expired` };
 	}
-	if (!grant.scope.documentTypes.includes('*') && !grant.scope.documentTypes.includes(documentType)) {
+	if (
+		!grant.scope.documentTypes.includes('*') &&
+		!grant.scope.documentTypes.includes(documentType)
+	) {
 		return {
 			code: 'OBP-E06',
 			message: `grant ${grant.grantId} not scoped for documentType ${documentType}`
@@ -162,7 +165,12 @@ export function verifyDelegation(
 		.grantsForPubkey(input.pubkey)
 		.filter((g) => g.orgId === input.issuer && g.grantId === input.signerKeyId);
 	if (candidates.length === 0) {
-		return { error: { code: 'OBP-E04', message: `signerKeyId ${input.signerKeyId} unknown for ${input.issuer}` } };
+		return {
+			error: {
+				code: 'OBP-E04',
+				message: `signerKeyId ${input.signerKeyId} unknown for ${input.issuer}`
+			}
+		};
 	}
 	for (const grant of candidates) {
 		const failure = checkGrant(grant, input.documentType, input.action, at);

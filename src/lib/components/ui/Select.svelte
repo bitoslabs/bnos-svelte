@@ -33,5 +33,8 @@
 			<option value={opt.value}>{opt.label}</option>
 		{/each}
 	</select>
-	<Icon name="lucide:chevron-down" class="pointer-events-none absolute right-2 size-4 text-[var(--ui-text-dimmed)]" />
+	<Icon
+		name="lucide:chevron-down"
+		class="pointer-events-none absolute right-2 size-4 text-[var(--ui-text-dimmed)]"
+	/>
 </div>

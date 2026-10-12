@@ -402,7 +402,9 @@
 			>
 				{t('common.export')}
 			</Button>
-			<Button color="primary" icon="lucide:plus" href="/orders/create">{t('common.new') + ' ' + t('common.order')}</Button>
+			<Button color="primary" icon="lucide:plus" href="/orders/create"
+				>{t('common.new') + ' ' + t('common.order')}</Button
+			>
 			<Button color="neutral" variant="subtle" size="sm" icon="lucide:scan-line" href="/pos"
 				>{t('nav.posShort')}</Button
 			>
@@ -431,7 +433,9 @@
 				<Icon name="lucide:clock" class="size-4" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('status.pending')}</div>
+				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+					{t('status.pending')}
+				</div>
 				<div class="font-display text-lg font-bold tabular-nums">{formatInt(pendingCount)}</div>
 			</div>
 		</div>
@@ -442,7 +446,9 @@
 				<Icon name="lucide:circle-check" class="size-4" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('status.completed')}</div>
+				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+					{t('status.completed')}
+				</div>
 				<div class="font-display text-lg font-bold tabular-nums">{formatInt(completedCount)}</div>
 			</div>
 		</div>
@@ -453,7 +459,9 @@
 				<Icon name="lucide:wallet" class="size-4" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('dashboard.revenue')}</div>
+				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+					{t('dashboard.revenue')}
+				</div>
 				<div class="font-display text-lg font-bold tabular-nums">
 					{formatMoney(totalRevenue, currency)}
 				</div>
@@ -639,9 +647,7 @@
 		<EmptyState
 			icon="lucide:receipt-text"
 			title={hasActiveFilters ? t('orders.noMatching') : t('orders.noOrders')}
-			description={hasActiveFilters
-				? t('common.tryDifferentSearch')
-				: t('orders.createOrSell')}
+			description={hasActiveFilters ? t('common.tryDifferentSearch') : t('orders.createOrSell')}
 		>
 			{#snippet actions()}
 				{#if !hasActiveFilters}
@@ -900,9 +906,15 @@
 															>
 																<tr>
 																	<th class="px-3 py-1.5 font-semibold">{t('common.item')}</th>
-																	<th class="px-3 py-1.5 text-right font-semibold">{t('common.qty')}</th>
-																	<th class="px-3 py-1.5 text-right font-semibold">{t('common.price')}</th>
-																	<th class="px-3 py-1.5 text-right font-semibold">{t('common.total')}</th>
+																	<th class="px-3 py-1.5 text-right font-semibold"
+																		>{t('common.qty')}</th
+																	>
+																	<th class="px-3 py-1.5 text-right font-semibold"
+																		>{t('common.price')}</th
+																	>
+																	<th class="px-3 py-1.5 text-right font-semibold"
+																		>{t('common.total')}</th
+																	>
 																</tr>
 															</thead>
 															<tbody class="divide-y divide-[var(--ui-border-muted)]">

@@ -22,14 +22,21 @@
 	} = $props();
 
 	const width = $derived(
-		size === 'xs' ? 'max-w-xs' :
-		size === 'sm' ? 'max-w-sm' :
-		size === 'md' ? 'max-w-md' :
-		size === 'lg' ? 'max-w-2xl' :
-		size === 'xl' ? 'max-w-4xl' :
-		size === '2xl' ? 'max-w-6xl' :
-		size === 'auto' ? 'max-w-[calc(100vw-2rem)]' :
-		'max-w-md'
+		size === 'xs'
+			? 'max-w-xs'
+			: size === 'sm'
+				? 'max-w-sm'
+				: size === 'md'
+					? 'max-w-md'
+					: size === 'lg'
+						? 'max-w-2xl'
+						: size === 'xl'
+							? 'max-w-4xl'
+							: size === '2xl'
+								? 'max-w-6xl'
+								: size === 'auto'
+									? 'max-w-[calc(100vw-2rem)]'
+									: 'max-w-md'
 	);
 	const onKey = (e: KeyboardEvent) => {
 		if (open && dismissible && e.key === 'Escape') open = false;
@@ -58,7 +65,9 @@
 			aria-modal="true"
 		>
 			{#if title}
-				<header class="flex items-center justify-between gap-3 border-b border-[var(--ui-border-muted)] px-5 py-3.5">
+				<header
+					class="flex items-center justify-between gap-3 border-b border-[var(--ui-border-muted)] px-5 py-3.5"
+				>
 					<h2 class="font-display text-[15px] font-semibold tracking-tight">{title}</h2>
 					<button
 						type="button"
@@ -75,7 +84,9 @@
 				{#if children}{@render children()}{/if}
 			</div>
 			{#if footer}
-				<footer class="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--ui-border-muted)] px-5 py-3.5">
+				<footer
+					class="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--ui-border-muted)] px-5 py-3.5"
+				>
 					{@render footer()}
 				</footer>
 			{/if}

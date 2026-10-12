@@ -321,8 +321,8 @@ class ReactiveCollections {
 				// that need to know when initial data has arrived).
 				if (gloInstance) gloInstance.bump();
 			})
-				.catch((e) => {
-					this._hydrating.delete(type);
+			.catch((e) => {
+				this._hydrating.delete(type);
 				this._hydrated.add(type);
 				if (gloInstance) gloInstance.bump();
 			});
@@ -414,7 +414,7 @@ class ReactiveCollections {
 				}
 			}
 			if (migrated > 0) {
-				}
+			}
 		} catch (e) {
 			/* best effort */
 		}
@@ -614,7 +614,7 @@ class GloStore {
 			// part of the next event's GLO content.
 			const publishObject = withoutEphemeralEvent(object as AnyGloObject);
 			const template = createAppGloEventTemplate(publishObject, {
-					client: 'bnos',
+				client: 'bnos',
 				summary: `${type} ${publishObject.id}`
 			});
 
@@ -744,7 +744,12 @@ class GloStore {
 			for (const ev of events) {
 				try {
 					const parsed = await parseAppGloEvent(ev as NostrEvent);
-					incoming.push({ ...parsed, __eventCreatedAt: ev.created_at, __eventId: ev.id, __event: ev as NostrEvent });
+					incoming.push({
+						...parsed,
+						__eventCreatedAt: ev.created_at,
+						__eventId: ev.id,
+						__event: ev as NostrEvent
+					});
 				} catch {
 					/* skip non-GLO / malformed / undecryptable */
 				}

@@ -219,7 +219,9 @@
 		<!-- Summary header -->
 		<div class="flex items-center justify-between rounded-xl bg-[var(--ui-bg-muted)] px-3.5 py-2.5">
 			<div>
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('common.order')}</div>
+				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+					{t('common.order')}
+				</div>
 				<div class="font-mono text-[13px] font-bold">
 					{order.data.orderNumber ?? order.id.slice(0, 8)}
 				</div>
@@ -348,7 +350,9 @@
 				</select>
 			</label>
 			<label class="block">
-				<span class="mb-1 block text-[11px] font-semibold text-[var(--ui-text-muted)]">{t('common.reason')}</span>
+				<span class="mb-1 block text-[11px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.reason')}</span
+				>
 				<select
 					bind:value={reason}
 					class="h-9.5 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-2.5 text-[13px]"
@@ -386,7 +390,9 @@
 					−{formatMoney(refundTotal, currency)}
 				</div>
 			</div>
-			<Button color="neutral" variant="ghost" onclick={() => (open = false)}>{t('common.cancel')}</Button>
+			<Button color="neutral" variant="ghost" onclick={() => (open = false)}
+				>{t('common.cancel')}</Button
+			>
 			<Button
 				color="error"
 				variant="solid"

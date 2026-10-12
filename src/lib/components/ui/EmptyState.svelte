@@ -15,7 +15,9 @@
 	} = $props();
 </script>
 
-<div class="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[var(--ui-border-accented)] bg-[var(--ui-bg-muted)] px-6 py-14 text-center">
+<div
+	class="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[var(--ui-border-accented)] bg-[var(--ui-bg-muted)] px-6 py-14 text-center"
+>
 	<div
 		class="grid size-12 place-items-center rounded-2xl bg-[var(--ui-bg-elevated)] text-[var(--ui-text-dimmed)]"
 	>

@@ -90,12 +90,8 @@
 		page = Math.min(Math.max(1, n), totalPages);
 	}
 
-	const reachableCount = $derived(
-		Object.values(results).filter((r) => r.status === 'ok').length
-	);
-	const testedFreeCount = $derived(
-		RELAY_DIRECTORY.filter((r) => r.tier !== 'paid').length
-	);
+	const reachableCount = $derived(Object.values(results).filter((r) => r.status === 'ok').length);
+	const testedFreeCount = $derived(RELAY_DIRECTORY.filter((r) => r.tier !== 'paid').length);
 
 	interface LatencyMeta {
 		label: string;
@@ -110,8 +106,7 @@
 			return { label: t('relayDirectory.testing'), color: 'info', spin: true };
 		if (s.status === 'ok') {
 			const ms = s.ms ?? 0;
-			const color =
-				ms < 120 ? 'success' : ms < 300 ? 'info' : ms < 600 ? 'warning' : 'error';
+			const color = ms < 120 ? 'success' : ms < 300 ? 'info' : ms < 600 ? 'warning' : 'error';
 			return { label: `${ms} ms`, color, spin: false };
 		}
 		return { label: t('relayDirectory.failed'), color: 'error', spin: false };
@@ -203,8 +198,12 @@
 
 <section class={cn('surface-card overflow-hidden', cls)}>
 	<!-- Header -->
-	<div class="flex flex-wrap items-center gap-3 border-b border-[var(--ui-border-muted)] px-5 py-3.5">
-		<div class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400">
+	<div
+		class="flex flex-wrap items-center gap-3 border-b border-[var(--ui-border-muted)] px-5 py-3.5"
+	>
+		<div
+			class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400"
+		>
 			<Icon name="lucide:telescope" class="size-5" />
 		</div>
 		<div class="min-w-0 flex-1">
@@ -228,8 +227,12 @@
 	</div>
 
 	<!-- Toolbar -->
-	<div class="flex flex-wrap items-center gap-2 border-b border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-4 py-2.5">
-		<label class="relative inline-flex h-8 flex-1 min-w-[160px] items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--surface-bg)] px-2.5 transition-colors focus-within:border-[var(--ui-color-primary-500)]">
+	<div
+		class="flex flex-wrap items-center gap-2 border-b border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-4 py-2.5"
+	>
+		<label
+			class="relative inline-flex h-8 min-w-[160px] flex-1 items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--surface-bg)] px-2.5 transition-colors focus-within:border-[var(--ui-color-primary-500)]"
+		>
 			<Icon name="lucide:search" class="size-3.5 shrink-0 text-[var(--ui-text-dimmed)]" />
 			<input
 				bind:value={query}
@@ -250,7 +253,9 @@
 		</label>
 
 		<!-- Region segmented control -->
-		<div class="inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--surface-bg)] p-0.5">
+		<div
+			class="inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--surface-bg)] p-0.5"
+		>
 			{#each regionFilters as opt (opt.value)}
 				<button
 					type="button"
@@ -306,7 +311,9 @@
 				{@const isPrimary = relays.primaryRelay === r.url}
 				{@const meta = r.tier === 'paid' ? null : latencyMeta(r.url)}
 				{@const dot = dotClass(r.url)}
-				<li class="group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-[var(--ui-bg-muted)]">
+				<li
+					class="group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-[var(--ui-bg-muted)]"
+				>
 					<!-- Latency/status dot -->
 					<span class="mt-1.5 size-2.5 shrink-0 rounded-full {dot}" aria-hidden="true"></span>
 
@@ -315,17 +322,25 @@
 						<div class="flex flex-wrap items-center gap-1.5">
 							<span class="text-[13px] font-semibold text-[var(--ui-text)]">{r.name}</span>
 							{#if isPrimary}
-								<Badge color="primary"><Icon name="lucide:star" class="size-3" />{t('common.primary')}</Badge>
+								<Badge color="primary"
+									><Icon name="lucide:star" class="size-3" />{t('common.primary')}</Badge
+								>
 							{/if}
 							{#if added}
-								<Badge color="success"><Icon name="lucide:check" class="size-3" />{t('relayDirectory.added')}</Badge>
+								<Badge color="success"
+									><Icon name="lucide:check" class="size-3" />{t('relayDirectory.added')}</Badge
+								>
 							{/if}
 							{#if r.tier === 'paid'}
-								<Badge color="warning"><Icon name="lucide:crown" class="size-3" />{t('relayDirectory.premium')}</Badge>
+								<Badge color="warning"
+									><Icon name="lucide:crown" class="size-3" />{t('relayDirectory.premium')}</Badge
+								>
 							{/if}
 						</div>
 
-						<p class="mt-0.5 truncate font-mono text-[11px] text-[var(--ui-text-dimmed)]">{r.url}</p>
+						<p class="mt-0.5 truncate font-mono text-[11px] text-[var(--ui-text-dimmed)]">
+							{r.url}
+						</p>
 						<p class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">{r.description}</p>
 
 						<!-- Meta + latency -->

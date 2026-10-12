@@ -16,11 +16,16 @@
 			block: { true: 'w-full', false: '' }
 		},
 		compoundVariants: [
-			{ color: 'primary', variant: 'solid', class: 'bg-primary-500 text-white hover:bg-primary-400' },
+			{
+				color: 'primary',
+				variant: 'solid',
+				class: 'bg-primary-500 text-white hover:bg-primary-400'
+			},
 			{
 				color: 'primary',
 				variant: 'subtle',
-				class: 'bg-primary-500/10 text-primary-700 dark:text-primary-300 border-primary-500/30 hover:bg-primary-500/15'
+				class:
+					'bg-primary-500/10 text-primary-700 dark:text-primary-300 border-primary-500/30 hover:bg-primary-500/15'
 			},
 			{
 				color: 'primary',
@@ -35,28 +40,37 @@
 			{
 				color: 'neutral',
 				variant: 'solid',
-				class: 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] border border-[var(--ui-border)] hover:bg-[var(--interactive-hover-bg)]'
+				class:
+					'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] border border-[var(--ui-border)] hover:bg-[var(--interactive-hover-bg)]'
 			},
 			{
 				color: 'neutral',
 				variant: 'subtle',
-				class: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text)] border-[var(--ui-border)] hover:bg-[var(--interactive-hover-bg)]'
+				class:
+					'bg-[var(--ui-bg-muted)] text-[var(--ui-text)] border-[var(--ui-border)] hover:bg-[var(--interactive-hover-bg)]'
 			},
 			{
 				color: 'neutral',
 				variant: 'soft',
-				class: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--interactive-hover-bg)]'
+				class:
+					'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--interactive-hover-bg)]'
 			},
 			{
 				color: 'neutral',
 				variant: 'ghost',
-				class: 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'
+				class:
+					'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'
 			},
-			{ color: 'error', variant: 'solid', class: 'bg-[var(--tone-error-text)] text-white hover:opacity-90' },
+			{
+				color: 'error',
+				variant: 'solid',
+				class: 'bg-[var(--tone-error-text)] text-white hover:opacity-90'
+			},
 			{
 				color: 'error',
 				variant: 'subtle',
-				class: 'bg-[var(--tone-error-bg)] text-[var(--tone-error-text)] border-[var(--danger-border)] hover:opacity-90'
+				class:
+					'bg-[var(--tone-error-bg)] text-[var(--tone-error-text)] border-[var(--danger-border)] hover:opacity-90'
 			},
 			{
 				color: 'error',

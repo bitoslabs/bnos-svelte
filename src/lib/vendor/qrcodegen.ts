@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-namespace */
+ 
 /**
  * QR Code generator library (TypeScript) — vendored from Project Nayuki (MIT).
  * https://www.nayuki.io/page/qr-code-generator-library
@@ -35,7 +35,11 @@ export default qrcodegen;
 			boostEcl = true
 		): QrCode {
 			if (
-				!(QrCode.MIN_VERSION <= minVersion && minVersion <= maxVersion && maxVersion <= QrCode.MAX_VERSION) ||
+				!(
+					QrCode.MIN_VERSION <= minVersion &&
+					minVersion <= maxVersion &&
+					maxVersion <= QrCode.MAX_VERSION
+				) ||
 				mask < -1 ||
 				mask > 7
 			) {
@@ -54,7 +58,11 @@ export default qrcodegen;
 					throw new RangeError('Data too long');
 				}
 			}
-			for (const newEcl of [qrcodegen.QrCode.Ecc.MEDIUM, qrcodegen.QrCode.Ecc.QUARTILE, qrcodegen.QrCode.Ecc.HIGH]) {
+			for (const newEcl of [
+				qrcodegen.QrCode.Ecc.MEDIUM,
+				qrcodegen.QrCode.Ecc.QUARTILE,
+				qrcodegen.QrCode.Ecc.HIGH
+			]) {
 				if (boostEcl && dataUsedBits <= QrCode.getNumDataCodewords(version, newEcl) * 8) {
 					ecl = newEcl;
 				}
@@ -81,12 +89,7 @@ export default qrcodegen;
 			return new QrCode(version, ecl, dataCodewords, mask);
 		}
 
-		constructor(
-			version: number,
-			errorCorrectionLevel: any,
-			dataCodewords: number[],
-			msk: number
-		) {
+		constructor(version: number, errorCorrectionLevel: any, dataCodewords: number[], msk: number) {
 			this.version = version;
 			this.errorCorrectionLevel = errorCorrectionLevel;
 			this.modules = [];
@@ -148,13 +151,11 @@ export default qrcodegen;
 			const numAlign = alignPatPos.length;
 			for (let i = 0; i < numAlign; i++) {
 				for (let j = 0; j < numAlign; j++) {
-					if (
-						!(
-							(i === 0 && j === 0) ||
-							(i === 0 && j === numAlign - 1) ||
-							(i === numAlign - 1 && j === 0)
-						)
-					) {
+					if (!(
+						(i === 0 && j === 0) ||
+						(i === 0 && j === numAlign - 1) ||
+						(i === numAlign - 1 && j === 0)
+					)) {
 						this.drawAlignmentPattern(alignPatPos[i], alignPatPos[j]);
 					}
 				}
@@ -353,7 +354,8 @@ export default qrcodegen;
 						runX = 1;
 					}
 				}
-				result += this.finderPenaltyTerminateAndCount(runColor, runX, runHistory) * QrCode.PENALTY_N3;
+				result +=
+					this.finderPenaltyTerminateAndCount(runColor, runX, runHistory) * QrCode.PENALTY_N3;
 			}
 			for (let x = 0; x < this.size; x++) {
 				let runColor = false;
@@ -376,7 +378,8 @@ export default qrcodegen;
 						runY = 1;
 					}
 				}
-				result += this.finderPenaltyTerminateAndCount(runColor, runY, runHistory) * QrCode.PENALTY_N3;
+				result +=
+					this.finderPenaltyTerminateAndCount(runColor, runY, runHistory) * QrCode.PENALTY_N3;
 			}
 			for (let y = 0; y < this.size - 1; y++) {
 				for (let x = 0; x < this.size - 1; x++) {
@@ -406,9 +409,7 @@ export default qrcodegen;
 			} else {
 				const numAlign = Math.floor(this.version / 7) + 2;
 				const step =
-					this.version === 32
-						? 26
-						: Math.ceil((this.version * 4 + 4) / (numAlign * 2 - 2)) * 2;
+					this.version === 32 ? 26 : Math.ceil((this.version * 4 + 4) / (numAlign * 2 - 2)) * 2;
 				const result = [6];
 				for (let pos = this.size - 7; result.length < numAlign; pos -= step) {
 					result.splice(1, 0, pos);
@@ -534,30 +535,38 @@ export default qrcodegen;
 		static readonly PENALTY_N4 = 10;
 		static ECC_CODEWORDS_PER_BLOCK: number[][] = [
 			[
-				-1, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30
+				-1, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28,
+				30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30
 			],
 			[
-				-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28
+				-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28,
+				28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28
 			],
 			[
-				-1, 13, 22, 18, 26, 18, 24, 18, 22, 20, 24, 28, 26, 24, 20, 30, 24, 28, 28, 26, 30, 28, 30, 30, 30, 30, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30
+				-1, 13, 22, 18, 26, 18, 24, 18, 22, 20, 24, 28, 26, 24, 20, 30, 24, 28, 28, 26, 30, 28, 30,
+				30, 30, 30, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30
 			],
 			[
-				-1, 17, 28, 22, 16, 22, 28, 26, 26, 24, 28, 24, 28, 22, 24, 24, 30, 28, 28, 26, 28, 30, 24, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30
+				-1, 17, 28, 22, 16, 22, 28, 26, 26, 24, 28, 24, 28, 22, 24, 24, 30, 28, 28, 26, 28, 30, 24,
+				30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30
 			]
 		];
 		static NUM_ERROR_CORRECTION_BLOCKS: number[][] = [
 			[
-				-1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 6, 7, 8, 8, 9, 9, 10, 12, 12, 12, 13, 14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25
+				-1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 6, 7, 8, 8, 9, 9, 10, 12, 12, 12, 13,
+				14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25
 			],
 			[
-				-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49
+				-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21,
+				23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49
 			],
 			[
-				-1, 1, 1, 2, 2, 4, 4, 6, 6, 8, 8, 8, 10, 12, 16, 12, 17, 16, 18, 21, 20, 23, 23, 25, 27, 29, 34, 34, 35, 38, 40, 43, 45, 48, 51, 53, 56, 59, 62, 65, 68
+				-1, 1, 1, 2, 2, 4, 4, 6, 6, 8, 8, 8, 10, 12, 16, 12, 17, 16, 18, 21, 20, 23, 23, 25, 27, 29,
+				34, 34, 35, 38, 40, 43, 45, 48, 51, 53, 56, 59, 62, 65, 68
 			],
 			[
-				-1, 1, 1, 2, 4, 4, 4, 5, 6, 8, 8, 11, 11, 16, 16, 18, 16, 19, 21, 25, 25, 25, 34, 30, 32, 35, 37, 40, 42, 45, 48, 51, 54, 57, 60, 63, 66, 70, 74, 77, 81
+				-1, 1, 1, 2, 4, 4, 4, 5, 6, 8, 8, 11, 11, 16, 16, 18, 16, 19, 21, 25, 25, 25, 34, 30, 32,
+				35, 37, 40, 42, 45, 48, 51, 54, 57, 60, 63, 66, 70, 74, 77, 81
 			]
 		];
 	}
@@ -591,7 +600,7 @@ export default qrcodegen;
 				throw new RangeError('String contains non-numeric characters');
 			}
 			const bb: number[] = [];
-			for (let i = 0; i < digits.length; ) {
+			for (let i = 0; i < digits.length;) {
 				const n = Math.min(digits.length - i, 3);
 				appendBits(Number.parseInt(digits.substr(i, n), 10), n * 3 + 1, bb);
 				i += n;
@@ -708,21 +717,27 @@ export default qrcodegen;
 	let QrCode = qrcodegen.QrCode;
 	(function (QrCode: any) {
 		class Ecc {
-			constructor(public ordinal: number, public formatBits: number) {}
+			constructor(
+				public ordinal: number,
+				public formatBits: number
+			) {}
 			static LOW = new Ecc(0, 1);
 			static MEDIUM = new Ecc(1, 0);
 			static QUARTILE = new Ecc(2, 3);
 			static HIGH = new Ecc(3, 2);
 		}
 		QrCode.Ecc = Ecc;
-	})(QrCode = qrcodegen.QrCode || (qrcodegen.QrCode = {}));
+	})((QrCode = qrcodegen.QrCode || (qrcodegen.QrCode = {})));
 })(qrcodegen);
 
 (function (qrcodegen: any) {
 	let QrSegment = qrcodegen.QrSegment;
 	(function (QrSegment: any) {
 		class Mode {
-			constructor(public modeBits: number, public numBitsCharCount: number[]) {}
+			constructor(
+				public modeBits: number,
+				public numBitsCharCount: number[]
+			) {}
 			numCharCountBits(ver: number): number {
 				return this.numBitsCharCount[Math.floor((ver + 7) / 17)];
 			}
@@ -733,5 +748,5 @@ export default qrcodegen;
 			static ECI = new Mode(0x7, [0, 0, 0]);
 		}
 		QrSegment.Mode = Mode;
-	})(QrSegment = qrcodegen.QrSegment || (qrcodegen.QrSegment = {}));
+	})((QrSegment = qrcodegen.QrSegment || (qrcodegen.QrSegment = {})));
 })(qrcodegen);

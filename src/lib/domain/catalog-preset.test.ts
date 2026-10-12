@@ -7,7 +7,7 @@ import {
 	parseCatalogPreset,
 	planPresetApplication,
 	presetRecordId,
-	slug,
+	slug
 } from './catalog-preset';
 import { TYPE } from './kind';
 
@@ -27,9 +27,9 @@ const preset = {
 			selectionType: 'single',
 			modifiers: [
 				{ name: 'Whole', priceAdjustment: 0, isDefault: true },
-				{ name: 'Oat', priceAdjustment: 1000 },
-			],
-		},
+				{ name: 'Oat', priceAdjustment: 1000 }
+			]
+		}
 	],
 	products: [
 		{
@@ -39,9 +39,9 @@ const preset = {
 			unitKey: 'piece',
 			price: 5500,
 			tags: ['coffee'],
-			modifierGroupKeys: ['milk'],
-		},
-	],
+			modifierGroupKeys: ['milk']
+		}
+	]
 };
 
 const catalog = {
@@ -61,9 +61,9 @@ const catalog = {
 			priceSats: 21000,
 			targetApp: 'bnos',
 			counts: { categories: 1, units: 1, modifierGroups: 1, products: 1 },
-			preset,
-		},
-	],
+			preset
+		}
+	]
 };
 
 describe('parseCatalogPreset', () => {
@@ -83,7 +83,7 @@ describe('parseCatalogPreset', () => {
 	it('rejects undeclared refs and duplicate keys', () => {
 		const broken = {
 			...preset,
-			products: [{ ...preset.products[0], categoryKey: 'ghost', modifierGroupKeys: ['ghost'] }],
+			products: [{ ...preset.products[0], categoryKey: 'ghost', modifierGroupKeys: ['ghost'] }]
 		};
 		const result = parseCatalogPreset(broken);
 		expect(result.ok).toBe(false);
@@ -104,7 +104,7 @@ describe('parseBrowseCatalog', () => {
 			categories: 1,
 			units: 1,
 			modifierGroups: 1,
-			products: 1,
+			products: 1
 		});
 	});
 
@@ -118,10 +118,10 @@ describe('parseBrowseCatalog', () => {
 describe('preset record ids', () => {
 	it('are deterministic and namespaced', () => {
 		expect(presetRecordId('Sats Shop Starter', 'product', 'Latte')).toBe(
-			'preset:sats-shop-starter:product:latte',
+			'preset:sats-shop-starter:product:latte'
 		);
 		expect(presetRecordId('sats-shop-starter', 'product', 'latte')).toBe(
-			presetRecordId('Sats Shop Starter', 'product', 'Latte'),
+			presetRecordId('Sats Shop Starter', 'product', 'Latte')
 		);
 		expect(slug('  Hello, World!  ')).toBe('hello-world');
 	});
@@ -163,7 +163,7 @@ describe('planPresetApplication', () => {
 		const parsed = parseCatalogPreset(preset).data!;
 		expect(planPresetApplication(parsed).products[0].data.currency).toBe('SATS');
 		expect(planPresetApplication(parsed, { currency: 'THB' }).products[0].data.currency).toBe(
-			'THB',
+			'THB'
 		);
 	});
 });
@@ -182,7 +182,7 @@ describe('applyCatalogPreset', () => {
 			TYPE.category,
 			TYPE.unit,
 			TYPE.modifierGroup,
-			TYPE.product,
+			TYPE.product
 		]);
 
 		calls.length = 0;
@@ -191,7 +191,7 @@ describe('applyCatalogPreset', () => {
 			presetRecordId(preset.id, 'category', 'drinks'),
 			presetRecordId(preset.id, 'unit', 'piece'),
 			presetRecordId(preset.id, 'modifier-group', 'milk'),
-			presetRecordId(preset.id, 'product', 'latte'),
+			presetRecordId(preset.id, 'product', 'latte')
 		]);
 	});
 

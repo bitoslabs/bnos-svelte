@@ -220,7 +220,9 @@
 			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.expenses')}</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Outgoing costs · kind 30802</p>
 		</div>
-		<Button color="primary" icon="lucide:plus" onclick={openCreate}>{t('common.add') + ' ' + t('common.expense')}</Button>
+		<Button color="primary" icon="lucide:plus" onclick={openCreate}
+			>{t('common.add') + ' ' + t('common.expense')}</Button
+		>
 	</div>
 
 	<div class="grid grid-cols-3 gap-3">
@@ -494,7 +496,9 @@
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.date')}</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.date')}</span
+				>
 				<input
 					type="date"
 					bind:value={expDate}
@@ -531,7 +535,9 @@
 		</label>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (open = false)}>{t('common.cancel')}</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (open = false)}
+			>{t('common.cancel')}</Button
+		>
 		<Button color="primary" icon="lucide:check" onclick={save}>{t('common.save')}</Button>
 	{/snippet}
 </Dialog>
@@ -587,7 +593,9 @@
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.date')}</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.date')}</span
+				>
 				<input
 					type="date"
 					bind:value={editDate}
@@ -624,7 +632,9 @@
 		</label>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (editOpen = false)}>{t('common.cancel')}</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (editOpen = false)}
+			>{t('common.cancel')}</Button
+		>
 		<Button color="primary" icon="lucide:check" onclick={saveEdit}>Save changes</Button>
 	{/snippet}
 </Dialog>

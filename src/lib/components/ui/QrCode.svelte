@@ -79,14 +79,18 @@
 		aria-label="QR code"
 		style="shape-rendering: crispEdges; max-width: 100%; height: auto; display: block;"
 	>
-		{#if light !== 'transparent'}<rect x="0" y="0" width={total} height={total} fill={light} rx="2" />{/if}
+		{#if light !== 'transparent'}<rect
+				x="0"
+				y="0"
+				width={total}
+				height={total}
+				fill={light}
+				rx="2"
+			/>{/if}
 		{#if path}<path d={path} fill={dark} />{/if}
 	</svg>
 	{#if badge !== 'none' && modules > 0}
-		<div
-			class="absolute inset-0 grid place-items-center"
-			style="pointer-events: none;"
-		>
+		<div class="absolute inset-0 grid place-items-center" style="pointer-events: none;">
 			<span
 				class="grid place-items-center rounded-full shadow-md ring-4 ring-white"
 				style="width: {size * 0.2}px; height: {size * 0.2}px; background: {badgeColor ??

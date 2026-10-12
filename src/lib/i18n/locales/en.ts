@@ -539,7 +539,7 @@ export const en = {
 		rateLoading: 'Fetching…',
 		today2: 'Today',
 		openShiftPrompt: 'Open a shift',
-		openShiftDesc: 'Start a cash drawer session to track today\'s sales.',
+		openShiftDesc: "Start a cash drawer session to track today's sales.",
 		shiftRunning: 'Shift open',
 		shiftSales: 'Sales',
 		viewShifts: 'View shifts',
@@ -705,7 +705,7 @@ export const en = {
 	},
 	reports: {
 		sales: 'Sales',
-		byPayment: 'By payment method',
+		byPayment: 'By payment method'
 	},
 	promotions: {
 		noPromotions: 'No promotions',
@@ -1248,7 +1248,7 @@ export const en = {
 		company: 'Company',
 		catalog: 'Catalog',
 		branch: 'Branch',
-		identity: 'Identity',
+		identity: 'Identity'
 	},
 	profile: {
 		nostrIdentity: 'Nostr identity',
@@ -1306,7 +1306,7 @@ export const en = {
 		syncDoneDesc: 'Everything is up to date across your relays.'
 	},
 	blocked: {
-		title: 'Account Restricted',
+		title: 'Account Restricted'
 	},
 	resolve: {
 		title: 'Resolving'
@@ -1315,7 +1315,7 @@ export const en = {
 		companies: 'Companies'
 	},
 	languages: {
-		en: 'English',
+		en: 'English'
 	}
 } as const;
 

@@ -16,8 +16,7 @@ import {
 	type ObpError
 } from './types';
 
-const ISO_RE =
-	/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 const HEX64_RE = /^[0-9a-f]{64}$/;
 const HEX128_RE = /^[0-9a-f]{128}$/;
 
@@ -60,7 +59,11 @@ export function validateEnvelope(env: unknown, opts: { partial?: boolean } = {})
 	// Goods documents need lines; monetary-only documents (payment evidence,
 	// receipt) carry their amount in totalsMinor and reference the invoice.
 	const GOODS_TYPES = ['rfq', 'quote', 'purchase_order', 'invoice'];
-	if (e.action === 'issue' && GOODS_TYPES.includes(String(e.documentType)) && e.lines.length === 0) {
+	if (
+		e.action === 'issue' &&
+		GOODS_TYPES.includes(String(e.documentType)) &&
+		e.lines.length === 0
+	) {
 		return err('lines must be a non-empty array for issue actions');
 	}
 	let total = 0;

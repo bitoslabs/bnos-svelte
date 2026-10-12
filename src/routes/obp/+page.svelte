@@ -23,7 +23,10 @@
 
 	// ── Node data (polled while running — relay inbox is push, stores are pull)
 	let documents = $state<ObpDocumentProjection[]>([]);
-	let selected = $state<{ doc: ObpDocumentProjection; log: { at: string; action: string; decision: string; from: string }[] } | null>(null);
+	let selected = $state<{
+		doc: ObpDocumentProjection;
+		log: { at: string; action: string; decision: string; from: string }[];
+	} | null>(null);
 	let audit = $state<{ at: string; kind: string; detail: string }[]>([]);
 	let outboxPending = $state(0);
 	let busy = $derived(obpNode.status === 'starting');
@@ -114,9 +117,9 @@
 		glo.all<Supplier, typeof TYPE.supplier>(TYPE.supplier).filter((s) => !!s.data?.pubkey)
 	);
 	let drafts = $derived(
-		glo.all<PurchaseOrder, typeof TYPE.purchaseOrder>(TYPE.purchaseOrder).filter(
-			(p) => p.data.status === 'draft' && (p.data.lines?.length ?? 0) > 0
-		)
+		glo
+			.all<PurchaseOrder, typeof TYPE.purchaseOrder>(TYPE.purchaseOrder)
+			.filter((p) => p.data.status === 'draft' && (p.data.lines?.length ?? 0) > 0)
 	);
 	let chosenSupplier = $state('');
 	let chosenDraft = $state('');
@@ -183,7 +186,12 @@
 			<Button color="primary" icon="lucide:rocket" onclick={() => features.set('obp', true)}>
 				Enable pilot
 			</Button>
-			<Button color="neutral" variant="subtle" icon="lucide:settings" href={resolve('/settings/features')}>
+			<Button
+				color="neutral"
+				variant="subtle"
+				icon="lucide:settings"
+				href={resolve('/settings/features')}
+			>
 				Module settings
 			</Button>
 		</div>
@@ -210,11 +218,21 @@
 			</div>
 			<div class="flex items-center gap-2">
 				{#if obpNode.status === 'running'}
-					<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11.5px] font-semibold text-emerald-600 dark:text-emerald-400">
+					<span
+						class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11.5px] font-semibold text-emerald-600 dark:text-emerald-400"
+					>
 						<span class="size-1.5 rounded-full bg-emerald-500"></span>
 						Node running
 					</span>
-					<Button color="neutral" variant="subtle" icon="lucide:power" onclick={() => { obpNode.stop(); void refresh(); }}>
+					<Button
+						color="neutral"
+						variant="subtle"
+						icon="lucide:power"
+						onclick={() => {
+							obpNode.stop();
+							void refresh();
+						}}
+					>
 						Stop
 					</Button>
 				{:else}
@@ -231,7 +249,9 @@
 		</div>
 
 		{#if obpNode.status !== 'running'}
-			<div class="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg)] p-4 text-[13px] text-[var(--ui-text-muted)]">
+			<div
+				class="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg)] p-4 text-[13px] text-[var(--ui-text-muted)]"
+			>
 				{#if obpNode.blockers.length}
 					<ul class="list-inside list-disc space-y-1">
 						{#each obpNode.blockers as blocker (blocker)}
@@ -248,7 +268,9 @@
 		{/if}
 
 		{#if message}
-			<div class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg)] px-4 py-2.5 text-[12.5px]">
+			<div
+				class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg)] px-4 py-2.5 text-[12.5px]"
+			>
 				{message}
 			</div>
 		{/if}
@@ -267,10 +289,18 @@
 					<select class="obp-select" bind:value={chosenDraft}>
 						<option value="">Purchase-order draft…</option>
 						{#each drafts as d (d.id)}
-							<option value={d.id}>{d.data.number} · {d.data.lines.length} lines · {d.data.total} {d.data.currency}</option>
+							<option value={d.id}
+								>{d.data.number} · {d.data.lines.length} lines · {d.data.total}
+								{d.data.currency}</option
+							>
 						{/each}
 					</select>
-					<Button color="primary" icon="lucide:send" disabled={!chosenSupplier || !chosenDraft} onclick={sendRfq}>
+					<Button
+						color="primary"
+						icon="lucide:send"
+						disabled={!chosenSupplier || !chosenDraft}
+						onclick={sendRfq}
+					>
 						Send RFQ
 					</Button>
 				</div>
@@ -283,7 +313,9 @@
 		<!-- Documents -->
 		<div class="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg)]">
 			<table class="w-full text-left text-[13px]">
-				<thead class="border-b border-[var(--ui-border)] text-[11.5px] uppercase tracking-wide text-[var(--ui-text-muted)]">
+				<thead
+					class="border-b border-[var(--ui-border)] text-[11.5px] tracking-wide text-[var(--ui-text-muted)] uppercase"
+				>
 					<tr>
 						<th class="px-4 py-2.5 font-semibold">Document</th>
 						<th class="px-4 py-2.5 font-semibold">Counterparty</th>
@@ -294,7 +326,11 @@
 				</thead>
 				<tbody>
 					{#if documents.length === 0}
-						<tr><td colspan="5" class="px-4 py-6 text-center text-[var(--ui-text-muted)]">No OBP documents yet.</td></tr>
+						<tr
+							><td colspan="5" class="px-4 py-6 text-center text-[var(--ui-text-muted)]"
+								>No OBP documents yet.</td
+							></tr
+						>
 					{/if}
 					{#each documents as doc (doc.documentId)}
 						<tr
@@ -302,12 +338,16 @@
 							onclick={() => void selectDoc(doc)}
 							class:bg-[var(--ui-bg-active)]={selected?.doc.documentId === doc.documentId}
 						>
-							<td class="px-4 py-2.5 font-semibold">{TYPE_LABEL[doc.documentType] ?? doc.documentType}</td>
+							<td class="px-4 py-2.5 font-semibold"
+								>{TYPE_LABEL[doc.documentType] ?? doc.documentType}</td
+							>
 							<td class="px-4 py-2.5 text-[var(--ui-text-muted)]">
 								{doc.issuer === ourOrgId ? doc.recipient : doc.issuer}
 							</td>
 							<td class="px-4 py-2.5 text-right tabular-nums">{amount(doc)}</td>
-							<td class="px-4 py-2.5"><span class="obp-state" data-state={doc.state}>{doc.state}</span></td>
+							<td class="px-4 py-2.5"
+								><span class="obp-state" data-state={doc.state}>{doc.state}</span></td
+							>
 							<td class="px-4 py-2.5">
 								{#if doc.documentType === 'invoice'}
 									<span class="obp-state" data-state={doc.settlement}>{doc.settlement}</span>
@@ -331,19 +371,33 @@
 					</h2>
 					{#if canRespond(selected.doc)}
 						<div class="flex gap-2">
-							<Button color="primary" icon="lucide:check" onclick={() => respond(selected!.doc, 'accept')}>Accept</Button>
-							<Button color="neutral" variant="subtle" icon="lucide:x" onclick={() => respond(selected!.doc, 'reject')}>Reject</Button>
+							<Button
+								color="primary"
+								icon="lucide:check"
+								onclick={() => respond(selected!.doc, 'accept')}>Accept</Button
+							>
+							<Button
+								color="neutral"
+								variant="subtle"
+								icon="lucide:x"
+								onclick={() => respond(selected!.doc, 'reject')}>Reject</Button
+							>
 						</div>
 					{/if}
 				</div>
 				<ol class="space-y-1.5 text-[12.5px]">
 					{#each selected.log as entry (entry.at + entry.action)}
 						<li class="flex items-center gap-2">
-							<span class="tabular-nums text-[var(--ui-text-muted)]">{new Date(entry.at).toLocaleString()}</span>
+							<span class="text-[var(--ui-text-muted)] tabular-nums"
+								>{new Date(entry.at).toLocaleString()}</span
+							>
 							<span class="font-semibold">{entry.action}</span>
-							<span class="text-[var(--ui-text-muted)]">from {entry.from === 'us' ? 'us' : entry.from.slice(0, 18) + '…'}</span>
+							<span class="text-[var(--ui-text-muted)]"
+								>from {entry.from === 'us' ? 'us' : entry.from.slice(0, 18) + '…'}</span
+							>
 							<span
-								class="rounded-full px-1.5 py-0.5 text-[10.5px] font-semibold {entry.decision === 'accepted'
+								class="rounded-full px-1.5 py-0.5 text-[10.5px] font-semibold {entry.decision ===
+								'accepted'
 									? 'bg-emerald-500/10 text-emerald-600'
 									: 'bg-red-500/10 text-red-600'}"
 							>
@@ -361,7 +415,9 @@
 				<h2 class="mb-2 text-[13px] font-semibold">Audit trail</h2>
 				<ul class="space-y-1 text-[11.5px] text-[var(--ui-text-muted)]">
 					{#each audit as entry (entry.at + entry.detail)}
-						<li><span class="tabular-nums">{new Date(entry.at).toLocaleTimeString()}</span> · {entry.detail}</li>
+						<li>
+							<span class="tabular-nums">{new Date(entry.at).toLocaleTimeString()}</span> · {entry.detail}
+						</li>
 					{/each}
 				</ul>
 			</div>

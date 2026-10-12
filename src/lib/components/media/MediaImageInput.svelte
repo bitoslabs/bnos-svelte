@@ -148,9 +148,7 @@
 						class="h-full w-full {objectFit === 'contain' ? 'object-contain' : 'object-cover'}"
 					/>
 					{#if uploading}
-						<div
-							class="absolute inset-0 grid place-items-center bg-black/40 backdrop-blur-sm"
-						>
+						<div class="absolute inset-0 grid place-items-center bg-black/40 backdrop-blur-sm">
 							<Icon name="lucide:loader-circle" class="size-5 animate-spin text-white" />
 						</div>
 					{/if}
@@ -168,13 +166,7 @@
 			{#if label}
 				<span class="block text-[12px] font-semibold text-[var(--ui-text-muted)]">{label}</span>
 			{/if}
-			<Input
-				bind:value
-				icon="lucide:link"
-				{placeholder}
-				{disabled}
-				class="w-full"
-			/>
+			<Input bind:value icon="lucide:link" {placeholder} {disabled} class="w-full" />
 			<div class="flex flex-wrap items-center gap-2">
 				<Button
 					type="button"
@@ -194,7 +186,7 @@
 						variant="ghost"
 						size="sm"
 						icon="lucide:trash-2"
-						disabled={disabled}
+						{disabled}
 						onclick={() => (value = '')}
 					>
 						{t('common.remove')}
@@ -203,18 +195,13 @@
 				{#if hint}
 					<span class="text-[10px] text-[var(--ui-text-dimmed)]">{hint}</span>
 				{:else}
-					<span class="text-[10px] text-[var(--ui-text-dimmed)]">Drag & drop · max {sizeLabel}</span>
+					<span class="text-[10px] text-[var(--ui-text-dimmed)]">Drag & drop · max {sizeLabel}</span
+					>
 				{/if}
 			</div>
 		</div>
 	</div>
 
 	<!-- Hidden native file input -->
-	<input
-		bind:this={inputEl}
-		type="file"
-		{accept}
-		class="hidden"
-		onchange={onPick}
-	/>
+	<input bind:this={inputEl} type="file" {accept} class="hidden" onchange={onPick} />
 </div>

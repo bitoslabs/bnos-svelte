@@ -32,16 +32,16 @@ flowchart LR
 
 Pin the server to a supported MCP protocol revision and document negotiated compatibility. Use remote HTTP transport and the official SDK; verify SDK support for the chosen revision before implementation. Publish a tool schema with strict input and output validation, stable error codes, pagination and tool annotations. Treat annotations as hints for clients, not authorization checks.
 
-| Tool | Behavior | Required scope | First release |
-| --- | --- | --- | --- |
-| `catalog_list_products` / `catalog_get_product` | Paginated, branch-aware read; redact internal cost unless separately granted | `products:read` | Yes |
-| `catalog_create_draft` | Validate SKU, unit, price/currency, tax fields and duplicates; persist a draft | `products:write` | Yes, with merchant approval before publish |
-| `catalog_update_draft` | Version-checked patch of allowlisted fields | `products:write` | Yes, with merchant approval before publish |
-| `inventory_get_availability` | Read a branch/location projection with `asOf`, unit and sync status | `inventory:read` | Yes |
-| `inventory_propose_adjustment` | Propose quantity delta with reason, location, unit and source reference | `inventory:write` | Yes, approval required |
-| `inventory_commit_adjustment` | Apply an approved proposal once | `inventory:approve` | Later, after ledger/reconciliation work |
-| `purchase_order_draft` | Create an OBP-backed draft from an approved supplier | `purchase_orders:write` | Later |
-| `purchase_order_submit` | Human-approved signed OBP order | `purchase_orders:approve` | Later |
+| Tool                                            | Behavior                                                                       | Required scope            | First release                              |
+| ----------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------- | ------------------------------------------ |
+| `catalog_list_products` / `catalog_get_product` | Paginated, branch-aware read; redact internal cost unless separately granted   | `products:read`           | Yes                                        |
+| `catalog_create_draft`                          | Validate SKU, unit, price/currency, tax fields and duplicates; persist a draft | `products:write`          | Yes, with merchant approval before publish |
+| `catalog_update_draft`                          | Version-checked patch of allowlisted fields                                    | `products:write`          | Yes, with merchant approval before publish |
+| `inventory_get_availability`                    | Read a branch/location projection with `asOf`, unit and sync status            | `inventory:read`          | Yes                                        |
+| `inventory_propose_adjustment`                  | Propose quantity delta with reason, location, unit and source reference        | `inventory:write`         | Yes, approval required                     |
+| `inventory_commit_adjustment`                   | Apply an approved proposal once                                                | `inventory:approve`       | Later, after ledger/reconciliation work    |
+| `purchase_order_draft`                          | Create an OBP-backed draft from an approved supplier                           | `purchase_orders:write`   | Later                                      |
+| `purchase_order_submit`                         | Human-approved signed OBP order                                                | `purchase_orders:approve` | Later                                      |
 
 Every write request carries an idempotency key and expected record version. The response carries command ID, status (`proposed`, `awaiting_approval`, `applied`, `rejected`), record reference, and audit reference. Replays return the original result. Conflicts return the current version without silently overwriting a human edit. A local write can report `applied` while relay delivery remains `pending`; expose these as separate fields.
 
@@ -60,17 +60,17 @@ Current stock is a local projection from inventory and order records. The OBP pl
 
 ## Delivery tasks and exit gates
 
-| Priority | Task | Exit gate |
-| --- | --- | --- |
-| P0 | Map current catalog/inventory write paths and define a framework-free command API | UI and MCP call the same validation/mutation functions; no direct MCP access to `glo.upsert` |
-| P0 | Specify agent principal, OAuth scopes, org/branch grants, token storage, revocation and audit schema | Cross-org, wrong-branch, expired and revoked requests fail in integration tests |
-| P0 | Implement read-only remote MCP server with catalog and availability tools | Pagination, redaction, stale-data status and client compatibility verified |
-| P1 | Add draft catalog commands, idempotency and optimistic concurrency | Duplicate calls produce one draft; stale patches fail safely |
-| P1 | Build Agent access and approvals UI | Owner can connect, inspect, approve, reject and revoke; each decision is auditable |
-| P1 | Add stock adjustment proposals and reconciliation report | No proposal mutates stock before approval; report matches existing projections |
-| P2 | Define and migrate local stock movement ledger, then enable approved commits | Exactly-once application, corrections, offline conflict tests and rollback plan pass |
-| P2 | Add OBP purchasing tools after pilot write and approval gates | Two-node exchange, signer scope, policy and settlement evidence checks pass |
-| P3 | Add event-driven agent notifications and marketplace availability promises | Explicit opt-in, bounded exposure and expiry/retraction tested |
+| Priority | Task                                                                                                 | Exit gate                                                                                    |
+| -------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| P0       | Map current catalog/inventory write paths and define a framework-free command API                    | UI and MCP call the same validation/mutation functions; no direct MCP access to `glo.upsert` |
+| P0       | Specify agent principal, OAuth scopes, org/branch grants, token storage, revocation and audit schema | Cross-org, wrong-branch, expired and revoked requests fail in integration tests              |
+| P0       | Implement read-only remote MCP server with catalog and availability tools                            | Pagination, redaction, stale-data status and client compatibility verified                   |
+| P1       | Add draft catalog commands, idempotency and optimistic concurrency                                   | Duplicate calls produce one draft; stale patches fail safely                                 |
+| P1       | Build Agent access and approvals UI                                                                  | Owner can connect, inspect, approve, reject and revoke; each decision is auditable           |
+| P1       | Add stock adjustment proposals and reconciliation report                                             | No proposal mutates stock before approval; report matches existing projections               |
+| P2       | Define and migrate local stock movement ledger, then enable approved commits                         | Exactly-once application, corrections, offline conflict tests and rollback plan pass         |
+| P2       | Add OBP purchasing tools after pilot write and approval gates                                        | Two-node exchange, signer scope, policy and settlement evidence checks pass                  |
+| P3       | Add event-driven agent notifications and marketplace availability promises                           | Explicit opt-in, bounded exposure and expiry/retraction tested                               |
 
 ## Decisions to settle before implementation
 

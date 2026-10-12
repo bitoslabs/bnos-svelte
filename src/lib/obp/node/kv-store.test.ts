@@ -193,9 +193,9 @@ describe('KvObpStores durability', () => {
 			},
 			requestedAt: 't'
 		});
-		expect(
-			(await stores.getPendingApprovalForDocument(unsigned.documentId))?.pendingId
-		).toBe('pend-1');
+		expect((await stores.getPendingApprovalForDocument(unsigned.documentId))?.pendingId).toBe(
+			'pend-1'
+		);
 		await stores.resolvePendingApproval('pend-1', 'buyer:owner');
 		expect(await stores.getPendingApprovalForDocument(unsigned.documentId)).toBeUndefined();
 		expect((await stores.getPendingApproval('pend-1'))?.approvedByGrantId).toBe('buyer:owner');

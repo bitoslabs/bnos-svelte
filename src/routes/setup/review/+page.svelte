@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-import { t } from '$lib/i18n/i18n.svelte';
-import { resolve } from '$app/paths';
-import Icon from '$lib/components/ui/Icon.svelte';
-import Button from '$lib/components/ui/Button.svelte';
-import { session } from '$nostr/session.svelte';
-import { tenant } from '$nostr/tenant.svelte';
-import { relays } from '$nostr/relay.svelte';
-import { glo } from '$nostr/store.svelte';
-import { createSetupWorkspace } from '$nostr/setup-workspace';
-import { toast } from '$lib/stores/toast.svelte';
-import { truncateNpub, titleCase } from '$lib/utils/format';
-import { newOrganizationId, newLocationId } from '$lib/utils/record-id';
+	import { t } from '$lib/i18n/i18n.svelte';
+	import { resolve } from '$app/paths';
+	import Icon from '$lib/components/ui/Icon.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import { session } from '$nostr/session.svelte';
+	import { tenant } from '$nostr/tenant.svelte';
+	import { relays } from '$nostr/relay.svelte';
+	import { glo } from '$nostr/store.svelte';
+	import { createSetupWorkspace } from '$nostr/setup-workspace';
+	import { toast } from '$lib/stores/toast.svelte';
+	import { truncateNpub, titleCase } from '$lib/utils/format';
+	import { newOrganizationId, newLocationId } from '$lib/utils/record-id';
 
 	let creating = $state(false);
 	let publishStatus = $state('');
@@ -41,7 +41,11 @@ import { newOrganizationId, newLocationId } from '$lib/utils/record-id';
 			value: truncateNpub(session.npub ?? '', 14, 8),
 			icon: 'lucide:fingerprint'
 		},
-		{ label: t('common.company'), value: tenant.state.organizationName || '—', icon: 'lucide:building-2' },
+		{
+			label: t('common.company'),
+			value: tenant.state.organizationName || '—',
+			icon: 'lucide:building-2'
+		},
 		{ label: 'Company code', value: tenant.state.organizationCode || '—', icon: 'lucide:hash' },
 		{
 			label: 'Business model',
@@ -78,9 +82,7 @@ import { newOrganizationId, newLocationId } from '$lib/utils/record-id';
 		try {
 			publishStatus = 'Publishing to Nostr…';
 			const result = await createSetupWorkspace();
-			publishStatus = result.published
-				? 'Published ✓'
-				: 'Saved locally (will sync when online)';
+			publishStatus = result.published ? 'Published ✓' : 'Saved locally (will sync when online)';
 			await goto(resolve('/setup/done'));
 		} catch (e) {
 			toast.error('Could not create workspace', e instanceof Error ? e.message : undefined);

@@ -45,7 +45,10 @@
 	<div
 		class="relative inline-flex min-w-[180px] flex-1 items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] transition-colors focus-within:border-[var(--ui-color-primary-500)]"
 	>
-		<Icon name="lucide:search" class="pointer-events-none absolute left-3 size-4 text-[var(--ui-text-dimmed)]" />
+		<Icon
+			name="lucide:search"
+			class="pointer-events-none absolute left-3 size-4 text-[var(--ui-text-dimmed)]"
+		/>
 		<input
 			bind:value={search}
 			placeholder={searchPlaceholder}

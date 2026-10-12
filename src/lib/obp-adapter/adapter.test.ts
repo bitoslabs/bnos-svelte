@@ -132,9 +132,12 @@ describe('payment → settlement evidence', () => {
 		expect(input.settlement?.externalId).toBe('hash-2');
 		expect(input.references).toEqual([{ documentId: 'doc:inv1', documentType: 'invoice' }]);
 
-		const view = paymentViewFromInvoice({ ...invoice, settlement: 'pending' }, {
-			localRecordId: 'po-local-1'
-		});
+		const view = paymentViewFromInvoice(
+			{ ...invoice, settlement: 'pending' },
+			{
+				localRecordId: 'po-local-1'
+			}
+		);
 		expect(view).toMatchObject({
 			obpDocumentId: 'doc:inv1',
 			settlement: 'pending',
@@ -153,9 +156,9 @@ describe('link store', () => {
 			linkedAt: '2026-10-07T00:00:00Z'
 		});
 		expect((await links.byObpDocument('doc:rfq-9'))?.localRecordId).toBe('po-local-1');
-		expect(
-			(await links.byLocalRecord('purchase-order', 'po-local-1'))?.obpDocumentId
-		).toBe('doc:rfq-9');
+		expect((await links.byLocalRecord('purchase-order', 'po-local-1'))?.obpDocumentId).toBe(
+			'doc:rfq-9'
+		);
 		expect(await links.byLocalRecord('purchase-order', 'other')).toBeUndefined();
 	});
 });

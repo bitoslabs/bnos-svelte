@@ -45,7 +45,9 @@
 	const style = $derived(toneStyles[tone]);
 	const icon = $derived(state.options.icon ?? style.icon);
 	const isDismiss = $derived(state.options.dismissOnly === true);
-	const confirmText = $derived(state.options.confirmText ?? (isDismiss ? t('common.ok') : t('common.confirm')));
+	const confirmText = $derived(
+		state.options.confirmText ?? (isDismiss ? t('common.ok') : t('common.confirm'))
+	);
 	const cancelText = $derived(state.options.cancelText ?? t('common.cancel'));
 
 	function onKey(e: KeyboardEvent) {

@@ -58,7 +58,10 @@ export function crc16(data: string): string {
 }
 
 /** Strip all non-digit characters; pad phone numbers for PromptPay. */
-function promptpayTargetId(input: string): { kind: 'phone' | 'national' | 'ewallet'; value: string } {
+function promptpayTargetId(input: string): {
+	kind: 'phone' | 'national' | 'ewallet';
+	value: string;
+} {
 	const raw = input.replace(/\D/g, '');
 	// Mobile phone (e.g. 0812345678 → 0066812345678 → 13 digits)
 	if (raw.length >= 9 && raw.length <= 10 && raw.startsWith('0')) {
@@ -127,7 +130,13 @@ const NAPAS_AID = tlv('00', 'A000000727'); // NAPAS consumer AID
 const VIETQR_AID = tlv('00', 'A000000727'); // VietQR (NAPAS National QR)
 
 /** Build a VietQR (Tag 38) payload (NAPAS national QR), with optional amount. */
-export function buildVietQr({ bin, account, amount, currency = 'VND', message }: VietQrInput): string {
+export function buildVietQr({
+	bin,
+	account,
+	amount,
+	currency = 'VND',
+	message
+}: VietQrInput): string {
 	const acq = tlv('00', 'A000000727');
 	const acc = tlv('01', tlv('00', bin.padStart(6, '0')) + tlv('01', account));
 	const merchant = tlv('38', acq + acc);

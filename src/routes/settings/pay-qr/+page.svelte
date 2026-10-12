@@ -197,7 +197,9 @@
 						>{t('settings.bankBinCode')}</label
 					>
 					<Input bind:value={cfg.vietqrBin} placeholder="970436 (Vietcombank)" class="w-full" />
-					<p class="mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">{t('settings.bankBinCodeDesc')}</p>
+					<p class="mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">
+						{t('settings.bankBinCodeDesc')}
+					</p>
 				</div>
 				<div>
 					<label
@@ -215,7 +217,8 @@
 					<div class="min-w-0 flex-1">
 						<p class="text-[13px] font-semibold">Use a static bank QR image</p>
 						<p class="mt-0.5 text-[11px] leading-relaxed break-words text-[var(--ui-text-dimmed)]">
-							Upload the QR issued by your bank. It is shown as-is at checkout; the sale amount is not embedded in it.
+							Upload the QR issued by your bank. It is shown as-is at checkout; the sale amount is
+							not embedded in it.
 						</p>
 					</div>
 					<div class="shrink-0 pt-0.5 sm:pt-0">
@@ -241,7 +244,11 @@
 								class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
 								>{t('settings.accountName')}</label
 							>
-							<Input bind:value={cfg.bankAccountName} placeholder="Bitdigo Co., Ltd." class="w-full" />
+							<Input
+								bind:value={cfg.bankAccountName}
+								placeholder="Bitdigo Co., Ltd."
+								class="w-full"
+							/>
 						</div>
 						<div>
 							<label
@@ -312,9 +319,11 @@
 			<div class="flex-1">
 				<h3 class="text-[13px] font-bold">{t('settings.whatCustomersSee')}</h3>
 				<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
-					When the cashier selects <span class="font-semibold">QR</span> at checkout, this code is shown
-					in the POS dialog and — if enabled — on the customer-facing display.
-					{#if qrPreview?.imageUrl} The uploaded bank QR is static, so confirm the displayed amount before marking the sale paid.{/if}
+					When the cashier selects <span class="font-semibold">QR</span> at checkout, this code is
+					shown in the POS dialog and — if enabled — on the customer-facing display.
+					{#if qrPreview?.imageUrl}
+						The uploaded bank QR is static, so confirm the displayed amount before marking the sale
+						paid.{/if}
 				</p>
 				{#if qrPreview?.payload}
 					<details class="mt-3">

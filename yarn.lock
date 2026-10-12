@@ -806,10 +806,10 @@
     "@babel/helper-string-parser" "^7.29.7"
     "@babel/helper-validator-identifier" "^7.29.7"
 
-"@bitos/bnos-core@^0.2.1":
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/@bitos/bnos-core/-/bnos-core-0.2.1.tgz#20e97ee2db9069d6b9591b54b0049edabc12f03b"
-  integrity sha512-KxPCrfFdqgol4cDL+SdjI9MkTbyliPPuwZ5T5XgLCUW+4Y7ZK50+G7BVrOa+btu6QwPf/U22Uzs/KkZ4lg4Wlg==
+"@bitos/bnos-core@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@bitos/bnos-core/-/bnos-core-0.3.0.tgz#77777c9086a8f484a6a16e705cd3e5421e9a5e6b"
+  integrity sha512-bfzjoXEVLLrM9Y3DVrHIGv5MmxSeNXa7FzkGnvb7ML61q3psu64aXPk+lkpzrfryYAVvzEyBCleW8Q232pk2ng==
   dependencies:
     nostr-tools "^2.23.3"
 

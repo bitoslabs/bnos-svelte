@@ -42,7 +42,9 @@
 			{@render children?.()}
 			{#if active}
 				<Icon
-					name={direction === 'asc' ? 'lucide:arrow-up-narrow-wide' : 'lucide:arrow-down-narrow-wide'}
+					name={direction === 'asc'
+						? 'lucide:arrow-up-narrow-wide'
+						: 'lucide:arrow-down-narrow-wide'}
 					class="size-3 text-primary-500"
 				/>
 			{/if}

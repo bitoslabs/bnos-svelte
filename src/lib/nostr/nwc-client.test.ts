@@ -39,13 +39,17 @@ describe('NWC connection string parsing', () => {
 
 	it('rejects malformed URIs', () => {
 		expect(parseNwcConnectionString('not-a-uri')).toBeNull();
-		expect(parseNwcConnectionString('nostr+walletconnect://abc?relay=wss://x&secret=' + SECRET64)).toBeNull(); // bad pubkey
+		expect(
+			parseNwcConnectionString('nostr+walletconnect://abc?relay=wss://x&secret=' + SECRET64)
+		).toBeNull(); // bad pubkey
 		expect(
 			parseNwcConnectionString(`nostr+walletconnect://${PK64}?relay=wss://x&secret=short`)
 		).toBeNull(); // bad secret
 		expect(parseNwcConnectionString(`nostr+walletconnect://${PK64}?secret=${SECRET64}`)).toBeNull(); // no relay
 		expect(
-			parseNwcConnectionString(`nostr+walletconnect://${PK64}?relay=ftp%3A%2F%2Fx&secret=${SECRET64}`)
+			parseNwcConnectionString(
+				`nostr+walletconnect://${PK64}?relay=ftp%3A%2F%2Fx&secret=${SECRET64}`
+			)
 		).toBeNull(); // non-ws relay scheme
 	});
 });

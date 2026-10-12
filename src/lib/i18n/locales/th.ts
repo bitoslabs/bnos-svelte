@@ -648,7 +648,7 @@ export const th = {
 	},
 	reports: {
 		sales: 'ยอดขาย',
-		byPayment: 'ตามวิธีชำระเงิน',
+		byPayment: 'ตามวิธีชำระเงิน'
 	},
 	promotions: {
 		noPromotions: 'ไม่มีโปรโมชั่น',
@@ -1149,7 +1149,7 @@ export const th = {
 		company: 'บริษัท',
 		catalog: 'แคตตาล็อก',
 		branch: 'สาขา',
-		identity: 'ไอเดนติตี้',
+		identity: 'ไอเดนติตี้'
 	},
 	profile: {
 		nostrIdentity: 'ไอเดนติตี้ Nostr',
@@ -1207,7 +1207,7 @@ export const th = {
 		syncDoneDesc: 'ข้อมูลทั้งหมดเป็นปัจจุบันแล้วทั่วทั้งรีเลย์ของคุณ'
 	},
 	blocked: {
-		title: 'บัญชีถูกจำกัด',
+		title: 'บัญชีถูกจำกัด'
 	},
 	resolve: {
 		title: 'กำลังแก้ไข'
@@ -1216,7 +1216,7 @@ export const th = {
 		companies: 'บริษัท'
 	},
 	languages: {
-		en: 'English',
+		en: 'English'
 	}
 } as const;
 

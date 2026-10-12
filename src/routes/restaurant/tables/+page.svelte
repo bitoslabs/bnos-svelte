@@ -27,7 +27,11 @@
 	const TABLE_TYPE = 'restaurant.table';
 	const STORAGE_KEY = 'bnos-os:tables';
 
-	const STATUS_OPTIONS: { value: TableStatus; label: string; color: 'success' | 'error' | 'warning' | 'info' }[] = [
+	const STATUS_OPTIONS: {
+		value: TableStatus;
+		label: string;
+		color: 'success' | 'error' | 'warning' | 'info';
+	}[] = [
 		{ value: 'available', label: 'Available', color: 'success' },
 		{ value: 'occupied', label: 'Occupied', color: 'error' },
 		{ value: 'reserved', label: 'Reserved', color: 'warning' },
@@ -59,7 +63,9 @@
 		try {
 			const raw = localStorage.getItem(STORAGE_KEY);
 			if (raw) return JSON.parse(raw);
-		} catch { /* noop */ }
+		} catch {
+			/* noop */
+		}
 		return [];
 	}
 
@@ -103,8 +109,6 @@
 		})
 	);
 
-
-
 	const stats = $derived({
 		total: tables.length,
 		available: tables.filter((t) => t.status === 'available').length,
@@ -115,10 +119,30 @@
 
 	const filterTabs = $derived([
 		{ status: 'all' as const, label: 'All', count: stats.total, dotColor: '' },
-		{ status: 'available' as const, label: 'Available', count: stats.available, dotColor: 'bg-emerald-500' },
-		{ status: 'occupied' as const, label: 'Occupied', count: stats.occupied, dotColor: 'bg-red-500' },
-		{ status: 'reserved' as const, label: 'Reserved', count: stats.reserved, dotColor: 'bg-amber-500' },
-		{ status: 'cleaning' as const, label: 'Cleaning', count: stats.cleaning, dotColor: 'bg-blue-500' }
+		{
+			status: 'available' as const,
+			label: 'Available',
+			count: stats.available,
+			dotColor: 'bg-emerald-500'
+		},
+		{
+			status: 'occupied' as const,
+			label: 'Occupied',
+			count: stats.occupied,
+			dotColor: 'bg-red-500'
+		},
+		{
+			status: 'reserved' as const,
+			label: 'Reserved',
+			count: stats.reserved,
+			dotColor: 'bg-amber-500'
+		},
+		{
+			status: 'cleaning' as const,
+			label: 'Cleaning',
+			count: stats.cleaning,
+			dotColor: 'bg-blue-500'
+		}
 	]);
 
 	// ── Actions ──
@@ -149,7 +173,9 @@
 		}
 		if (editMode && editId) {
 			tables = tables.map((t) =>
-				t.id === editId ? { ...t, name: formName.trim(), seats: formSeats, area: formArea, status: formStatus } : t
+				t.id === editId
+					? { ...t, name: formName.trim(), seats: formSeats, area: formArea, status: formStatus }
+					: t
 			);
 			toast.success('Table updated');
 		} else {
@@ -184,28 +210,86 @@
 
 	function seedDemo() {
 		const demo: Table[] = [
-			{ id: crypto.randomUUID(), name: 'T1', seats: 2, status: 'available', area: 'Main', orderInfo: null },
-			{ id: crypto.randomUUID(), name: 'T2', seats: 4, status: 'occupied', area: 'Main', orderInfo: { number: '#1042', total: 28.5 } },
-			{ id: crypto.randomUUID(), name: 'T3', seats: 4, status: 'available', area: 'Main', orderInfo: null },
-			{ id: crypto.randomUUID(), name: 'T4', seats: 6, status: 'reserved', area: 'Main', orderInfo: null },
-			{ id: crypto.randomUUID(), name: 'T5', seats: 2, status: 'cleaning', area: 'Main', orderInfo: null },
-			{ id: crypto.randomUUID(), name: 'Patio A', seats: 8, status: 'available', area: 'Patio', orderInfo: null },
-			{ id: crypto.randomUUID(), name: 'Patio B', seats: 8, status: 'occupied', area: 'Patio', orderInfo: { number: '#1043', total: 52.0 } },
-			{ id: crypto.randomUUID(), name: 'VIP 1', seats: 10, status: 'reserved', area: 'VIP', orderInfo: null }
+			{
+				id: crypto.randomUUID(),
+				name: 'T1',
+				seats: 2,
+				status: 'available',
+				area: 'Main',
+				orderInfo: null
+			},
+			{
+				id: crypto.randomUUID(),
+				name: 'T2',
+				seats: 4,
+				status: 'occupied',
+				area: 'Main',
+				orderInfo: { number: '#1042', total: 28.5 }
+			},
+			{
+				id: crypto.randomUUID(),
+				name: 'T3',
+				seats: 4,
+				status: 'available',
+				area: 'Main',
+				orderInfo: null
+			},
+			{
+				id: crypto.randomUUID(),
+				name: 'T4',
+				seats: 6,
+				status: 'reserved',
+				area: 'Main',
+				orderInfo: null
+			},
+			{
+				id: crypto.randomUUID(),
+				name: 'T5',
+				seats: 2,
+				status: 'cleaning',
+				area: 'Main',
+				orderInfo: null
+			},
+			{
+				id: crypto.randomUUID(),
+				name: 'Patio A',
+				seats: 8,
+				status: 'available',
+				area: 'Patio',
+				orderInfo: null
+			},
+			{
+				id: crypto.randomUUID(),
+				name: 'Patio B',
+				seats: 8,
+				status: 'occupied',
+				area: 'Patio',
+				orderInfo: { number: '#1043', total: 52.0 }
+			},
+			{
+				id: crypto.randomUUID(),
+				name: 'VIP 1',
+				seats: 10,
+				status: 'reserved',
+				area: 'VIP',
+				orderInfo: null
+			}
 		];
 		tables = demo;
 		saveTables(demo);
 		toast.success('Demo tables added');
 	}
 
-	const areaList = $derived((() => {
-		const groups: Record<string, Table[]> = {};
-		for (const t of filteredTables) {
-			const a = t.area || 'Main';
-			(groups[a] ??= []).push(t);
-		}
-		return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-	})());
+	const areaList = $derived(
+		(() => {
+			const groups: Record<string, Table[]> = {};
+			for (const t of filteredTables) {
+				const a = t.area || 'Main';
+				(groups[a] ??= []).push(t);
+			}
+			return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+		})()
+	);
 </script>
 
 <svelte:head><title>{t('common.appName')} · {t('nav.tables')}</title></svelte:head>
@@ -220,21 +304,21 @@
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">Floor &amp; tables</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Table layout &amp; live status · kind 30610</p>
+			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+				Table layout &amp; live status · kind 30610
+			</p>
 		</div>
-		<Button color="primary" variant="solid" icon="lucide:plus" onclick={openAdd}>{t('common.add') + ' ' + t('common.table')}</Button>
+		<Button color="primary" variant="solid" icon="lucide:plus" onclick={openAdd}
+			>{t('common.add') + ' ' + t('common.table')}</Button
+		>
 	</div>
 
 	<!-- Stats bar -->
 	<div class="flex flex-wrap items-center gap-3">
-		{#each [
-			{ label: t('common.total'), value: stats.total, color: 'neutral' as const, dot: 'bg-[var(--ui-text-dimmed)]' },
-			{ label: 'Available', value: stats.available, color: 'success' as const, dot: 'bg-emerald-500' },
-			{ label: 'Occupied', value: stats.occupied, color: 'error' as const, dot: 'bg-red-500' },
-			{ label: 'Reserved', value: stats.reserved, color: 'warning' as const, dot: 'bg-amber-500' },
-			{ label: 'Cleaning', value: stats.cleaning, color: 'info' as const, dot: 'bg-blue-500' }
-		] as stat (stat.label)}
-			<div class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5">
+		{#each [{ label: t('common.total'), value: stats.total, color: 'neutral' as const, dot: 'bg-[var(--ui-text-dimmed)]' }, { label: 'Available', value: stats.available, color: 'success' as const, dot: 'bg-emerald-500' }, { label: 'Occupied', value: stats.occupied, color: 'error' as const, dot: 'bg-red-500' }, { label: 'Reserved', value: stats.reserved, color: 'warning' as const, dot: 'bg-amber-500' }, { label: 'Cleaning', value: stats.cleaning, color: 'info' as const, dot: 'bg-blue-500' }] as stat (stat.label)}
+			<div
+				class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5"
+			>
 				<span class="size-2 rounded-full {stat.dot}"></span>
 				<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">{stat.label}</span>
 				<span class="text-[14px] font-bold tabular-nums">{formatInt(stat.value)}</span>
@@ -259,7 +343,10 @@
 						<span class="size-2 rounded-full {ft.dotColor}"></span>
 					{/if}
 					{ft.label}
-					<span class="ml-0.5 rounded-md bg-[var(--ui-bg-accented)] px-1.5 py-0.5 text-[10px] font-bold tabular-nums">{ft.count}</span>
+					<span
+						class="ml-0.5 rounded-md bg-[var(--ui-bg-accented)] px-1.5 py-0.5 text-[10px] font-bold tabular-nums"
+						>{ft.count}</span
+					>
 				</button>
 			{/each}
 		</div>
@@ -270,7 +357,10 @@
 				<Select
 					size="sm"
 					value={filterArea}
-					options={[{ value: 'all', label: 'All areas' }, ...areas.map((a) => ({ value: a, label: a }))]}
+					options={[
+						{ value: 'all', label: 'All areas' },
+						...areas.map((a) => ({ value: a, label: a }))
+					]}
 					onchange={(e: Event) => (filterArea = (e.currentTarget as HTMLSelectElement).value)}
 				/>
 			</div>
@@ -279,7 +369,11 @@
 
 	<!-- Table grid -->
 	{#if tables.length === 0}
-		<EmptyState icon="lucide:armchair" title={t('restaurant.noTables')} description="Add tables to manage your floor plan and track live status.">
+		<EmptyState
+			icon="lucide:armchair"
+			title={t('restaurant.noTables')}
+			description="Add tables to manage your floor plan and track live status."
+		>
 			{#snippet actions()}
 				<Button color="primary" variant="soft" size="sm" onclick={seedDemo}>Add demo tables</Button>
 			{/snippet}
@@ -290,30 +384,44 @@
 				<div class="space-y-3">
 					<!-- Area label -->
 					<div class="flex items-center gap-2 px-1">
-						<span class="text-[11px] font-extrabold uppercase tracking-widest text-[var(--ui-text-dimmed)]">{areaName}</span>
-						<span class="rounded bg-[var(--ui-bg-accented)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--ui-text-muted)]">{areaTables.length}</span>
+						<span
+							class="text-[11px] font-extrabold tracking-widest text-[var(--ui-text-dimmed)] uppercase"
+							>{areaName}</span
+						>
+						<span
+							class="rounded bg-[var(--ui-bg-accented)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--ui-text-muted)]"
+							>{areaTables.length}</span
+						>
 					</div>
 
 					<!-- Cards -->
 					<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 						{#each areaTables as tbl (tbl.id)}
 							<div
-								class="relative flex flex-col rounded-2xl border p-4 min-h-[160px] transition-all duration-200 cursor-pointer select-none
-								{openPopoverId === tbl.id ? 'z-30 ring-2 ring-primary-500 border-transparent scale-[1.02] shadow-lg' : 'hover:-translate-y-0.5 hover:shadow-md'}
+								class="relative flex min-h-[160px] cursor-pointer flex-col rounded-2xl border p-4 transition-all duration-200 select-none
+								{openPopoverId === tbl.id
+									? 'z-30 scale-[1.02] border-transparent shadow-lg ring-2 ring-primary-500'
+									: 'hover:-translate-y-0.5 hover:shadow-md'}
 								{statusBg(tbl.status)}"
 								role="button"
 								tabindex="0"
 								onclick={() => (openPopoverId = openPopoverId === tbl.id ? null : tbl.id)}
-								onkeydown={(e) => e.key === 'Enter' && (openPopoverId = openPopoverId === tbl.id ? null : tbl.id)}
+								onkeydown={(e) =>
+									e.key === 'Enter' && (openPopoverId = openPopoverId === tbl.id ? null : tbl.id)}
 							>
 								<!-- Card top -->
 								<div class="mb-2 flex items-center justify-between">
-									<span class="font-display text-[15px] font-bold truncate">{tbl.name}</span>
-									<span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider
-										{tbl.status === 'available' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-										: tbl.status === 'occupied' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-										: tbl.status === 'reserved' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
-										: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'}">
+									<span class="truncate font-display text-[15px] font-bold">{tbl.name}</span>
+									<span
+										class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase
+										{tbl.status === 'available'
+											? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+											: tbl.status === 'occupied'
+												? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+												: tbl.status === 'reserved'
+													? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+													: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'}"
+									>
 										<span class="size-1.5 rounded-full {statusDot(tbl.status)}"></span>
 										{tbl.status}
 									</span>
@@ -323,13 +431,19 @@
 								<div class="flex flex-1 flex-col items-center justify-center py-2">
 									<div class="flex items-center gap-1.5 text-[var(--ui-text-muted)]">
 										<Icon name="lucide:users" class="size-4" />
-										<span class="text-[20px] font-bold tabular-nums text-[var(--ui-text)]">{tbl.seats}</span>
+										<span class="text-[20px] font-bold text-[var(--ui-text)] tabular-nums"
+											>{tbl.seats}</span
+										>
 										<span class="text-[11px] font-medium">seats</span>
 									</div>
 									{#if tbl.status === 'occupied' && tbl.orderInfo}
-										<div class="mt-2 rounded-md bg-[var(--ui-bg-elevated)]/80 px-2.5 py-1 text-center">
+										<div
+											class="mt-2 rounded-md bg-[var(--ui-bg-elevated)]/80 px-2.5 py-1 text-center"
+										>
 											<div class="font-mono text-[11px] font-bold">{tbl.orderInfo.number}</div>
-											<div class="text-[11px] text-[var(--ui-text-muted)]">{formatMoney(tbl.orderInfo.total, currency)}</div>
+											<div class="text-[11px] text-[var(--ui-text-muted)]">
+												{formatMoney(tbl.orderInfo.total, currency)}
+											</div>
 										</div>
 									{:else if tbl.status === 'reserved'}
 										<div class="mt-2 text-center text-[11px] text-[var(--ui-text-muted)]">
@@ -351,13 +465,18 @@
 										role="menu"
 									>
 										<div class="mb-1.5 flex items-center justify-between px-1">
-											<span class="text-[11px] font-bold text-[var(--ui-text-muted)]">Set status</span>
+											<span class="text-[11px] font-bold text-[var(--ui-text-muted)]"
+												>Set status</span
+											>
 											<div class="flex items-center gap-1">
 												<button
 													type="button"
 													class="grid size-6 place-items-center rounded text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 													title={t('common.edit')}
-													onclick={(e) => { e.stopPropagation(); openEdit(tbl); }}
+													onclick={(e) => {
+														e.stopPropagation();
+														openEdit(tbl);
+													}}
 												>
 													<Icon name="lucide:pencil" class="size-3.5" />
 												</button>
@@ -365,7 +484,10 @@
 													type="button"
 													class="grid size-6 place-items-center rounded text-[var(--tone-error-text)] hover:bg-[var(--tone-error-bg)]"
 													title={t('common.delete')}
-													onclick={(e) => { e.stopPropagation(); deleteTable(tbl.id); }}
+													onclick={(e) => {
+														e.stopPropagation();
+														deleteTable(tbl.id);
+													}}
 												>
 													<Icon name="lucide:trash-2" class="size-3.5" />
 												</button>
@@ -376,8 +498,13 @@
 												<button
 													type="button"
 													class="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)]
-														{tbl.status === opt.value ? 'bg-[var(--ui-bg-accented)] text-[var(--ui-text)]' : 'text-[var(--ui-text-muted)]'}"
-													onclick={(e) => { e.stopPropagation(); setStatus(tbl.id, opt.value); }}
+														{tbl.status === opt.value
+														? 'bg-[var(--ui-bg-accented)] text-[var(--ui-text)]'
+														: 'text-[var(--ui-text-muted)]'}"
+													onclick={(e) => {
+														e.stopPropagation();
+														setStatus(tbl.id, opt.value);
+													}}
 													role="menuitem"
 												>
 													<span class="size-2 rounded-full {statusDot(opt.value)}"></span>
@@ -400,12 +527,15 @@
 <Dialog bind:open={dialogOpen} title={editMode ? 'Edit table' : 'Add table'} size="md">
 	<div class="space-y-3">
 		<div>
-			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</label>
+			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.name')}</label
+			>
 			<Input bind:value={formName} placeholder="e.g. T1, Patio A" />
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<div>
-				<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Seats</label>
+				<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Seats</label
+				>
 				<Input type="number" min="1" max="50" bind:value={formSeats} />
 			</div>
 			<div>
@@ -414,11 +544,14 @@
 			</div>
 		</div>
 		<div>
-			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.status')}</label>
+			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.status')}</label
+			>
 			<Select
 				value={formStatus}
 				options={STATUS_OPTIONS.map((s) => ({ value: s.value, label: s.label }))}
-				onchange={(e: Event) => (formStatus = (e.currentTarget as HTMLSelectElement).value as TableStatus)}
+				onchange={(e: Event) =>
+					(formStatus = (e.currentTarget as HTMLSelectElement).value as TableStatus)}
 			/>
 		</div>
 	</div>

@@ -22,7 +22,7 @@
 
 {#if isOffline}
 	<div
-		class="pointer-events-none fixed left-1/2 top-2 z-[60] -translate-x-1/2 rounded-full bg-amber-500/90 px-3 py-1 text-xs font-medium text-white shadow-md backdrop-blur"
+		class="pointer-events-none fixed top-2 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-amber-500/90 px-3 py-1 text-xs font-medium text-white shadow-md backdrop-blur"
 	>
 		⚠ {t('offline.banner')}
 	</div>

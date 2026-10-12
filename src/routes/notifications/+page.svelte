@@ -43,7 +43,9 @@
 <div class="space-y-4">
 	<PageHeader
 		title={t('notifications.title')}
-		description="{items.length} {t('topbar.onThisDevice')}{unread ? ` · ${unread} ${t('topbar.unreadTab').toLowerCase()}` : ''}"
+		description="{items.length} {t('topbar.onThisDevice')}{unread
+			? ` · ${unread} ${t('topbar.unreadTab').toLowerCase()}`
+			: ''}"
 	>
 		{#snippet actions()}
 			<Button
@@ -56,13 +58,7 @@
 			>
 				{t('topbar.markAllRead')}
 			</Button>
-			<Button
-				color="neutral"
-				variant="ghost"
-				size="sm"
-				icon="lucide:bell-plus"
-				onclick={seed}
-			>
+			<Button color="neutral" variant="ghost" size="sm" icon="lucide:bell-plus" onclick={seed}>
 				Seed
 			</Button>
 			<Button
@@ -87,7 +83,9 @@
 	{:else}
 		<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
 			{#each items as n (n.id)}
-				<div class="group flex items-start gap-3 px-4 py-3.5 {n.read ? '' : 'bg-primary-500/[0.05]'}">
+				<div
+					class="group flex items-start gap-3 px-4 py-3.5 {n.read ? '' : 'bg-primary-500/[0.05]'}"
+				>
 					<div class="grid size-9 shrink-0 place-items-center rounded-lg {tone[n.tone]}">
 						<Icon name={n.icon} class="size-4 {toneText[n.tone]}" />
 					</div>

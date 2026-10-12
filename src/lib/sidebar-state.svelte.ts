@@ -17,7 +17,9 @@ export function toggleCollapsed() {
 	state.collapsed = !state.collapsed;
 	try {
 		localStorage.setItem('bnos-os:sidebar-collapsed', String(state.collapsed));
-	} catch { /* ignore */ }
+	} catch {
+		/* ignore */
+	}
 }
 
 export function isCollapsed(): boolean {

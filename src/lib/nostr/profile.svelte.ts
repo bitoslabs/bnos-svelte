@@ -180,7 +180,7 @@ class ProfileStore {
 			}
 			return ok;
 		} catch (e) {
-				return false;
+			return false;
 		} finally {
 			this.publishing = false;
 		}

@@ -26,7 +26,9 @@ import { ObpApprovalRequiredError, type SendResult } from './node/business-node'
 import { generateSigningKey, signEnvelope } from './index';
 import type { ObpEnvelope, ObpUnsignedEnvelope } from './types';
 
-const BEANS = [{ description: 'Arabica beans 1kg', quantity: 10, unit: 'kg', unitPriceMinor: 85_000 }];
+const BEANS = [
+	{ description: 'Arabica beans 1kg', quantity: 10, unit: 'kg', unitPriceMinor: 85_000 }
+];
 const TOTAL = 850_000;
 
 let pilot: TwoNodePilot;
@@ -143,7 +145,11 @@ async function runFullFlow() {
 		totalsMinor: TOTAL,
 		references: [
 			{ documentId: invoice.documentId, documentType: 'invoice', hash: invoice.payloadHash },
-			{ documentId: payment.documentId, documentType: 'payment_evidence', hash: payment.payloadHash }
+			{
+				documentId: payment.documentId,
+				documentType: 'payment_evidence',
+				hash: payment.payloadHash
+			}
 		]
 	});
 	await settleDelivery();
@@ -191,7 +197,11 @@ describe('two-node vertical slice', () => {
 		}
 
 		// Append-only logs on both sides.
-		expect((await pilot.buyer.node.getDocumentLog(ids.rfq.documentId)).map(m => `${m.envelope.action}:${m.decision}`)).toEqual(['issue:accepted', 'accept:accepted']);
+		expect(
+			(await pilot.buyer.node.getDocumentLog(ids.rfq.documentId)).map(
+				(m) => `${m.envelope.action}:${m.decision}`
+			)
+		).toEqual(['issue:accepted', 'accept:accepted']);
 		expect(await pilot.seller.node.getDocumentLog(ids.invoice.documentId)).toHaveLength(2);
 
 		// No outbox entries are left undelivered.
@@ -385,9 +395,7 @@ describe('rejection fixtures', () => {
 				recipient: 'org:buyer',
 				currency: 'LAK',
 				lines: BEANS,
-				references: [
-					{ documentId: rfq.documentId, documentType: 'rfq', hash: 'f'.repeat(64) }
-				]
+				references: [{ documentId: rfq.documentId, documentType: 'rfq', hash: 'f'.repeat(64) }]
 			})
 		).rejects.toMatchObject({ error: { code: 'OBP-E10' } });
 	});

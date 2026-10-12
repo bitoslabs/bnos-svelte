@@ -61,7 +61,8 @@ export function savePayConfig(cfg: PayConfig) {
 
 export function hasQrConfigured(cfg: PayConfig): boolean {
 	if (cfg.qrScheme === 'promptpay') return cfg.promptpayId.trim().length > 0;
-	if (cfg.qrScheme === 'vietqr') return cfg.vietqrAccount.trim().length > 0 && cfg.vietqrBin.trim().length > 0;
+	if (cfg.qrScheme === 'vietqr')
+		return cfg.vietqrAccount.trim().length > 0 && cfg.vietqrBin.trim().length > 0;
 	if (cfg.useStaticBankQr) return cfg.staticBankQrImageUrl.trim().length > 0;
 	return cfg.bankAccountNumber.trim().length > 0;
 }

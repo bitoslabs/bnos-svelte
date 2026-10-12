@@ -17,7 +17,8 @@ export default defineConfig({
 			manifest: {
 				name: 'BNOS OS',
 				short_name: 'BNOS Lite',
-				description: 'Bitcoin Nostr Operating System - Open-source point of sale & commerce on Nostr.',
+				description:
+					'Bitcoin Nostr Operating System - Open-source point of sale & commerce on Nostr.',
 				theme_color: '#f97316',
 				background_color: '#0f0f0f',
 				display: 'standalone',
@@ -49,7 +50,8 @@ export default defineConfig({
 				navigateFallbackDenylist: [/^\/api\//],
 				runtimeCaching: [
 					{
-						urlPattern: ({ url }: { url: URL }) => url.protocol === 'wss:' || url.protocol === 'ws:',
+						urlPattern: ({ url }: { url: URL }) =>
+							url.protocol === 'wss:' || url.protocol === 'ws:',
 						handler: 'NetworkOnly',
 						options: {
 							cacheName: 'nostr-relays'

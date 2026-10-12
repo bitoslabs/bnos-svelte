@@ -2,13 +2,14 @@
 
 **Date:** 2026-08-03  
 **Project:** bnos-svelte  
-**Reference:** bdgo-os-nuxt  
+**Reference:** bdgo-os-nuxt
 
 ---
 
 ## 1. What Exists and Works
 
 ### 1.1 Authentication (`src/routes/login/+page.svelte`)
+
 - ✅ NIP-07 browser extension login
 - ✅ nsec private key login
 - ✅ Account generation with backup flow (generate → backup → confirm → login)
@@ -17,12 +18,14 @@
 - ✅ Theme toggle on login screen
 
 ### 1.2 Session Store (`src/lib/nostr/session.svelte.ts`)
+
 - ✅ `loginWithNsec()`, `loginWithExtension()`, `generateAccount()`, `logout()`
 - ✅ `isAuthenticated`, `pubkey`, `npub`, `shortNpub`, `loginMethod` getters
 - ✅ Hydration from localStorage on mount
 - ✅ NIP-07 signer exposure for event signing
 
 ### 1.3 Tenant Context (`src/lib/nostr/tenant.svelte.ts`)
+
 - ✅ Organization ID, name, code
 - ✅ Business model (`single`, `multi_branch`, `chain`, etc.)
 - ✅ Business type (`retail`, `restaurant`, `cafe`, etc.)
@@ -33,6 +36,7 @@
 - ✅ Workspace resolution from local + relay on login (`workspace.svelte.ts`)
 
 ### 1.4 Staff Page (`src/routes/staff/+page.svelte`)
+
 - ✅ List staff with grid and table views
 - ✅ Add/edit/delete staff (CRUD)
 - ✅ Fields in form: name, role, email, phone, PIN, npub, hourlyRate
@@ -45,11 +49,13 @@
 - ✅ Nostr sync via `dataSync.pageSync([TYPE.staff])` on mount
 
 ### 1.5 Staff Type (`src/lib/domain/types.ts`)
+
 - ✅ `Staff` interface with fields: `name`, `role`, `status`, `displayName`, `email`, `phone`, `avatar`, `pubkey`, `npub`, `companyId`, `companyName`, `companyCode`, `customPermissions`, `branchIds`, `employeeCode`, `department`, `hireDate`, `pinHash`, `pin`, `hourlyRate`
 - ✅ `UserRole` type: `owner`, `manager`, `cashier`, `waiter`, `chef`, `stock`
 - ✅ `StaffStatus` type: `active`, `inactive`, `suspended`, `on_leave`, `terminated`
 
 ### 1.6 Layout & Navigation
+
 - ✅ Auth guard in `+layout.svelte`: redirects unauthenticated users to `/login`
 - ✅ Redirects to `/setup` if tenant workspace not found
 - ✅ Sidebar navigation with Staff link under Administration
@@ -63,6 +69,7 @@
 ### 2.1 🔴 CRITICAL: No Permission System
 
 **bdgo-os-nuxt has:** A full RBAC system in `app/composables/usePermissions.ts`:
+
 - `ROLE_DEFAULTS` mapping for 11 roles (owner, admin, manager, cashier, waiter, warehouse, viewer, franchise_owner, customer, supplier, delivery)
 - `can(resource, action)` function checking role defaults + custom permission overrides
 - `canAccessBranch(branchId)` for branch-scoped access control
@@ -78,6 +85,7 @@
 ### 2.2 🔴 CRITICAL: No Active Role / Staff Resolution
 
 **bdgo-os-nuxt has:** `useTenantContext` with `activeRole`, `activeStaffId`, `activeBranchId`, `activeStaffInfo` — all persisted to localStorage. On login, the `resolve.vue` page + `useMemberships.ts` composable:
+
 1. Finds staff records matching the logged-in pubkey
 2. Auto-resolves company/branch/role if user has exactly one
 3. Redirects to `/workspace` selector if multiple
@@ -91,6 +99,7 @@
 ### 2.3 🔴 CRITICAL: No Login → Staff Matching Flow
 
 **bdgo-os-nuxt has:** A `/resolve` page that:
+
 1. Bootstraps data from relays for the current user's pubkey
 2. Waits for staff records to arrive
 3. Matches `auth.pubkey` against `staff.pubkey` to find memberships
@@ -103,27 +112,28 @@
 
 **bdgo-os-nuxt staff form includes these fields that bnos-svelte's form is missing:**
 
-| Field | bdgo-os-nuxt | bnos-svelte | Notes |
-|-------|:---:|:---:|-------|
-| name | ✅ | ✅ | |
-| displayName | ✅ | ❌ | Type has it, form doesn't |
-| role | ✅ | ✅ | bnos-svelte missing `admin`, `viewer`, `warehouse` roles |
-| email | ✅ | ✅ | |
-| phone | ✅ | ✅ | |
-| pubkey/npub | ✅ (required) | ✅ (optional) | bdgo-os requires pubkey; bnos-svelte makes it optional |
-| companyId | ✅ (required) | ❌ | Not in form at all |
-| employeeCode | ✅ | ❌ | Type has it, form doesn't |
-| department | ✅ | ❌ | Type has it, form doesn't |
-| status | ✅ (5 statuses) | ❌ (hardcoded `active`) | Cannot change status after create |
-| branchIds | ✅ (checkbox list) | ❌ | Type has it, form doesn't |
-| customPermissions | ✅ (full UI) | ❌ | Type has it, form doesn't |
-| pinHash | ✅ (hash + set/remove) | ❌ (plaintext PIN) | bnos-svelte stores raw PIN, no hashing |
-| hourlyRate | ❌ | ✅ | bnos-svelte extra (not in bdgo-os staff form) |
-| avatar | ✅ (type) | ❌ | Neither form has avatar upload |
+| Field             |      bdgo-os-nuxt      |       bnos-svelte       | Notes                                                    |
+| ----------------- | :--------------------: | :---------------------: | -------------------------------------------------------- |
+| name              |           ✅           |           ✅            |                                                          |
+| displayName       |           ✅           |           ❌            | Type has it, form doesn't                                |
+| role              |           ✅           |           ✅            | bnos-svelte missing `admin`, `viewer`, `warehouse` roles |
+| email             |           ✅           |           ✅            |                                                          |
+| phone             |           ✅           |           ✅            |                                                          |
+| pubkey/npub       |     ✅ (required)      |      ✅ (optional)      | bdgo-os requires pubkey; bnos-svelte makes it optional   |
+| companyId         |     ✅ (required)      |           ❌            | Not in form at all                                       |
+| employeeCode      |           ✅           |           ❌            | Type has it, form doesn't                                |
+| department        |           ✅           |           ❌            | Type has it, form doesn't                                |
+| status            |    ✅ (5 statuses)     | ❌ (hardcoded `active`) | Cannot change status after create                        |
+| branchIds         |   ✅ (checkbox list)   |           ❌            | Type has it, form doesn't                                |
+| customPermissions |      ✅ (full UI)      |           ❌            | Type has it, form doesn't                                |
+| pinHash           | ✅ (hash + set/remove) |   ❌ (plaintext PIN)    | bnos-svelte stores raw PIN, no hashing                   |
+| hourlyRate        |           ❌           |           ✅            | bnos-svelte extra (not in bdgo-os staff form)            |
+| avatar            |       ✅ (type)        |           ❌            | Neither form has avatar upload                           |
 
 ### 2.5 🟡 HIGH: No Permission-Gated UI
 
 **bdgo-os-nuxt** gates every action button with `v-if="can(...)"`:
+
 - `can('staff', 'write')` — add/edit buttons
 - `can('staff', 'delete')` — delete buttons
 - `can('staff', 'read')` — page access (redirects if denied)
@@ -159,6 +169,7 @@
 ### 2.10 🟠 MEDIUM: No Key Generation/Management for Staff
 
 **bdgo-os-nuxt** staff form has:
+
 - "Generate" button to create a new keypair for a staff member
 - nsec display with show/hide/copy and a backup warning
 - `saveStaffKey()` / `findStaffKeyByPubkey()` / `removeStaffKey()` in localStorage
@@ -187,6 +198,7 @@
 ### 2.14 🟡 LOW: No Permission Preview / Customization UI
 
 **bdgo-os-nuxt** form shows:
+
 - A live permission preview based on the selected role
 - A "Customize Permissions" toggle that switches from role defaults to a per-resource, per-action checklist
 - Available resources: pos, orders, products, customers, inventory, staff, reports, settings, payments, refunds, discounts — each with read/write/delete/approve actions
@@ -196,6 +208,7 @@
 ### 2.15 🟡 LOW: No Suspended/Blocked User Handling
 
 **bdgo-os-nuxt** checks staff status on login resolve:
+
 - Suspended/inactive users → redirect to `/blocked`
 - No active staff records → redirect to `/setup` (to create organization)
 
@@ -207,26 +220,26 @@
 
 ### New Files to Create
 
-| File | Purpose |
-|------|---------|
-| `src/lib/permissions.svelte.ts` | Port of `usePermissions.ts` — `ROLE_DEFAULTS`, `can()`, `canAccessBranch()`, `requirePermission()` |
+| File                                 | Purpose                                                                                                 |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `src/lib/permissions.svelte.ts`      | Port of `usePermissions.ts` — `ROLE_DEFAULTS`, `can()`, `canAccessBranch()`, `requirePermission()`      |
 | `src/lib/staff-resolution.svelte.ts` | Port of `useMemberships.ts` — match logged-in pubkey to staff records, auto-resolve company/branch/role |
-| `src/routes/resolve/+page.svelte` | Post-login resolution page (sync data, match staff, set active context, redirect) |
-| `src/routes/workspace/+page.svelte` | Multi-workspace selector (if user belongs to multiple companies/branches) |
-| `src/routes/blocked/+page.svelte` | "You are suspended" page |
-| `src/lib/utils/pin.ts` | PIN hashing utility |
+| `src/routes/resolve/+page.svelte`    | Post-login resolution page (sync data, match staff, set active context, redirect)                       |
+| `src/routes/workspace/+page.svelte`  | Multi-workspace selector (if user belongs to multiple companies/branches)                               |
+| `src/routes/blocked/+page.svelte`    | "You are suspended" page                                                                                |
+| `src/lib/utils/pin.ts`               | PIN hashing utility                                                                                     |
 
 ### Existing Files to Modify
 
-| File | Changes Needed |
-|------|----------------|
-| `src/lib/domain/types.ts` | Expand `UserRole` to include `admin`, `viewer`, `warehouse` (align with bdgo-os). Consider adding `supplier`, `delivery`, `franchise_owner` if needed. |
-| `src/lib/nostr/tenant.svelte.ts` | Add `activeRole`, `activeStaffId`, `activeBranchId`, `activeStaffInfo` to `TenantContext`. Add `setActiveStaff()`, `setActiveBranch()` methods. Persist to localStorage. |
-| `src/lib/nostr/session.svelte.ts` | After login, trigger staff resolution flow. May call into `staff-resolution.svelte.ts`. |
-| `src/routes/+layout.svelte` | Add post-login staff resolution step (similar to workspace resolution). Check `activeRole` is set before allowing access. Redirect suspended users. |
-| `src/routes/staff/+page.svelte` | Major rework: (1) Add permission gates (`can('staff', 'write')`, `can('staff', 'delete')`). (2) Add missing form fields: displayName, status selector, employeeCode, department, companyId, branchIds, customPermissions. (3) Add PIN hashing flow. (4) Add key generation + backup display. (5) Add staff export button. (6) Add permission preview UI. (7) Remove hardcoded `status: 'active'`. |
-| `src/routes/+layout.svelte` (or `src/routes/+layout.ts`) | Consider adding per-route permission guards (SvelteKit hooks or in-layout `$effect`). |
-| `src/lib/nav.ts` | Optionally gate nav items by permission (hide Staff link if `!can('staff', 'read')`). |
+| File                                                     | Changes Needed                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/domain/types.ts`                                | Expand `UserRole` to include `admin`, `viewer`, `warehouse` (align with bdgo-os). Consider adding `supplier`, `delivery`, `franchise_owner` if needed.                                                                                                                                                                                                                                            |
+| `src/lib/nostr/tenant.svelte.ts`                         | Add `activeRole`, `activeStaffId`, `activeBranchId`, `activeStaffInfo` to `TenantContext`. Add `setActiveStaff()`, `setActiveBranch()` methods. Persist to localStorage.                                                                                                                                                                                                                          |
+| `src/lib/nostr/session.svelte.ts`                        | After login, trigger staff resolution flow. May call into `staff-resolution.svelte.ts`.                                                                                                                                                                                                                                                                                                           |
+| `src/routes/+layout.svelte`                              | Add post-login staff resolution step (similar to workspace resolution). Check `activeRole` is set before allowing access. Redirect suspended users.                                                                                                                                                                                                                                               |
+| `src/routes/staff/+page.svelte`                          | Major rework: (1) Add permission gates (`can('staff', 'write')`, `can('staff', 'delete')`). (2) Add missing form fields: displayName, status selector, employeeCode, department, companyId, branchIds, customPermissions. (3) Add PIN hashing flow. (4) Add key generation + backup display. (5) Add staff export button. (6) Add permission preview UI. (7) Remove hardcoded `status: 'active'`. |
+| `src/routes/+layout.svelte` (or `src/routes/+layout.ts`) | Consider adding per-route permission guards (SvelteKit hooks or in-layout `$effect`).                                                                                                                                                                                                                                                                                                             |
+| `src/lib/nav.ts`                                         | Optionally gate nav items by permission (hide Staff link if `!can('staff', 'read')`).                                                                                                                                                                                                                                                                                                             |
 
 ---
 

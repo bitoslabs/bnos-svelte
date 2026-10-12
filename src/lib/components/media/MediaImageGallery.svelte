@@ -176,14 +176,17 @@
 		>
 			{#if uploadingCount > 0}
 				<Icon name="lucide:loader-circle" class="size-6 animate-spin text-primary-500" />
-				<span class="text-[11.5px] font-medium text-[var(--ui-text-muted)]">Uploading {uploadingCount}…</span>
+				<span class="text-[11.5px] font-medium text-[var(--ui-text-muted)]"
+					>Uploading {uploadingCount}…</span
+				>
 			{:else}
 				<Icon name="lucide:image-up" class="size-6 text-[var(--ui-text-dimmed)]" />
 				<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
 					Drag & drop or <span class="text-primary-600 dark:text-primary-400">browse</span>
 				</span>
 				<span class="text-[10px] text-[var(--ui-text-dimmed)]">
-					{#if value.length > 0}Add more · {/if}up to {maxImages} images · max {sizeLabel}
+					{#if value.length > 0}Add more ·
+					{/if}up to {maxImages} images · max {sizeLabel}
 				</span>
 			{/if}
 		</div>
@@ -205,7 +208,15 @@
 					}
 				}}
 			/>
-			<Button type="button" color="neutral" variant="subtle" size="md" icon="lucide:plus" onclick={addUrl} disabled={disabled || !urlInput.trim()}>
+			<Button
+				type="button"
+				color="neutral"
+				variant="subtle"
+				size="md"
+				icon="lucide:plus"
+				onclick={addUrl}
+				disabled={disabled || !urlInput.trim()}
+			>
 				{t('common.add')}
 			</Button>
 		</div>
@@ -222,28 +233,52 @@
 
 					<!-- Cover badge -->
 					{#if i === 0}
-						<span class="absolute top-1 left-1 inline-flex items-center gap-0.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm">
+						<span
+							class="absolute top-1 left-1 inline-flex items-center gap-0.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm"
+						>
 							<Icon name="lucide:star" class="size-2.5" />Cover
 						</span>
 					{/if}
 
 					<!-- Hover toolbar -->
-					<div class="absolute inset-0 flex items-end justify-center gap-1 bg-gradient-to-t from-black/70 via-black/0 to-black/0 opacity-0 transition-opacity group-hover:opacity-100">
+					<div
+						class="absolute inset-0 flex items-end justify-center gap-1 bg-gradient-to-t from-black/70 via-black/0 to-black/0 opacity-0 transition-opacity group-hover:opacity-100"
+					>
 						<div class="mb-1.5 flex items-center gap-0.5">
 							{#if i > 0}
-								<button type="button" title={t('common.setAsCover')} onclick={() => promote(i)} class="grid size-6 place-items-center rounded-md bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/40">
+								<button
+									type="button"
+									title={t('common.setAsCover')}
+									onclick={() => promote(i)}
+									class="grid size-6 place-items-center rounded-md bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/40"
+								>
 									<Icon name="lucide:star" class="size-3" />
 								</button>
-								<button type="button" title="Move left" onclick={() => move(i, -1)} class="grid size-6 place-items-center rounded-md bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/40">
+								<button
+									type="button"
+									title="Move left"
+									onclick={() => move(i, -1)}
+									class="grid size-6 place-items-center rounded-md bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/40"
+								>
 									<Icon name="lucide:chevron-left" class="size-3" />
 								</button>
 							{/if}
 							{#if i < value.length - 1}
-								<button type="button" title="Move right" onclick={() => move(i, 1)} class="grid size-6 place-items-center rounded-md bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/40">
+								<button
+									type="button"
+									title="Move right"
+									onclick={() => move(i, 1)}
+									class="grid size-6 place-items-center rounded-md bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/40"
+								>
 									<Icon name="lucide:chevron-right" class="size-3" />
 								</button>
 							{/if}
-							<button type="button" title={t('common.remove')} onclick={() => removeAt(i)} class="grid size-6 place-items-center rounded-md bg-red-500/80 text-white backdrop-blur-sm transition-colors hover:bg-red-500">
+							<button
+								type="button"
+								title={t('common.remove')}
+								onclick={() => removeAt(i)}
+								class="grid size-6 place-items-center rounded-md bg-red-500/80 text-white backdrop-blur-sm transition-colors hover:bg-red-500"
+							>
 								<Icon name="lucide:trash-2" class="size-3" />
 							</button>
 						</div>
@@ -252,7 +287,12 @@
 			{/each}
 		</div>
 		{#if value.length > 1}
-			<button type="button" onclick={clearAll} disabled={disabled} class="text-[11px] font-medium text-[var(--ui-text-dimmed)] transition-colors hover:text-[var(--tone-error-text)]">
+			<button
+				type="button"
+				onclick={clearAll}
+				{disabled}
+				class="text-[11px] font-medium text-[var(--ui-text-dimmed)] transition-colors hover:text-[var(--tone-error-text)]"
+			>
 				Clear all
 			</button>
 		{/if}

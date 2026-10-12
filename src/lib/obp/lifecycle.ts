@@ -140,7 +140,10 @@ export function checkIssueReferences(
 			return { code: 'OBP-E09', message: `referenced ${want.type} ${got.documentId} not found` };
 		}
 		if (doc.documentType !== want.type) {
-			return { code: 'OBP-E09', message: `referenced document ${got.documentId} is a ${doc.documentType}` };
+			return {
+				code: 'OBP-E09',
+				message: `referenced document ${got.documentId} is a ${doc.documentType}`
+			};
 		}
 		const states = Array.isArray(want.state) ? want.state : [want.state];
 		if (!states.includes(doc.state)) {

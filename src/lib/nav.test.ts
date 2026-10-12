@@ -17,6 +17,9 @@ describe('route access policy', () => {
 
 	it('continues to protect business settings', () => {
 		expect(permissionForPath('/settings/store')).toEqual({ resource: 'settings', action: 'write' });
-		expect(permissionForPath('/settings/organization')).toEqual({ resource: 'settings', action: 'write' });
+		expect(permissionForPath('/settings/organization')).toEqual({
+			resource: 'settings',
+			action: 'write'
+		});
 	});
 });

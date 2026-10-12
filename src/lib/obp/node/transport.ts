@@ -29,7 +29,10 @@ export interface ObpTransport {
 	readonly kind: string;
 	/** Whether this transport can carry confidential (encrypted) documents. */
 	readonly canEncrypt: boolean;
-	deliver(envelope: unknown, opts: { confidential: boolean; recipient: string }): Promise<ObpTransportResult>;
+	deliver(
+		envelope: unknown,
+		opts: { confidential: boolean; recipient: string }
+	): Promise<ObpTransportResult>;
 }
 
 type Handler = (envelope: unknown) => void;

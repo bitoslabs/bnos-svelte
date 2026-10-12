@@ -344,8 +344,12 @@
 							? 'border-[var(--tone-success-text)]/15 text-[var(--ui-text-muted)]'
 							: 'border-emerald-400/15 text-white/55'}"
 					>
-						<span>{t('pos.tendered')}</span><span class="tabular-nums">{formatMoney(tendered, currency)}</span>
-						<span>{t('common.total')}</span><span class="tabular-nums">{formatMoney(finalTotal, currency)}</span>
+						<span>{t('pos.tendered')}</span><span class="tabular-nums"
+							>{formatMoney(tendered, currency)}</span
+						>
+						<span>{t('common.total')}</span><span class="tabular-nums"
+							>{formatMoney(finalTotal, currency)}</span
+						>
 					</div>
 				{/if}
 			</div>

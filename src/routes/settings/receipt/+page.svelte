@@ -283,13 +283,15 @@
 						{storeName || 'My Store'}
 					</div>{/if}
 				{#if showPhone && phone}<div class="text-center text-[10px] text-neutral-600">
-						{t('settings.receiptTel')} {phone}
+						{t('settings.receiptTel')}
+						{phone}
 					</div>{/if}
 				{#if showAddress && address}<div class="text-center text-[10px] text-neutral-600">
 						{address}
 					</div>{/if}
 				{#if showTaxId && taxId}<div class="text-center text-[10px] text-neutral-600">
-						{t('settings.receiptTaxIdLabel')} {taxId}
+						{t('settings.receiptTaxIdLabel')}
+						{taxId}
 					</div>{/if}
 				<div class="my-2 border-t border-dashed border-neutral-300"></div>
 				{#if showDate}<div class="flex justify-between">
@@ -302,9 +304,13 @@
 						<span>{t('settings.cashierName')}</span><span>Staff</span>
 					</div>{/if}
 				<div class="my-2 border-t border-dashed border-neutral-300"></div>
-				<div class="flex justify-between"><span>{t('settings.receiptItem')} x1</span><span>0.00</span></div>
+				<div class="flex justify-between">
+					<span>{t('settings.receiptItem')} x1</span><span>0.00</span>
+				</div>
 				<div class="my-2 border-t border-dashed border-neutral-300"></div>
-				<div class="flex justify-between font-bold"><span>{t('settings.receiptTotal')}</span><span>0.00</span></div>
+				<div class="flex justify-between font-bold">
+					<span>{t('settings.receiptTotal')}</span><span>0.00</span>
+				</div>
 				{#if showBarcode}
 					<div class="my-2 flex justify-center">
 						<span class="font-mono text-[20px] tracking-widest">||||||||</span>

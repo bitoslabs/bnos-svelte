@@ -29,13 +29,7 @@ export type UploadedMediaProviderId = MediaProviderId | 'blossom' | 'server';
 
 /** Semantic bucket the file belongs to — drives the storage folder + validation. */
 export type UploadPurpose =
-	| 'product'
-	| 'category'
-	| 'brand'
-	| 'logo'
-	| 'avatar'
-	| 'receipt'
-	| 'test';
+	'product' | 'category' | 'brand' | 'logo' | 'avatar' | 'receipt' | 'test';
 
 export interface UploadOptions {
 	/** Owner scope (the active org id). Becomes a folder segment on the server path. */
@@ -160,7 +154,10 @@ export async function uploadToBlossom(
 		throw new Error('Blossom upload succeeded without a blob URL');
 	}
 
-	const mimeType = typeof payload.type === 'string' && payload.type ? payload.type : file.type || 'application/octet-stream';
+	const mimeType =
+		typeof payload.type === 'string' && payload.type
+			? payload.type
+			: file.type || 'application/octet-stream';
 	return {
 		url: payload.url,
 		kind: classifyMime(mimeType),
@@ -474,7 +471,10 @@ export async function uploadToS3(file: File, cfg: S3Config): Promise<UploadedMed
    Server fallback — POST /api/media/upload (Cloudinary signed proxy)
  * ========================================================================== */
 
-export async function uploadViaServer(file: File, options: UploadOptions = {}): Promise<UploadedMedia> {
+export async function uploadViaServer(
+	file: File,
+	options: UploadOptions = {}
+): Promise<UploadedMedia> {
 	const form = new FormData();
 	form.append('file', file);
 	if (options.owner) form.append('owner', options.owner);

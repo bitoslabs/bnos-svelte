@@ -13,19 +13,9 @@ const STORAGE_KEY = 'bnos-os:tenant';
 const AUTH_PUBKEY_KEY = 'nostr_pubkey';
 
 export type BusinessModel =
-	| 'single'
-	| 'multi_branch'
-	| 'chain'
-	| 'franchise_hq'
-	| 'franchise_branch';
+	'single' | 'multi_branch' | 'chain' | 'franchise_hq' | 'franchise_branch';
 
-export type BusinessType =
-	| 'retail'
-	| 'restaurant'
-	| 'cafe'
-	| 'service'
-	| 'wholesale'
-	| 'other';
+export type BusinessType = 'retail' | 'restaurant' | 'cafe' | 'service' | 'wholesale' | 'other';
 
 export interface ActiveStaffInfo {
 	id: string;
@@ -75,7 +65,9 @@ export const DEFAULT_TENANT: TenantContext = {
 };
 
 function hasTenantChanges(state: TenantContext, patch: Partial<TenantContext>) {
-	return (Object.keys(patch) as (keyof TenantContext)[]).some((key) => !Object.is(state[key], patch[key]));
+	return (Object.keys(patch) as (keyof TenantContext)[]).some(
+		(key) => !Object.is(state[key], patch[key])
+	);
 }
 
 class TenantStore {

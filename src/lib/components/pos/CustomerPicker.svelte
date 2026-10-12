@@ -124,7 +124,9 @@
 			>
 				<Icon name="lucide:user-plus" class="size-4" />
 				Add customer
-				<span class="ml-auto text-[10px] font-normal text-[var(--ui-text-dimmed)]">{t('common.optional_field')}</span>
+				<span class="ml-auto text-[10px] font-normal text-[var(--ui-text-dimmed)]"
+					>{t('common.optional_field')}</span
+				>
 			</div>
 		{/if}
 	{/snippet}

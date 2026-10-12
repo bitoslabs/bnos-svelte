@@ -34,7 +34,11 @@
 	let cMinSpend = $state<number | ''>('');
 
 	const couponStatus = $derived(
-		cType === 'free_shipping' ? '★ Free Shipping' : cType === 'percent' ? `${cValue || 0}% Off` : `${formatMoney(Number(cValue) || 0, currency)} Off`
+		cType === 'free_shipping'
+			? '★ Free Shipping'
+			: cType === 'percent'
+				? `${cValue || 0}% Off`
+				: `${formatMoney(Number(cValue) || 0, currency)} Off`
 	);
 
 	function genCode() {
@@ -76,7 +80,11 @@
 
 	async function toggleCoupon(id: string, data: Coupon) {
 		const active = data.status !== 'active';
-		await glo.upsert<Coupon>(TYPE.coupon, { ...data, status: active ? 'active' : 'disabled' }, { id });
+		await glo.upsert<Coupon>(
+			TYPE.coupon,
+			{ ...data, status: active ? 'active' : 'disabled' },
+			{ id }
+		);
 		toast.success(active ? 'Coupon activated' : 'Coupon disabled');
 	}
 
@@ -103,8 +111,16 @@
 			<p class="text-[12px] text-[var(--ui-text-muted)]">Coupon codes & offers for your channels</p>
 		</div>
 		<div class="flex items-center gap-2">
-			<Button color="neutral" variant="subtle" size="sm" icon="lucide:megaphone" href={resolve('/promotions')}>Campaign manager</Button>
-			<Button color="primary" icon="lucide:plus" onclick={() => (couponOpen = true)}>{t('common.new') + ' ' + t('common.coupon')}</Button>
+			<Button
+				color="neutral"
+				variant="subtle"
+				size="sm"
+				icon="lucide:megaphone"
+				href={resolve('/promotions')}>Campaign manager</Button
+			>
+			<Button color="primary" icon="lucide:plus" onclick={() => (couponOpen = true)}
+				>{t('common.new') + ' ' + t('common.coupon')}</Button
+			>
 		</div>
 	</div>
 
@@ -115,7 +131,9 @@
 			description="Create shareable coupon codes and free-shipping offers to drive sales across TikTok, Facebook, and your website."
 		>
 			{#snippet actions()}
-				<Button color="primary" size="sm" icon="lucide:plus" onclick={() => (couponOpen = true)}>Create coupon</Button>
+				<Button color="primary" size="sm" icon="lucide:plus" onclick={() => (couponOpen = true)}
+					>Create coupon</Button
+				>
 			{/snippet}
 		</EmptyState>
 	{:else}
@@ -128,20 +146,34 @@
 			</div>
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 				{#each coupons as c (c.id)}
-					<div class="accent-bar surface-card relative overflow-hidden p-5" style="--accent: var(--color-violet-accent);">
+					<div
+						class="accent-bar surface-card relative overflow-hidden p-5"
+						style="--accent: var(--color-violet-accent);"
+					>
 						<div class="flex items-start justify-between">
-							<div class="grid size-10 place-items-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
-								<Icon name={c.data.type === 'free_shipping' ? 'lucide:truck' : 'lucide:ticket'} class="size-5" />
+							<div
+								class="grid size-10 place-items-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400"
+							>
+								<Icon
+									name={c.data.type === 'free_shipping' ? 'lucide:truck' : 'lucide:ticket'}
+									class="size-5"
+								/>
 							</div>
 							<Badge color={statusColor(c.data.status)}>{c.data.status}</Badge>
 						</div>
 						<div class="mt-3 font-mono text-lg font-bold tracking-wider">{c.data.code}</div>
-						<div class="font-display text-xl font-bold text-violet-600 tabular-nums dark:text-violet-400">{couponBadge(c.data)}</div>
+						<div
+							class="font-display text-xl font-bold text-violet-600 tabular-nums dark:text-violet-400"
+						>
+							{couponBadge(c.data)}
+						</div>
 						<div class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">
 							{c.data.uses ?? 0}{#if c.data.maxUses}/{c.data.maxUses}{/if} redemptions
 						</div>
 						{#if c.data.minSpend}
-							<div class="mt-0.5 text-[10px] text-[var(--ui-text-dimmed)]">Min spend: {formatMoney(c.data.minSpend, currency)}</div>
+							<div class="mt-0.5 text-[10px] text-[var(--ui-text-dimmed)]">
+								Min spend: {formatMoney(c.data.minSpend, currency)}
+							</div>
 						{/if}
 						<button
 							type="button"
@@ -155,7 +187,13 @@
 							<Icon name="lucide:copy" class="size-3.5" />
 						</button>
 						<div class="mt-3 flex items-center justify-end">
-							<Button size="sm" color="neutral" variant="ghost" icon={c.data.status === 'active' ? 'lucide:circle-x' : 'lucide:circle-check'} onclick={() => toggleCoupon(c.id, c.data)}>
+							<Button
+								size="sm"
+								color="neutral"
+								variant="ghost"
+								icon={c.data.status === 'active' ? 'lucide:circle-x' : 'lucide:circle-check'}
+								onclick={() => toggleCoupon(c.id, c.data)}
+							>
 								{c.data.status === 'active' ? 'Disable' : 'Enable'}
 							</Button>
 						</div>
@@ -179,9 +217,15 @@
 							<Badge color={statusColor(p.data.status)}>{p.data.status}</Badge>
 						</div>
 						{#if p.data.description}
-							<p class="mt-0.5 line-clamp-2 text-[11px] text-[var(--ui-text-dimmed)]">{p.data.description}</p>
+							<p class="mt-0.5 line-clamp-2 text-[11px] text-[var(--ui-text-dimmed)]">
+								{p.data.description}
+							</p>
 						{/if}
-						<div class="mt-2 font-display text-lg font-bold text-primary-600 tabular-nums dark:text-primary-400">{promoBadge(p.data)}</div>
+						<div
+							class="mt-2 font-display text-lg font-bold text-primary-600 tabular-nums dark:text-primary-400"
+						>
+							{promoBadge(p.data)}
+						</div>
 						<div class="mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">
 							{p.data.currentUsage ?? 0}{#if p.data.maxUsage}/{p.data.maxUsage}{/if} uses
 						</div>
@@ -196,17 +240,30 @@
 <Dialog bind:open={couponOpen} title={t('common.new') + ' ' + t('common.coupon')} size="md">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.code')}</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.code')}</span
+			>
 			<div class="flex gap-2">
 				<Input bind:value={cCode} placeholder="SUMMER20" class="flex-1 font-mono uppercase" />
-				<Button color="neutral" variant="subtle" size="md" icon="lucide:dice-5" onclick={genCode}>{t('common.generate')}</Button>
+				<Button color="neutral" variant="subtle" size="md" icon="lucide:dice-5" onclick={genCode}
+					>{t('common.generate')}</Button
+				>
 			</div>
 		</label>
 		<div>
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Offer type</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Offer type</span
+			>
 			<div class="grid grid-cols-3 gap-2">
 				{#each [{ v: 'percent', l: '% Off', i: 'lucide:percent' }, { v: 'fixed', l: 'Fixed', i: 'lucide:dollar-sign' }, { v: 'free_shipping', l: 'Free Ship', i: 'lucide:truck' }] as t (t.v)}
-					<button type="button" onclick={() => (cType = t.v as typeof cType)} class="rounded-lg border-2 px-2 py-2.5 text-center text-[11px] font-medium transition-all {cType === t.v ? 'border-[var(--ui-color-primary-500)] bg-[var(--ui-color-primary-500)]/10 text-[var(--ui-color-primary-500)]' : 'border-[var(--ui-border)] hover:border-[var(--ui-border-muted)]'}">
+					<button
+						type="button"
+						onclick={() => (cType = t.v as typeof cType)}
+						class="rounded-lg border-2 px-2 py-2.5 text-center text-[11px] font-medium transition-all {cType ===
+						t.v
+							? 'border-[var(--ui-color-primary-500)] bg-[var(--ui-color-primary-500)]/10 text-[var(--ui-color-primary-500)]'
+							: 'border-[var(--ui-border)] hover:border-[var(--ui-border-muted)]'}"
+					>
 						<Icon name={t.i} class="mx-auto mb-1 block size-4" />{t.l}
 					</button>
 				{/each}
@@ -214,28 +271,43 @@
 		</div>
 		{#if cType !== 'free_shipping'}
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Value {cType === 'percent' ? '(%)' : `(${currency})`}</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Value {cType === 'percent' ? '(%)' : `(${currency})`}</span
+				>
 				<Input bind:value={cValue} type="number" min="0" class="w-full" />
 			</label>
 		{/if}
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Min spend</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Min spend</span
+				>
 				<Input bind:value={cMinSpend} type="number" min="0" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Max uses</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Max uses</span
+				>
 				<Input bind:value={cMaxUses} type="number" min="0" placeholder="∞" class="w-full" />
 			</label>
 		</div>
 		<div class="rounded-lg bg-[var(--ui-bg-accented)] p-3 text-center">
 			<span class="text-[11px] text-[var(--ui-text-dimmed)]">Preview · </span>
 			<span class="font-mono text-[13px] font-bold">{cCode || 'CODE'}</span>
-			<span class="ml-2 font-display font-bold text-primary-600 dark:text-primary-400">{couponStatus}</span>
+			<span class="ml-2 font-display font-bold text-primary-600 dark:text-primary-400"
+				>{couponStatus}</span
+			>
 		</div>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (couponOpen = false)}>{t('common.cancel')}</Button>
-		<Button color="primary" icon="lucide:check" disabled={!cCode.trim() || saving} onclick={saveCoupon}>{saving ? 'Creating…' : 'Create coupon'}</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (couponOpen = false)}
+			>{t('common.cancel')}</Button
+		>
+		<Button
+			color="primary"
+			icon="lucide:check"
+			disabled={!cCode.trim() || saving}
+			onclick={saveCoupon}>{saving ? 'Creating…' : 'Create coupon'}</Button
+		>
 	{/snippet}
 </Dialog>

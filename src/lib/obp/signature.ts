@@ -31,10 +31,7 @@ export function signEnvelope(env: ObpUnsignedEnvelope, secretKey: ObpSecretKey):
  * its fields. Returns false for any malformed input; callers map that to
  * `OBP-E02` plus a hash check result.
  */
-export function verifyEnvelopeSignature(
-	envelope: ObpEnvelope,
-	pubkey: string
-): boolean {
+export function verifyEnvelopeSignature(envelope: ObpEnvelope, pubkey: string): boolean {
 	try {
 		const bytes = canonicalEnvelopeBytes(envelope);
 		const sig = fromHex(envelope.signature);

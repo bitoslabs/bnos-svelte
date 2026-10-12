@@ -460,7 +460,9 @@ class PosCart {
 		// even after the cart is cleared below.
 		let promotion: CompletedSale['promotion'];
 		if (this.appliedPromotionId) {
-			const promoObj = glo.get(TYPE.promotion, this.appliedPromotionId) ?? glo.get(TYPE.coupon, this.appliedPromotionId);
+			const promoObj =
+				glo.get(TYPE.promotion, this.appliedPromotionId) ??
+				glo.get(TYPE.coupon, this.appliedPromotionId);
 			const pd = promoObj?.data as
 				| {
 						name?: string;

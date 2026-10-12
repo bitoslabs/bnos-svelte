@@ -69,7 +69,9 @@ export function hydratePaymentSettingsFromNostr() {
 }
 
 /** Migrate settings created before a workspace was available, then publish them. */
-export async function syncLocalPaymentSettingsToNostr(types: readonly PaymentSettingsType[] = PAYMENT_SETTINGS_TYPES) {
+export async function syncLocalPaymentSettingsToNostr(
+	types: readonly PaymentSettingsType[] = PAYMENT_SETTINGS_TYPES
+) {
 	if (!isBrowser() || !tenant.state.organizationId) return 0;
 	let published = 0;
 	for (const type of types) {

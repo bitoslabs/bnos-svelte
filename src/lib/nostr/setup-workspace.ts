@@ -12,8 +12,7 @@ export async function createSetupWorkspace(): Promise<{ published: boolean }> {
 		id: organizationId,
 		name: tenant.state.organizationName,
 		currency: tenant.state.currency,
-		code:
-			tenant.state.organizationCode || tenant.state.organizationName.slice(0, 3).toUpperCase(),
+		code: tenant.state.organizationCode || tenant.state.organizationName.slice(0, 3).toUpperCase(),
 		status: 'active'
 	} as unknown as Parameters<typeof makeOrganizationObject>[0]);
 

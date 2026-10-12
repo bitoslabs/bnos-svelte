@@ -47,10 +47,14 @@
 		aria-modal="true"
 	>
 		{#if title}
-			<header class="flex items-start justify-between gap-3 border-b border-[var(--ui-border-muted)] px-5 py-4">
+			<header
+				class="flex items-start justify-between gap-3 border-b border-[var(--ui-border-muted)] px-5 py-4"
+			>
 				<div class="min-w-0">
 					<h2 class="font-display text-[15px] font-semibold tracking-tight">{title}</h2>
-					{#if subtitle}<p class="mt-0.5 truncate text-[12px] text-[var(--ui-text-muted)]">{subtitle}</p>{/if}
+					{#if subtitle}<p class="mt-0.5 truncate text-[12px] text-[var(--ui-text-muted)]">
+							{subtitle}
+						</p>{/if}
 				</div>
 				<button
 					type="button"

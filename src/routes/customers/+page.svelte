@@ -56,7 +56,11 @@
 			{ key: 'name', label: t('common.name'), value: (c) => c.data.name ?? '~' },
 			{ key: 'phone', label: t('common.phone'), value: (c) => c.data.phone ?? '~' },
 			{ key: 'email', label: t('common.email'), value: (c) => c.data.email ?? '~' },
-			{ key: 'segment', label: t('common.segment'), value: (c) => (c.data.segment as string) ?? 'none' },
+			{
+				key: 'segment',
+				label: t('common.segment'),
+				value: (c) => (c.data.segment as string) ?? 'none'
+			},
 			{ key: 'totalSpend', label: 'Total spend', value: (c) => (c.data.totalSpend as number) ?? 0 },
 			{ key: 'status', label: t('common.status'), value: (c) => c.data.status ?? 'active' }
 		],
@@ -216,7 +220,9 @@
 				{formatInt(customers.length)} total · {formatInt(controls.list.length)} showing · kind 30300
 			</p>
 		</div>
-		<Button color="primary" icon="lucide:user-plus" onclick={openCreate}>{t('common.add') + ' ' + t('common.customer')}</Button>
+		<Button color="primary" icon="lucide:user-plus" onclick={openCreate}
+			>{t('common.add') + ' ' + t('common.customer')}</Button
+		>
 	</div>
 
 	<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -411,17 +417,21 @@
 <Dialog bind:open title={t('common.add') + ' ' + t('common.customer')} size="lg">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.name')}</span
+			>
 			<Input bind:value={name} icon="lucide:user" placeholder="Jane Doe" class="w-full" />
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.phone')}</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.phone')}</span
 				>
 				<Input bind:value={phone} icon="lucide:phone" placeholder="+856 …" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.email')}</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.email')}</span
 				>
 				<Input
 					bind:value={email}
@@ -432,7 +442,8 @@
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.address')}</span
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.address')}</span
 			>
 			<Input
 				bind:value={address}
@@ -456,7 +467,9 @@
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.notes')}</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.notes')}</span
+			>
 			<Input
 				bind:value={notes}
 				textarea
@@ -466,7 +479,9 @@
 		</label>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (open = false)}>{t('common.cancel')}</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (open = false)}
+			>{t('common.cancel')}</Button
+		>
 		<Button color="primary" icon="lucide:check" onclick={save}>{t('common.save')}</Button>
 	{/snippet}
 </Dialog>
@@ -475,23 +490,28 @@
 <Dialog bind:open={editOpen} title={t('common.edit') + ' ' + t('common.customer')} size="lg">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.name')}</span
+			>
 			<Input bind:value={editName} icon="lucide:user" class="w-full" />
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.phone')}</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.phone')}</span
 				>
 				<Input bind:value={editPhone} icon="lucide:phone" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.email')}</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.email')}</span
 				>
 				<Input bind:value={editEmail} icon="lucide:at-sign" class="w-full" />
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.address')}</span
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.address')}</span
 			>
 			<Input bind:value={editAddress} icon="lucide:map-pin" class="w-full" />
 		</label>
@@ -510,7 +530,9 @@
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.status')}</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.status')}</span
+			>
 			<Select
 				bind:value={editStatus}
 				options={[
@@ -521,12 +543,16 @@
 			/>
 		</label>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.notes')}</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.notes')}</span
+			>
 			<Input bind:value={editNotes} textarea class="w-full" />
 		</label>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (editOpen = false)}>{t('common.cancel')}</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (editOpen = false)}
+			>{t('common.cancel')}</Button
+		>
 		<Button color="primary" icon="lucide:check" onclick={saveEdit}>Save changes</Button>
 	{/snippet}
 </Dialog>
