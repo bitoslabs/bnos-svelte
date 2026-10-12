@@ -102,7 +102,7 @@ import { memberships } from '$nostr/memberships.svelte';
 	}
 </script>
 
-<svelte:head><title>{t('resolve.title')} · {t('common.appName')}</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('resolve.title')}</title></svelte:head>
 
 <div class="flex min-h-screen items-center justify-center px-4">
 	<div class="w-full max-w-md space-y-6">

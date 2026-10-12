@@ -19,7 +19,8 @@ export type FeatureKey =
 	| 'crm'
 	| 'multiBranch'
 	| 'marketplace'
-	| 'ai';
+	| 'ai'
+	| 'obp';
 
 export const FEATURE_KEYS: FeatureKey[] = [
 	'restaurant',
@@ -28,7 +29,8 @@ export const FEATURE_KEYS: FeatureKey[] = [
 	'crm',
 	'multiBranch',
 	'marketplace',
-	'ai'
+	'ai',
+	'obp'
 ];
 
 export const FEATURE_META: Record<
@@ -69,6 +71,11 @@ export const FEATURE_META: Record<
 		icon: 'lucide:sparkles',
 		label: 'AI assistant',
 		description: 'Forecasting, restock suggestions, insights'
+	},
+	obp: {
+		icon: 'lucide:file-signature',
+		label: 'OBP purchasing',
+		description: 'Open Business Protocol RFQ→receipt flow (pilot, read-only shadow)'
 	}
 };
 
@@ -79,7 +86,9 @@ const DEFAULTS: Record<FeatureKey, boolean> = {
 	crm: false,
 	multiBranch: false,
 	marketplace: false,
-	ai: false
+	ai: false,
+	// OBP stays off until the pilot gate in docs/OBP_SYSTEM_PLAN.md passes.
+	obp: false
 };
 
 class FeaturesStore {

@@ -369,7 +369,7 @@
 	})();
 </script>
 
-<svelte:head><title>Order {(id ?? '').slice(0, 8)} · BNOS</title></svelte:head>
+<svelte:head><title>BNOS · Order {(id ?? '').slice(0, 8)}</title></svelte:head>
 
 {#if !order}
 	<EmptyState

@@ -94,7 +94,7 @@
 		onclick={() => onnavigate?.()}
 	>
 		<div class="relative grid size-10 shrink-0 place-items-center ">
-			<BnosMark class="size-9 text-primary-500" />
+			<BnosMark class="size-9" />
 		</div>
 		{#if !sidebarState.collapsed}
 			<div class="leading-tight">

@@ -383,7 +383,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('common.new') + ' ' + t('common.order')} · {t('common.appName')}</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('common.new') + ' ' + t('common.order')}</title></svelte:head>
 <svelte:window onkeydown={onGlobalKeydown} />
 
 <div class="space-y-4">

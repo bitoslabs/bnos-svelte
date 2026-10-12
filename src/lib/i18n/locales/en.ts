@@ -352,7 +352,8 @@ export const en = {
 	},
 	topbar: {
 		searchPlaceholder: 'Search…',
-		searchCommands: 'Search & commands (⌘K)',
+		searchCommands: 'Search & commands',
+		quickSettings: 'Quick settings',
 		manageRelays: 'Manage relays',
 		syncingAllData: 'Syncing all data…',
 		syncing: 'Syncing…',

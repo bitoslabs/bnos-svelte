@@ -16,3 +16,5 @@ export * from './helpers';
 export * from './meta';
 export * from './order-sources';
 export * from './marketplace';
+export * from './catalog-preset';
+export * from './catalog-kit';

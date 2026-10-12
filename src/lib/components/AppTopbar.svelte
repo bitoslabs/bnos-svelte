@@ -42,6 +42,13 @@
 		notifications.load();
 	});
 
+	// Platform-aware keyboard hint for the command palette trigger.
+	let shortcutLabel = $state('⌘K');
+	onMount(() => {
+		const platform = navigator.platform ?? '';
+		shortcutLabel = /mac|iphone|ipad|ipod/i.test(platform) ? '⌘K' : 'Ctrl K';
+	});
+
 	let notifOpen = $state(false);
 	let notifTab = $state<'all' | 'unread'>('all');
 
@@ -75,15 +82,9 @@
 	}
 
 	// ── Sync engine ────────────────────────────────────────────────────────
-	// Labeled status chip (twin of the relay chip below): icon + short state
-	// label on ≥sm, icon-only on xs. Clicking always triggers a manual sync.
+	// Sync state is surfaced inside the system/network popover (single control
+	// instead of a second status chip) plus a transient badge on its trigger.
 	const syncState = $derived(dataSync.status);
-	const syncShortLabel = $derived.by(() => {
-		if (syncState === 'syncing') return t('topbar.syncing');
-		if (syncState === 'done') return t('topbar.synced');
-		if (syncState === 'failed') return t('topbar.syncFailedShort');
-		return t('common.sync');
-	});
 	const syncFullLabel = $derived.by(() => {
 		if (syncState === 'syncing') return t('topbar.syncingAllData');
 		if (syncState === 'done') return t('common.allDataSynced');
@@ -106,17 +107,6 @@
 		if (syncState === 'syncing') return 'animate-spin';
 		return '';
 	});
-	const syncChipClass = $derived.by(() => {
-		const base =
-			'relative inline-flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-[12.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60';
-		if (syncState === 'done') {
-			return `${base} border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/15 dark:text-emerald-400`;
-		}
-		if (syncState === 'failed') {
-			return `${base} border-red-500/30 bg-[var(--tone-error-bg)] text-[var(--tone-error-text)] hover:border-red-500/50`;
-		}
-		return `${base} border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]`;
-	});
 
 	async function syncAllData() {
 		await dataSync.manualSync();
@@ -136,6 +126,10 @@
 	);
 	const relayStatusTitle = $derived(
 		`${relays.online ? t('common.online') : t('common.offline')} · ${t('topbar.relaysActive', { active: relays.activeRelays.length, total: relays.relays.length })}`
+	);
+	// Single system control: network status + transient sync state.
+	const systemStatusTitle = $derived(
+		syncState === 'idle' ? relayStatusTitle : `${relayStatusTitle} · ${syncFullLabel}`
 	);
 
 	// Quick add-relay field for the status popover.
@@ -201,27 +195,27 @@
 	</div>
 
 
-	<!-- Command palette trigger (⌘K) -->
+	<!-- Command palette trigger (⌘K / Ctrl K) -->
 	<button
 		type="button"
 		onclick={() => command.show()}
 		class="hidden h-9 items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2.5 text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] sm:flex"
-		aria-label={t('common.search')}
-		title={t('topbar.searchCommands')}
+		aria-label="{t('common.search')} ({shortcutLabel})"
+		title="{t('topbar.searchCommands')} ({shortcutLabel})"
 	>
 		<Icon name="lucide:search" class="size-4" />
 		<span class="text-[12.5px] font-medium">{t('topbar.searchPlaceholder')}</span>
 		<kbd
 			class="ml-1 rounded border border-[var(--ui-border-muted)] bg-[var(--ui-bg)] px-1.5 py-0.5 text-[10px] font-bold"
-			>⌘K</kbd
+			>{shortcutLabel}</kbd
 		>
 	</button>
 	<button
 		type="button"
 		onclick={() => command.show()}
 		class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] sm:hidden"
-		aria-label={t('common.search')}
-		title={t('topbar.searchCommands')}
+		aria-label="{t('common.search')} ({shortcutLabel})"
+		title="{t('topbar.searchCommands')} ({shortcutLabel})"
 	>
 		<Icon name="lucide:search" class="size-[18px]" />
 	</button>
@@ -229,19 +223,10 @@
 	<!-- Divider: tasks ↔ system cluster -->
 	<div class="mx-1 hidden h-5 w-px bg-[var(--ui-border-muted)] sm:block"></div>
 
-	<!-- Sync status chip (system control — twin of the relay chip) -->
-	<button
-		type="button"
-		onclick={syncAllData}
-		disabled={syncState === 'syncing'}
-		class={syncChipClass}
-		aria-label={syncTitle}
-		title={syncTitle}
-		aria-live="polite"
-	>
-		<Icon name={syncIcon} class="size-4 {syncIconClass}" />
-		<span class="hidden sm:inline">{syncShortLabel}</span>
-	</button>
+	<!-- Sync state, announced politely without making a control a live region -->
+	<span class="sr-only" role="status" aria-live="polite">
+		{syncState === 'idle' ? '' : syncFullLabel}
+	</span>
 
 	<!-- 🔔 Notification center -->
 	<Popover
@@ -411,12 +396,12 @@
 		{/snippet}
 	</Popover>
 
-	<!-- System status (relay) popover — labeled chip, icon-only on mobile -->
+	<!-- System status popover: network (relays) + sync in one control -->
 	<Popover
 		bind:open={relayOpen}
 		align="end"
 		side="bottom"
-		title={relayStatusTitle}
+		title={systemStatusTitle}
 		triggerClass={relayTriggerClass}
 		triggerActiveClass="ring-2 ring-emerald-500/20"
 	>
@@ -436,6 +421,14 @@
 					</span>
 				{/if}
 			</span>
+			{#if syncState !== 'idle'}
+				<Icon
+					name={syncIcon}
+					class="size-3.5 {syncIconClass} {syncState === 'failed'
+						? 'text-[var(--tone-error-text)]'
+						: ''}"
+				/>
+			{/if}
 			<span class="hidden tabular-nums sm:inline">
 				{relays.activeRelays.length}/{relays.relays.length}
 			</span>
@@ -552,6 +545,7 @@
 					type="button"
 					onclick={syncAllData}
 					disabled={syncState === 'syncing'}
+					title={syncTitle}
 					class="mt-1 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-60"
 				>
 					<Icon name={syncIcon} class="size-3.5 {syncIconClass}" />
@@ -576,93 +570,29 @@
 		{/snippet}
 	</Popover>
 
-	<!-- Quick settings popover -->
-	<Popover bind:open={quickOpen} align="end" side="bottom" class="w-80 p-0">
+	<!-- Quick settings popover (appearance + language only; account lives in the avatar menu) -->
+	<Popover
+		bind:open={quickOpen}
+		align="end"
+		side="bottom"
+		title={t('topbar.quickSettings')}
+		class="w-80 p-0"
+	>
 		{#snippet trigger()}
 			<Icon name="lucide:sliders-horizontal" class="size-[18px]" />
 		{/snippet}
 		{#snippet content()}
-			<div class="w-80 space-y-1 p-0">
-				<!-- Account chip -->
-				<a
-					href={resolve('/profile')}
-					onclick={() => (quickOpen = false)}
-					class="flex items-center gap-3 rounded-t-xl border-b border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3.5 py-3 transition-colors hover:bg-[var(--ui-bg-accented)]"
-				>
-					<div
-						class="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[13px] font-bold text-white shadow-sm"
-					>
-						{#if profile.hasAvatar}
-							<img
-								src={profile.picture}
-								alt={profile.displayLabel}
-								class="size-9 rounded-full object-cover"
-							/>
-						{:else}
-							{profile.avatarLetter}
-						{/if}
-					</div>
-					<div class="min-w-0 flex-1">
-						<p class="truncate text-[12.5px] font-semibold text-[var(--ui-text)]">
-							{profile.displayLabel}
-						</p>
-						<p class="truncate text-[10.5px] text-[var(--ui-text-dimmed)]">
-							{profile.subtitle}
-						</p>
-					</div>
-					<Icon name="lucide:chevron-right" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
-				</a>
-
+			<div class="w-80 p-0">
 				<!-- Appearance controls -->
 				<AppearanceControls class="px-3.5 py-3.5" />
 
 				<!-- Language -->
-				<div class="px-3.5 pb-3">
+				<div class="border-t border-[var(--ui-border-muted)] px-3.5 py-3">
 					<div class="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
 						<Icon name="lucide:languages" class="size-3.5" />
 						{t('settings.language')}
 					</div>
 					<LanguageSwitcher />
-				</div>
-
-				<!-- Links -->
-				<div class="space-y-0.5 border-t border-[var(--ui-border-muted)] px-1.5 py-1.5">
-					<a
-						href={resolve('/settings')}
-						onclick={() => (quickOpen = false)}
-						class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-					>
-						<Icon name="lucide:settings" class="size-4" />
-						{t('topbar.allSettings')}
-						<Icon
-							name="lucide:chevron-right"
-							class="ml-auto size-3.5 text-[var(--ui-text-dimmed)]"
-						/>
-					</a>
-					<a
-						href={resolve('/settings/appearance')}
-						onclick={() => (quickOpen = false)}
-						class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-					>
-						<Icon name="lucide:palette" class="size-4" />
-						{t('settings.appearance')}
-						<Icon
-							name="lucide:chevron-right"
-							class="ml-auto size-3.5 text-[var(--ui-text-dimmed)]"
-						/>
-					</a>
-					<a
-						href={resolve('/settings/about')}
-						onclick={() => (quickOpen = false)}
-						class="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-					>
-						<Icon name="lucide:info" class="size-4" />
-						{t('topbar.aboutBnos')}
-						<Icon
-							name="lucide:chevron-right"
-							class="ml-auto size-3.5 text-[var(--ui-text-dimmed)]"
-						/>
-					</a>
 				</div>
 			</div>
 		{/snippet}

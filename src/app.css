@@ -53,29 +53,43 @@
 	--color-brand-900: #13413f;
 	--color-brand-950: #042f2e;
 
-	--color-primary-50: #fff7ed;
-	--color-primary-100: #ffedd5;
-	--color-primary-200: #fed7aa;
-	--color-primary-300: #fdba74;
-	--color-primary-400: #fb923c;
-	--color-primary-500: #f97316;
-	--color-primary-600: #ea580c;
-	--color-primary-700: #c2410c;
-	--color-primary-800: #9a3412;
-	--color-primary-900: #7c2d12;
-	--color-primary-950: #431407;
+	/* Primary — Bitcoin orange (#F7931A), the BNOS default accent. */
+	--color-primary-50: #fff6e9;
+	--color-primary-100: #ffe9c7;
+	--color-primary-200: #ffd08a;
+	--color-primary-300: #ffb84d;
+	--color-primary-400: #ffa31a;
+	--color-primary-500: #f7931a;
+	--color-primary-600: #db7c0a;
+	--color-primary-700: #b45f05;
+	--color-primary-800: #8f4a04;
+	--color-primary-900: #6b3702;
+	--color-primary-950: #3d1e01;
 
-	--color-neutral-50: #fafafa;
-	--color-neutral-100: #f4f4f5;
-	--color-neutral-200: #e4e4e7;
-	--color-neutral-300: #d4d4d8;
-	--color-neutral-400: #a1a1aa;
-	--color-neutral-500: #71717a;
-	--color-neutral-600: #52525b;
-	--color-neutral-700: #3f3f46;
-	--color-neutral-800: #27272a;
-	--color-neutral-900: #18181b;
-	--color-neutral-950: #09090b;
+	/* Secondary — Bitcoin gold (#FFC107), the BNOS support/highlight accent. */
+	--color-secondary-50: #fffbe6;
+	--color-secondary-100: #fff4c2;
+	--color-secondary-200: #ffe88a;
+	--color-secondary-300: #ffdd52;
+	--color-secondary-400: #ffd11a;
+	--color-secondary-500: #ffc107;
+	--color-secondary-600: #e0a800;
+	--color-secondary-700: #b88800;
+	--color-secondary-800: #8f6a00;
+	--color-secondary-900: #6b4f00;
+	--color-secondary-950: #3d2d00;
+
+	--color-neutral-50: #f8f9fa;
+	--color-neutral-100: #f0f1f3;
+	--color-neutral-200: #e2e4e7;
+	--color-neutral-300: #cbced2;
+	--color-neutral-400: #a0a0a0;
+	--color-neutral-500: #7a7c80;
+	--color-neutral-600: #5a5c60;
+	--color-neutral-700: #404245;
+	--color-neutral-800: #26272a;
+	--color-neutral-900: #161719;
+	--color-neutral-950: #0b0b0b;
 
 	--color-cyan-accent: #22d3ee;
 	--color-amber-accent: #f5a524;
@@ -86,6 +100,19 @@
 
 @layer base {
 	:root,
+	html[data-neutral='bitcoin'] {
+		--color-neutral-50: #f8f9fa;
+		--color-neutral-100: #f0f1f3;
+		--color-neutral-200: #e2e4e7;
+		--color-neutral-300: #cbced2;
+		--color-neutral-400: #a0a0a0;
+		--color-neutral-500: #7a7c80;
+		--color-neutral-600: #5a5c60;
+		--color-neutral-700: #404245;
+		--color-neutral-800: #26272a;
+		--color-neutral-900: #161719;
+		--color-neutral-950: #0b0b0b;
+	}
 	html[data-neutral='zinc'] {
 		--color-neutral-50: #fafafa;
 		--color-neutral-100: #f4f4f5;
@@ -164,6 +191,13 @@
 		--ui-color-primary-500: var(--color-primary-500);
 		--ui-color-primary-600: var(--color-primary-600);
 		--ui-color-primary-700: var(--color-primary-700);
+
+		--ui-color-secondary-200: var(--color-secondary-200);
+		--ui-color-secondary-300: var(--color-secondary-300);
+		--ui-color-secondary-400: var(--color-secondary-400);
+		--ui-color-secondary-500: var(--color-secondary-500);
+		--ui-color-secondary-600: var(--color-secondary-600);
+		--ui-color-secondary-700: var(--color-secondary-700);
 
 		--surface-tint-page: 4%;
 		--surface-tint-muted: 6%;
@@ -422,6 +456,13 @@
 		--ui-color-primary-500: var(--color-primary-500);
 		--ui-color-primary-600: var(--color-primary-600);
 		--ui-color-primary-700: var(--color-primary-700);
+
+		--ui-color-secondary-200: var(--color-secondary-200);
+		--ui-color-secondary-300: var(--color-secondary-300);
+		--ui-color-secondary-400: var(--color-secondary-400);
+		--ui-color-secondary-500: var(--color-secondary-500);
+		--ui-color-secondary-600: var(--color-secondary-600);
+		--ui-color-secondary-700: var(--color-secondary-700);
 
 		--ui-text-dimmed: color-mix(in oklab, var(--color-neutral-500) 88%, #9ca3af);
 		--ui-text-muted: color-mix(in oklab, var(--color-neutral-400) 88%, #d4d4d8);
