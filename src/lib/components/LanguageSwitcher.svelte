@@ -8,10 +8,8 @@
 	import { i18n, locales } from '$lib/i18n/i18n.svelte';
 	import { nativeNames, localeFlag, type Locale } from '$lib/i18n/messages';
 
-	let {
-		size = 'md',
-		orientation = 'row'
-	}: { size?: 'sm' | 'md'; orientation?: 'row' | 'column' } = $props();
+	let { size = 'md', orientation = 'row' }: { size?: 'sm' | 'md'; orientation?: 'row' | 'column' } =
+		$props();
 
 	const current = $derived(i18n.locale);
 

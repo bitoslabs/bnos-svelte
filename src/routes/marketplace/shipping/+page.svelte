@@ -43,7 +43,9 @@
 			.filter((o) => isRemoteSource(o.data.source))
 			.map((o) => ({
 				id: o.id,
-				number: String((o.data.orderNumber as string | number | undefined) ?? o.data.number ?? o.id.slice(0, 8)),
+				number: String(
+					(o.data.orderNumber as string | number | undefined) ?? o.data.number ?? o.id.slice(0, 8)
+				),
 				source: o.data.source as string | undefined,
 				customerName: o.data.customerName ?? '',
 				total: o.data.total ?? 0,
@@ -52,7 +54,15 @@
 			}))
 			.filter((o) => {
 				const s = o.shipping?.shippingStatus ?? 'pending';
-				return ['pending', 'packed', 'shipped', 'in_transit', 'delivered', 'failed', 'returned'].includes(s);
+				return [
+					'pending',
+					'packed',
+					'shipped',
+					'in_transit',
+					'delivered',
+					'failed',
+					'returned'
+				].includes(s);
 			})
 	);
 
@@ -62,7 +72,12 @@
 		{ status: 'packed', label: 'Packed', icon: 'lucide:package-check', tone: 'text-blue-500' },
 		{ status: 'shipped', label: 'Shipped', icon: 'lucide:truck', tone: 'text-violet-500' },
 		{ status: 'in_transit', label: 'In transit', icon: 'lucide:route', tone: 'text-cyan-500' },
-		{ status: 'delivered', label: 'Delivered', icon: 'lucide:circle-check', tone: 'text-emerald-500' },
+		{
+			status: 'delivered',
+			label: 'Delivered',
+			icon: 'lucide:circle-check',
+			tone: 'text-emerald-500'
+		},
 		{ status: 'issues', label: 'Issues', icon: 'lucide:triangle-alert', tone: 'text-red-500' }
 	];
 
@@ -73,9 +88,7 @@
 	}
 
 	function rowsFor(colStatus: string): FulfillRow[] {
-		return fulfillable
-			.filter((r) => columnFor(r) === colStatus)
-			.sort((a, b) => b.atMs - a.atMs);
+		return fulfillable.filter((r) => columnFor(r) === colStatus).sort((a, b) => b.atMs - a.atMs);
 	}
 
 	// Advance status: pending → packed → shipped → in_transit → delivered
@@ -98,7 +111,10 @@
 		if (!next) return;
 		const obj = orders.find((o) => o.id === row.id);
 		if (!obj) return;
-		const shipping: ShippingInfo = { ...(obj.data.shipping as ShippingInfo | undefined), shippingStatus: next as ShippingInfo['shippingStatus'] };
+		const shipping: ShippingInfo = {
+			...(obj.data.shipping as ShippingInfo | undefined),
+			shippingStatus: next as ShippingInfo['shippingStatus']
+		};
 		await glo.upsert('commerce.order', { ...obj.data, shipping }, { id: row.id });
 		toast.success(`${row.number} → ${shippingStatusLabel(next)}`);
 	}
@@ -130,40 +146,67 @@
 			<div class="flex min-w-max gap-3">
 				{#each COLUMNS as col (col.status)}
 					{@const rows = rowsFor(col.status)}
-					<div class="flex w-72 shrink-0 flex-col rounded-2xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)]/50">
+					<div
+						class="flex w-72 shrink-0 flex-col rounded-2xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)]/50"
+					>
 						<!-- Column header -->
 						<div class="flex items-center justify-between px-3.5 py-3">
 							<div class="flex items-center gap-2">
 								<Icon name={col.icon} class="size-4 {col.tone}" />
 								<span class="text-[12.5px] font-bold">{col.label}</span>
 							</div>
-							<span class="grid size-5 min-w-5 place-items-center rounded-full bg-[var(--ui-bg-accented)] px-1 text-[10px] font-bold tabular-nums">{rows.length}</span>
+							<span
+								class="grid size-5 min-w-5 place-items-center rounded-full bg-[var(--ui-bg-accented)] px-1 text-[10px] font-bold tabular-nums"
+								>{rows.length}</span
+							>
 						</div>
 						<!-- Cards -->
 						<div class="flex-1 space-y-2 px-2 pb-2">
 							{#each rows as row (row.id)}
-								<div class="group rounded-xl border border-[var(--ui-border-muted)] bg-[var(--surface-bg)] p-3 shadow-sm transition-shadow hover:shadow-sm">
+								<div
+									class="group rounded-xl border border-[var(--ui-border-muted)] bg-[var(--surface-bg)] p-3 shadow-sm transition-shadow hover:shadow-sm"
+								>
 									<div class="flex items-center justify-between">
-										<a href={resolve(`/orders/${row.id}`)} class="font-mono text-[12px] font-bold hover:text-primary-500">{row.number}</a>
-										<span class="inline-flex items-center gap-0.5 text-[10px] text-[var(--ui-text-dimmed)]">
-											<Icon name={sourceIcon(row.source)} class="size-2.5" />{sourceLabel(row.source)}
+										<a
+											href={resolve(`/orders/${row.id}`)}
+											class="font-mono text-[12px] font-bold hover:text-primary-500">{row.number}</a
+										>
+										<span
+											class="inline-flex items-center gap-0.5 text-[10px] text-[var(--ui-text-dimmed)]"
+										>
+											<Icon name={sourceIcon(row.source)} class="size-2.5" />{sourceLabel(
+												row.source
+											)}
 										</span>
 									</div>
 									{#if row.customerName}
-										<p class="mt-1 truncate text-[11.5px] text-[var(--ui-text-muted)]">{row.customerName}</p>
-									{/if}
-									{#if row.shipping?.address}
-										<p class="mt-0.5 truncate text-[10.5px] text-[var(--ui-text-dimmed)]">{row.shipping.address}</p>
-									{/if}
-									{#if row.shipping?.trackingNumber}
-										<p class="mt-1 inline-flex items-center gap-1 font-mono text-[10px] text-[var(--ui-text-muted)]">
-											<Icon name="lucide:package-search" class="size-2.5" />{row.shipping.trackingNumber}
+										<p class="mt-1 truncate text-[11.5px] text-[var(--ui-text-muted)]">
+											{row.customerName}
 										</p>
 									{/if}
-									<div class="mt-2.5 flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-2">
-										<span class="text-[11px] text-[var(--ui-text-dimmed)]">{relativeTime(row.atMs)}</span>
+									{#if row.shipping?.address}
+										<p class="mt-0.5 truncate text-[10.5px] text-[var(--ui-text-dimmed)]">
+											{row.shipping.address}
+										</p>
+									{/if}
+									{#if row.shipping?.trackingNumber}
+										<p
+											class="mt-1 inline-flex items-center gap-1 font-mono text-[10px] text-[var(--ui-text-muted)]"
+										>
+											<Icon name="lucide:package-search" class="size-2.5" />{row.shipping
+												.trackingNumber}
+										</p>
+									{/if}
+									<div
+										class="mt-2.5 flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-2"
+									>
+										<span class="text-[11px] text-[var(--ui-text-dimmed)]"
+											>{relativeTime(row.atMs)}</span
+										>
 										<div class="flex items-center gap-1.5">
-											<span class="font-semibold tabular-nums text-[11.5px]">{formatMoney(row.total, currency)}</span>
+											<span class="text-[11.5px] font-semibold tabular-nums"
+												>{formatMoney(row.total, currency)}</span
+											>
 											{#if NEXT[row.shipping?.shippingStatus ?? 'pending']}
 												<button
 													type="button"
@@ -172,7 +215,10 @@
 													title={NEXT_LABEL[row.shipping?.shippingStatus ?? 'pending']}
 												>
 													<Icon name="lucide:chevron-right" class="size-3" />
-													{NEXT_LABEL[row.shipping?.shippingStatus ?? 'pending'].replace('Mark ', '')}
+													{NEXT_LABEL[row.shipping?.shippingStatus ?? 'pending'].replace(
+														'Mark ',
+														''
+													)}
 												</button>
 											{/if}
 										</div>
@@ -180,7 +226,9 @@
 								</div>
 							{/each}
 							{#if rows.length === 0}
-								<div class="rounded-xl border border-dashed border-[var(--ui-border-muted)] py-6 text-center">
+								<div
+									class="rounded-xl border border-dashed border-[var(--ui-border-muted)] py-6 text-center"
+								>
 									<span class="text-[10.5px] text-[var(--ui-text-dimmed)]">Empty</span>
 								</div>
 							{/if}

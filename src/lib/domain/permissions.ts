@@ -58,7 +58,13 @@ export const PERMISSION_RESOURCES: {
 	{ id: 'discounts', name: 'Discounts', actions: ['read', 'write', 'approve'] }
 ];
 
-export const PERMISSION_ACTIONS: PermissionAction[] = ['read', 'write', 'delete', 'approve', 'export'];
+export const PERMISSION_ACTIONS: PermissionAction[] = [
+	'read',
+	'write',
+	'delete',
+	'approve',
+	'export'
+];
 
 /** Roles that grant company-wide (all-branch) access (bnos-core convention). */
 export const COMPANY_WIDE_ROLES = new Set<UserRole>(['owner', 'admin']);
@@ -67,8 +73,12 @@ export const COMPANY_WIDE_ROLES = new Set<UserRole>(['owner', 'admin']);
 
 /** Default permissions granted by each role. */
 export const ROLE_DEFAULTS: Record<UserRole, Permission[]> = {
-	owner: [{ resource: 'all', actions: ['read', 'write', 'delete', 'approve', 'export'], scope: 'global' }],
-	admin: [{ resource: 'all', actions: ['read', 'write', 'delete', 'approve', 'export'], scope: 'global' }],
+	owner: [
+		{ resource: 'all', actions: ['read', 'write', 'delete', 'approve', 'export'], scope: 'global' }
+	],
+	admin: [
+		{ resource: 'all', actions: ['read', 'write', 'delete', 'approve', 'export'], scope: 'global' }
+	],
 	manager: [
 		{ resource: 'pos', actions: ['read', 'write'], scope: 'branch' },
 		{ resource: 'orders', actions: ['read', 'write', 'delete'], scope: 'branch' },
@@ -80,7 +90,11 @@ export const ROLE_DEFAULTS: Record<UserRole, Permission[]> = {
 		{ resource: 'refunds', actions: ['read', 'write'], scope: 'branch' },
 		{ resource: 'discounts', actions: ['read', 'write'], scope: 'branch' },
 		{ resource: 'suppliers', actions: ['read', 'write'], scope: 'branch' },
-		{ resource: 'purchase_orders', actions: ['read', 'write', 'delete', 'approve'], scope: 'branch' },
+		{
+			resource: 'purchase_orders',
+			actions: ['read', 'write', 'delete', 'approve'],
+			scope: 'branch'
+		},
 		{ resource: 'marketplace', actions: ['read', 'write', 'delete'], scope: 'branch' }
 	],
 	cashier: [

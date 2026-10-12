@@ -121,7 +121,9 @@ class NotificationStore {
 
 	/** Push a notification. Duplicates inside the window refresh the
 	 *  timestamp instead of stacking noise (mirrors the toast store). */
-	push = (n: Omit<AppNotification, 'id' | 'at' | 'read'> & Partial<Pick<AppNotification, 'at'>>) => {
+	push = (
+		n: Omit<AppNotification, 'id' | 'at' | 'read'> & Partial<Pick<AppNotification, 'at'>>
+	) => {
 		const at = n.at ?? Date.now();
 		const existing = this.items.find(
 			(item) => item.title === n.title && item.description === n.description && !item.read
@@ -195,7 +197,10 @@ export function startSystemNotifications() {
 			if (online) {
 				notifications.push({
 					title: i18nText('notifications.relayOnlineTitle', 'Back online'),
-					description: i18nText('notifications.relayOnlineDesc', 'Connected and syncing with your relays.'),
+					description: i18nText(
+						'notifications.relayOnlineDesc',
+						'Connected and syncing with your relays.'
+					),
 					icon: 'lucide:wifi',
 					tone: 'success',
 					href: '/settings/relays'

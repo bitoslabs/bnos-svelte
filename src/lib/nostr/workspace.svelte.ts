@@ -3,7 +3,10 @@ import { relays } from './relay.svelte';
 import { session } from './session.svelte';
 import { glo } from './store.svelte';
 import { tenant } from './tenant.svelte';
-import { hydrateOrganizationSettingsFromWorkspace, readOrganizationSettings } from './organization-settings';
+import {
+	hydrateOrganizationSettingsFromWorkspace,
+	readOrganizationSettings
+} from './organization-settings';
 import { applyWorkspaceSettingsFromOrganization } from './workspace-settings';
 import { BNOS_EXT_KEY } from '$lib/domain/helpers';
 
@@ -27,8 +30,13 @@ export function restoreTenantFromWorkspace(options: { organizationId?: string } 
 
 	const settingsSnapshot = readOrganizationSettings();
 	const preferredOrgId =
-		options.organizationId || tenant.state.organizationId || settingsSnapshot?.activeCompanyId || '';
-	const org = orgs.find((item) => item.id === preferredOrgId) ?? (options.organizationId ? undefined : orgs[0]);
+		options.organizationId ||
+		tenant.state.organizationId ||
+		settingsSnapshot?.activeCompanyId ||
+		'';
+	const org =
+		orgs.find((item) => item.id === preferredOrgId) ??
+		(options.organizationId ? undefined : orgs[0]);
 	if (!org) return false;
 	const orgData = org.data as Record<string, unknown>;
 	const orgExt = org.extensions?.[BNOS_EXT_KEY];

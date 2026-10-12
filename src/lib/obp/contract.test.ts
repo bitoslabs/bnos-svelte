@@ -105,9 +105,9 @@ describe('envelope schema validation', () => {
 	});
 
 	it('rejects expiry before creation', () => {
-		expect(
-			codeFor({ createdAt: '2026-10-07T10:00:00Z', expiresAt: '2026-10-07T09:00:00Z' })
-		).toBe('OBP-E01');
+		expect(codeFor({ createdAt: '2026-10-07T10:00:00Z', expiresAt: '2026-10-07T09:00:00Z' })).toBe(
+			'OBP-E01'
+		);
 	});
 });
 
@@ -133,9 +133,7 @@ function baseDraft(): ObpUnsignedEnvelope {
 		createdAt: '2026-10-07T10:00:00Z',
 		expiresAt: '2026-10-14T10:00:00Z',
 		currency: 'LAK',
-		lines: [
-			{ description: 'Arabica beans 1kg', quantity: 10, unit: 'kg', unitPriceMinor: 85_000 }
-		],
+		lines: [{ description: 'Arabica beans 1kg', quantity: 10, unit: 'kg', unitPriceMinor: 85_000 }],
 		totalsMinor: 850_000,
 		references: []
 	};

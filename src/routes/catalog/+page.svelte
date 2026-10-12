@@ -308,7 +308,12 @@
 			icon: 'lucide:folder',
 			count: () => glo.all(TYPE.category).length
 		},
-		{ id: 'units', label: t('catalog.units'), icon: 'lucide:ruler', count: () => glo.all(TYPE.unit).length },
+		{
+			id: 'units',
+			label: t('catalog.units'),
+			icon: 'lucide:ruler',
+			count: () => glo.all(TYPE.unit).length
+		},
 		{
 			id: 'modifiers',
 			label: t('catalog.modifiers'),
@@ -331,7 +336,11 @@
 		sortOptions: () => [
 			{ key: 'name', label: t('common.name'), value: (p) => (p.data as any).name ?? '~' },
 			{ key: 'price', label: t('common.price'), value: (p) => (p.data as any).price ?? 0 },
-			{ key: 'category', label: t('common.category'), value: (p) => (p.data as any).categoryId ?? '~' }
+			{
+				key: 'category',
+				label: t('common.category'),
+				value: (p) => (p.data as any).categoryId ?? '~'
+			}
 		],
 		defaultSortKey: 'name',
 		defaultViewMode: 'table',
@@ -442,9 +451,7 @@
 
 	/** Dynamic dialog width: product editor is wide (gallery + details),
 	 *  the lighter forms stay compact. */
-	const dlgSize = $derived(
-		dlgKind === 'products' ? 'xl' : dlgKind === 'modifiers' ? 'md' : 'sm'
-	);
+	const dlgSize = $derived(dlgKind === 'products' ? 'xl' : dlgKind === 'modifiers' ? 'md' : 'sm');
 
 	function openCreate(t: Tab) {
 		dlgKind = t;
@@ -493,7 +500,7 @@
 		pBarcode = d.barcode ?? '';
 		pDesc = d.description ?? '';
 		pImage = d.image ?? '';
-		pImages = Array.isArray(d.images) ? d.images : (d.image ? [d.image] : []);
+		pImages = Array.isArray(d.images) ? d.images : d.image ? [d.image] : [];
 		pUnitId = d.unitId ?? '';
 		pVariants = (d.variants ?? []).map((v: any) => ({
 			name: v.name ?? v.shortName ?? '',
@@ -578,7 +585,7 @@
 					barcode: pBarcode.trim() || undefined,
 					description: pDesc.trim() || undefined,
 					image: (pImages[0] ?? pImage.trim()) || undefined,
-				images: pImages.length ? pImages : undefined,
+					images: pImages.length ? pImages : undefined,
 					unitId: pUnitId.trim() || undefined,
 					costPrice:
 						typeof pCostPrice === 'number'
@@ -1042,7 +1049,8 @@
 				icon="lucide:plus"
 				title={t('common.add') + ' ' + t('common.item')}
 				onclick={() => (tab === 'bundles' ? openBundleCreate() : openCreate(tab))}
-				>{t('common.add')} {tab === 'products'
+				>{t('common.add')}
+				{tab === 'products'
 					? t('common.product')
 					: tab === 'categories'
 						? t('common.category')
@@ -1293,7 +1301,8 @@
 						color="primary"
 						size="sm"
 						icon="lucide:plus"
-						onclick={() => openCreate('categories')}>{t('common.add')} {t('common.category')}</Button
+						onclick={() => openCreate('categories')}
+						>{t('common.add')} {t('common.category')}</Button
 					>{/snippet}
 			</EmptyState>
 		{:else}
@@ -1334,20 +1343,20 @@
 								<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
 									>{c.data.sortOrder ?? 0}</td
 								>
-				<td class="px-5 py-3 text-right">
-					<div class="flex items-center justify-end gap-1">
-						<button
-							type="button"
-							class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-							onclick={() => openEditCategory(c.id)}
-							aria-label={t('common.edit')}
-							title={t('common.edit')}
-						>
-							<Icon name="lucide:pencil-line" class="size-3.5" />
-						</button>
-						<RowActions actions={catActions(c)} />
-					</div>
-				</td>
+								<td class="px-5 py-3 text-right">
+									<div class="flex items-center justify-end gap-1">
+										<button
+											type="button"
+											class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+											onclick={() => openEditCategory(c.id)}
+											aria-label={t('common.edit')}
+											title={t('common.edit')}
+										>
+											<Icon name="lucide:pencil-line" class="size-3.5" />
+										</button>
+										<RowActions actions={catActions(c)} />
+									</div>
+								</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -1410,20 +1419,20 @@
 								<td class="px-5 py-3 text-[var(--ui-text-muted)] capitalize"
 									>{u.data.type ?? 'count'}</td
 								>
-				<td class="px-5 py-3 text-right">
-					<div class="flex items-center justify-end gap-1">
-						<button
-							type="button"
-							class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-							onclick={() => openEditUnit(u.id)}
-							aria-label={t('common.edit')}
-							title={t('common.edit')}
-						>
-							<Icon name="lucide:pencil-line" class="size-3.5" />
-						</button>
-						<RowActions actions={unitActions(u)} />
-					</div>
-				</td>
+								<td class="px-5 py-3 text-right">
+									<div class="flex items-center justify-end gap-1">
+										<button
+											type="button"
+											class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+											onclick={() => openEditUnit(u.id)}
+											aria-label={t('common.edit')}
+											title={t('common.edit')}
+										>
+											<Icon name="lucide:pencil-line" class="size-3.5" />
+										</button>
+										<RowActions actions={unitActions(u)} />
+									</div>
+								</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -1454,7 +1463,8 @@
 						color="primary"
 						size="sm"
 						icon="lucide:plus"
-						onclick={() => openCreate('modifiers')}>{t('common.add')} {t('common.modifierGroup')}</Button
+						onclick={() => openCreate('modifiers')}
+						>{t('common.add')} {t('common.modifierGroup')}</Button
 					>{/snippet}
 			</EmptyState>
 		{:else}
@@ -1616,10 +1626,16 @@
 	{/if}
 </div>
 
-<Dialog bind:open={bDlgOpen} title={bEditingId ? t('common.edit') + ' ' + t('common.bundle') : t('common.add') + ' ' + t('common.bundle')}>
+<Dialog
+	bind:open={bDlgOpen}
+	title={bEditingId
+		? t('common.edit') + ' ' + t('common.bundle')
+		: t('common.add') + ' ' + t('common.bundle')}
+>
 	<div class="space-y-3">
 		<label class="block"
-			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span
+			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.name')}</span
 			><Input bind:value={bName} icon="lucide:package-open" class="w-full" /></label
 		>
 		<label class="block"
@@ -1817,244 +1833,247 @@
 			</div>
 			<!-- Details -->
 			<div class="space-y-3">
-			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span
-				><Input bind:value={pName} icon="lucide:package" class="w-full" /></label
-			>
+				<label class="block"
+					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>{t('common.name')}</span
+					><Input bind:value={pName} icon="lucide:package" class="w-full" /></label
+				>
 
-			<!-- Price / Cost / Compare-at -->
-			<div class="grid grid-cols-3 gap-3">
-				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Price ({currency})</span
-					><Input
-						bind:value={pPrice}
-						type="number"
-						icon="lucide:banknote"
-						min="0"
-						step="0.01"
-						class="w-full"
-					/></label
-				>
-				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>{t('common.cost')}</span
-					><Input
-						bind:value={pCostPrice}
-						type="number"
-						icon="lucide:wallet"
-						min="0"
-						step="0.01"
-						placeholder="0.00"
-						class="w-full"
-					/></label
-				>
-				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Compare-at</span
-					><Input
-						bind:value={pCompareAtPrice}
-						type="number"
-						icon="lucide:tag"
-						min="0"
-						step="0.01"
-						placeholder="0.00"
-						class="w-full"
-					/></label
-				>
-			</div>
-
-			<!-- Category + Unit -->
-			<div class="grid grid-cols-2 gap-3">
-				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>{t('common.category')}</span
-					><Select
-						bind:value={pCat}
-						class="w-full"
-						options={[
-							{ value: '', label: '— None —' },
-							...categories.map((c) => ({ value: c.id, label: c.data.name ?? c.id }))
-						]}
-					/></label
-				>
-				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>{t('common.unit')}</span
-					><Select
-						bind:value={pUnitId}
-						class="w-full"
-						options={[
-							{ value: '', label: t('common.none') },
-							...units.map((u) => ({ value: u.id, label: u.data.symbol ?? u.data.name ?? '' }))
-						]}
-					/></label
-				>
-			</div>
-			<datalist id="cats"
-				>{#each categories as c (c.id)}<option value={c.data.name}></option>{/each}</datalist
-			>
-
-			<!-- SKU + Barcode -->
-			<div class="grid grid-cols-2 gap-3">
-				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>{t('common.sku')}</span
-					><Input bind:value={pSku} icon="lucide:barcode" class="w-full" /></label
-				>
-				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Barcode</span
-					><Input
-						bind:value={pBarcode}
-						icon="lucide:scan-line"
-						placeholder="EAN/UPC"
-						class="w-full"
-					/></label
-				>
-			</div>
-
-			<!-- Description -->
-			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>{t('common.description')}</span
-				><Input
-					bind:value={pDesc}
-					textarea
-					rows={2}
-					placeholder="Product description…"
-					class="w-full"
-				/></label
-			>
-
-			<!-- Toggles: isPublic / available / taxInclusive -->
-			<div class="flex flex-wrap gap-3">
-				<Checkbox bind:checked={pIsPublic} size="sm" label="Public" />
-				<Checkbox bind:checked={pAvailable} size="sm" label="Available" />
-				<Checkbox bind:checked={pTaxInclusive} size="sm" label="Tax inclusive" />
-			</div>
-
-			<!-- prepTime + sortOrder -->
-			<div class="grid grid-cols-2 gap-3">
-				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Prep time (min)</span
-					><Input
-						bind:value={pPrepTime}
-						type="number"
-						min="0"
-						icon="lucide:timer"
-						placeholder="0"
-						class="w-full"
-					/></label
-				>
-				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Sort order</span
-					><Input
-						bind:value={pSortOrder}
-						type="number"
-						min="0"
-						icon="lucide:arrow-down-up"
-						placeholder="0"
-						class="w-full"
-					/></label
-				>
-			</div>
-
-			<!-- Variants -->
-			<div>
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Variants (sizes)</span
-				>
-				{#if pVariants.length}
-					<ul class="mb-2 space-y-1">
-						{#each pVariants as v, i (i)}
-							<li
-								class="flex items-center gap-2 rounded-lg border border-[var(--ui-border-muted)] px-2.5 py-1.5 text-[12.5px]"
-							>
-								<span class="flex-1 font-semibold">{v.name}</span><span
-									class="text-[var(--ui-text-muted)] tabular-nums"
-									>{v.price >= 0 ? '+' : ''}{v.price}</span
-								><button
-									type="button"
-									class="text-[var(--tone-error-text)]"
-									onclick={() => removeVariant(i)}
-									aria-label={t('common.remove')}><Icon name="lucide:x" class="size-3.5" /></button
-								>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-				<div class="flex gap-2">
-					<Input bind:value={pVariantName} placeholder="Large" class="flex-1" />
-					<Input bind:value={pVariantPrice} type="number" placeholder="price adj." class="w-28" />
-					<Button
-						color="neutral"
-						variant="subtle"
-						size="icon"
-						icon="lucide:plus"
-						onclick={addVariant}
-						aria-label="Add variant"
-					/>
-				</div>
-			</div>
-
-			<!-- Modifier groups -->
-			{#if modifiers.length}
-				<div>
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Modifier groups</span
+				<!-- Price / Cost / Compare-at -->
+				<div class="grid grid-cols-3 gap-3">
+					<label class="block"
+						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Price ({currency})</span
+						><Input
+							bind:value={pPrice}
+							type="number"
+							icon="lucide:banknote"
+							min="0"
+							step="0.01"
+							class="w-full"
+						/></label
 					>
-					<div class="flex flex-wrap gap-1.5">
-						{#each modifiers as m (m.id)}
-							<button
-								type="button"
-								onclick={() => toggleModGroup(m.id)}
-								class="rounded-full border px-2.5 py-1 text-[11.5px] font-semibold transition-colors {pModGroupIds.includes(
-									m.id
-								)
-									? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300'
-									: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
-								>{m.data.name}</button
-							>
-						{/each}
-					</div>
+					<label class="block"
+						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>{t('common.cost')}</span
+						><Input
+							bind:value={pCostPrice}
+							type="number"
+							icon="lucide:wallet"
+							min="0"
+							step="0.01"
+							placeholder="0.00"
+							class="w-full"
+						/></label
+					>
+					<label class="block"
+						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Compare-at</span
+						><Input
+							bind:value={pCompareAtPrice}
+							type="number"
+							icon="lucide:tag"
+							min="0"
+							step="0.01"
+							placeholder="0.00"
+							class="w-full"
+						/></label
+					>
 				</div>
-			{/if}
 
-			<!-- Inventory policy -->
-			<div>
-				<Checkbox
-					bind:checked={pTrackInv}
-					size="sm"
-					label="Track inventory & show stock in POS"
-				/>
-				{#if pTrackInv}
-					<div class="mt-2 grid grid-cols-2 gap-2">
-						<Input
-							bind:value={pLowStock}
+				<!-- Category + Unit -->
+				<div class="grid grid-cols-2 gap-3">
+					<label class="block"
+						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>{t('common.category')}</span
+						><Select
+							bind:value={pCat}
+							class="w-full"
+							options={[
+								{ value: '', label: '— None —' },
+								...categories.map((c) => ({ value: c.id, label: c.data.name ?? c.id }))
+							]}
+						/></label
+					>
+					<label class="block"
+						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>{t('common.unit')}</span
+						><Select
+							bind:value={pUnitId}
+							class="w-full"
+							options={[
+								{ value: '', label: t('common.none') },
+								...units.map((u) => ({ value: u.id, label: u.data.symbol ?? u.data.name ?? '' }))
+							]}
+						/></label
+					>
+				</div>
+				<datalist id="cats"
+					>{#each categories as c (c.id)}<option value={c.data.name}></option>{/each}</datalist
+				>
+
+				<!-- SKU + Barcode -->
+				<div class="grid grid-cols-2 gap-3">
+					<label class="block"
+						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>{t('common.sku')}</span
+						><Input bind:value={pSku} icon="lucide:barcode" class="w-full" /></label
+					>
+					<label class="block"
+						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Barcode</span
+						><Input
+							bind:value={pBarcode}
+							icon="lucide:scan-line"
+							placeholder="EAN/UPC"
+							class="w-full"
+						/></label
+					>
+				</div>
+
+				<!-- Description -->
+				<label class="block"
+					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>{t('common.description')}</span
+					><Input
+						bind:value={pDesc}
+						textarea
+						rows={2}
+						placeholder="Product description…"
+						class="w-full"
+					/></label
+				>
+
+				<!-- Toggles: isPublic / available / taxInclusive -->
+				<div class="flex flex-wrap gap-3">
+					<Checkbox bind:checked={pIsPublic} size="sm" label="Public" />
+					<Checkbox bind:checked={pAvailable} size="sm" label="Available" />
+					<Checkbox bind:checked={pTaxInclusive} size="sm" label="Tax inclusive" />
+				</div>
+
+				<!-- prepTime + sortOrder -->
+				<div class="grid grid-cols-2 gap-3">
+					<label class="block"
+						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Prep time (min)</span
+						><Input
+							bind:value={pPrepTime}
 							type="number"
 							min="0"
-							icon="lucide:alert-triangle"
-							placeholder="Low-stock alert at"
+							icon="lucide:timer"
+							placeholder="0"
 							class="w-full"
-						/>
-						<Checkbox
-							bind:checked={pDenyOos}
-							size="sm"
-							label="Block sale when out of stock"
-							class="items-center rounded-lg border border-[var(--ui-border-muted)] px-2.5 py-2"
+						/></label
+					>
+					<label class="block"
+						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Sort order</span
+						><Input
+							bind:value={pSortOrder}
+							type="number"
+							min="0"
+							icon="lucide:arrow-down-up"
+							placeholder="0"
+							class="w-full"
+						/></label
+					>
+				</div>
+
+				<!-- Variants -->
+				<div>
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Variants (sizes)</span
+					>
+					{#if pVariants.length}
+						<ul class="mb-2 space-y-1">
+							{#each pVariants as v, i (i)}
+								<li
+									class="flex items-center gap-2 rounded-lg border border-[var(--ui-border-muted)] px-2.5 py-1.5 text-[12.5px]"
+								>
+									<span class="flex-1 font-semibold">{v.name}</span><span
+										class="text-[var(--ui-text-muted)] tabular-nums"
+										>{v.price >= 0 ? '+' : ''}{v.price}</span
+									><button
+										type="button"
+										class="text-[var(--tone-error-text)]"
+										onclick={() => removeVariant(i)}
+										aria-label={t('common.remove')}
+										><Icon name="lucide:x" class="size-3.5" /></button
+									>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+					<div class="flex gap-2">
+						<Input bind:value={pVariantName} placeholder="Large" class="flex-1" />
+						<Input bind:value={pVariantPrice} type="number" placeholder="price adj." class="w-28" />
+						<Button
+							color="neutral"
+							variant="subtle"
+							size="icon"
+							icon="lucide:plus"
+							onclick={addVariant}
+							aria-label="Add variant"
 						/>
 					</div>
+				</div>
+
+				<!-- Modifier groups -->
+				{#if modifiers.length}
+					<div>
+						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							>Modifier groups</span
+						>
+						<div class="flex flex-wrap gap-1.5">
+							{#each modifiers as m (m.id)}
+								<button
+									type="button"
+									onclick={() => toggleModGroup(m.id)}
+									class="rounded-full border px-2.5 py-1 text-[11.5px] font-semibold transition-colors {pModGroupIds.includes(
+										m.id
+									)
+										? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300'
+										: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
+									>{m.data.name}</button
+								>
+							{/each}
+						</div>
+					</div>
 				{/if}
-			</div>
+
+				<!-- Inventory policy -->
+				<div>
+					<Checkbox
+						bind:checked={pTrackInv}
+						size="sm"
+						label="Track inventory & show stock in POS"
+					/>
+					{#if pTrackInv}
+						<div class="mt-2 grid grid-cols-2 gap-2">
+							<Input
+								bind:value={pLowStock}
+								type="number"
+								min="0"
+								icon="lucide:alert-triangle"
+								placeholder="Low-stock alert at"
+								class="w-full"
+							/>
+							<Checkbox
+								bind:checked={pDenyOos}
+								size="sm"
+								label="Block sale when out of stock"
+								class="items-center rounded-lg border border-[var(--ui-border-muted)] px-2.5 py-2"
+							/>
+						</div>
+					{/if}
+				</div>
 			</div>
 		</div>
 	{:else if dlgKind === 'categories'}
 		<div class="space-y-3">
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span
+				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.name')}</span
 				><Input bind:value={cName} icon="lucide:folder" class="w-full" /></label
 			>
 			<label class="block"
@@ -2114,7 +2133,8 @@
 				>
 			</div>
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.type')}</span
+				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.type')}</span
 				>
 				<Select
 					bind:value={uType}
@@ -2172,7 +2192,9 @@
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (dlgOpen = false)}>{t('common.cancel')}</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (dlgOpen = false)}
+			>{t('common.cancel')}</Button
+		>
 		<Button color="primary" icon="lucide:check" onclick={save}
 			>{isEditing ? t('common.update') : t('common.save')}</Button
 		>
@@ -2213,7 +2235,8 @@
 			><Input bind:value={quickAdjustQty} type="number" min="1" class="w-full" /></label
 		>
 		<label class="block"
-			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.reason')}</span
+			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.reason')}</span
 			><Input
 				bind:value={quickAdjustReason}
 				placeholder="Manual adjustment"
@@ -2225,7 +2248,9 @@
 			color="neutral"
 			variant="ghost"
 			onclick={() => (quickAdjustOpen = false)}>{t('common.cancel')}</Button
-		><Button color="primary" icon="lucide:check" onclick={saveQuickAdjust}>{t('common.save')}</Button>{/snippet}
+		><Button color="primary" icon="lucide:check" onclick={saveQuickAdjust}
+			>{t('common.save')}</Button
+		>{/snippet}
 </Dialog>
 
 <!-- Import starter kits from the templates marketplace -->
@@ -2233,19 +2258,26 @@
 	<div class="space-y-3">
 		<p class="text-[12.5px] text-[var(--ui-text-muted)]">
 			Browse starter-kit product items published by the <span class="font-semibold">templates</span>
-			marketplace and apply them to this catalog. Load the bundled catalog by URL, search your
-			relays for kits published by creators, or paste the JSON. Each kit is namespaced, so re-applying
-			updates its records instead of duplicating them.
+			marketplace and apply them to this catalog. Load the bundled catalog by URL, search your relays
+			for kits published by creators, or paste the JSON. Each kit is namespaced, so re-applying updates
+			its records instead of duplicating them.
 		</p>
 		<div class="flex items-end gap-2">
 			<label class="min-w-0 flex-1">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 					>Preset catalog URL</span
 				>
-				<Input bind:value={tmplUrl} placeholder="https://bnos.market/bnos-presets.json" class="w-full" />
+				<Input
+					bind:value={tmplUrl}
+					placeholder="https://bnos.market/bnos-presets.json"
+					class="w-full"
+				/>
 			</label>
-			<Button color="neutral" variant="subtle" icon="lucide:refresh-cw" onclick={loadTemplateCatalog}
-				>{tmplLoading ? 'Loading…' : 'Load'}</Button
+			<Button
+				color="neutral"
+				variant="subtle"
+				icon="lucide:refresh-cw"
+				onclick={loadTemplateCatalog}>{tmplLoading ? 'Loading…' : 'Load'}</Button
 			>
 			<Button
 				color="neutral"
@@ -2274,7 +2306,9 @@
 					>{tmplSelected.size === tmplItems.length ? 'Clear all' : 'Select all'}</button
 				>
 			</div>
-			<ul class="divide-y divide-[var(--ui-border-muted)] rounded-xl border border-[var(--ui-border)]">
+			<ul
+				class="divide-y divide-[var(--ui-border-muted)] rounded-xl border border-[var(--ui-border)]"
+			>
 				{#each tmplItems as item (item.presetId)}
 					<li class="flex items-start gap-3 p-3">
 						<Checkbox

@@ -3,7 +3,13 @@
  * presentation. Mirrors the `order-sources.ts` pattern: a single source of
  * truth so badges, filters, pickers and analytics never drift.
  */
-import type { MarketplaceChannelType, MarketplaceProductStatus, MarketplaceConnectionStatus, MarketplaceReviewStatus, MarketplaceConnection } from './types';
+import type {
+	MarketplaceChannelType,
+	MarketplaceProductStatus,
+	MarketplaceConnectionStatus,
+	MarketplaceReviewStatus,
+	MarketplaceConnection
+} from './types';
 
 // ── Channels ────────────────────────────────────────────────────────────────
 
@@ -18,17 +24,83 @@ export interface ChannelMeta {
 }
 
 export const CHANNEL_TYPES: ChannelMeta[] = [
-	{ value: 'tiktok', label: 'TikTok Shop', icon: 'lucide:music', color: 'bg-pink-500/10 text-pink-500', blurb: 'Short-video commerce, live selling' },
-	{ value: 'facebook', label: 'Facebook Shop', icon: 'lucide:facebook', color: 'bg-blue-500/10 text-blue-500', blurb: 'Meta storefront + Messenger orders' },
-	{ value: 'instagram', label: 'Instagram', icon: 'lucide:instagram', color: 'bg-fuchsia-500/10 text-fuchsia-500', blurb: 'Shoppable posts & DM checkout' },
-	{ value: 'website', label: 'Own Website', icon: 'lucide:globe', color: 'bg-emerald-500/10 text-emerald-500', blurb: 'Your branded storefront (DTC)' },
-	{ value: 'shopee', label: 'Shopee', icon: 'lucide:shopping-bag', color: 'bg-orange-500/10 text-orange-500', blurb: 'Southeast-Asia marketplace' },
-	{ value: 'lazada', label: 'Lazada', icon: 'lucide:shopping-cart', color: 'bg-sky-500/10 text-sky-500', blurb: 'Regional marketplace reach' },
-	{ value: 'tokopedia', label: 'Tokopedia', icon: 'lucide:store', color: 'bg-green-500/10 text-green-500', blurb: 'Indonesia marketplace' },
-	{ value: 'amazon', label: 'Amazon', icon: 'lucide:package', color: 'bg-amber-500/10 text-amber-500', blurb: 'Global marketplace fulfillment' },
-	{ value: 'whatsapp', label: 'WhatsApp Catalog', icon: 'lucide:message-circle', color: 'bg-green-500/10 text-green-500', blurb: 'Chat commerce & catalog' },
-	{ value: 'shopify', label: 'Shopify', icon: 'lucide:shopping-bag', color: 'bg-lime-500/10 text-lime-600', blurb: 'Sync with a Shopify store' },
-	{ value: 'custom', label: 'Custom', icon: 'lucide:plug', color: 'bg-violet-500/10 text-violet-500', blurb: 'API / webhook integration' }
+	{
+		value: 'tiktok',
+		label: 'TikTok Shop',
+		icon: 'lucide:music',
+		color: 'bg-pink-500/10 text-pink-500',
+		blurb: 'Short-video commerce, live selling'
+	},
+	{
+		value: 'facebook',
+		label: 'Facebook Shop',
+		icon: 'lucide:facebook',
+		color: 'bg-blue-500/10 text-blue-500',
+		blurb: 'Meta storefront + Messenger orders'
+	},
+	{
+		value: 'instagram',
+		label: 'Instagram',
+		icon: 'lucide:instagram',
+		color: 'bg-fuchsia-500/10 text-fuchsia-500',
+		blurb: 'Shoppable posts & DM checkout'
+	},
+	{
+		value: 'website',
+		label: 'Own Website',
+		icon: 'lucide:globe',
+		color: 'bg-emerald-500/10 text-emerald-500',
+		blurb: 'Your branded storefront (DTC)'
+	},
+	{
+		value: 'shopee',
+		label: 'Shopee',
+		icon: 'lucide:shopping-bag',
+		color: 'bg-orange-500/10 text-orange-500',
+		blurb: 'Southeast-Asia marketplace'
+	},
+	{
+		value: 'lazada',
+		label: 'Lazada',
+		icon: 'lucide:shopping-cart',
+		color: 'bg-sky-500/10 text-sky-500',
+		blurb: 'Regional marketplace reach'
+	},
+	{
+		value: 'tokopedia',
+		label: 'Tokopedia',
+		icon: 'lucide:store',
+		color: 'bg-green-500/10 text-green-500',
+		blurb: 'Indonesia marketplace'
+	},
+	{
+		value: 'amazon',
+		label: 'Amazon',
+		icon: 'lucide:package',
+		color: 'bg-amber-500/10 text-amber-500',
+		blurb: 'Global marketplace fulfillment'
+	},
+	{
+		value: 'whatsapp',
+		label: 'WhatsApp Catalog',
+		icon: 'lucide:message-circle',
+		color: 'bg-green-500/10 text-green-500',
+		blurb: 'Chat commerce & catalog'
+	},
+	{
+		value: 'shopify',
+		label: 'Shopify',
+		icon: 'lucide:shopping-bag',
+		color: 'bg-lime-500/10 text-lime-600',
+		blurb: 'Sync with a Shopify store'
+	},
+	{
+		value: 'custom',
+		label: 'Custom',
+		icon: 'lucide:plug',
+		color: 'bg-violet-500/10 text-violet-500',
+		blurb: 'API / webhook integration'
+	}
 ];
 
 const CHANNEL_MAP = new Map(CHANNEL_TYPES.map((c) => [c.value, c]));
@@ -111,12 +183,8 @@ export const CONNECTION_STATUSES: ConnectionStatusMeta[] = [
 	{ value: 'disconnected', label: 'Disconnected', tone: 'neutral' }
 ];
 
-export function connectionStatusMeta(
-	s?: string | null
-): ConnectionStatusMeta {
-	return (
-		CONNECTION_STATUSES.find((x) => x.value === s) ?? CONNECTION_STATUSES[3]
-	);
+export function connectionStatusMeta(s?: string | null): ConnectionStatusMeta {
+	return CONNECTION_STATUSES.find((x) => x.value === s) ?? CONNECTION_STATUSES[3];
 }
 
 // `MarketplaceConnection` is referenced above; imported lazily to keep helpers tidy.

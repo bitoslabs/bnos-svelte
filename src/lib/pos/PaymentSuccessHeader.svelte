@@ -117,7 +117,9 @@
 		{sale.number}
 	</p>
 	<div class="ps-fade-up mx-auto mt-3 w-full max-w-[260px] text-left">
-		<div class="mb-1.5 flex items-center justify-between text-[9px] font-bold tracking-[0.12em] text-[var(--tone-success-text)] uppercase">
+		<div
+			class="mb-1.5 flex items-center justify-between text-[9px] font-bold tracking-[0.12em] text-[var(--tone-success-text)] uppercase"
+		>
 			<span>Payment confirmed</span>
 			<span>100%</span>
 		</div>
@@ -184,8 +186,14 @@
 		</div>
 		{#if hasTendered}
 			<div class="mt-1 flex items-center justify-between text-[11px] text-[var(--ui-text-muted)]">
-				<span>{t('pos.tendered')} <span class="tabular-nums">{formatMoney(tendered, currency)}</span></span>
-				<span>{t('common.total')} <span class="tabular-nums">{formatMoney(finalTotal, currency)}</span></span>
+				<span
+					>{t('pos.tendered')}
+					<span class="tabular-nums">{formatMoney(tendered, currency)}</span></span
+				>
+				<span
+					>{t('common.total')}
+					<span class="tabular-nums">{formatMoney(finalTotal, currency)}</span></span
+				>
 			</div>
 		{/if}
 	{/if}

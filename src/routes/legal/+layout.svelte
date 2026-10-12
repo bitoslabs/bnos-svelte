@@ -14,7 +14,6 @@
 		{ to: '/legal/license', icon: 'lucide:scale', label: 'Open-source License' },
 		// about
 		{ to: '/about', icon: 'lucide:info', label: 'About' }
-
 	];
 
 	function active(to: string) {
@@ -27,7 +26,7 @@
 
 <svelte:head><title>{t('legal.title')} · {site.name}</title></svelte:head>
 
-<div class="mx-auto w-full max-w-5xl space-y-6 px-5 pt-6 pb-24 lg:pb-12 min-h-dvh lg:pt-10">
+<div class="mx-auto min-h-dvh w-full max-w-5xl space-y-6 px-5 pt-6 pb-24 lg:pt-10 lg:pb-12">
 	<header class="space-y-2">
 		<a
 			href={resolve('/about')}

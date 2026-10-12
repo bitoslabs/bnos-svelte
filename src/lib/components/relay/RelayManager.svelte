@@ -65,7 +65,9 @@
 				placeholder="wss://relay.example.com"
 				class="flex-1"
 			/>
-			<Button type="submit" color="primary" variant="solid" icon="lucide:plus">{t('common.add')}</Button>
+			<Button type="submit" color="primary" variant="solid" icon="lucide:plus"
+				>{t('common.add')}</Button
+			>
 		</form>
 	{/if}
 
@@ -96,12 +98,17 @@
 					<!-- URL + meta -->
 					<div class="min-w-0 flex-1">
 						<div class="flex items-center gap-1.5">
-							<span class={cn('truncate font-mono text-[var(--ui-text)]', compact ? 'text-[11.5px]' : 'text-[12.5px]')}>
+							<span
+								class={cn(
+									'truncate font-mono text-[var(--ui-text)]',
+									compact ? 'text-[11.5px]' : 'text-[12.5px]'
+								)}
+							>
 								{url}
 							</span>
 							{#if isPrimary}
 								<span
-									class="shrink-0 rounded bg-primary-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-primary-600 dark:text-primary-400"
+									class="shrink-0 rounded bg-primary-500/10 px-1.5 py-0.5 text-[9px] font-bold text-primary-600 uppercase dark:text-primary-400"
 								>
 									Primary
 								</span>

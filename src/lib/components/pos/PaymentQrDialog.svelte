@@ -69,18 +69,19 @@
 	const steps = $derived([
 		{ state: 'done' as const, label: isLightning ? 'Invoice' : 'QR ready' },
 		{
-			state: (flow.paid ? 'done' : flow.phase === 'awaiting' || flow.phase === 'expired' ? 'active' : 'pending') as
-				| 'done'
-				| 'active'
-				| 'pending',
+			state: (flow.paid
+				? 'done'
+				: flow.phase === 'awaiting' || flow.phase === 'expired'
+					? 'active'
+					: 'pending') as 'done' | 'active' | 'pending',
 			label: isLightning ? 'Payment' : 'Scan & pay'
 		},
 		{ state: (flow.paid ? 'done' : 'pending') as 'done' | 'pending', label: 'Confirmed' }
 	]);
-	const satsHint = $derived(
-		flow.invoice?.amountSats ?? satsFromAmount(flow.amount)
+	const satsHint = $derived(flow.invoice?.amountSats ?? satsFromAmount(flow.amount));
+	const countdownPct = $derived(
+		Math.max(0, Math.min(100, (flow.secondsLeft / QR_WINDOW_SEC) * 100))
 	);
-	const countdownPct = $derived(Math.max(0, Math.min(100, (flow.secondsLeft / QR_WINDOW_SEC) * 100)));
 	const urgent = $derived(flow.secondsLeft < 60);
 	const qrDimmed = $derived(flow.expired && !flow.paid);
 
@@ -119,7 +120,12 @@
 	});
 </script>
 
-<Dialog bind:open={dlgOpen} title={t('common.scanToPay')} size="md" dismissible={!flow.paid && !flow.loading}>
+<Dialog
+	bind:open={dlgOpen}
+	title={t('common.scanToPay')}
+	size="md"
+	dismissible={!flow.paid && !flow.loading}
+>
 	{#if flow.result}
 		<div class="flex flex-col items-center gap-4 py-2">
 			<!-- Header: method + kind badge -->
@@ -150,7 +156,9 @@
 
 			<!-- Amount hero: the number the customer owes. -->
 			<div class="text-center">
-				<p class="text-[10.5px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+				<p
+					class="text-[10.5px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+				>
 					{t('pos.amountDue')}
 				</p>
 				<p class="font-display text-[32px] leading-tight font-black tabular-nums">
@@ -168,22 +176,25 @@
 			<!-- Honest 3-step timeline (no fake percentages). -->
 			<div class="grid w-full grid-cols-3 gap-1.5" aria-hidden="true">
 				{#each steps as s, i (i)}
-					<div class="flex items-center gap-1.5 text-[10px] font-semibold {s.state === 'done'
-						? 'text-emerald-600 dark:text-emerald-400'
-						: s.state === 'active'
-							? 'text-amber-700 dark:text-amber-300'
-							: 'text-[var(--ui-text-dimmed)]'}"
+					<div
+						class="flex items-center gap-1.5 text-[10px] font-semibold {s.state === 'done'
+							? 'text-emerald-600 dark:text-emerald-400'
+							: s.state === 'active'
+								? 'text-amber-700 dark:text-amber-300'
+								: 'text-[var(--ui-text-dimmed)]'}"
 					>
 						{#if s.state === 'done'}
 							<Icon name="lucide:check-circle-2" class="size-3.5 shrink-0" />
 						{:else if s.state === 'active'}
 							<span class="relative flex size-3.5 shrink-0">
 								<span
-									class="absolute inline-flex size-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
+									class="absolute inline-flex size-full animate-ping rounded-full bg-amber-400 opacity-75"
+								></span>
 								<span class="relative inline-flex size-3.5 rounded-full bg-amber-500"></span>
 							</span>
 						{:else}
-							<span class="size-3.5 shrink-0 rounded-full border-2 border-[var(--ui-border)]"></span>
+							<span class="size-3.5 shrink-0 rounded-full border-2 border-[var(--ui-border)]"
+							></span>
 						{/if}
 						<span class="truncate">{s.label}</span>
 					</div>
@@ -203,7 +214,9 @@
 						>
 							<Icon name="lucide:loader-circle" class="size-8 animate-spin text-amber-500" />
 							<span class="text-[11.5px] font-semibold">Generating Lightning invoice…</span>
-							<span class="text-[10px] text-[var(--ui-text-dimmed)]">Contacting wallet provider</span>
+							<span class="text-[10px] text-[var(--ui-text-dimmed)]"
+								>Contacting wallet provider</span
+							>
 						</div>
 					{:else if flow.result.imageUrl}
 						<img
@@ -357,11 +370,13 @@
 						<Icon name="lucide:message-square-text" class="size-3.5" />Invoice memo
 					</div>
 					<p
-						class="text-[12.5px] leading-relaxed font-medium whitespace-pre-wrap break-words text-[var(--ui-text)]"
+						class="text-[12.5px] leading-relaxed font-medium break-words whitespace-pre-wrap text-[var(--ui-text)]"
 					>
 						{flow.note}
 					</p>
-					<p class="mt-1.5 flex items-start gap-1.5 text-[10px] leading-snug {memoDeliveryInfo.cls}">
+					<p
+						class="mt-1.5 flex items-start gap-1.5 text-[10px] leading-snug {memoDeliveryInfo.cls}"
+					>
 						<Icon name={memoDeliveryInfo.icon} class="mt-px size-3 shrink-0" />
 						{memoDeliveryInfo.text}
 					</p>
@@ -405,8 +420,12 @@
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="subtle" icon="lucide:x" onclick={onclose} disabled={flow.paid || flow.loading}
-			>{t('common.cancel')}</Button
+		<Button
+			color="neutral"
+			variant="subtle"
+			icon="lucide:x"
+			onclick={onclose}
+			disabled={flow.paid || flow.loading}>{t('common.cancel')}</Button
 		>
 		<Button
 			color="primary"
@@ -414,7 +433,8 @@
 			onclick={onconfirm}
 			disabled={flow.loading || flow.fetching || flow.paid}
 		>
-			{#if flow.loading}<Icon name="lucide:loader-circle" class="size-4 animate-spin" />…{:else}Mark paid{/if}
+			{#if flow.loading}<Icon name="lucide:loader-circle" class="size-4 animate-spin" />…{:else}Mark
+				paid{/if}
 		</Button>
 	{/snippet}
 </Dialog>

@@ -3,7 +3,15 @@
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import BnosMark from '$lib/components/BnosMark.svelte';
-	import { findNavItem, navSections, navSectionLabel, navLabel, permissionForNavItem, permissionForPath, type NavItem } from '$lib/nav';
+	import {
+		findNavItem,
+		navSections,
+		navSectionLabel,
+		navLabel,
+		permissionForNavItem,
+		permissionForPath,
+		type NavItem
+	} from '$lib/nav';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { permissions } from '$lib/permissions.svelte';
@@ -40,10 +48,7 @@
 	}
 
 	function isGroupActive(item: NavItem): boolean {
-		return (
-			isActive(item) ||
-			(item.children?.some((c) => isActive(c)) ?? false)
-		);
+		return isActive(item) || (item.children?.some((c) => isActive(c)) ?? false);
 	}
 
 	function isGroupExpanded(item: NavItem): boolean {
@@ -75,9 +80,7 @@
 				items: section.items
 					.filter(canSeeNav)
 					.map((item) =>
-						item.children
-							? { ...item, children: item.children.filter(canSeeNav) }
-							: item
+						item.children ? { ...item, children: item.children.filter(canSeeNav) } : item
 					)
 			}))
 			.filter((section) => section.items.length > 0)
@@ -90,16 +93,20 @@
 		href={resolve('/')}
 		aria-label={t('sidebar.goDashboard')}
 		title={sidebarState.collapsed ? t('sidebar.bnosDashboard') : undefined}
-		class="app-sidebar-brand flex h-16 items-center {sidebarState.collapsed ? 'justify-center px-0' : 'gap-3 px-5'} border-b border-[var(--glass-border)] transition-all hover:bg-[var(--ui-bg-accented)]"
+		class="app-sidebar-brand flex h-16 items-center {sidebarState.collapsed
+			? 'justify-center px-0'
+			: 'gap-3 px-5'} border-b border-[var(--glass-border)] transition-all hover:bg-[var(--ui-bg-accented)]"
 		onclick={() => onnavigate?.()}
 	>
-		<div class="relative grid size-10 shrink-0 place-items-center ">
+		<div class="relative grid size-10 shrink-0 place-items-center">
 			<BnosMark class="size-9" />
 		</div>
 		{#if !sidebarState.collapsed}
 			<div class="leading-tight">
 				<div class="font-display text-[17px] font-bold tracking-tight">BNOS</div>
-				<div class="text-[10px] font-semibold tracking-[0.18em] text-[var(--ui-text-dimmed)] uppercase">
+				<div
+					class="text-[10px] font-semibold tracking-[0.18em] text-[var(--ui-text-dimmed)] uppercase"
+				>
 					{t('common.tagline')}
 				</div>
 			</div>
@@ -107,119 +114,134 @@
 	</a>
 
 	<!-- Navigation -->
-	<nav class="app-nav min-h-0 flex-1 overflow-y-auto {sidebarState.collapsed ? 'px-2' : 'px-3'} py-2">
+	<nav
+		class="app-nav min-h-0 flex-1 overflow-y-auto {sidebarState.collapsed ? 'px-2' : 'px-3'} py-2"
+	>
 		{#each visibleSections as section (section.label)}
 			{#if !section.feature || (section.feature === 'restaurant' ? tenant.restaurantEnabled : features.isEnabled(section.feature))}
-			<div class="app-nav-section mb-5">
-				{#if !sidebarState.collapsed && sectionHasOwnLabel(section.items)}
-					<div
-						class="app-nav-section-label px-3 pb-1.5 text-[10px] font-semibold tracking-[0.16em] text-[var(--ui-text-dimmed)] uppercase"
-					>
-						{navSectionLabel(section)}
-					</div>
-				{/if}
-				{#each section.items as item (item.to)}
-					{@const active = isActive(item)}
+				<div class="app-nav-section mb-5">
+					{#if !sidebarState.collapsed && sectionHasOwnLabel(section.items)}
+						<div
+							class="app-nav-section-label px-3 pb-1.5 text-[10px] font-semibold tracking-[0.16em] text-[var(--ui-text-dimmed)] uppercase"
+						>
+							{navSectionLabel(section)}
+						</div>
+					{/if}
+					{#each section.items as item (item.to)}
+						{@const active = isActive(item)}
 
-					{#if hasChildren(item) && !sidebarState.collapsed}
-						{@const groupActive = isGroupActive(item)}
-						{@const groupExpanded = isGroupExpanded(item)}
-						<div class="sidebar-nav-group-wrap mb-0.5">
-							<div
-								class="sidebar-nav-parent nav-active group flex items-center rounded-lg pr-1 {groupActive
-									? 'is-active-surface'
-									: 'soft-hover'}"
-							>
+						{#if hasChildren(item) && !sidebarState.collapsed}
+							{@const groupActive = isGroupActive(item)}
+							{@const groupExpanded = isGroupExpanded(item)}
+							<div class="sidebar-nav-group-wrap mb-0.5">
+								<div
+									class="sidebar-nav-parent nav-active group flex items-center rounded-lg pr-1 {groupActive
+										? 'is-active-surface'
+										: 'soft-hover'}"
+								>
+									<a
+										href={resolvedHref(item.to)}
+										title={navLabel(item)}
+										class="sidebar-nav-parent-link flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors {groupActive
+											? 'text-[var(--ui-text)]'
+											: 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
+										onclick={() => onnavigate?.()}
+									>
+										<Icon
+											name={item.icon}
+											class="size-[18px] shrink-0 {groupActive
+												? 'text-primary-500'
+												: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'}"
+										/>
+										<span class="truncate">{navLabel(item)}</span>
+									</a>
+									<button
+										type="button"
+										onclick={() => toggleGroup(item.to)}
+										aria-label={groupExpanded ? t('sidebar.collapse') : t('sidebar.expand')}
+										class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+									>
+										<Icon
+											name="lucide:chevron-down"
+											class="size-3.5 transition-transform duration-200 {groupExpanded
+												? 'rotate-180'
+												: ''}"
+										/>
+									</button>
+								</div>
+								{#if groupExpanded}
+									<div
+										class="sidebar-nav-group mt-0.5 ml-[1.35rem] flex flex-col gap-0.5 border-l border-[var(--ui-border-muted)] pl-2"
+									>
+										{#each item.children as child (child.to)}
+											{@const childActive = isActive(child)}
+											<a
+												href={resolvedHref(child.to)}
+												title={navLabel(child)}
+												class="sidebar-nav-child nav-active group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors {childActive
+													? 'is-active-surface text-[var(--ui-text)]'
+													: 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
+												onclick={() => onnavigate?.()}
+											>
+												<Icon
+													name={child.icon}
+													class="size-4 shrink-0 {childActive
+														? 'text-primary-500'
+														: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'}"
+												/>
+												<span class="truncate">{navLabel(child)}</span>
+											</a>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{:else}
 							<a
 								href={resolvedHref(item.to)}
-								title={navLabel(item)}
-								class="sidebar-nav-parent-link flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors {groupActive
-									? 'text-[var(--ui-text)]'
-									: 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
+								title={sidebarState.collapsed ? navLabel(item) : undefined}
+								class="app-nav-item nav-active group mb-0.5 flex items-center {sidebarState.collapsed
+									? 'justify-center px-0'
+									: 'gap-3 px-3'} rounded-lg py-2 text-[13.5px] font-medium transition-colors {active
+									? 'nav-active-on is-active-surface'
+									: 'soft-hover text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
 								onclick={() => onnavigate?.()}
 							>
 								<Icon
 									name={item.icon}
-									class="size-[18px] shrink-0 {groupActive
+									class="size-[18px] shrink-0 {active
 										? 'text-primary-500'
 										: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'}"
 								/>
-								<span class="truncate">{navLabel(item)}</span>
+								{#if !sidebarState.collapsed}
+									<span class="truncate">{navLabel(item)}</span>
+								{/if}
 							</a>
-							<button
-								type="button"
-								onclick={() => toggleGroup(item.to)}
-								aria-label={groupExpanded ? t('sidebar.collapse') : t('sidebar.expand')}
-								class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-							>
-								<Icon
-									name="lucide:chevron-down"
-									class="size-3.5 transition-transform duration-200 {groupExpanded ? 'rotate-180' : ''}"
-								/>
-							</button>
-						</div>
-							{#if groupExpanded}
-								<div
-									class="sidebar-nav-group ml-[1.35rem] mt-0.5 flex flex-col gap-0.5 border-l border-[var(--ui-border-muted)] pl-2"
-								>
-									{#each item.children as child (child.to)}
-										{@const childActive = isActive(child)}
-										<a
-											href={resolvedHref(child.to)}
-											title={navLabel(child)}
-											class="sidebar-nav-child nav-active group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors {childActive
-												? 'is-active-surface text-[var(--ui-text)]'
-												: 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
-											onclick={() => onnavigate?.()}
-										>
-											<Icon
-												name={child.icon}
-												class="size-4 shrink-0 {childActive
-													? 'text-primary-500'
-													: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'}"
-											/>
-											<span class="truncate">{navLabel(child)}</span>
-										</a>
-									{/each}
-								</div>
-							{/if}
-						</div>
-					{:else}
-						<a
-							href={resolvedHref(item.to)}
-							title={sidebarState.collapsed ? navLabel(item) : undefined}
-							class="app-nav-item nav-active group mb-0.5 flex items-center {sidebarState.collapsed ? 'justify-center px-0' : 'gap-3 px-3'} rounded-lg py-2 text-[13.5px] font-medium transition-colors {active
-								? 'nav-active-on is-active-surface'
-								: 'soft-hover text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
-							onclick={() => onnavigate?.()}
-						>
-							<Icon
-								name={item.icon}
-								class="size-[18px] shrink-0 {active
-									? 'text-primary-500'
-									: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'}"
-							/>
-							{#if !sidebarState.collapsed}
-								<span class="truncate">{navLabel(item)}</span>
-							{/if}
-						</a>
-					{/if}
-				{/each}
-			</div>
+						{/if}
+					{/each}
+				</div>
 			{/if}
 		{/each}
 	</nav>
 
 	<!-- Collapse toggle -->
-	<div class="app-sidebar-footer flex items-center {sidebarState.collapsed ? 'justify-center' : ''} p-3">
+	<div
+		class="app-sidebar-footer flex items-center {sidebarState.collapsed
+			? 'justify-center'
+			: ''} p-3"
+	>
 		<button
 			type="button"
 			onclick={toggleCollapsed}
 			title={sidebarState.collapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')}
-			aria-label={sidebarState.collapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')}
+			aria-label={sidebarState.collapsed
+				? t('sidebar.expandSidebar')
+				: t('sidebar.collapseSidebar')}
 			class="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 		>
-			<Icon name={sidebarState.collapsed ? 'lucide:chevrons-right' : 'lucide:chevrons-left'} class="size-4" />
+			<Icon
+				name={sidebarState.collapsed ? 'lucide:chevrons-right' : 'lucide:chevrons-left'}
+				class="size-4"
+			/>
 		</button>
 	</div>
 </div>

@@ -32,7 +32,9 @@
 					</div>
 				{/if}
 				<div>
-					{#if title}<h3 class="font-display text-[15px] font-semibold tracking-tight">{title}</h3>{/if}
+					{#if title}<h3 class="font-display text-[15px] font-semibold tracking-tight">
+							{title}
+						</h3>{/if}
 					{#if description}
 						<p class="mt-0.5 text-[12.5px] text-[var(--ui-text-muted)]">{description}</p>
 					{/if}

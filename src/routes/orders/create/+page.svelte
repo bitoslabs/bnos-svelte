@@ -383,7 +383,9 @@
 	}
 </script>
 
-<svelte:head><title>{t('common.appName')} · {t('common.new') + ' ' + t('common.order')}</title></svelte:head>
+<svelte:head
+	><title>{t('common.appName')} · {t('common.new') + ' ' + t('common.order')}</title></svelte:head
+>
 <svelte:window onkeydown={onGlobalKeydown} />
 
 <div class="space-y-4">
@@ -398,7 +400,9 @@
 				onclick={() => goto(resolve('/orders'))}
 			/>
 			<div>
-				<h1 class="font-display text-xl font-bold tracking-tight">{t('common.new') + ' ' + t('common.order')}</h1>
+				<h1 class="font-display text-xl font-bold tracking-tight">
+					{t('common.new') + ' ' + t('common.order')}
+				</h1>
 				<p class="text-[12px] text-[var(--ui-text-muted)]">Create a manual order</p>
 			</div>
 		</div>
@@ -426,7 +430,9 @@
 				<div class="flex items-center justify-between gap-2 px-5 py-3">
 					<div class="flex items-center gap-2">
 						<Icon name="lucide:scan-barcode" class="size-4 text-primary-500" />
-						<h2 class="font-display text-[14px] font-semibold">{t('common.add') + ' ' + t('common.items')}</h2>
+						<h2 class="font-display text-[14px] font-semibold">
+							{t('common.add') + ' ' + t('common.items')}
+						</h2>
 					</div>
 					<span
 						class="hidden items-center gap-1 rounded-md border border-[var(--ui-border)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--ui-text-dimmed)] sm:inline-flex"
@@ -861,7 +867,11 @@
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 									>Recipient name</span
 								>
-								<Input bind:value={shipping.recipientName} placeholder={t('common.fullName')} class="w-full" />
+								<Input
+									bind:value={shipping.recipientName}
+									placeholder={t('common.fullName')}
+									class="w-full"
+								/>
 							</label>
 							<label class="block">
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
@@ -898,7 +908,11 @@
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 									>State</span
 								>
-								<Input bind:value={shipping.state} placeholder={t('common.province')} class="w-full" />
+								<Input
+									bind:value={shipping.state}
+									placeholder={t('common.province')}
+									class="w-full"
+								/>
 							</label>
 							<label class="block">
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
@@ -1029,7 +1043,11 @@
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 									>Pickup name</span
 								>
-								<Input bind:value={pickup.pickupName} placeholder={t('common.customerName')} class="w-full" />
+								<Input
+									bind:value={pickup.pickupName}
+									placeholder={t('common.customerName')}
+									class="w-full"
+								/>
 							</label>
 							<label class="block">
 								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
@@ -1255,12 +1273,14 @@
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.phone')}</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.phone')}</span
 				>
 				<Input bind:value={qcPhone} type="tel" placeholder="020 xx xxx xxx" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.email')}</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.email')}</span
 				>
 				<Input bind:value={qcEmail} type="email" placeholder="name@email.com" class="w-full" />
 			</label>
@@ -1270,7 +1290,9 @@
 		</p>
 	</div>
 	{#snippet footer()}
-		<Button variant="ghost" color="neutral" onclick={() => (qcOpen = false)}>{t('common.cancel')}</Button>
+		<Button variant="ghost" color="neutral" onclick={() => (qcOpen = false)}
+			>{t('common.cancel')}</Button
+		>
 		<Button
 			color="primary"
 			icon="lucide:user-plus"

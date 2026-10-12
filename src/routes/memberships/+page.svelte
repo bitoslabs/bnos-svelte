@@ -263,7 +263,11 @@
 
 	const tabs = [
 		{ id: 'plans' as Tab, label: t('memberships.plans'), icon: 'lucide:layers' },
-		{ id: 'subscriptions' as Tab, label: t('memberships.subscriptions'), icon: 'lucide:badge-check' },
+		{
+			id: 'subscriptions' as Tab,
+			label: t('memberships.subscriptions'),
+			icon: 'lucide:badge-check'
+		},
 		{ id: 'checkins' as Tab, label: t('memberships.checkins'), icon: 'lucide:door-open' }
 	];
 
@@ -950,7 +954,9 @@
 
 			<!-- Mode selector -->
 			<div>
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.mode')}</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.mode')}</span
+				>
 				<div class="grid grid-cols-3 gap-2">
 					{#each [{ v: 'normal', l: 'Normal', i: 'lucide:star' }, { v: 'gym', l: 'Gym', i: 'lucide:dumbbell' }, { v: 'hybrid', l: 'Hybrid', i: 'lucide:layers' }] as m (m.v)}
 						<button
@@ -1057,7 +1063,9 @@
 				><Input bind:value={subCust} class="w-full" /></label
 			>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.plan')}</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.plan')}</span
+				>
 				<Input bind:value={subPlan} list="planslist" class="w-full" />
 				<datalist id="planslist"
 					>{#each plans as p (p.id)}<option value={p.data.name}></option>{/each}</datalist

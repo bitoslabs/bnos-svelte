@@ -27,7 +27,12 @@ describe('emvco builders', () => {
 	});
 
 	it('VietQR builds with NAPAS AID + CRC', () => {
-		const p = buildVietQr({ bin: '970436', account: '0011001234567', amount: 50000, currency: 'VND' });
+		const p = buildVietQr({
+			bin: '970436',
+			account: '0011001234567',
+			amount: 50000,
+			currency: 'VND'
+		});
 		expect(p.startsWith('000201')).toBe(true);
 		expect(p.includes('A000000727')).toBe(true);
 		expect(p.includes('970436')).toBe(true);

@@ -80,8 +80,7 @@ export class KvObpStores implements ObpStores {
 			await this.kv.set(logKey, log);
 
 			const docKey = K.doc(envelope.documentId);
-			const doc: ObpDocumentProjection =
-				(await this.kv.get<ObpDocumentProjection>(docKey)) ?? {
+			const doc: ObpDocumentProjection = (await this.kv.get<ObpDocumentProjection>(docKey)) ?? {
 				documentId: envelope.documentId,
 				documentType: envelope.documentType,
 				issuer: envelope.issuer,
@@ -112,9 +111,7 @@ export class KvObpStores implements ObpStores {
 
 	async listDocuments(): Promise<ObpDocumentProjection[]> {
 		const ids = await this.kv.keys(K.doc(''));
-		const docs = await Promise.all(
-			ids.map((k) => this.kv.get<ObpDocumentProjection>(k))
-		);
+		const docs = await Promise.all(ids.map((k) => this.kv.get<ObpDocumentProjection>(k)));
 		return docs
 			.filter((d): d is ObpDocumentProjection => !!d)
 			.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
@@ -157,9 +154,7 @@ export class KvObpStores implements ObpStores {
 
 	async pendingOutbox(): Promise<ObpOutboxEntry[]> {
 		const ids = await this.kv.keys(K.outbox(''));
-		const entries = await Promise.all(
-			ids.map((k) => this.kv.get<ObpOutboxEntry>(k))
-		);
+		const entries = await Promise.all(ids.map((k) => this.kv.get<ObpOutboxEntry>(k)));
 		return entries.filter((e): e is ObpOutboxEntry => !!e && !e.deliveredAt);
 	}
 
@@ -179,9 +174,7 @@ export class KvObpStores implements ObpStores {
 		return this.kv.get<ObpPendingApproval>(K.pending(pendingId));
 	}
 
-	async getPendingApprovalForDocument(
-		documentId: string
-	): Promise<ObpPendingApproval | undefined> {
+	async getPendingApprovalForDocument(documentId: string): Promise<ObpPendingApproval | undefined> {
 		const ids = await this.kv.keys(K.pending(''));
 		for (const k of ids) {
 			const p = await this.kv.get<ObpPendingApproval>(k);

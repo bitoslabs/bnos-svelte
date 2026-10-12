@@ -257,7 +257,10 @@
 				<Icon name="lucide:printer" class="size-4 text-primary-500" />
 				<h2 class="font-display text-[14px] font-semibold">{t('settings.printerProfiles')}</h2>
 				<span class="ml-auto text-[11px] text-[var(--ui-text-dimmed)]"
-					>{t('settings.printersActiveTotal', { active: activeCount, total: printers.length })}</span
+					>{t('settings.printersActiveTotal', {
+						active: activeCount,
+						total: printers.length
+					})}</span
 				>
 			</div>
 
@@ -279,11 +282,15 @@
 							{/if}
 							{#if printer.enabled}
 								<Badge color="success"
-									><span class="size-1.5 rounded-full bg-emerald-500" />{t('settings.active')}</Badge
+									><span class="size-1.5 rounded-full bg-emerald-500" />{t(
+										'settings.active'
+									)}</Badge
 								>
 							{:else}
 								<Badge color="neutral"
-									><span class="size-1.5 rounded-full bg-[var(--ui-text-dimmed)]" />{t('settings.off')}</Badge
+									><span class="size-1.5 rounded-full bg-[var(--ui-text-dimmed)]" />{t(
+										'settings.off'
+									)}</Badge
 								>
 							{/if}
 							{#if !complete}

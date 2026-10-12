@@ -128,7 +128,7 @@ export interface PresetApplyResult {
 export type GloUpsert = (
 	type: string,
 	data: unknown,
-	options: { id: string },
+	options: { id: string }
 ) => Promise<unknown> | unknown;
 
 type ParseResult<T> =
@@ -156,7 +156,7 @@ export function presetRecordId(presetId: string, kind: string, key: string): str
 function parseEntries(
 	input: unknown,
 	label: string,
-	{ min = 0, max = MAX_PRESET_META, required = [] as string[] } = {},
+	{ min = 0, max = MAX_PRESET_META, required = [] as string[] } = {}
 ): { errors: string[]; value: Record<string, unknown>[] } {
 	const errors: string[] = [];
 	if (input == null) return { errors, value: [] };
@@ -211,7 +211,7 @@ export function parseCatalogPreset(input: unknown): ParseResult<CatalogPreset> {
 	const products = parseEntries(input.products, 'products', {
 		min: 1,
 		max: MAX_PRESET_PRODUCTS,
-		required: ['name'],
+		required: ['name']
 	});
 	errors.push(...categories.errors, ...units.errors, ...groups.errors, ...products.errors);
 
@@ -234,7 +234,7 @@ export function parseCatalogPreset(input: unknown): ParseResult<CatalogPreset> {
 					modifiers.push({
 						name: option.name,
 						priceAdjustment: Number(option.priceAdjustment) || 0,
-						isDefault: option.isDefault === true,
+						isDefault: option.isDefault === true
 					});
 				});
 			}
@@ -246,7 +246,7 @@ export function parseCatalogPreset(input: unknown): ParseResult<CatalogPreset> {
 			required: group.required === true,
 			minSelections: typeof group.minSelections === 'number' ? group.minSelections : undefined,
 			maxSelections: typeof group.maxSelections === 'number' ? group.maxSelections : undefined,
-			modifiers,
+			modifiers
 		};
 	});
 
@@ -283,7 +283,7 @@ export function parseCatalogPreset(input: unknown): ParseResult<CatalogPreset> {
 			tags: Array.isArray(product.tags) ? product.tags.filter(isNonEmptyString) : undefined,
 			images: Array.isArray(product.images) ? product.images.filter(isNonEmptyString) : undefined,
 			sortOrder: typeof product.sortOrder === 'number' ? product.sortOrder : undefined,
-			modifierGroupKeys,
+			modifierGroupKeys
 		};
 	});
 
@@ -303,8 +303,8 @@ export function parseCatalogPreset(input: unknown): ParseResult<CatalogPreset> {
 			categories: categories.value as unknown as PresetCategory[],
 			units: units.value as unknown as PresetUnit[],
 			modifierGroups: normalizedGroups,
-			products: normalizedProducts,
-		},
+			products: normalizedProducts
+		}
 	};
 }
 
@@ -317,7 +317,7 @@ export function parseBrowseCatalog(input: unknown): ParseResult<BrowseCatalog> {
 		return {
 			ok: false,
 			data: null,
-			errors: [`Unsupported catalog schemaVersion: ${String(input.schemaVersion)}.`],
+			errors: [`Unsupported catalog schemaVersion: ${String(input.schemaVersion)}.`]
 		};
 	}
 	if (!Array.isArray(input.items))
@@ -349,9 +349,9 @@ export function parseBrowseCatalog(input: unknown): ParseResult<BrowseCatalog> {
 				categories: result.data.categories.length,
 				units: result.data.units.length,
 				modifierGroups: result.data.modifierGroups.length,
-				products: result.data.products.length,
+				products: result.data.products.length
 			},
-			preset: result.data,
+			preset: result.data
 		});
 	});
 	return errors.length
@@ -359,7 +359,7 @@ export function parseBrowseCatalog(input: unknown): ParseResult<BrowseCatalog> {
 		: {
 				ok: true,
 				data: { format: CATALOG_FORMAT, schemaVersion: CATALOG_SCHEMA_VERSION, items },
-				errors: [],
+				errors: []
 			};
 }
 
@@ -370,7 +370,7 @@ export function parseBrowseCatalog(input: unknown): ParseResult<BrowseCatalog> {
  */
 export function planPresetApplication(
 	preset: CatalogPreset,
-	options: { currency?: string } = {},
+	options: { currency?: string } = {}
 ): PresetApplicationPlan {
 	const categoryIdByKey = new Map<string, string>();
 	const unitIdByKey = new Map<string, string>();
@@ -383,7 +383,7 @@ export function planPresetApplication(
 			name: category.name,
 			description: category.description,
 			sortOrder: category.sortOrder,
-			status: 'active',
+			status: 'active'
 		};
 		return { id, data };
 	});
@@ -395,7 +395,7 @@ export function planPresetApplication(
 			name: unit.name,
 			symbol: unit.symbol ?? unit.abbreviation ?? unit.name,
 			type: unit.type ?? 'count',
-			isDefault: unit.isDefault === true,
+			isDefault: unit.isDefault === true
 		};
 		return { id, data };
 	});
@@ -415,12 +415,12 @@ export function planPresetApplication(
 					name: option.name,
 					priceAdjustment: option.priceAdjustment ?? 0,
 					price: option.priceAdjustment ?? 0,
-					isDefault: option.isDefault === true,
+					isDefault: option.isDefault === true
 				})),
-				status: 'active',
+				status: 'active'
 			};
 			return { id, data };
-		},
+		}
 	);
 
 	const currency = options.currency ?? preset.currency;
@@ -446,7 +446,7 @@ export function planPresetApplication(
 			isPublic: false,
 			type: 'standard',
 			trackInventory: true,
-			taxable: true,
+			taxable: true
 		};
 		return { id, data };
 	});
@@ -461,14 +461,14 @@ export function planPresetApplication(
 export async function applyCatalogPreset(
 	preset: unknown,
 	upsert: GloUpsert,
-	options: { currency?: string } = {},
+	options: { currency?: string } = {}
 ): Promise<PresetApplyResult> {
 	const parsed = parseCatalogPreset(preset);
 	if (!parsed.ok) {
 		return {
 			ok: false,
 			errors: parsed.errors,
-			counts: { categories: 0, units: 0, modifierGroups: 0, products: 0 },
+			counts: { categories: 0, units: 0, modifierGroups: 0, products: 0 }
 		};
 	}
 	const plan = planPresetApplication(parsed.data, options);
@@ -484,7 +484,7 @@ export async function applyCatalogPreset(
 			categories: plan.categories.length,
 			units: plan.units.length,
 			modifierGroups: plan.modifierGroups.length,
-			products: plan.products.length,
-		},
+			products: plan.products.length
+		}
 	};
 }

@@ -53,7 +53,9 @@
 				<Icon name="lucide:package" class="size-5" />
 			</div>
 			<div>
-				<div class="text-[13px] font-semibold">{formatInt(count)} product{count === 1 ? '' : 's'}</div>
+				<div class="text-[13px] font-semibold">
+					{formatInt(count)} product{count === 1 ? '' : 's'}
+				</div>
 				<div class="text-[12px] text-[var(--ui-text-muted)]">in your local catalog</div>
 			</div>
 		</div>

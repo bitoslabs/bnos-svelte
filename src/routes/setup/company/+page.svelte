@@ -66,14 +66,23 @@
 	<!-- Name + code -->
 	<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Company name</span>
-			<Input bind:value={name} class="w-full" icon="lucide:building-2" placeholder="e.g. Morning Brew Café" />
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Company name</span
+			>
+			<Input
+				bind:value={name}
+				class="w-full"
+				icon="lucide:building-2"
+				placeholder="e.g. Morning Brew Café"
+			/>
 		</label>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Company code</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Company code</span
+			>
 			<Input
 				bind:value={code}
-				icon="lucide:hash" 
+				icon="lucide:hash"
 				class="w-full"
 				placeholder={codeFollowsName ? slugify(name) || 'my-store' : 'my-store'}
 				oninput={() => (codeFollowsName = false)}
@@ -86,7 +95,9 @@
 
 	<!-- Business model -->
 	<div>
-		<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Business model</span>
+		<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			>Business model</span
+		>
 		<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 			{#each businessModels as model (model.value)}
 				{@const active = tenant.state.businessModel === model.value}
@@ -97,7 +108,10 @@
 						? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
 						: 'border-[var(--ui-border)] hover:border-[var(--ui-border-accented)]'}"
 				>
-					<Icon name={model.icon} class="size-5 shrink-0 {active ? 'text-primary-500' : 'text-[var(--ui-text-dimmed)]'}" />
+					<Icon
+						name={model.icon}
+						class="size-5 shrink-0 {active ? 'text-primary-500' : 'text-[var(--ui-text-dimmed)]'}"
+					/>
 					<div class="min-w-0">
 						<div>{model.label}</div>
 						<div class="text-[11px] font-normal opacity-70">{model.desc}</div>
@@ -109,7 +123,9 @@
 
 	<!-- Business type -->
 	<div>
-		<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Business type</span>
+		<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			>Business type</span
+		>
 		<div class="flex flex-wrap gap-2">
 			{#each businessTypes as type (type.value)}
 				{@const active = tenant.state.businessType === type.value}
@@ -126,7 +142,9 @@
 			{/each}
 		</div>
 		{#if activeType?.restaurant}
-			<p class="mt-2 flex items-center gap-1.5 text-[11.5px] text-primary-600 dark:text-primary-400">
+			<p
+				class="mt-2 flex items-center gap-1.5 text-[11.5px] text-primary-600 dark:text-primary-400"
+			>
 				<Icon name="lucide:utensils" class="size-3.5" />
 				Restaurant module (tables, kitchen, waiter, queue) will be enabled.
 			</p>
@@ -135,7 +153,9 @@
 
 	<!-- Currency -->
 	<label class="block">
-		<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Default currency</span>
+		<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			>Default currency</span
+		>
 		<Select bind:value={tenant.state.currency} options={currencies} class="w-full" />
 	</label>
 
@@ -144,11 +164,15 @@
 		<div>
 			<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Sales tax</span>
 			<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
-				Applied at checkout. {tenant.state.taxIncludedInPrice ? 'Prices are tax-inclusive.' : 'Prices are tax-exclusive.'}
+				Applied at checkout. {tenant.state.taxIncludedInPrice
+					? 'Prices are tax-inclusive.'
+					: 'Prices are tax-exclusive.'}
 			</p>
 		</div>
 		<div class="flex items-center gap-4">
-			<label class="flex items-center gap-2 text-[12.5px] font-semibold text-[var(--ui-text-muted)]">
+			<label
+				class="flex items-center gap-2 text-[12.5px] font-semibold text-[var(--ui-text-muted)]"
+			>
 				<Input
 					bind:value={tenant.state.defaultTaxRate}
 					type="number"
@@ -159,7 +183,9 @@
 					class="w-24"
 				/>
 			</label>
-			<label class="flex items-center gap-2 text-[12.5px] font-semibold text-[var(--ui-text-muted)]">
+			<label
+				class="flex items-center gap-2 text-[12.5px] font-semibold text-[var(--ui-text-muted)]"
+			>
 				<Switch
 					checked={tenant.state.taxIncludedInPrice}
 					onCheckedChange={(v) => tenant.configure({ taxIncludedInPrice: v })}
@@ -170,7 +196,9 @@
 	</div>
 
 	{#if name.trim()}
-		<div class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-3 text-[12.5px] text-primary-700 dark:text-primary-300">
+		<div
+			class="rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-3 text-[12.5px] text-primary-700 dark:text-primary-300"
+		>
 			<strong>{name}</strong> · {titleCase(tenant.state.businessModel.replace(/_/g, ' '))} ·
 			{titleCase(tenant.state.businessType)} · {tenant.state.currency}
 		</div>

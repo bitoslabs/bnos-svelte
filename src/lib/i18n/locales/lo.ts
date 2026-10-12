@@ -648,7 +648,7 @@ export const lo = {
 	},
 	reports: {
 		sales: 'ຍອດຂາຍ',
-		byPayment: 'ຕາມວິທີຊຳລະ',
+		byPayment: 'ຕາມວິທີຊຳລະ'
 	},
 	promotions: {
 		noPromotions: 'ບໍ່ມີໂປຣໂມຊັນ',
@@ -1148,7 +1148,7 @@ export const lo = {
 		company: 'ບໍລິສັດ',
 		catalog: 'ແຄຕາລັອກ',
 		branch: 'ສາຂາ',
-		identity: 'ໄອເດັນຕິຕີ',
+		identity: 'ໄອເດັນຕິຕີ'
 	},
 	profile: {
 		nostrIdentity: 'ໄອເດັນຕິຕີ Nostr',
@@ -1205,7 +1205,7 @@ export const lo = {
 		syncDoneDesc: 'ຂໍ້ມູນທັງໝົດເປັນປັດຈຸບັນແລ້ວທົ່ວຣິເລຂອງທ່ານ'
 	},
 	blocked: {
-		title: 'ບັນຊີຖືກຈຳກັດ',
+		title: 'ບັນຊີຖືກຈຳກັດ'
 	},
 	resolve: {
 		title: 'ກຳລັງແກ້ໄຂ'
@@ -1214,7 +1214,7 @@ export const lo = {
 		companies: 'ບໍລິສັດ'
 	},
 	languages: {
-		en: 'English',
+		en: 'English'
 	}
 } as const;
 

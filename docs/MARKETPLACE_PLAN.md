@@ -11,74 +11,93 @@ feature toggle in **Settings → Features** (`bnos-os:features`). `order-sources
 
 ## 1. Architecture principles (respected throughout)
 
-| Concern | Pattern (from existing code) |
-|---|---|
-| Data | `glo.upsert/all/get` reactive store → IndexedDB + Nostr relay sync |
-| Extension types | short kebab type → NIP-78 `30078` fallback (see `domain/kind.ts`) |
-| Lists | `createListControls` + `ListToolbar` / `Pagination` / `SortableTh` / `RowActions` |
-| Sync | `dataSync.pageSync([types], { scope })` in `onMount` |
-| Status → color | `statusColor()` / `STATUS_COLORS` in `domain/meta.ts` |
-| Design tokens | `surface-card`, `metric-card`, `--ui-*`, `--tone-*`, `segmented`, `is-active-surface` |
-| Permissions | `routePermissions` in `nav.ts` + `permissions.can(resource, action)` |
-| Feature gate | sidebar `section.feature` ↔ reactive feature flag |
+| Concern         | Pattern (from existing code)                                                          |
+| --------------- | ------------------------------------------------------------------------------------- |
+| Data            | `glo.upsert/all/get` reactive store → IndexedDB + Nostr relay sync                    |
+| Extension types | short kebab type → NIP-78 `30078` fallback (see `domain/kind.ts`)                     |
+| Lists           | `createListControls` + `ListToolbar` / `Pagination` / `SortableTh` / `RowActions`     |
+| Sync            | `dataSync.pageSync([types], { scope })` in `onMount`                                  |
+| Status → color  | `statusColor()` / `STATUS_COLORS` in `domain/meta.ts`                                 |
+| Design tokens   | `surface-card`, `metric-card`, `--ui-*`, `--tone-*`, `segmented`, `is-active-surface` |
+| Permissions     | `routePermissions` in `nav.ts` + `permissions.can(resource, action)`                  |
+| Feature gate    | sidebar `section.feature` ↔ reactive feature flag                                     |
 
 ## 2. Data model
 
 **3 new extension GLO types** (→ `30078`):
 
 ### `marketplace.channel` — a connected sales channel
+
 ```ts
 interface MarketplaceChannel {
-  name: string;
-  type: 'tiktok'|'facebook'|'instagram'|'website'|'amazon'|'shopee'|'lazada'
-      |'whatsapp'|'tokopedia'|'shopify'|'custom';
-  status: 'connected'|'disconnected'|'error'|'pending';
-  storeUrl?: string;
-  syncEnabled: boolean;
-  autoFulfill?: boolean;
-  lastSyncAt?: string;
-  logo?: string;
-  config?: Record<string, string>; // apiKey (masked), region, currency override…
+	name: string;
+	type:
+		| 'tiktok'
+		| 'facebook'
+		| 'instagram'
+		| 'website'
+		| 'amazon'
+		| 'shopee'
+		| 'lazada'
+		| 'whatsapp'
+		| 'tokopedia'
+		| 'shopify'
+		| 'custom';
+	status: 'connected' | 'disconnected' | 'error' | 'pending';
+	storeUrl?: string;
+	syncEnabled: boolean;
+	autoFulfill?: boolean;
+	lastSyncAt?: string;
+	logo?: string;
+	config?: Record<string, string>; // apiKey (masked), region, currency override…
 }
 ```
 
 ### `marketplace.listing` — a product published to ≥1 channel
+
 ```ts
 interface MarketplaceListing {
-  productId: string;
-  productName: string;
-  sku?: string;
-  channelIds: string[];
-  status: 'draft'|'active'|'paused'|'out_of_stock'|'archived';
-  price: number;
-  compareAtPrice?: number;
-  channelPrices?: Record<string, number>;
-  inventoryTracked: boolean;
-  stock?: number;
-  images?: string[];
-  description?: string;
-  publishedAt?: string;
-  views?: number; clicks?: number; conversions?: number;
-  channelStatus?: Record<string, 'published'|'syncing'|'rejected'>;
+	productId: string;
+	productName: string;
+	sku?: string;
+	channelIds: string[];
+	status: 'draft' | 'active' | 'paused' | 'out_of_stock' | 'archived';
+	price: number;
+	compareAtPrice?: number;
+	channelPrices?: Record<string, number>;
+	inventoryTracked: boolean;
+	stock?: number;
+	images?: string[];
+	description?: string;
+	publishedAt?: string;
+	views?: number;
+	clicks?: number;
+	conversions?: number;
+	channelStatus?: Record<string, 'published' | 'syncing' | 'rejected'>;
 }
 ```
 
 ### `marketplace.review` — product/store review (pulled or manual)
+
 ```ts
 interface MarketplaceReview {
-  productId?: string; productName?: string;
-  channelId?: string; channelName?: string;
-  customerName: string;
-  rating: 1|2|3|4|5;
-  title?: string; body?: string;
-  status: 'published'|'pending'|'flagged'|'hidden'|'replied';
-  reply?: string;
-  verified: boolean;
-  helpful?: number;
+	productId?: string;
+	productName?: string;
+	channelId?: string;
+	channelName?: string;
+	customerName: string;
+	rating: 1 | 2 | 3 | 4 | 5;
+	title?: string;
+	body?: string;
+	status: 'published' | 'pending' | 'flagged' | 'hidden' | 'replied';
+	reply?: string;
+	verified: boolean;
+	helpful?: number;
 }
 ```
 
 **Reused (no new types):**
+
 - Orders + Shipping → `commerce.order` filtered by `source ∈ REMOTE_SOURCES` / `channel === 'marketplace'`; `ShippingInfo.shippingStatus` drives the fulfillment board.
 - Promotions → global `promotion` / `coupon` GLO types, scoped to online/channel offers.
 

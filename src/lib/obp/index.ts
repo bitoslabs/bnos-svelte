@@ -18,12 +18,13 @@ export {
 	type ObpRegistry,
 	type ObpRole
 } from './identity';
+export { checkIssueReferences, checkTransition, type ObpDocumentProjection } from './lifecycle';
 export {
-	checkIssueReferences,
-	checkTransition,
-	type ObpDocumentProjection
-} from './lifecycle';
-export { DefaultObpPolicy, type ObpPolicyEngine, type ObpPolicyContext, type ObpPolicyRecord } from './policy';
+	DefaultObpPolicy,
+	type ObpPolicyEngine,
+	type ObpPolicyContext,
+	type ObpPolicyRecord
+} from './policy';
 export {
 	BusinessNode,
 	ObpApprovalRequiredError,
@@ -37,7 +38,12 @@ export {
 	type SendResult,
 	type SettlementVerifier
 } from './node/business-node';
-export { MemoryObpStores, type ObpStores, type ObpOutboxEntry, type ObpAuditEntry } from './node/store';
+export {
+	MemoryObpStores,
+	type ObpStores,
+	type ObpOutboxEntry,
+	type ObpAuditEntry
+} from './node/store';
 export { LoopbackNetwork, type ObpTransport, type ObpTransportResult } from './node/transport';
 export {
 	HttpTransport,

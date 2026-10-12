@@ -7,7 +7,12 @@
  */
 import { browser } from '$app/environment';
 import { buildPromptPay, buildVietQr, buildBankQr } from './emvco';
-import { loadPayConfig, hasQrConfigured, hasLightningConfigured, type PayConfig } from './pay-config';
+import {
+	loadPayConfig,
+	hasQrConfigured,
+	hasLightningConfigured,
+	type PayConfig
+} from './pay-config';
 import { getMerchantLightning } from './lightning';
 
 export interface PaymentQrRequest {
@@ -154,13 +159,25 @@ export function buildPaymentQr(req: PaymentQrRequest): PaymentQrResult {
 	if (m === 'lightning') return buildLightningPayment(req);
 	if (m === 'qr' || m === 'bank_transfer' || m === 'bank' || m === 'mobile_payment')
 		return buildQrPayment(req);
-	return { payload: '', kind: 'unknown', configured: false, hint: 'No QR for this method', badge: 'none' };
+	return {
+		payload: '',
+		kind: 'unknown',
+		configured: false,
+		hint: 'No QR for this method',
+		badge: 'none'
+	};
 }
 
 /** Convenience: is this payment method QR-capable (qr / lightning / bank)? */
 export function isQrMethod(method: string): boolean {
 	const m = method.toLowerCase();
-	return m === 'qr' || m === 'lightning' || m === 'bank_transfer' || m === 'bank' || m === 'mobile_payment';
+	return (
+		m === 'qr' ||
+		m === 'lightning' ||
+		m === 'bank_transfer' ||
+		m === 'bank' ||
+		m === 'mobile_payment'
+	);
 }
 
 /** Whether the merchant has *any* QR method ready (config present). */

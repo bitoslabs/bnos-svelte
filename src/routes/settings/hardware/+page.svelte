@@ -121,7 +121,10 @@
 			<Icon name="lucide:printer" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.receiptPrinters')}</h2>
 			<span class="ml-auto text-[11px] text-[var(--ui-text-dimmed)]"
-				>{t('settings.printersActive', { active: printers.filter((p) => p.enabled).length, total: printers.length })}</span
+				>{t('settings.printersActive', {
+					active: printers.filter((p) => p.enabled).length,
+					total: printers.length
+				})}</span
 			>
 		</div>
 

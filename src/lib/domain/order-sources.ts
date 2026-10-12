@@ -36,9 +36,7 @@ export function sourceLabel(src?: string | null): string {
 	if (!src) return '—';
 	const found = SOURCE_MAP.get(src as OrderSource);
 	if (found) return found.label;
-	return src
-		.replace(/_/g, ' ')
-		.replace(/\b\w/g, (c) => c.toUpperCase());
+	return src.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function sourceIcon(src?: string | null): string {

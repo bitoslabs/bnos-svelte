@@ -57,7 +57,7 @@
 	});
 	const customRangeReady = $derived(
 		rangePreset !== 'custom' ||
-		(Boolean(customStart) && Boolean(customEnd) && rangeStart <= rangeEnd)
+			(Boolean(customStart) && Boolean(customEnd) && rangeStart <= rangeEnd)
 	);
 
 	/** Duration of the selected range, used to compute the previous period. */
@@ -69,9 +69,9 @@
 	const filteredOrders = $derived(
 		customRangeReady
 			? orders.filter((o) => {
-				const t = new Date(o.data.occurredAt || o.data.createdAt || 0).getTime();
-				return t >= rangeStart && t <= rangeEnd;
-			})
+					const t = new Date(o.data.occurredAt || o.data.createdAt || 0).getTime();
+					return t >= rangeStart && t <= rangeEnd;
+				})
 			: []
 	);
 
@@ -101,10 +101,7 @@
 	const prevCount = $derived(prevOrders.length);
 	const prevAOV = $derived(prevCount > 0 ? prevRevenue / prevCount : 0);
 	const prevItems = $derived(
-		prevOrders.reduce(
-			(s, o) => s + (o.data.lines ?? []).reduce((ls, l) => ls + l.quantity, 0),
-			0
-		)
+		prevOrders.reduce((s, o) => s + (o.data.lines ?? []).reduce((ls, l) => ls + l.quantity, 0), 0)
 	);
 
 	function pctChange(curr: number, prev: number): number | null {
@@ -228,8 +225,7 @@
 		for (const o of filteredOrders) {
 			for (const l of o.data.lines ?? []) {
 				const key = l.productId || l.name || 'unknown';
-				const name =
-					products.find((p) => p.id === key)?.data.name ?? l.name ?? 'Unknown product';
+				const name = products.find((p) => p.id === key)?.data.name ?? l.name ?? 'Unknown product';
 				const e = map.get(key) ?? { name, qty: 0, revenue: 0 };
 				e.qty += l.quantity;
 				e.revenue += l.total ?? l.quantity * l.unitPrice;
@@ -380,7 +376,13 @@
 				Derived live from signed order records
 			</p>
 		</div>
-		<Button variant="subtle" size="sm" icon="lucide:download" onclick={exportCSV} disabled={!hasData}>
+		<Button
+			variant="subtle"
+			size="sm"
+			icon="lucide:download"
+			onclick={exportCSV}
+			disabled={!hasData}
+		>
 			Export CSV
 		</Button>
 	</div>
@@ -389,10 +391,10 @@
 	<div class="flex flex-wrap items-center gap-2">
 		{#each rangePresets as rp (rp.key)}
 			<button
-				class="rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors tabular-nums
+				class="rounded-lg px-3 py-1.5 text-[13px] font-semibold tabular-nums transition-colors
 					{rangePreset === rp.key
 					? 'bg-primary-500 text-white'
-					: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--interactive-hover-bg)]'}"
+					: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)] hover:text-[var(--ui-text)]'}"
 				onclick={() => (rangePreset = rp.key)}
 			>
 				{rp.label}
@@ -428,7 +430,7 @@
 			<div class="text-center">
 				<p class="font-display text-[15px] font-semibold">No data for this period</p>
 				<p class="text-[12.5px] text-[var(--ui-text-muted)]">
-				Try a different date range, or make some sales first.
+					Try a different date range, or make some sales first.
 				</p>
 			</div>
 		</div>
@@ -440,7 +442,7 @@
 				value: formatMoney(totalRevenue, currency),
 				change: revenueChange,
 				icon: 'lucide:trending-up',
-			 accent: 'text-primary-600 dark:text-primary-400'
+				accent: 'text-primary-600 dark:text-primary-400'
 			})}
 			{@render statCard({
 				label: 'Orders',
@@ -469,28 +471,56 @@
 		<div class="grid grid-cols-2 gap-3 lg:grid-cols-3">
 			<div class="surface-card p-4">
 				<div class="mb-2 flex items-center justify-between">
-					<span class="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">{t('dashboard.revenue')}</span>
+					<span
+						class="text-[11.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+						>{t('dashboard.revenue')}</span
+					>
 					<Icon name="lucide:trending-up" class="size-4 text-emerald-600 dark:text-emerald-400" />
 				</div>
-				<div class="font-display text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{formatMoney(totalRevenue, currency)}</div>
+				<div
+					class="font-display text-xl font-bold text-emerald-600 tabular-nums dark:text-emerald-400"
+				>
+					{formatMoney(totalRevenue, currency)}
+				</div>
 			</div>
 			<div class="surface-card p-4">
 				<div class="mb-2 flex items-center justify-between">
-					<span class="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">Expenses</span>
+					<span
+						class="text-[11.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+						>Expenses</span
+					>
 					<Icon name="lucide:trending-down" class="size-4 text-rose-500" />
 				</div>
-				<div class="font-display text-xl font-bold tabular-nums text-rose-500">{formatMoney(totalExpenses, currency)}</div>
+				<div class="font-display text-xl font-bold text-rose-500 tabular-nums">
+					{formatMoney(totalExpenses, currency)}
+				</div>
 				{#if expenseBreakdown.length > 0}
-					<div class="mt-1 text-[11px] text-[var(--ui-text-dimmed)]">{expenseBreakdown.length} categories</div>
+					<div class="mt-1 text-[11px] text-[var(--ui-text-dimmed)]">
+						{expenseBreakdown.length} categories
+					</div>
 				{/if}
 			</div>
 			<div class="surface-card p-4">
 				<div class="mb-2 flex items-center justify-between">
-					<span class="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">Net Profit</span>
-					<Icon name="lucide:wallet" class="size-4 {netProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}" />
+					<span
+						class="text-[11.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+						>Net Profit</span
+					>
+					<Icon
+						name="lucide:wallet"
+						class="size-4 {netProfit >= 0
+							? 'text-emerald-600 dark:text-emerald-400'
+							: 'text-rose-500'}"
+					/>
 				</div>
-				<div class="font-display text-xl font-bold tabular-nums {netProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">{formatMoney(netProfit, currency)}</div>
-				<div class="mt-0.5 text-[12px] font-semibold tabular-nums text-[var(--ui-text-dimmed)]">
+				<div
+					class="font-display text-xl font-bold tabular-nums {netProfit >= 0
+						? 'text-emerald-600 dark:text-emerald-400'
+						: 'text-rose-500'}"
+				>
+					{formatMoney(netProfit, currency)}
+				</div>
+				<div class="mt-0.5 text-[12px] font-semibold text-[var(--ui-text-dimmed)] tabular-nums">
 					{totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0'}% margin
 				</div>
 			</div>
@@ -501,9 +531,13 @@
 			<!-- Revenue chart (2 cols) -->
 			<div class="surface-card p-5 lg:col-span-2">
 				<div class="mb-4 flex items-center justify-between">
-					<h2 class="font-display text-[15px] font-semibold tracking-tight">{t('dashboard.revenue')}</h2>
+					<h2 class="font-display text-[15px] font-semibold tracking-tight">
+						{t('dashboard.revenue')}
+					</h2>
 					<div class="flex items-baseline gap-2">
-						<span class="font-display text-lg font-bold tabular-nums text-primary-600 dark:text-primary-400">
+						<span
+							class="font-display text-lg font-bold text-primary-600 tabular-nums dark:text-primary-400"
+						>
 							{formatMoney(totalRevenue, currency)}
 						</span>
 						{#if revenueChange !== null}
@@ -522,7 +556,7 @@
 						<div class="group relative flex flex-1 flex-col items-center gap-1.5">
 							<!-- Tooltip -->
 							<div
-								class="pointer-events-none absolute -top-8 z-10 hidden whitespace-nowrap rounded-md bg-[var(--ui-bg-elevated)] px-2 py-1 text-[11px] font-semibold shadow-md tabular-nums group-hover:block border border-[var(--ui-border)]"
+								class="pointer-events-none absolute -top-8 z-10 hidden rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] px-2 py-1 text-[11px] font-semibold whitespace-nowrap tabular-nums shadow-md group-hover:block"
 							>
 								{formatMoney(day.total, currency)}
 							</div>
@@ -543,11 +577,11 @@
 
 			<!-- Payment method breakdown -->
 			<div class="surface-card p-5">
-				<h2 class="mb-4 font-display text-[15px] font-semibold tracking-tight">
-					Payment Methods
-				</h2>
+				<h2 class="mb-4 font-display text-[15px] font-semibold tracking-tight">Payment Methods</h2>
 				{#if paymentBreakdown.length === 0}
-					<div class="flex h-32 items-center justify-center text-[12.5px] text-[var(--ui-text-dimmed)]">
+					<div
+						class="flex h-32 items-center justify-center text-[12.5px] text-[var(--ui-text-dimmed)]"
+					>
 						No payment data
 					</div>
 				{:else}
@@ -581,11 +615,11 @@
 
 		<!-- Expense category breakdown -->
 		<div class="surface-card p-5">
-			<h2 class="mb-4 font-display text-[15px] font-semibold tracking-tight">
-				Expense Breakdown
-			</h2>
+			<h2 class="mb-4 font-display text-[15px] font-semibold tracking-tight">Expense Breakdown</h2>
 			{#if expenseBreakdown.length === 0}
-				<div class="flex h-32 items-center justify-center text-[12.5px] text-[var(--ui-text-dimmed)]">
+				<div
+					class="flex h-32 items-center justify-center text-[12.5px] text-[var(--ui-text-dimmed)]"
+				>
 					No expenses in this period
 				</div>
 			{:else}
@@ -604,7 +638,10 @@
 								</div>
 							</div>
 							<div class="h-2 overflow-hidden rounded-full bg-[var(--ui-bg-accented)]">
-								<div class="h-full rounded-full transition-all" style="width: {ec.percent}%; background: {ec.color}"></div>
+								<div
+									class="h-full rounded-full transition-all"
+									style="width: {ec.percent}%; background: {ec.color}"
+								></div>
 							</div>
 						</div>
 					{/each}
@@ -627,7 +664,7 @@
 				{#each hourlySales as hr (hr.hour)}
 					<div class="group relative flex flex-1 flex-col items-center gap-1">
 						<div
-							class="pointer-events-none absolute -top-8 z-10 hidden whitespace-nowrap rounded-md bg-[var(--ui-bg-elevated)] px-2 py-1 text-[11px] font-semibold shadow-md tabular-nums group-hover:block border border-[var(--ui-border)]"
+							class="pointer-events-none absolute -top-8 z-10 hidden rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] px-2 py-1 text-[11px] font-semibold whitespace-nowrap tabular-nums shadow-md group-hover:block"
 						>
 							{formatMoney(hr.total, currency)} · {hr.count} orders
 						</div>
@@ -648,7 +685,9 @@
 		<div class="surface-card p-5">
 			<h2 class="mb-4 font-display text-[15px] font-semibold tracking-tight">Top Products</h2>
 			{#if topProducts.length === 0}
-				<div class="flex h-32 items-center justify-center gap-2 text-[12.5px] text-[var(--ui-text-dimmed)]">
+				<div
+					class="flex h-32 items-center justify-center gap-2 text-[12.5px] text-[var(--ui-text-dimmed)]"
+				>
 					<Icon name="lucide:package-open" class="size-5" />
 					No product sales in this period.
 				</div>
@@ -656,7 +695,9 @@
 				<div class="overflow-x-auto">
 					<table class="w-full text-left text-[13px]">
 						<thead>
-							<tr class="border-b border-[var(--ui-border)] text-[11.5px] uppercase tracking-wide text-[var(--ui-text-dimmed)]">
+							<tr
+								class="border-b border-[var(--ui-border)] text-[11.5px] tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+							>
 								<th class="py-2 pr-3 font-semibold">#</th>
 								<th class="py-2 pr-3 font-semibold">{t('common.product')}</th>
 								<th class="py-2 pr-3 text-right font-semibold">{t('common.qty')}</th>
@@ -669,13 +710,13 @@
 								<tr
 									class="border-b border-[var(--ui-border)]/50 transition-colors hover:bg-[var(--ui-bg-accented)]/50"
 								>
-									<td class="py-2.5 pr-3 tabular-nums text-[var(--ui-text-dimmed)]">{i + 1}</td>
+									<td class="py-2.5 pr-3 text-[var(--ui-text-dimmed)] tabular-nums">{i + 1}</td>
 									<td class="py-2.5 pr-3 font-semibold">{p.name}</td>
 									<td class="py-2.5 pr-3 text-right tabular-nums">{formatInt(p.qty)}</td>
 									<td class="py-2.5 pr-3 text-right tabular-nums">
 										{formatMoney(p.revenue, currency)}
 									</td>
-									<td class="py-2.5 text-right tabular-nums text-[var(--ui-text-muted)]">
+									<td class="py-2.5 text-right text-[var(--ui-text-muted)] tabular-nums">
 										{totalRevenue > 0 ? ((p.revenue / totalRevenue) * 100).toFixed(1) : '0.0'}%
 									</td>
 								</tr>
@@ -688,10 +729,18 @@
 	{/if}
 </div>
 
-{#snippet statCard(props: { label: string; value: string; change: number | null; icon: string; accent: string })}
+{#snippet statCard(props: {
+	label: string;
+	value: string;
+	change: number | null;
+	icon: string;
+	accent: string;
+})}
 	<div class="surface-card p-4">
 		<div class="mb-2 flex items-center justify-between">
-			<span class="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--ui-text-dimmed)]">
+			<span
+				class="text-[11.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+			>
 				{props.label}
 			</span>
 			<Icon name={props.icon} class="size-4 {props.accent}" />

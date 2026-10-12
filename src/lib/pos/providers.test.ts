@@ -35,7 +35,9 @@ describe('lightning provider factory', () => {
 
 	it('returns null when nothing is selected', () => {
 		expect(selectProviderForConfig({} as ProviderConfig)).toBeNull();
-		expect(selectProviderForConfig({ lightningProvider: 'lnaddress' } as ProviderConfig)).toBeNull();
+		expect(
+			selectProviderForConfig({ lightningProvider: 'lnaddress' } as ProviderConfig)
+		).toBeNull();
 	});
 
 	it('selects lnaddress when configured', () => {
@@ -85,7 +87,10 @@ describe('lightning provider factory', () => {
 
 	it('selects lnd only when BOTH url + macaroon present', () => {
 		expect(
-			selectProviderForConfig({ lightningProvider: 'lnd', lndUrl: 'https://x:8080' } as ProviderConfig)
+			selectProviderForConfig({
+				lightningProvider: 'lnd',
+				lndUrl: 'https://x:8080'
+			} as ProviderConfig)
 		).toBeNull();
 		const p = selectProviderForConfig({
 			lightningProvider: 'lnd',

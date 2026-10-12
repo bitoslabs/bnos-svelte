@@ -37,7 +37,8 @@ export interface OrganizationSettingsSnapshot {
 }
 
 function normalizeCompanySettings(value: Partial<CompanySettings>): CompanySettings {
-	const taxRate = typeof value.taxRate === 'number' && Number.isFinite(value.taxRate) ? value.taxRate : 0;
+	const taxRate =
+		typeof value.taxRate === 'number' && Number.isFinite(value.taxRate) ? value.taxRate : 0;
 	const enableTax = typeof value.enableTax === 'boolean' ? value.enableTax : taxRate > 0;
 
 	return {
@@ -83,9 +84,8 @@ function companyFromWorkspaceObject(object: {
 	data?: unknown;
 	extensions?: Record<string, unknown>;
 }): CompanySettings {
-	const data = object.data && typeof object.data === 'object'
-		? (object.data as Record<string, unknown>)
-		: {};
+	const data =
+		object.data && typeof object.data === 'object' ? (object.data as Record<string, unknown>) : {};
 	const ext = bnosExt(object as never) ?? {};
 	const taxRate = numberOr(ext.taxRate, numberOr(data.taxRate, 0));
 
@@ -107,12 +107,12 @@ function branchFromWorkspaceObject(object: {
 	data?: unknown;
 	scope?: Record<string, unknown>;
 }): BranchSettings {
-	const data = object.data && typeof object.data === 'object'
-		? (object.data as Record<string, unknown>)
-		: {};
-	const scope = object.scope && typeof object.scope === 'object'
-		? (object.scope as Record<string, unknown>)
-		: {};
+	const data =
+		object.data && typeof object.data === 'object' ? (object.data as Record<string, unknown>) : {};
+	const scope =
+		object.scope && typeof object.scope === 'object'
+			? (object.scope as Record<string, unknown>)
+			: {};
 
 	return normalizeBranchSettings({
 		id: object.id,
@@ -170,11 +170,13 @@ export function buildOrganizationSettingsFromWorkspace(active?: {
 	const activeCompanyId =
 		active?.activeCompanyId && companies.some((company) => company.id === active.activeCompanyId)
 			? active.activeCompanyId
-			: companies[0]?.id ?? '';
+			: (companies[0]?.id ?? '');
 	const activeBranchId =
 		active?.activeBranchId && branches.some((branch) => branch.id === active.activeBranchId)
 			? active.activeBranchId
-			: branches.find((branch) => branch.storeId === activeCompanyId)?.id ?? branches[0]?.id ?? '';
+			: (branches.find((branch) => branch.storeId === activeCompanyId)?.id ??
+				branches[0]?.id ??
+				'');
 
 	return {
 		companies,
@@ -281,18 +283,18 @@ export function upsertOrganizationSettingsFromTenant(tenant: TenantContext) {
 	const companies = [company, ...current.companies.filter((item) => item.id !== company.id)];
 	const branches = tenant.locationId
 		? [
-			{
-				id: tenant.locationId,
-				code: tenant.locationId,
-				storeId: tenant.organizationId,
-				name: tenant.locationName || 'Main Branch',
-				address: '',
-				phone: '',
-				email: '',
-				status: 'active' as const
-			},
-			...current.branches.filter((item) => item.id !== tenant.locationId)
-		]
+				{
+					id: tenant.locationId,
+					code: tenant.locationId,
+					storeId: tenant.organizationId,
+					name: tenant.locationName || 'Main Branch',
+					address: '',
+					phone: '',
+					email: '',
+					status: 'active' as const
+				},
+				...current.branches.filter((item) => item.id !== tenant.locationId)
+			]
 		: current.branches;
 
 	writeOrganizationSettings({

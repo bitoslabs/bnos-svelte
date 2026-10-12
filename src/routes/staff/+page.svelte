@@ -18,7 +18,8 @@
 	import Pagination from '$lib/components/list/Pagination.svelte';
 	import RowActions, { type RowAction } from '$lib/components/list/RowActions.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
-	import { glo } from '$nostr/store.svelte';	import { tenant } from '$nostr/tenant.svelte';
+	import { glo } from '$nostr/store.svelte';
+	import { tenant } from '$nostr/tenant.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { grantKeyToPubkey, canDistributeKey } from '$lib/crypto/key-grants-manage';
@@ -268,7 +269,7 @@
 	function openEventPreview(s: { id: string; data: Staff }) {
 		const object = sanitizedStaffObject(s);
 		const template = createGloEventTemplate(object as never, {
-				client: 'bnos',
+			client: 'bnos',
 			summary: `${TYPE.staff} ${object.id}`
 		});
 		const staffPubkey = object.data.pubkey;
@@ -472,7 +473,9 @@
 				>
 			{/if}
 			{#if canWrite}
-				<Button color="primary" icon="lucide:user-plus" onclick={openCreate}>{t('common.add') + ' ' + t('common.staff')}</Button>
+				<Button color="primary" icon="lucide:user-plus" onclick={openCreate}
+					>{t('common.add') + ' ' + t('common.staff')}</Button
+				>
 			{/if}
 		</div>
 	</div>
@@ -561,11 +564,7 @@
 	</div>
 
 	{#if controls.list.length === 0}
-		<EmptyState
-			icon="lucide:users"
-			title={t('staff.noStaff')}
-			description={t('staff.noStaffDesc')}
-		>
+		<EmptyState icon="lucide:users" title={t('staff.noStaff')} description={t('staff.noStaffDesc')}>
 			{#snippet actions()}
 				{#if canWrite}
 					<Button color="primary" size="sm" icon="lucide:user-plus" onclick={openCreate}
@@ -732,7 +731,12 @@
 </div>
 
 <!-- Add / Edit Dialog -->
-<Dialog bind:open title={editingId ? t('common.edit') + ' ' + t('common.staff') : t('common.add') + ' ' + t('common.staff')}>
+<Dialog
+	bind:open
+	title={editingId
+		? t('common.edit') + ' ' + t('common.staff')
+		: t('common.add') + ' ' + t('common.staff')}
+>
 	<div class="space-y-3">
 		<!-- Identity / pubkey -->
 		<label class="block">
@@ -801,7 +805,9 @@
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.role')}</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.role')}</span
+				>
 				<Select
 					bind:value={form.role}
 					options={STAFF_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
@@ -818,12 +824,14 @@
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.email')}</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.email')}</span
 				>
 				<Input bind:value={form.email} icon="lucide:at-sign" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.phone')}</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.phone')}</span
 				>
 				<Input bind:value={form.phone} icon="lucide:phone" class="w-full" />
 			</label>
@@ -883,7 +891,9 @@
 
 		<!-- Status -->
 		<div>
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.status')}</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.status')}</span
+			>
 			<div class="flex flex-wrap gap-2">
 				{#each STATUSES as status (status)}
 					<button
@@ -914,7 +924,7 @@
 						checked={form.branchIds.includes(branch.id)}
 						onCheckedChange={() => toggleBranch(branch.id)}
 						class="items-center gap-2 rounded-lg border border-[var(--ui-border)] px-3 py-2 text-[12.5px] hover:bg-[var(--ui-bg-accented)]"
-					>{(branch.data as { name?: string }).name ?? branch.id}</Checkbox
+						>{(branch.data as { name?: string }).name ?? branch.id}</Checkbox
 					>
 				{:else}
 					<span class="text-[11px] text-[var(--ui-text-dimmed)]">No branches configured.</span>
@@ -942,7 +952,8 @@
 										onCheckedChange={() => togglePermission(`${res.id}:${action}`)}
 										size="sm"
 										class="inline-flex cursor-pointer items-center gap-1 text-[11px] capitalize"
-									>{action}</Checkbox>
+										>{action}</Checkbox
+									>
 								{/each}
 							</div>
 						</div>
@@ -958,7 +969,9 @@
 		</div>
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (open = false)}>{t('common.cancel')}</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (open = false)}
+			>{t('common.cancel')}</Button
+		>
 		<Button color="primary" icon="lucide:check" disabled={!canSave} onclick={save}>
 			{editingId ? 'Update' : 'Save'}
 		</Button>

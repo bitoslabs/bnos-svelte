@@ -137,7 +137,10 @@ export function decodeLnurlUrl(lnurl: string): string | null {
 /** Decode the amount (millisatoshis) from a BOLT11 invoice's human-readable part.
  *  Returns 0 for zero-amount invoices, or null if it doesn't look like a BOLT11. */
 export function decodeBolt11AmountMsat(pr: string): number | null {
-	const m = pr.trim().toLowerCase().match(/^ln(bc|tb|bcrt)(\d*)([munp]?)/);
+	const m = pr
+		.trim()
+		.toLowerCase()
+		.match(/^ln(bc|tb|bcrt)(\d*)([munp]?)/);
 	if (!m) return null;
 	const amtStr = m[2];
 	if (!amtStr) return 0; // zero-amount invoice
@@ -206,8 +209,7 @@ export async function resolveLnurlPay(addrOrLnurl: string): Promise<LnurlPayMeta
 	};
 
 	if (data.status === 'ERROR') throw new Error(data.reason ?? 'LNURL provider error');
-	if (data.tag !== 'payRequest' || !data.callback)
-		throw new Error('Not an LNURL-pay endpoint');
+	if (data.tag !== 'payRequest' || !data.callback) throw new Error('Not an LNURL-pay endpoint');
 
 	let domain = v;
 	if (isLightningAddress(v)) domain = parseLightningAddress(v)!.domain;
@@ -252,7 +254,8 @@ export async function requestInvoice(
 	}
 	const cb = new URL(meta.callback);
 	cb.searchParams.set('amount', String(Math.round(amountMsat)));
-	if (comment && meta.commentAllowed) cb.searchParams.set('comment', comment.slice(0, meta.commentAllowed));
+	if (comment && meta.commentAllowed)
+		cb.searchParams.set('comment', comment.slice(0, meta.commentAllowed));
 	if (zapRequest) {
 		cb.searchParams.set('nostr', zapRequest);
 		// Some providers (Alby et al.) also expect the lnurl bech32 of the
@@ -260,10 +263,7 @@ export async function requestInvoice(
 		if (meta.endpoint) {
 			try {
 				const { encodeBytes } = await import('nostr-tools/nip19');
-				cb.searchParams.set(
-					'lnurl',
-					encodeBytes('lnurl', new TextEncoder().encode(meta.endpoint))
-				);
+				cb.searchParams.set('lnurl', encodeBytes('lnurl', new TextEncoder().encode(meta.endpoint)));
 			} catch {
 				/* optional param — ignore */
 			}
@@ -304,9 +304,7 @@ export async function requestInvoice(
 }
 
 /** Poll a LNURL-pay `verify` URL → settlement state (spec LUD-06). */
-export async function checkVerifyUrl(
-	verifyUrl: string
-): Promise<'pending' | 'paid' | 'unknown'> {
+export async function checkVerifyUrl(verifyUrl: string): Promise<'pending' | 'paid' | 'unknown'> {
 	try {
 		const data = (await getJson(verifyUrl, 8000)) as {
 			status?: string;

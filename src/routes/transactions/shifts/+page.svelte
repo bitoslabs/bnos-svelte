@@ -313,7 +313,9 @@
 					class="w-full"
 				/>
 			</div>
-			<Button color="primary" icon="lucide:lock-open" onclick={openShift}>{t('shifts.openShift')}</Button>
+			<Button color="primary" icon="lucide:lock-open" onclick={openShift}
+				>{t('shifts.openShift')}</Button
+			>
 		</div>
 	{/if}
 
@@ -350,7 +352,8 @@
 			<div class="min-w-[10rem] flex-1">
 				<Input bind:value={cashReason} placeholder="Reason (optional)" class="w-full" />
 			</div>
-			<Button color="neutral" variant="subtle" icon="lucide:plus" onclick={addCashEvent}>{t('common.add')}</Button
+			<Button color="neutral" variant="subtle" icon="lucide:plus" onclick={addCashEvent}
+				>{t('common.add')}</Button
 			>
 		</div>
 	{/if}
@@ -530,7 +533,9 @@
 				/>
 			</label>
 			<div class="mt-4 flex items-center justify-end gap-2">
-				<Button variant="ghost" color="neutral" onclick={() => (closing = false)}>{t('common.cancel')}</Button>
+				<Button variant="ghost" color="neutral" onclick={() => (closing = false)}
+					>{t('common.cancel')}</Button
+				>
 				<Button variant="ghost" color="neutral" onclick={() => closeShiftAction(true)}>
 					Force close
 				</Button>
@@ -554,24 +559,20 @@
 			</div>
 			<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
 				This <span class="font-mono font-semibold">{cancelling.shift.data.number}</span> shift will be
-				voided without reconciliation. Use this only for shifts opened by mistake
-				(wrong float, branch or staff). It stays in history for audit.
+				voided without reconciliation. Use this only for shifts opened by mistake (wrong float, branch
+				or staff). It stays in history for audit.
 			</p>
 			<label class="mt-3 block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 					>Reason (optional)</span
 				>
-				<Input
-					bind:value={cancelReason}
-					placeholder="e.g. opened on wrong branch"
-					class="w-full"
-				/>
+				<Input bind:value={cancelReason} placeholder="e.g. opened on wrong branch" class="w-full" />
 			</label>
 			<div class="mt-4 flex items-center justify-end gap-2">
-				<Button variant="ghost" color="neutral" onclick={() => (cancelling = null)}>Keep shift</Button>
-				<Button color="error" icon="lucide:ban" onclick={cancelShiftAction}>
-					Cancel shift
-				</Button>
+				<Button variant="ghost" color="neutral" onclick={() => (cancelling = null)}
+					>Keep shift</Button
+				>
+				<Button color="error" icon="lucide:ban" onclick={cancelShiftAction}>Cancel shift</Button>
 			</div>
 		</div>
 	</div>

@@ -34,7 +34,11 @@ function cloudinaryConfig() {
 
 function safeOwner(value: FormDataEntryValue | null) {
 	if (typeof value !== 'string') return '';
-	const trimmed = value.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').slice(0, 64);
+	const trimmed = value
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9_-]+/g, '-')
+		.slice(0, 64);
 	return trimmed || '';
 }
 

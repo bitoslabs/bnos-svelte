@@ -15,34 +15,46 @@
 			note: `${site.core.standard} data standard`
 		},
 		{ name: 'nostr-tools', url: 'https://github.com/nbd-wtf/nostr-tools', note: 'Nostr protocol' },
-		{ name: 'idb-keyval', url: 'https://github.com/jakearchibald/idb-keyval', note: 'IndexedDB store' },
-		{ name: 'mode-watcher', url: 'https://github.com/svecosystem/mode-watcher', note: 'Dark / light mode' },
+		{
+			name: 'idb-keyval',
+			url: 'https://github.com/jakearchibald/idb-keyval',
+			note: 'IndexedDB store'
+		},
+		{
+			name: 'mode-watcher',
+			url: 'https://github.com/svecosystem/mode-watcher',
+			note: 'Dark / light mode'
+		},
 		{ name: 'Iconify (Lucide)', url: 'https://iconify.design', note: 'Icon set' }
 	];
 </script>
 
 <svelte:head><title>{t('legal.license')} · {site.name}</title></svelte:head>
 
-<div class="prose prose-sm max-w-none dark:prose-invert
+<div
+	class="prose prose-sm max-w-none dark:prose-invert
 	prose-headings:font-display prose-headings:tracking-tight
-	prose-headings:text-[var(--ui-text)] prose-p:text-[var(--ui-text-muted)]
-	prose-li:text-[var(--ui-text-muted)] prose-strong:text-[var(--ui-text)]
-	prose-a:text-primary-600 prose-a:no-underline hover:prose-a:underline dark:prose-a:text-primary-400
-	prose-h3:text-[1.05rem] prose-code:rounded prose-code:bg-[var(--ui-bg-accented)]
-	prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[0.85em] prose-code:before:content-[''] prose-code:after:content-['']">
-
+	prose-headings:text-[var(--ui-text)] prose-h3:text-[1.05rem]
+	prose-p:text-[var(--ui-text-muted)] prose-a:text-primary-600
+	prose-a:no-underline hover:prose-a:underline dark:prose-a:text-primary-400 prose-strong:text-[var(--ui-text)]
+	prose-code:rounded prose-code:bg-[var(--ui-bg-accented)] prose-code:px-1.5
+	prose-code:py-0.5 prose-code:text-[0.85em] prose-code:before:content-[''] prose-code:after:content-[''] prose-li:text-[var(--ui-text-muted)]"
+>
 	<h2>Open-source License</h2>
 
 	<p class="text-[var(--ui-text)]">
-		{site.fullName} is free and open-source software released under the <strong>{site.license}
-		License</strong>. You are free to run, study, modify, and redistribute it — including for
-		commercial use.
+		{site.fullName} is free and open-source software released under the
+		<strong
+			>{site.license}
+			License</strong
+		>. You are free to run, study, modify, and redistribute it — including for commercial use.
 	</p>
 
 	<div class="not-prose my-6 flex flex-wrap items-center gap-2">
 		<Badge color="success"><Icon name="lucide:check" class="mr-1 size-3" />MIT Licensed</Badge>
 		<Badge color="neutral"><Icon name="lucide:github" class="mr-1 size-3" />Public source</Badge>
-		<Badge color="info"><Icon name="lucide:git-fork" class="mr-1 size-3" />Self-host friendly</Badge>
+		<Badge color="info"><Icon name="lucide:git-fork" class="mr-1 size-3" />Self-host friendly</Badge
+		>
 	</div>
 
 	<h3>Your permissions</h3>
@@ -51,25 +63,53 @@
 		<li><strong>Use</strong> {site.name} commercially and non-commercially.</li>
 		<li><strong>Study</strong> and audit the complete source code.</li>
 		<li><strong>Modify</strong> it to fit your business and self-host your build.</li>
-		<li><strong>Redistribute</strong> and even relicense derivatives (under the license's terms).</li>
+		<li>
+			<strong>Redistribute</strong> and even relicense derivatives (under the license's terms).
+		</li>
 	</ul>
 
 	<div class="not-prose my-6">
 		<div class="flex flex-wrap gap-2">
-			<Button color="primary" variant="soft" size="sm" icon="lucide:github" href={site.source.url} target="_blank" rel="noopener">
+			<Button
+				color="primary"
+				variant="soft"
+				size="sm"
+				icon="lucide:github"
+				href={site.source.url}
+				target="_blank"
+				rel="noopener"
+			>
 				View on GitHub
 			</Button>
-			<Button color="neutral" variant="subtle" size="sm" icon="lucide:scale" href={`${site.source.url}/blob/main/LICENSE`} target="_blank" rel="noopener">
+			<Button
+				color="neutral"
+				variant="subtle"
+				size="sm"
+				icon="lucide:scale"
+				href={`${site.source.url}/blob/main/LICENSE`}
+				target="_blank"
+				rel="noopener"
+			>
 				Read full LICENSE
 			</Button>
-			<Button color="neutral" variant="subtle" size="sm" icon="lucide:git-fork" href={`${site.source.url}/fork`} target="_blank" rel="noopener">
+			<Button
+				color="neutral"
+				variant="subtle"
+				size="sm"
+				icon="lucide:git-fork"
+				href={`${site.source.url}/fork`}
+				target="_blank"
+				rel="noopener"
+			>
 				Fork &amp; self-host
 			</Button>
 		</div>
 	</div>
 
 	<h3>The MIT License</h3>
-	<pre class="not-prose overflow-x-auto rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-4 text-[11.5px] leading-relaxed text-[var(--ui-text-muted)]"><code>MIT License
+	<pre
+		class="not-prose overflow-x-auto rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-4 text-[11.5px] leading-relaxed text-[var(--ui-text-muted)]"><code
+			>MIT License
 
 Copyright (c) {new Date().getFullYear()} {site.name} contributors
 
@@ -89,7 +129,8 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.</code></pre>
+SOFTWARE.</code
+		></pre>
 
 	<h3>Built on</h3>
 	<p>{site.name} stands on the shoulders of excellent open-source projects:</p>
@@ -101,12 +142,18 @@ SOFTWARE.</code></pre>
 				rel="noopener"
 				class="group flex items-center gap-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3.5 py-2.5 transition-colors hover:border-primary-500/40 hover:bg-[var(--ui-bg-accented)]"
 			>
-				<Icon name="lucide:box" class="size-4 shrink-0 text-[var(--ui-text-dimmed)] group-hover:text-primary-500" />
+				<Icon
+					name="lucide:box"
+					class="size-4 shrink-0 text-[var(--ui-text-dimmed)] group-hover:text-primary-500"
+				/>
 				<div class="min-w-0">
 					<p class="truncate text-[13px] font-bold text-[var(--ui-text)]">{s.name}</p>
 					<p class="truncate text-[11px] text-[var(--ui-text-dimmed)]">{s.note}</p>
 				</div>
-				<Icon name="lucide:arrow-up-right" class="ml-auto size-3.5 shrink-0 text-[var(--ui-text-dimmed)]" />
+				<Icon
+					name="lucide:arrow-up-right"
+					class="ml-auto size-3.5 shrink-0 text-[var(--ui-text-dimmed)]"
+				/>
 			</a>
 		{/each}
 	</div>

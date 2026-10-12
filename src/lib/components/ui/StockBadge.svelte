@@ -9,8 +9,12 @@
 		threshold?: number;
 	} = $props();
 
-	let color = $derived<'error' | 'warning' | 'success'>(level === 0 ? 'error' : level <= threshold ? 'warning' : 'success');
-	let text = $derived(level === 0 ? 'Out of stock' : level <= threshold ? `Low: ${level}` : `${level} in stock`);
+	let color = $derived<'error' | 'warning' | 'success'>(
+		level === 0 ? 'error' : level <= threshold ? 'warning' : 'success'
+	);
+	let text = $derived(
+		level === 0 ? 'Out of stock' : level <= threshold ? `Low: ${level}` : `${level} in stock`
+	);
 </script>
 
 <Badge {color}>{text}</Badge>

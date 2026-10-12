@@ -181,7 +181,10 @@
 					code: p.data.code,
 					isCoupon: true,
 					description: p.data.description,
-					type: p.data.type === 'percent' || p.data.type === 'fixed' || p.data.type === 'bogo' ? p.data.type : 'manual',
+					type:
+						p.data.type === 'percent' || p.data.type === 'fixed' || p.data.type === 'bogo'
+							? p.data.type
+							: 'manual',
 					value: p.data.value,
 					minimumSpend: p.data.minSpend,
 					maxUsage: p.data.maxUses,
@@ -452,9 +455,7 @@
 	});
 
 	let activeCat = $state<string>('all');
-	const catalogCategories = $derived(
-		glo.all<CatalogCategory, typeof TYPE.category>(TYPE.category)
-	);
+	const catalogCategories = $derived(glo.all<CatalogCategory, typeof TYPE.category>(TYPE.category));
 	const categoryNames = $derived(
 		new Map(catalogCategories.map((category) => [category.id, category.data.name]))
 	);
@@ -888,7 +889,10 @@
 	onDestroy(() => payFlow.destroy());
 
 	/** Map store notifications to toasts (UI stays out of the store). */
-	function payFlowNotify(kind: 'no-provider' | 'fallback' | 'invoice-error' | 'no-rate', detail?: string) {
+	function payFlowNotify(
+		kind: 'no-provider' | 'fallback' | 'invoice-error' | 'no-rate',
+		detail?: string
+	) {
 		if (kind === 'no-provider')
 			toast.warning(
 				'No Lightning provider',
@@ -1024,7 +1028,11 @@
 		receiptOpen = true;
 		try {
 			const primary = splitPayments[0];
-			const sale = await cart.checkout(primary.method as PaymentMethod, primary.amount, updateCheckoutProgress);
+			const sale = await cart.checkout(
+				primary.method as PaymentMethod,
+				primary.amount,
+				updateCheckoutProgress
+			);
 			if (sale) {
 				playSuccessChime();
 				successTip = tipAmount;
@@ -1636,13 +1644,16 @@
 				</a>
 				<div class="min-w-0">
 					<div class="flex items-center gap-2">
-						<h1 class="font-display text-lg font-bold tracking-tight sm:text-xl">{t('pos.terminal')}</h1>
+						<h1 class="font-display text-lg font-bold tracking-tight sm:text-xl">
+							{t('pos.terminal')}
+						</h1>
 						<Badge color={cart.isEmpty ? 'neutral' : 'primary'}>
 							{cart.isEmpty ? t('pos.ready') : t('pos.itemsCount', { count: cart.itemCount })}
 						</Badge>
 					</div>
 					<p class="truncate text-[12.5px] text-[var(--ui-text-muted)]">
-						{tenant.state.organizationName || 'BNOS'} · {tenant.state.locationName || t('pos.mainBranch')} ·
+						{tenant.state.organizationName || 'BNOS'} · {tenant.state.locationName ||
+							t('pos.mainBranch')} ·
 						{dateLabel} · {clockLabel}
 					</p>
 				</div>
@@ -1721,7 +1732,11 @@
 												class="text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
 												>{t('pos.totalSales')}</span
 											>
-											<Badge color="primary">{t('pos.ordersCount', { count: formatInt(shiftSummary.totalOrders) })}</Badge>
+											<Badge color="primary"
+												>{t('pos.ordersCount', {
+													count: formatInt(shiftSummary.totalOrders)
+												})}</Badge
+											>
 										</div>
 										<div class="mt-1 font-display text-2xl font-bold tabular-nums">
 											{formatMoney(shiftSummary.totalSales, currency)}
@@ -1754,8 +1769,8 @@
 
 									<div class="space-y-1 rounded-xl border border-[var(--ui-border-muted)] p-3">
 										<div class="flex items-center justify-between text-[12px]">
-											<span class="text-[var(--ui-text-muted)]">{t('shifts.openingCash')}</span><span
-												class="tabular-nums"
+											<span class="text-[var(--ui-text-muted)]">{t('shifts.openingCash')}</span
+											><span class="tabular-nums"
 												>{formatMoney(openShift.data.openingCash ?? 0, currency)}</span
 											>
 										</div>
@@ -1877,7 +1892,10 @@
 									<div
 										class="mb-2 text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
 									>
-										{t('pos.lowCount', { count: formatInt(lowStockCount) })} · {t('pos.trackedCount', { count: formatInt(trackedProducts) })}
+										{t('pos.lowCount', { count: formatInt(lowStockCount) })} · {t(
+											'pos.trackedCount',
+											{ count: formatInt(trackedProducts) }
+										)}
 									</div>
 									<ul class="space-y-1">
 										{#each lowStockItems as p (p.id)}
@@ -1900,7 +1918,9 @@
 									</ul>
 									{#if lowStockCount > lowStockItems.length}
 										<p class="mt-2 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
-											{t('pos.moreCount', { count: formatInt(lowStockCount - lowStockItems.length) })}
+											{t('pos.moreCount', {
+												count: formatInt(lowStockCount - lowStockItems.length)
+											})}
 										</p>
 									{/if}
 								{/if}
@@ -1919,7 +1939,8 @@
 					onclick={startNewSale}
 					title={t('common.new') + ' ' + t('common.sale')}
 				>
-					{t('common.new')} {t('common.sale')}
+					{t('common.new')}
+					{t('common.sale')}
 				</Button>
 				<Button
 					color="neutral"
@@ -1974,7 +1995,8 @@
 				<!-- More options dropdown -->
 				<Menu id="pos-header-more" placement="bottom-end" width="md">
 					{#snippet trigger()}<Icon name="lucide:more-horizontal" class="size-4" />{/snippet}
-					<MenuItem icon="lucide:history" onclick={openHistory}>{t('orders.recentOrders')}</MenuItem>
+					<MenuItem icon="lucide:history" onclick={openHistory}>{t('orders.recentOrders')}</MenuItem
+					>
 					<MenuItem
 						icon="lucide:pause"
 						onclick={() => {
@@ -1990,7 +2012,9 @@
 						>
 					{/if}
 					<MenuDivider />
-					<MenuItem icon="lucide:list-ordered" href={resolve('/orders')}>{t('orders.allOrders')}</MenuItem>
+					<MenuItem icon="lucide:list-ordered" href={resolve('/orders')}
+						>{t('orders.allOrders')}</MenuItem
+					>
 					<MenuItem icon="lucide:package" href={resolve('/catalog')}>{t('nav.catalog')}</MenuItem>
 				</Menu>
 			</div>
@@ -2011,7 +2035,7 @@
 							icon={hardwareSettings.barcodeScanner ? 'lucide:scan-barcode' : 'lucide:search'}
 							placeholder={hardwareSettings.barcodeScanner
 								? t('pos.searchScan')
-								: t('pos.searchProducts')+'…'}
+								: t('pos.searchProducts') + '…'}
 							onkeydown={onSearchKeydown}
 							class="min-w-[12rem] flex-1"
 						>
@@ -2241,7 +2265,8 @@
 							onclick={openCustom}
 							class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--ui-bg-muted)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 						>
-							<Icon name="lucide:plus-circle" class="size-3.5" /> {t('pos.custom')}
+							<Icon name="lucide:plus-circle" class="size-3.5" />
+							{t('pos.custom')}
 						</button>
 					</div>
 				{:else}
@@ -2390,7 +2415,8 @@
 								type="button"
 								onclick={() => cart.dec(line.key)}
 								class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-								aria-label={t('common.decrease')}><Icon name="lucide:minus" class="size-3.5" /></button
+								aria-label={t('common.decrease')}
+								><Icon name="lucide:minus" class="size-3.5" /></button
 							>
 							<span class="w-6 text-center text-[13px] font-semibold tabular-nums"
 								>{line.quantity}</span
@@ -2399,7 +2425,8 @@
 								type="button"
 								onclick={() => cart.inc(line.key)}
 								class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-								aria-label={t('common.increase')}><Icon name="lucide:plus" class="size-3.5" /></button
+								aria-label={t('common.increase')}
+								><Icon name="lucide:plus" class="size-3.5" /></button
 							>
 						</div>
 						<div class="flex items-center gap-1">
@@ -2548,7 +2575,9 @@
 						}}
 						class="flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--ui-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-50"
 					>
-						<span><Icon name="lucide:tag" class="mr-1 inline size-3.5" />{t('common.discount')}</span>
+						<span
+							><Icon name="lucide:tag" class="mr-1 inline size-3.5" />{t('common.discount')}</span
+						>
 						{#if cart.totals.discountAmount > 0}<span class="text-[var(--tone-success-text)]"
 								>−{formatMoney(cart.totals.discountAmount, currency)}</span
 							>{:else}<span class="text-[var(--ui-text-dimmed)]">{t('common.none')}</span>{/if}
@@ -2678,7 +2707,8 @@
 				><span class="tabular-nums">{formatMoney(cart.totals.tax, currency)}</span>
 			</div>
 			<div class="flex justify-between pt-1 font-display text-[17px] font-bold">
-				<span>{t('common.total')}</span><span class="text-primary-600 tabular-nums dark:text-primary-400"
+				<span>{t('common.total')}</span><span
+					class="text-primary-600 tabular-nums dark:text-primary-400"
 					>{formatMoney(cart.totals.total, currency)}</span
 				>
 			</div>
@@ -2719,7 +2749,9 @@
 
 		{#if method === 'lightning' && !splitMode}
 			<label class="block">
-				<span class="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ui-text-muted)]">
+				<span
+					class="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ui-text-muted)]"
+				>
 					<Icon name="lucide:notebook-pen" class="size-3.5" />Invoice description / memo
 				</span>
 				<Input
@@ -2838,7 +2870,8 @@
 
 			<!-- Complete split checkout -->
 			<div class="grid grid-cols-2 gap-2">
-				<Button color="neutral" variant="subtle" icon="lucide:x" onclick={resetSplit}>{t('common.cancel')}</Button
+				<Button color="neutral" variant="subtle" icon="lucide:x" onclick={resetSplit}
+					>{t('common.cancel')}</Button
 				>
 				<Button
 					color="primary"
@@ -3024,7 +3057,9 @@
 		</div>
 	{/if}
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (sizeOpen = false)}>{t('common.cancel')}</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (sizeOpen = false)}
+			>{t('common.cancel')}</Button
+		>
 		<Button color="primary" icon="lucide:check" onclick={confirmVariant}>{t('common.add')}</Button>
 	{/snippet}
 </Dialog>
@@ -3100,7 +3135,9 @@
 <Dialog bind:open={noteOpen} title={t('pos.lineNote')} size="sm">
 	<Input bind:value={noteText} placeholder="e.g. extra hot, no onions" class="w-full" />
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (noteOpen = false)}>{t('common.cancel')}</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (noteOpen = false)}
+			>{t('common.cancel')}</Button
+		>
 		<Button color="primary" icon="lucide:check" onclick={saveNote}>{t('common.save')}</Button>
 	{/snippet}
 </Dialog>
@@ -3152,7 +3189,9 @@
 		{/if}
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (discountOpen = false)}>{t('common.cancel')}</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (discountOpen = false)}
+			>{t('common.cancel')}</Button
+		>
 		<Button color="primary" icon="lucide:check" onclick={applyDiscount}>{t('common.apply')}</Button>
 	{/snippet}
 </Dialog>
@@ -3164,7 +3203,7 @@
 			<Input
 				bind:value={couponCode}
 				placeholder="Enter coupon code"
-				class="font-mono uppercase w-full"
+				class="w-full font-mono uppercase"
 				onkeydown={(e) => e.key === 'Enter' && applyCouponCode()}
 			/>
 			<Button color="primary" icon="lucide:ticket-check" onclick={applyCouponCode}>Apply</Button>
@@ -3252,7 +3291,9 @@
 		{/if}
 	</div>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (promoOpen = false)}>{t('common.close')}</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (promoOpen = false)}
+			>{t('common.close')}</Button
+		>
 	{/snippet}
 </Dialog>
 
@@ -3312,281 +3353,383 @@
 <!-- Receipt -->
 {#if !payFlow.open}
 	<Dialog bind:open={receiptOpen} size="sm" dismissible={!processing}>
-	{#if processing}
-		<div class="space-y-3 py-1">
-			<div class="relative text-center">
-				<div class="mx-auto grid size-16 place-items-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/25">
-					<Icon name={checkoutProgressStage === 'synced' ? 'lucide:check' : 'lucide:loader-circle'} class="size-8 {checkoutProgressStage === 'synced' ? '' : 'animate-spin'}" />
-				</div>
-				<h2 class="mt-3 font-display text-xl font-black tracking-tight text-[var(--ui-text)]">{checkoutProgressStage === 'synced' ? 'Payment received' : 'Pending payment'}</h2>
-				<p class="mt-0.5 font-mono text-[11px] font-semibold text-[var(--ui-text-dimmed)]">ORDER · PROCESSING</p>
-				<p class="mt-1 font-display text-[2.2rem] leading-none font-black tabular-nums text-[var(--ui-text)]">{formatMoney(grandTotal, currency)}</p>
-				<div class="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-semibold">
-					<span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-emerald-600 dark:text-emerald-400"><Icon name={method === 'cash' ? 'lucide:banknote' : 'lucide:credit-card'} class="size-3.5" />{method}</span>
-					<span class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[var(--ui-text-muted)]"><Icon name="lucide:shopping-bag" class="size-3.5" />{cart.orderType.replace('_', ' ')}</span>
-					<span class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[var(--ui-text-muted)]"><Icon name="lucide:hash" class="size-3.5" />{cart.itemCount} items</span>
-				</div>
-			</div>
-
-			<div class="rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.06] p-4 text-left">
-				<div class="mb-2 flex items-center justify-between text-[10px] font-bold tracking-[0.12em] text-emerald-700 uppercase dark:text-emerald-300"><span>{checkoutProgressStage === 'synced' ? 'Payment received' : 'Syncing receipt'}</span><span>{checkoutProgressStage === 'saving' ? '35%' : checkoutProgressStage === 'syncing' ? '70%' : '100%'}</span></div>
-				<div class="h-2 overflow-hidden rounded-full bg-emerald-500/15"><div class="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-500 {checkoutProgressStage === 'saving' ? 'w-1/3' : checkoutProgressStage === 'syncing' ? 'w-2/3' : 'w-full'}"></div></div>
-				<div class="mt-3 grid grid-cols-3 gap-2 text-[10px] font-semibold">
-					<div class="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300"><Icon name="lucide:check-circle-2" class="size-3.5" />Order</div>
-					<div class="flex items-center gap-1.5 {checkoutProgressStage === 'synced' ? 'text-emerald-700 dark:text-emerald-300' : 'text-[var(--ui-text-dimmed)]'}"><Icon name={checkoutProgressStage === 'synced' ? 'lucide:check-circle-2' : 'lucide:loader-circle'} class="size-3.5 {checkoutProgressStage === 'syncing' ? 'animate-spin' : ''}" />Relay</div>
-					<div class="flex items-center gap-1.5 {checkoutProgressStage === 'synced' ? 'text-emerald-700 dark:text-emerald-300' : 'text-[var(--ui-text-dimmed)]'}"><Icon name={checkoutProgressStage === 'synced' ? 'lucide:check-circle-2' : 'lucide:circle'} class="size-3.5" />Complete</div>
-				</div>
-			</div>
-			<p class="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[var(--ui-text-dimmed)]"><Icon name="lucide:shield-check" class="size-3.5" />Do not close or click again while processing.</p>
-		</div>
-	{:else if cart.lastCompleted}
-		{@const s = cart.lastCompleted}
-		<PaymentSuccessHeader
-			sale={s}
-			{currency}
-			tip={successTip}
-			tendered={successTendered}
-			onClose={() => (receiptOpen = false)}
-		/>
-		<ul
-			class="mt-4 divide-y divide-[var(--ui-border-muted)] border-t border-[var(--ui-border-muted)] pt-3 text-[12.5px]"
-		>
-			{#each s.items as it (it.key)}
-				<li class="flex justify-between py-1.5">
-					<span class="min-w-0 truncate"
-						>{it.quantity}× {it.name}{#if it.variantName}
-							({it.variantName}){/if}</span
-					><span class="tabular-nums"
-						>{formatMoney(
-							(it.unitPrice + (it.modifiers?.reduce((a, m) => a + m.priceAdjustment, 0) ?? 0)) *
-								it.quantity,
-							currency
-						)}</span
+		{#if processing}
+			<div class="space-y-3 py-1">
+				<div class="relative text-center">
+					<div
+						class="mx-auto grid size-16 place-items-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
 					>
-				</li>
-			{/each}
-		</ul>
-		<dl class="mt-2 space-y-1 border-t border-[var(--ui-border-muted)] pt-2 text-[12px]">
-			<div class="flex justify-between text-[var(--ui-text-muted)]">
-				<span>{t('common.subtotal')}</span><span class="tabular-nums"
-					>{formatMoney(s.totals.subtotal, currency)}</span
-				>
-			</div>
-			{#if s.totals.discountAmount > 0}
-				<div class="flex justify-between text-[var(--tone-success-text)]">
-					<span class="truncate"
-						>Discount{#if s.promotion?.name}
-							· {s.promotion.name}{/if}</span
+						<Icon
+							name={checkoutProgressStage === 'synced' ? 'lucide:check' : 'lucide:loader-circle'}
+							class="size-8 {checkoutProgressStage === 'synced' ? '' : 'animate-spin'}"
+						/>
+					</div>
+					<h2 class="mt-3 font-display text-xl font-black tracking-tight text-[var(--ui-text)]">
+						{checkoutProgressStage === 'synced' ? 'Payment received' : 'Pending payment'}
+					</h2>
+					<p class="mt-0.5 font-mono text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+						ORDER · PROCESSING
+					</p>
+					<p
+						class="mt-1 font-display text-[2.2rem] leading-none font-black text-[var(--ui-text)] tabular-nums"
 					>
-					<span class="tabular-nums">−{formatMoney(s.totals.discountAmount, currency)}</span>
+						{formatMoney(grandTotal, currency)}
+					</p>
+					<div
+						class="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-semibold"
+					>
+						<span
+							class="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-emerald-600 dark:text-emerald-400"
+							><Icon
+								name={method === 'cash' ? 'lucide:banknote' : 'lucide:credit-card'}
+								class="size-3.5"
+							/>{method}</span
+						>
+						<span
+							class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[var(--ui-text-muted)]"
+							><Icon name="lucide:shopping-bag" class="size-3.5" />{cart.orderType.replace(
+								'_',
+								' '
+							)}</span
+						>
+						<span
+							class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[var(--ui-text-muted)]"
+							><Icon name="lucide:hash" class="size-3.5" />{cart.itemCount} items</span
+						>
+					</div>
 				</div>
-			{:else if s.promotion?.name}
-				<div class="flex items-center gap-1.5 text-[var(--ui-text-muted)]">
-					<Icon name="lucide:ticket-percent" class="size-3.5 shrink-0" />
-					<span class="truncate">{s.promotion.name}</span>
-				</div>
-			{/if}
-			<div class="flex justify-between text-[var(--ui-text-muted)]">
-				<span>{t('common.tax')}</span><span class="tabular-nums">{formatMoney(s.totals.tax, currency)}</span>
-			</div>
-			{#if s.totalSats}
-				<div
-					class="flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-1.5 text-[12px] font-semibold text-[var(--tone-warning-text)]"
-				>
-					<span class="flex items-center gap-1"
-						><Icon name="lucide:zap" class="size-3.5" />Sats</span
-					><span class="tabular-nums">≈ {formatInt(s.totalSats)}</span>
-				</div>
-			{/if}
-		</dl>
-	{/if}
-	{#snippet footer()}
-		<div class="flex gap-2">
-			<Button color="neutral" variant="subtle" icon="lucide:printer" onclick={printReceipt}
-				>{t('common.print')}</Button
-			>
-			<Button color="primary" block onclick={() => (receiptOpen = false)}>{t('common.new') + ' ' + t('common.sale')}</Button>
-		</div>
-	{/snippet}
-</Dialog>
 
-<!-- Custom Item Modal -->
-<Dialog bind:open={customOpen} title="Custom item" size="sm">
-	<div class="space-y-3">
-		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Item name</span
-			>
-			<Input
-				bind:value={customName}
-				icon="lucide:pencil-line"
-				placeholder="e.g. Special coffee"
-				class="w-full"
+				<div class="rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.06] p-4 text-left">
+					<div
+						class="mb-2 flex items-center justify-between text-[10px] font-bold tracking-[0.12em] text-emerald-700 uppercase dark:text-emerald-300"
+					>
+						<span
+							>{checkoutProgressStage === 'synced' ? 'Payment received' : 'Syncing receipt'}</span
+						><span
+							>{checkoutProgressStage === 'saving'
+								? '35%'
+								: checkoutProgressStage === 'syncing'
+									? '70%'
+									: '100%'}</span
+						>
+					</div>
+					<div class="h-2 overflow-hidden rounded-full bg-emerald-500/15">
+						<div
+							class="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-500 {checkoutProgressStage ===
+							'saving'
+								? 'w-1/3'
+								: checkoutProgressStage === 'syncing'
+									? 'w-2/3'
+									: 'w-full'}"
+						></div>
+					</div>
+					<div class="mt-3 grid grid-cols-3 gap-2 text-[10px] font-semibold">
+						<div class="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
+							<Icon name="lucide:check-circle-2" class="size-3.5" />Order
+						</div>
+						<div
+							class="flex items-center gap-1.5 {checkoutProgressStage === 'synced'
+								? 'text-emerald-700 dark:text-emerald-300'
+								: 'text-[var(--ui-text-dimmed)]'}"
+						>
+							<Icon
+								name={checkoutProgressStage === 'synced'
+									? 'lucide:check-circle-2'
+									: 'lucide:loader-circle'}
+								class="size-3.5 {checkoutProgressStage === 'syncing' ? 'animate-spin' : ''}"
+							/>Relay
+						</div>
+						<div
+							class="flex items-center gap-1.5 {checkoutProgressStage === 'synced'
+								? 'text-emerald-700 dark:text-emerald-300'
+								: 'text-[var(--ui-text-dimmed)]'}"
+						>
+							<Icon
+								name={checkoutProgressStage === 'synced'
+									? 'lucide:check-circle-2'
+									: 'lucide:circle'}
+								class="size-3.5"
+							/>Complete
+						</div>
+					</div>
+				</div>
+				<p
+					class="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[var(--ui-text-dimmed)]"
+				>
+					<Icon name="lucide:shield-check" class="size-3.5" />Do not close or click again while
+					processing.
+				</p>
+			</div>
+		{:else if cart.lastCompleted}
+			{@const s = cart.lastCompleted}
+			<PaymentSuccessHeader
+				sale={s}
+				{currency}
+				tip={successTip}
+				tendered={successTendered}
+				onClose={() => (receiptOpen = false)}
 			/>
-		</label>
-		<div class="grid grid-cols-2 gap-3">
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.price')}</span
-				>
-				<Input
-					bind:value={customPrice}
-					type="number"
-					min="0"
-					step="0.01"
-					icon="lucide:banknote"
-					placeholder="0"
-					class="w-full"
-				/>
-			</label>
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>{t('common.quantity')}</span
-				>
-				<Input
-					bind:value={customQty}
-					type="number"
-					min="1"
-					step="1"
-					icon="lucide:hash"
-					class="w-full"
-				/>
-			</label>
-		</div>
-	</div>
-	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (customOpen = false)}>{t('common.cancel')}</Button>
-		<Button color="primary" icon="lucide:plus" onclick={addCustomItem}>Add to sale</Button>
-	{/snippet}
-</Dialog>
-
-<!-- Shift Gate Modal -->
-<Dialog open={shiftModalOpen} title={openShift ? 'Close shift' : 'Open shift'} size="sm">
-	{#if openShift}
-		<div class="space-y-3">
-			<div class="rounded-lg bg-[var(--ui-bg-muted)] px-3 py-2 text-[12.5px]">
-				<div class="font-semibold">{openShift.data.number}</div>
-				<div class="text-[var(--ui-text-muted)]">
-					Opened: {new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(
-						new Date(openShift.data.openedAt)
-					)}
-				</div>
-				<div class="text-[var(--ui-text-muted)]">
-					Opening cash: {formatMoney(openShift.data.openingCash ?? 0, currency)}
-				</div>
-			</div>
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Counted closing cash</span
-				>
-				<Input
-					bind:value={shiftOpeningCash}
-					type="number"
-					min="0"
-					step="0.01"
-					icon="lucide:banknote"
-					placeholder="0"
-					class="w-full"
-				/>
-			</label>
-		</div>
-	{:else}
-		<div class="space-y-3">
-			<div
-				class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2.5 text-[12.5px] text-[var(--ui-text-muted)]"
+			<ul
+				class="mt-4 divide-y divide-[var(--ui-border-muted)] border-t border-[var(--ui-border-muted)] pt-3 text-[12.5px]"
 			>
-				<Icon name="lucide:info" class="mr-1 inline size-3.5" />
-				{t('pos.noActiveShift')}.
+				{#each s.items as it (it.key)}
+					<li class="flex justify-between py-1.5">
+						<span class="min-w-0 truncate"
+							>{it.quantity}× {it.name}{#if it.variantName}
+								({it.variantName}){/if}</span
+						><span class="tabular-nums"
+							>{formatMoney(
+								(it.unitPrice + (it.modifiers?.reduce((a, m) => a + m.priceAdjustment, 0) ?? 0)) *
+									it.quantity,
+								currency
+							)}</span
+						>
+					</li>
+				{/each}
+			</ul>
+			<dl class="mt-2 space-y-1 border-t border-[var(--ui-border-muted)] pt-2 text-[12px]">
+				<div class="flex justify-between text-[var(--ui-text-muted)]">
+					<span>{t('common.subtotal')}</span><span class="tabular-nums"
+						>{formatMoney(s.totals.subtotal, currency)}</span
+					>
+				</div>
+				{#if s.totals.discountAmount > 0}
+					<div class="flex justify-between text-[var(--tone-success-text)]">
+						<span class="truncate"
+							>Discount{#if s.promotion?.name}
+								· {s.promotion.name}{/if}</span
+						>
+						<span class="tabular-nums">−{formatMoney(s.totals.discountAmount, currency)}</span>
+					</div>
+				{:else if s.promotion?.name}
+					<div class="flex items-center gap-1.5 text-[var(--ui-text-muted)]">
+						<Icon name="lucide:ticket-percent" class="size-3.5 shrink-0" />
+						<span class="truncate">{s.promotion.name}</span>
+					</div>
+				{/if}
+				<div class="flex justify-between text-[var(--ui-text-muted)]">
+					<span>{t('common.tax')}</span><span class="tabular-nums"
+						>{formatMoney(s.totals.tax, currency)}</span
+					>
+				</div>
+				{#if s.totalSats}
+					<div
+						class="flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-1.5 text-[12px] font-semibold text-[var(--tone-warning-text)]"
+					>
+						<span class="flex items-center gap-1"
+							><Icon name="lucide:zap" class="size-3.5" />Sats</span
+						><span class="tabular-nums">≈ {formatInt(s.totalSats)}</span>
+					</div>
+				{/if}
+			</dl>
+		{/if}
+		{#snippet footer()}
+			<div class="flex gap-2">
+				<Button color="neutral" variant="subtle" icon="lucide:printer" onclick={printReceipt}
+					>{t('common.print')}</Button
+				>
+				<Button color="primary" block onclick={() => (receiptOpen = false)}
+					>{t('common.new') + ' ' + t('common.sale')}</Button
+				>
 			</div>
+		{/snippet}
+	</Dialog>
+
+	<!-- Custom Item Modal -->
+	<Dialog bind:open={customOpen} title="Custom item" size="sm">
+		<div class="space-y-3">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Opening cash (optional)</span
+					>Item name</span
 				>
 				<Input
-					bind:value={shiftOpeningCash}
-					type="number"
-					min="0"
-					step="0.01"
-					icon="lucide:banknote"
-					placeholder="0"
+					bind:value={customName}
+					icon="lucide:pencil-line"
+					placeholder="e.g. Special coffee"
 					class="w-full"
 				/>
 			</label>
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Cashier name (optional)</span
-				>
-				<Input bind:value={shiftStaffName} icon="lucide:user" placeholder={t('common.name')} class="w-full" />
-			</label>
-		</div>
-	{/if}
-	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (shiftModalOpen = false)}>{t('common.cancel')}</Button>
-		{#if openShift}
-			<Button color="neutral" icon="lucide:lock" onclick={closeShift}>{t('shifts.closeShift')}</Button>
-		{:else}
-			<Button color="primary" icon="lucide:unlock" onclick={openShiftAction}>{t('shifts.openShift')}</Button>
-		{/if}
-	{/snippet}
-</Dialog>
-
-<!-- History Quick Access Modal -->
-<Dialog bind:open={historyOpen} title={t('dashboard.recentOrders')} size="md">
-	{#if recentOrders.length === 0}
-		<EmptyState
-			icon="lucide:receipt"
-			title="No orders yet"
-			description="Completed sales will appear here."
-		/>
-	{:else}
-		<ul class="divide-y divide-[var(--ui-border-muted)]">
-			{#each recentOrders as o (o.id)}
-				{@const orderData = recordValue(o.data)}
-				{@const total =
-					(typeof orderData.total === 'number' ? orderData.total : undefined) ??
-					(orderData.totals as { total?: number } | undefined)?.total ??
-					(typeof orderData.amount === 'number' ? orderData.amount : 0)}
-				{@const rawDate =
-					typeof orderData.occurredAt === 'string'
-						? orderData.occurredAt
-						: typeof orderData.createdAt === 'string'
-							? orderData.createdAt
-							: ''}
-				{@const orderTime = rawDate
-					? new Intl.DateTimeFormat('en-US', {
-							hour: 'numeric',
-							minute: '2-digit',
-							day: 'numeric',
-							month: 'short'
-						}).format(new Date(rawDate))
-					: '—'}
-				<li>
-					<button
-						type="button"
-						onclick={() => gotoOrder(o.id)}
-						class="flex w-full items-center justify-between py-2.5 text-left transition-colors hover:bg-[var(--ui-bg-accented)]"
+			<div class="grid grid-cols-2 gap-3">
+				<label class="block">
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>{t('common.price')}</span
 					>
-						<div class="min-w-0">
-							<div class="text-[13px] font-semibold">
-								{(o.data as { orderNumber?: string; number?: string }).orderNumber ??
-									(o.data as { number?: string }).number ??
-									o.id.slice(0, 8)}
+					<Input
+						bind:value={customPrice}
+						type="number"
+						min="0"
+						step="0.01"
+						icon="lucide:banknote"
+						placeholder="0"
+						class="w-full"
+					/>
+				</label>
+				<label class="block">
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>{t('common.quantity')}</span
+					>
+					<Input
+						bind:value={customQty}
+						type="number"
+						min="1"
+						step="1"
+						icon="lucide:hash"
+						class="w-full"
+					/>
+				</label>
+			</div>
+		</div>
+		{#snippet footer()}
+			<Button color="neutral" variant="ghost" onclick={() => (customOpen = false)}
+				>{t('common.cancel')}</Button
+			>
+			<Button color="primary" icon="lucide:plus" onclick={addCustomItem}>Add to sale</Button>
+		{/snippet}
+	</Dialog>
+
+	<!-- Shift Gate Modal -->
+	<Dialog open={shiftModalOpen} title={openShift ? 'Close shift' : 'Open shift'} size="sm">
+		{#if openShift}
+			<div class="space-y-3">
+				<div class="rounded-lg bg-[var(--ui-bg-muted)] px-3 py-2 text-[12.5px]">
+					<div class="font-semibold">{openShift.data.number}</div>
+					<div class="text-[var(--ui-text-muted)]">
+						Opened: {new Intl.DateTimeFormat('en-US', {
+							hour: 'numeric',
+							minute: '2-digit'
+						}).format(new Date(openShift.data.openedAt))}
+					</div>
+					<div class="text-[var(--ui-text-muted)]">
+						Opening cash: {formatMoney(openShift.data.openingCash ?? 0, currency)}
+					</div>
+				</div>
+				<label class="block">
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Counted closing cash</span
+					>
+					<Input
+						bind:value={shiftOpeningCash}
+						type="number"
+						min="0"
+						step="0.01"
+						icon="lucide:banknote"
+						placeholder="0"
+						class="w-full"
+					/>
+				</label>
+			</div>
+		{:else}
+			<div class="space-y-3">
+				<div
+					class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2.5 text-[12.5px] text-[var(--ui-text-muted)]"
+				>
+					<Icon name="lucide:info" class="mr-1 inline size-3.5" />
+					{t('pos.noActiveShift')}.
+				</div>
+				<label class="block">
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Opening cash (optional)</span
+					>
+					<Input
+						bind:value={shiftOpeningCash}
+						type="number"
+						min="0"
+						step="0.01"
+						icon="lucide:banknote"
+						placeholder="0"
+						class="w-full"
+					/>
+				</label>
+				<label class="block">
+					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						>Cashier name (optional)</span
+					>
+					<Input
+						bind:value={shiftStaffName}
+						icon="lucide:user"
+						placeholder={t('common.name')}
+						class="w-full"
+					/>
+				</label>
+			</div>
+		{/if}
+		{#snippet footer()}
+			<Button color="neutral" variant="ghost" onclick={() => (shiftModalOpen = false)}
+				>{t('common.cancel')}</Button
+			>
+			{#if openShift}
+				<Button color="neutral" icon="lucide:lock" onclick={closeShift}
+					>{t('shifts.closeShift')}</Button
+				>
+			{:else}
+				<Button color="primary" icon="lucide:unlock" onclick={openShiftAction}
+					>{t('shifts.openShift')}</Button
+				>
+			{/if}
+		{/snippet}
+	</Dialog>
+
+	<!-- History Quick Access Modal -->
+	<Dialog bind:open={historyOpen} title={t('dashboard.recentOrders')} size="md">
+		{#if recentOrders.length === 0}
+			<EmptyState
+				icon="lucide:receipt"
+				title="No orders yet"
+				description="Completed sales will appear here."
+			/>
+		{:else}
+			<ul class="divide-y divide-[var(--ui-border-muted)]">
+				{#each recentOrders as o (o.id)}
+					{@const orderData = recordValue(o.data)}
+					{@const total =
+						(typeof orderData.total === 'number' ? orderData.total : undefined) ??
+						(orderData.totals as { total?: number } | undefined)?.total ??
+						(typeof orderData.amount === 'number' ? orderData.amount : 0)}
+					{@const rawDate =
+						typeof orderData.occurredAt === 'string'
+							? orderData.occurredAt
+							: typeof orderData.createdAt === 'string'
+								? orderData.createdAt
+								: ''}
+					{@const orderTime = rawDate
+						? new Intl.DateTimeFormat('en-US', {
+								hour: 'numeric',
+								minute: '2-digit',
+								day: 'numeric',
+								month: 'short'
+							}).format(new Date(rawDate))
+						: '—'}
+					<li>
+						<button
+							type="button"
+							onclick={() => gotoOrder(o.id)}
+							class="flex w-full items-center justify-between py-2.5 text-left transition-colors hover:bg-[var(--ui-bg-accented)]"
+						>
+							<div class="min-w-0">
+								<div class="text-[13px] font-semibold">
+									{(o.data as { orderNumber?: string; number?: string }).orderNumber ??
+										(o.data as { number?: string }).number ??
+										o.id.slice(0, 8)}
+								</div>
+								<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">{orderTime}</div>
 							</div>
-							<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">{orderTime}</div>
-						</div>
-						<div class="flex items-center gap-2">
-							<span class="text-[13px] font-bold tabular-nums"
-								>{formatMoney(total, (o.data as { currency?: string }).currency ?? currency)}</span
-							>
-							<Badge color={statusColor((o.data as { status?: string }).status ?? 'pending')}
-								>{(o.data as { status?: string }).status ?? 'pending'}</Badge
-							>
-							<Icon name="lucide:chevron-right" class="size-4 text-[var(--ui-text-dimmed)]" />
-						</div>
-					</button>
-				</li>
-			{/each}
-		</ul>
-	{/if}
+							<div class="flex items-center gap-2">
+								<span class="text-[13px] font-bold tabular-nums"
+									>{formatMoney(
+										total,
+										(o.data as { currency?: string }).currency ?? currency
+									)}</span
+								>
+								<Badge color={statusColor((o.data as { status?: string }).status ?? 'pending')}
+									>{(o.data as { status?: string }).status ?? 'pending'}</Badge
+								>
+								<Icon name="lucide:chevron-right" class="size-4 text-[var(--ui-text-dimmed)]" />
+							</div>
+						</button>
+					</li>
+				{/each}
+			</ul>
+		{/if}
 	</Dialog>
 {/if}
 
@@ -3594,7 +3737,7 @@
 <PaymentQrDialog
 	flow={payFlow}
 	{currency}
-	showSats={showSats}
+	{showSats}
 	satsFromAmount={(a) => btcRate.satsFromAmount(a, currency)}
 	onclose={() => payFlow.close()}
 	onconfirm={confirmQrPaid}

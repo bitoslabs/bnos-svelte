@@ -30,11 +30,7 @@ import {
 	type ObpSettlement,
 	type ObpUnsignedEnvelope
 } from '../types';
-import {
-	checkIssueReferences,
-	checkTransition,
-	type ObpDocumentProjection
-} from '../lifecycle';
+import { checkIssueReferences, checkTransition, type ObpDocumentProjection } from '../lifecycle';
 import { verifyDelegation, type ObpOrganization, type ObpRegistry } from '../identity';
 import { DefaultObpPolicy, type ObpPolicyEngine, type ObpPolicyRecord } from '../policy';
 import { isExpired, validateEnvelope } from '../validate';
@@ -186,7 +182,8 @@ export class BusinessNode {
 			signerPubkey: '',
 			recipient: input.recipient,
 			createdAt: nowIso,
-			expiresAt: input.expiresAt ?? new Date(this.now().getTime() + this.defaultValidityMs).toISOString(),
+			expiresAt:
+				input.expiresAt ?? new Date(this.now().getTime() + this.defaultValidityMs).toISOString(),
 			currency: input.currency,
 			lines: input.lines ?? [],
 			totalsMinor:
@@ -356,13 +353,20 @@ export class BusinessNode {
 	 */
 	receive(envelope: unknown): Promise<ReceiveResult> {
 		const run = this.verifyAndAccept(envelope);
-		this.receiveChain = this.receiveChain.then(() => run, () => run);
+		this.receiveChain = this.receiveChain.then(
+			() => run,
+			() => run
+		);
 		return run;
 	}
 
 	private async verifyAndAccept(envelopeRaw: unknown): Promise<ReceiveResult> {
 		const envelope = envelopeRaw as ObpEnvelope;
-		const drop = (error: ObpError): ReceiveResult => ({ decision: 'rejected', error, duplicate: false });
+		const drop = (error: ObpError): ReceiveResult => ({
+			decision: 'rejected',
+			error,
+			duplicate: false
+		});
 
 		// 1. Schema & version. Garbage is dropped without persistence.
 		const invalid = validateEnvelope(envelope);
@@ -416,7 +420,10 @@ export class BusinessNode {
 
 		// 5. Expiry.
 		if (isExpired(envelope, this.now())) {
-			return rejectPersisted({ code: 'OBP-E08', message: `message expired at ${envelope.expiresAt}` });
+			return rejectPersisted({
+				code: 'OBP-E08',
+				message: `message expired at ${envelope.expiresAt}`
+			});
 		}
 
 		// 6. Idempotency: replayed messageId returns the same decision.
@@ -522,7 +529,10 @@ export class BusinessNode {
 	private async verifySettlement(evidence: ObpEnvelope, invoiceId?: string): Promise<void> {
 		if (!this.settlementVerifier || !invoiceId) return;
 		const outcome = await this.settlementVerifier.verify(evidence);
-		await this.stores.setSettlement(invoiceId, outcome.status === 'verified' ? 'verified' : outcome.status);
+		await this.stores.setSettlement(
+			invoiceId,
+			outcome.status === 'verified' ? 'verified' : outcome.status
+		);
 		await this.stores.appendAudit({
 			at: this.now().toISOString(),
 			kind: 'settlement',
@@ -608,7 +618,8 @@ export class BusinessNode {
 		entry: ObpOutboxEntry,
 		isRetry: boolean
 	): Promise<ObpTransportResult & { delivered: boolean }> {
-		if (!this.transport) return { ok: false, error: 'no-transport', retryable: false, delivered: false };
+		if (!this.transport)
+			return { ok: false, error: 'no-transport', retryable: false, delivered: false };
 		// Every v0.1 document type is bilateral and confidential; public
 		// offers arrive with the discovery extension and an explicit
 		// visibility policy.

@@ -248,15 +248,15 @@ RECEIPT
 
 ```json
 {
-  "id": "...",
-  "type": "invoice",
-  "issuer": "...",
-  "recipient": "...",
-  "created_at": "...",
-  "currency": "LAK",
-  "amount": 2500000,
-  "references": ["order:..."],
-  "signature": "..."
+	"id": "...",
+	"type": "invoice",
+	"issuer": "...",
+	"recipient": "...",
+	"created_at": "...",
+	"currency": "LAK",
+	"amount": 2500000,
+	"references": ["order:..."],
+	"signature": "..."
 }
 ```
 

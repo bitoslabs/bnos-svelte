@@ -46,6 +46,9 @@ export class LightningPreimageVerifier implements SettlementVerifier {
 
 		// Manual/bank/mobile claims are never auto-verified: a human or a
 		// provider-backed verifier must confirm them.
-		return { status: 'pending', detail: `method ${settlement.method} requires provider verification` };
+		return {
+			status: 'pending',
+			detail: `method ${settlement.method} requires provider verification`
+		};
 	}
 }

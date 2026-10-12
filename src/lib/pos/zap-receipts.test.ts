@@ -79,7 +79,9 @@ describe('zapReceiptMatches', () => {
 
 describe('zapReceiptPreimage', () => {
 	it('extracts the preimage tag when present', () => {
-		expect(zapReceiptPreimage(receipt({ bolt11: PR, preimage: 'ab'.repeat(32) }))).toBe('ab'.repeat(32));
+		expect(zapReceiptPreimage(receipt({ bolt11: PR, preimage: 'ab'.repeat(32) }))).toBe(
+			'ab'.repeat(32)
+		);
 		expect(zapReceiptPreimage(receipt({ bolt11: PR }))).toBeUndefined();
 	});
 });

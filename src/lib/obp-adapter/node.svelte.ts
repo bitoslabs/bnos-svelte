@@ -151,18 +151,15 @@ class ObpNodeService {
 			const orgId = orgIdForPubkey(pubkey);
 			orgs.push({ orgId, name: s.data.name, ownerPubkey: pubkey });
 			this.directory.set(orgId, pubkey);
-			this.registry.trustOrganization(
-				{ orgId, name: s.data.name, ownerPubkey: pubkey },
-				[
-					{
-						grantId: ownerGrantIdFor(orgId),
-						orgId,
-						pubkey,
-						role: 'owner',
-						scope: { documentTypes: ['*'], actions: ['*'] }
-					}
-				]
-			);
+			this.registry.trustOrganization({ orgId, name: s.data.name, ownerPubkey: pubkey }, [
+				{
+					grantId: ownerGrantIdFor(orgId),
+					orgId,
+					pubkey,
+					role: 'owner',
+					scope: { documentTypes: ['*'], actions: ['*'] }
+				}
+			]);
 		}
 		this.counterparties = orgs;
 	};

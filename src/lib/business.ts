@@ -14,10 +14,25 @@ export interface BusinessModelOption {
 
 export const businessModels: BusinessModelOption[] = [
 	{ value: 'single', label: 'Single store', icon: 'lucide:store', desc: 'One location, one team' },
-	{ value: 'multi_branch', label: 'Multi-branch', icon: 'lucide:building-2', desc: 'Several owned locations' },
+	{
+		value: 'multi_branch',
+		label: 'Multi-branch',
+		icon: 'lucide:building-2',
+		desc: 'Several owned locations'
+	},
 	{ value: 'chain', label: 'Chain', icon: 'lucide:link', desc: 'Linked stores, shared catalog' },
-	{ value: 'franchise_hq', label: 'Franchise HQ', icon: 'lucide:globe', desc: 'Own the brand, onboard branches' },
-	{ value: 'franchise_branch', label: 'Franchise branch', icon: 'lucide:map', desc: 'Operate under a brand' }
+	{
+		value: 'franchise_hq',
+		label: 'Franchise HQ',
+		icon: 'lucide:globe',
+		desc: 'Own the brand, onboard branches'
+	},
+	{
+		value: 'franchise_branch',
+		label: 'Franchise branch',
+		icon: 'lucide:map',
+		desc: 'Operate under a brand'
+	}
 ];
 
 export interface BusinessTypeOption {
@@ -51,7 +66,9 @@ export const currencies = [
 ];
 
 /** Sample catalog seed per business type (used by the catalog setup step). */
-export function seedForType(type: BusinessType): { name: string; price: number; categoryId: string }[] {
+export function seedForType(
+	type: BusinessType
+): { name: string; price: number; categoryId: string }[] {
 	switch (type) {
 		case 'cafe':
 			return [

@@ -131,9 +131,10 @@ describe('LnurlAddressProvider auto-confirm flow (mocked provider)', () => {
 
 	it('flips autoConfirms via verify even without a zap-capable provider', async () => {
 		// Same provider, no nostr context → plain invoice; verify URL still polls.
-		const provider = selectProviderForConfig(
-			{ lightningProvider: 'lnaddress', lightningAddress: 'store@prov.example' } as never
-		)!;
+		const provider = selectProviderForConfig({
+			lightningProvider: 'lnaddress',
+			lightningAddress: 'store@prov.example'
+		} as never)!;
 		const inv = await provider.makeInvoice(100_000);
 		expect(inv.pr).toBe(PR);
 		expect(callbackQuery!.get('nostr')).toBeNull(); // no zap request sent

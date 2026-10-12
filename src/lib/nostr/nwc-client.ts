@@ -129,7 +129,11 @@ export async function nwcRequest(
 	// encrypts the payload. A replacement key would be rejected by the wallet.
 	const sk = hexToBytes(active.secret);
 	const clientPubkey = getPublicKey(sk);
-	const content = await nip04.encrypt(active.secret, active.walletPubkey, JSON.stringify({ method, params }));
+	const content = await nip04.encrypt(
+		active.secret,
+		active.walletPubkey,
+		JSON.stringify({ method, params })
+	);
 	const event = finalizeEvent(
 		{
 			kind: NWC_REQUEST_KIND,
@@ -161,19 +165,30 @@ export async function nwcRequest(
 			{
 				onevent: async (response: Event) => {
 					try {
-						const plaintext = await nip04.decrypt(active.secret, active.walletPubkey, response.content);
+						const plaintext = await nip04.decrypt(
+							active.secret,
+							active.walletPubkey,
+							response.content
+						);
 						const decoded = JSON.parse(plaintext) as NwcResponse;
 						if (decoded.error)
-							throw new Error(decoded.error.message || decoded.error.code || 'Wallet request failed.');
+							throw new Error(
+								decoded.error.message || decoded.error.code || 'Wallet request failed.'
+							);
 						finish(() => resolve(decoded.result ?? {}));
 					} catch (error) {
-						finish(() => reject(error instanceof Error ? error : new Error('Invalid wallet response.')));
+						finish(() =>
+							reject(error instanceof Error ? error : new Error('Invalid wallet response.'))
+						);
 					}
 				}
 			}
 		);
 		const timer = setTimeout(
-			() => finish(() => reject(new Error('Wallet did not respond — relay unreachable or wallet offline.'))),
+			() =>
+				finish(() =>
+					reject(new Error('Wallet did not respond — relay unreachable or wallet offline.'))
+				),
 			timeoutMs
 		);
 		void Promise.allSettled(p.publish(active.relays, event)).then((published) => {
@@ -262,7 +277,9 @@ export function watchPaymentReceived(onReceived: (n: NwcPaymentReceived) => void
 					onReceived({
 						invoice: typeof n.invoice === 'string' ? n.invoice : undefined,
 						amountSats:
-							typeof n.amount === 'number' && n.amount > 0 ? Math.round(n.amount / 1000) : undefined,
+							typeof n.amount === 'number' && n.amount > 0
+								? Math.round(n.amount / 1000)
+								: undefined,
 						preimage: typeof n.preimage === 'string' ? n.preimage : undefined
 					});
 				} catch {

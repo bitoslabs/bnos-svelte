@@ -11,7 +11,6 @@
 
 /* Local Lao typeface. It is selected only while the active locale is Lao;
    Latin UI, numeric values, and money keep their existing typefaces below. */
-@import '$lib/assets/fonts/stylesheet.css';
 
 /* Restrict the Lao face to Lao characters. This is important for mixed values
    such as SKU-123, IDs, phone numbers, and money: Latin characters and digits
@@ -550,8 +549,10 @@
 	/* Lao labels use Chanthavong, while the existing display and numeric styles
 	   remain stable for figures, money, and active navigation/status controls. */
 	html[data-locale='lo'] {
-		--font-sans: 'Chanthavong Lao', 'Plus Jakarta Sans', 'SF Pro Text', ui-sans-serif, system-ui, sans-serif;
-		--font-display: 'Chanthavong Lao', 'Space Grotesk', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+		--font-sans:
+			'Chanthavong Lao', 'Plus Jakarta Sans', 'SF Pro Text', ui-sans-serif, system-ui, sans-serif;
+		--font-display:
+			'Chanthavong Lao', 'Space Grotesk', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 	}
 
 	/* Lao glyphs need slightly more vertical room than the Latin UI font. Keep

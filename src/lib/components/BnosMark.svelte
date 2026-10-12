@@ -49,12 +49,12 @@
 			/>
 		</g>
 		<g fill="none" stroke-linecap="round">
+			<path d="M137 49 Q128 30 112 19 M173 49 Q182 30 198 19" stroke="#0b0b0b" stroke-width="15" />
 			<path
 				d="M137 49 Q128 30 112 19 M173 49 Q182 30 198 19"
-				stroke="#0b0b0b"
-				stroke-width="15"
+				stroke="url(#{gold})"
+				stroke-width="9"
 			/>
-			<path d="M137 49 Q128 30 112 19 M173 49 Q182 30 198 19" stroke="url(#{gold})" stroke-width="9" />
 		</g>
 		<circle cx="108" cy="16" r="10" fill="url(#{gold})" />
 		<circle cx="202" cy="16" r="10" fill="url(#{gold})" />

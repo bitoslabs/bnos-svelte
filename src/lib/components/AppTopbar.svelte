@@ -55,9 +55,7 @@
 	const unreadCount = $derived(notifications.unread);
 	const unreadBadge = $derived(unreadCount > 9 ? '9+' : String(unreadCount));
 	const notifItems = $derived(
-		notifTab === 'unread'
-			? notifications.items.filter((n) => !n.read)
-			: notifications.items
+		notifTab === 'unread' ? notifications.items.filter((n) => !n.read) : notifications.items
 	);
 
 	const notifToneBg: Record<AppNotification['tone'], string> = {
@@ -194,7 +192,6 @@
 		{/if}
 	</div>
 
-
 	<!-- Command palette trigger (⌘K / Ctrl K) -->
 	<button
 		type="button"
@@ -293,7 +290,8 @@
 							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
 							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
 					>
-						{t('topbar.unreadTab')}{#if unreadCount > 0} · {unreadCount}{/if}
+						{t('topbar.unreadTab')}{#if unreadCount > 0}
+							· {unreadCount}{/if}
 					</button>
 				</div>
 
@@ -302,10 +300,7 @@
 					<div
 						class="flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--ui-border-muted)] px-3 py-7"
 					>
-						<Icon
-							name="lucide:bell-off"
-							class="mb-1.5 size-5 text-[var(--ui-text-dimmed)]"
-						/>
+						<Icon name="lucide:bell-off" class="mb-1.5 size-5 text-[var(--ui-text-dimmed)]" />
 						<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
 							{t('topbar.youAreAllCaughtUp')}
 						</p>
@@ -370,7 +365,9 @@
 				{/if}
 
 				<!-- Footer: view all + clear -->
-				<div class="mt-2 flex items-center gap-1.5 border-t border-[var(--ui-border-muted)] px-1 pt-2">
+				<div
+					class="mt-2 flex items-center gap-1.5 border-t border-[var(--ui-border-muted)] px-1 pt-2"
+				>
 					<a
 						href={resolve('/notifications')}
 						onclick={() => (notifOpen = false)}
@@ -409,9 +406,7 @@
 			<span class="relative flex size-4 items-center justify-center">
 				<Icon name={relays.online ? 'lucide:wifi' : 'lucide:wifi-off'} class="size-4" />
 				{#if relays.online}
-					<span
-						class="absolute -right-1 -bottom-0.5 flex size-2.5"
-					>
+					<span class="absolute -right-1 -bottom-0.5 flex size-2.5">
 						<span
 							class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75"
 						></span>
@@ -452,7 +447,10 @@
 							>{relays.online ? t('common.connected') : t('common.offline')}</span
 						>
 						<span class="text-[11px] text-[var(--ui-text-dimmed)]">
-							{t('topbar.relaysActive', { active: relays.activeRelays.length, total: relays.relays.length })}
+							{t('topbar.relaysActive', {
+								active: relays.activeRelays.length,
+								total: relays.relays.length
+							})}
 						</span>
 					</div>
 					<a
@@ -484,9 +482,16 @@
 					<div
 						class="rounded-lg border border-dashed border-[var(--ui-border-muted)] px-3 py-6 text-center"
 					>
-						<Icon name="lucide:radio-off" class="mx-auto mb-1.5 size-5 text-[var(--ui-text-dimmed)]" />
-						<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('topbar.noRelays')}</p>
-						<p class="mt-0.5 text-[11px] text-[var(--ui-text-dimmed)]">{t('topbar.noRelaysDesc')}</p>
+						<Icon
+							name="lucide:radio-off"
+							class="mx-auto mb-1.5 size-5 text-[var(--ui-text-dimmed)]"
+						/>
+						<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
+							{t('topbar.noRelays')}
+						</p>
+						<p class="mt-0.5 text-[11px] text-[var(--ui-text-dimmed)]">
+							{t('topbar.noRelaysDesc')}
+						</p>
 					</div>
 				{:else}
 					<ul class="max-h-64 space-y-1 overflow-y-auto px-0.5">
@@ -588,7 +593,9 @@
 
 				<!-- Language -->
 				<div class="border-t border-[var(--ui-border-muted)] px-3.5 py-3">
-					<div class="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+					<div
+						class="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+					>
 						<Icon name="lucide:languages" class="size-3.5" />
 						{t('settings.language')}
 					</div>

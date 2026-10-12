@@ -45,7 +45,9 @@
 		try {
 			const raw = localStorage.getItem(STORAGE_KEY);
 			if (raw) return JSON.parse(raw);
-		} catch { /* noop */ }
+		} catch {
+			/* noop */
+		}
 		return [];
 	}
 
@@ -78,15 +80,17 @@
 		cancelled: queue.filter((q) => q.status === 'cancelled').length
 	});
 
-	const avgWait = $derived((() => {
-		const waiting = queue.filter((q) => q.status === 'waiting');
-		if (waiting.length === 0) return 0;
-		const total = waiting.reduce((sum, q) => {
-			const m = Math.floor((Date.now() - new Date(q.arrivedAt).getTime()) / 60_000);
-			return sum + Math.max(0, m);
-		}, 0);
-		return Math.round(total / waiting.length);
-	})());
+	const avgWait = $derived(
+		(() => {
+			const waiting = queue.filter((q) => q.status === 'waiting');
+			if (waiting.length === 0) return 0;
+			const total = waiting.reduce((sum, q) => {
+				const m = Math.floor((Date.now() - new Date(q.arrivedAt).getTime()) / 60_000);
+				return sum + Math.max(0, m);
+			}, 0);
+			return Math.round(total / waiting.length);
+		})()
+	);
 
 	const tabs = [
 		{ key: 'waiting' as const, label: t('restaurant.waiting'), count: stats.waiting },
@@ -174,22 +178,30 @@
 			<h1 class="font-display text-xl font-bold tracking-tight">Waitlist &amp; queue</h1>
 			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Manage parties waiting for a table</p>
 		</div>
-		<Button color="primary" icon="lucide:user-plus" onclick={openAdd}>{t('common.add') + ' ' + t('common.party')}</Button>
+		<Button color="primary" icon="lucide:user-plus" onclick={openAdd}
+			>{t('common.add') + ' ' + t('common.party')}</Button
+		>
 	</div>
 
 	<!-- Stats bar -->
 	<div class="flex flex-wrap items-center gap-3">
-		<div class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5">
+		<div
+			class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5"
+		>
 			<Icon name="lucide:users" class="size-4 text-[var(--ui-text-dimmed)]" />
 			<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Waiting</span>
 			<span class="text-[14px] font-bold tabular-nums">{stats.waiting}</span>
 		</div>
-		<div class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5">
+		<div
+			class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5"
+		>
 			<Icon name="lucide:clock" class="size-4 text-[var(--ui-text-dimmed)]" />
 			<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Avg wait</span>
 			<span class="text-[14px] font-bold tabular-nums">{avgWait}m</span>
 		</div>
-		<div class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5">
+		<div
+			class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5"
+		>
 			<Icon name="lucide:check-circle" class="size-4 text-[var(--ui-text-dimmed)]" />
 			<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Seated</span>
 			<span class="text-[14px] font-bold tabular-nums">{stats.seated}</span>
@@ -208,25 +220,35 @@
 				onclick={() => (activeTab = tab.key)}
 			>
 				{tab.label}
-				<span class="rounded-md bg-[var(--ui-bg-accented)] px-1.5 py-0.5 text-[10px] tabular-nums">{tab.count}</span>
+				<span class="rounded-md bg-[var(--ui-bg-accented)] px-1.5 py-0.5 text-[10px] tabular-nums"
+					>{tab.count}</span
+				>
 			</button>
 		{/each}
 	</div>
 
 	<!-- Queue list -->
 	{#if filtered.length === 0}
-		<EmptyState icon="lucide:clipboard-list" title={t('common.queueEmpty')} description="Add parties to the waitlist when you're at capacity." />
+		<EmptyState
+			icon="lucide:clipboard-list"
+			title={t('common.queueEmpty')}
+			description="Add parties to the waitlist when you're at capacity."
+		/>
 	{:else}
 		<ol class="space-y-2">
 			{#each filtered as entry, i (entry.id)}
 				<li class="surface-card flex items-center gap-3 p-4">
 					<!-- Position number -->
 					{#if entry.status === 'waiting'}
-						<span class="grid size-9 shrink-0 place-items-center rounded-full bg-primary-500/10 text-[13px] font-bold text-primary-600 dark:text-primary-400">
+						<span
+							class="grid size-9 shrink-0 place-items-center rounded-full bg-primary-500/10 text-[13px] font-bold text-primary-600 dark:text-primary-400"
+						>
 							{i + 1}
 						</span>
 					{:else}
-						<span class="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--ui-bg-accented)] text-[13px] font-bold text-[var(--ui-text-dimmed)]">
+						<span
+							class="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--ui-bg-accented)] text-[13px] font-bold text-[var(--ui-text-dimmed)]"
+						>
 							<Icon name={entry.status === 'seated' ? 'lucide:check' : 'lucide:x'} class="size-4" />
 						</span>
 					{/if}
@@ -234,18 +256,22 @@
 					<!-- Info -->
 					<div class="min-w-0 flex-1">
 						<div class="flex items-center gap-2">
-							<span class="font-semibold truncate">{entry.name}</span>
+							<span class="truncate font-semibold">{entry.name}</span>
 							<span class="flex items-center gap-0.5 text-[11px] text-[var(--ui-text-muted)]">
 								<Icon name="lucide:users" class="size-3" />
 								{entry.partySize}
 							</span>
 							{#if entry.tablePreference}
-								<span class="text-[11px] text-[var(--ui-text-muted)]">· prefers {entry.tablePreference}</span>
+								<span class="text-[11px] text-[var(--ui-text-muted)]"
+									>· prefers {entry.tablePreference}</span
+								>
 							{/if}
 						</div>
 						<div class="flex items-center gap-2 text-[11px] text-[var(--ui-text-muted)]">
 							{#if entry.phone}
-								<span class="flex items-center gap-0.5"><Icon name="lucide:phone" class="size-3" />{entry.phone}</span>
+								<span class="flex items-center gap-0.5"
+									><Icon name="lucide:phone" class="size-3" />{entry.phone}</span
+								>
 							{/if}
 							<span>· arrived {relativeTime(entry.arrivedAt)}</span>
 							{#if entry.notes}
@@ -257,7 +283,10 @@
 					<!-- Wait time / status -->
 					{#if entry.status === 'waiting'}
 						<div class="flex shrink-0 flex-col items-end">
-							<span class="font-mono text-[14px] font-bold tabular-nums {waitColor(entry.arrivedAt)}">{waitMin(entry.arrivedAt)}m</span>
+							<span
+								class="font-mono text-[14px] font-bold tabular-nums {waitColor(entry.arrivedAt)}"
+								>{waitMin(entry.arrivedAt)}m</span
+							>
 							<span class="text-[10px] text-[var(--ui-text-dimmed)]">waiting</span>
 						</div>
 					{:else}
@@ -267,16 +296,35 @@
 					<!-- Actions -->
 					{#if entry.status === 'waiting'}
 						<div class="flex shrink-0 items-center gap-1">
-							<Button size="icon-sm" variant="ghost" title={t('restaurant.call')} onclick={() => callParty(entry.id)}>
+							<Button
+								size="icon-sm"
+								variant="ghost"
+								title={t('restaurant.call')}
+								onclick={() => callParty(entry.id)}
+							>
 								<Icon name="lucide:bell" class="size-4" />
 							</Button>
-							<Button size="sm" color="primary" variant="soft" onclick={() => seatParty(entry.id)}>Seat</Button>
-							<Button size="icon-sm" variant="ghost" color="error" title={t('common.cancel')} onclick={() => cancelParty(entry.id)}>
+							<Button size="sm" color="primary" variant="soft" onclick={() => seatParty(entry.id)}
+								>Seat</Button
+							>
+							<Button
+								size="icon-sm"
+								variant="ghost"
+								color="error"
+								title={t('common.cancel')}
+								onclick={() => cancelParty(entry.id)}
+							>
 								<Icon name="lucide:x" class="size-4" />
 							</Button>
 						</div>
 					{:else}
-						<Button size="icon-sm" variant="ghost" color="error" title={t('common.remove')} onclick={() => removeEntry(entry.id)}>
+						<Button
+							size="icon-sm"
+							variant="ghost"
+							color="error"
+							title={t('common.remove')}
+							onclick={() => removeEntry(entry.id)}
+						>
 							<Icon name="lucide:trash-2" class="size-4" />
 						</Button>
 					{/if}
@@ -290,25 +338,35 @@
 <Dialog bind:open={dialogOpen} title={t('restaurant.addParty')} size="md">
 	<div class="space-y-3">
 		<div>
-			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</label>
+			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.name')}</label
+			>
 			<Input bind:value={formName} placeholder="Party name" />
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<div>
-				<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.phone')}</label>
+				<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.phone')}</label
+				>
 				<Input bind:value={formPhone} placeholder="+856…" icon="lucide:phone" />
 			</div>
 			<div>
-				<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Party size</label>
+				<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>Party size</label
+				>
 				<Input type="number" min="1" max="30" bind:value={formPartySize} />
 			</div>
 		</div>
 		<div>
-			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Table preference (optional)</label>
+			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Table preference (optional)</label
+			>
 			<Input bind:value={formTablePref} placeholder="e.g. Patio, Window, VIP…" />
 		</div>
 		<div>
-			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Notes (optional)</label>
+			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>Notes (optional)</label
+			>
 			<Input bind:value={formNotes} placeholder="Birthday, high chair, etc." />
 		</div>
 	</div>

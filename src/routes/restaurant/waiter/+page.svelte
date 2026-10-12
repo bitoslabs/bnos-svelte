@@ -37,12 +37,17 @@
 				const status = (o.data.status ?? '').toLowerCase();
 				return activeStatuses.includes(status);
 			})
-			.sort((a, b) => new Date(b.data.occurredAt ?? 0).getTime() - new Date(a.data.occurredAt ?? 0).getTime())
+			.sort(
+				(a, b) =>
+					new Date(b.data.occurredAt ?? 0).getTime() - new Date(a.data.occurredAt ?? 0).getTime()
+			)
 	);
 
 	// Waiter assignments
 	const assignments = $derived(
-		glo.all<WaiterAssignment, typeof WAITER_TYPE>(WAITER_TYPE).map((g) => ({ orderId: g.data.orderId, waiterName: g.data.waiterName }))
+		glo
+			.all<WaiterAssignment, typeof WAITER_TYPE>(WAITER_TYPE)
+			.map((g) => ({ orderId: g.data.orderId, waiterName: g.data.waiterName }))
 	);
 
 	function waiterFor(orderId: string): string {
@@ -91,10 +96,12 @@
 
 	// Waiter list
 	const waiterNames = $derived(
-		[...new Set([
-			...staff.filter((s) => s.role === 'waiter').map((s) => s.name),
-			...assignments.map((a) => a.waiterName)
-		])].sort()
+		[
+			...new Set([
+				...staff.filter((s) => s.role === 'waiter').map((s) => s.name),
+				...assignments.map((a) => a.waiterName)
+			])
+		].sort()
 	);
 
 	// Grouped by waiter for assignment view
@@ -116,24 +123,32 @@
 		const current = ((order.data as { status?: string }).status ?? '').toLowerCase();
 		const next = NEXT_STATUS[current];
 		if (!next) return;
-		await glo.upsert('commerce.order', { ...(order.data as Record<string, unknown>), status: next }, { id: order.id });
+		await glo.upsert(
+			'commerce.order',
+			{ ...(order.data as Record<string, unknown>), status: next },
+			{ id: order.id }
+		);
 		toast.success(`Order → ${next}`);
 	}
 
 	async function assignWaiter(orderId: string, waiterName: string) {
-		await glo.upsert(WAITER_TYPE, { orderId, waiterName } as WaiterAssignment, { id: `wa-${orderId}` });
+		await glo.upsert(WAITER_TYPE, { orderId, waiterName } as WaiterAssignment, {
+			id: `wa-${orderId}`
+		});
 		toast.success(`Assigned to ${waiterName}`);
 	}
 
 	let viewMode = $state<'orders' | 'waiters'>('orders');
-	const wg = $derived((() => {
-		const groups: Record<string, typeof openOrders> = {};
-		for (const o of openOrders) {
-			const w = waiterFor(o.id) || 'Unassigned';
-			(groups[w] ??= []).push(o);
-		}
-		return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-	})());
+	const wg = $derived(
+		(() => {
+			const groups: Record<string, typeof openOrders> = {};
+			for (const o of openOrders) {
+				const w = waiterFor(o.id) || 'Unassigned';
+				(groups[w] ??= []).push(o);
+			}
+			return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+		})()
+	);
 </script>
 
 <svelte:head><title>{t('common.appName')} · {t('nav.waiter')}</title></svelte:head>
@@ -150,7 +165,9 @@
 			<button
 				type="button"
 				class="flex items-center gap-1 rounded-md px-3 py-1.5 text-[12px] font-bold transition-colors
-					{viewMode === 'orders' ? 'bg-[var(--ui-bg-elevated)] text-primary-600 dark:text-primary-400 shadow-sm' : 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
+					{viewMode === 'orders'
+					? 'bg-[var(--ui-bg-elevated)] text-primary-600 shadow-sm dark:text-primary-400'
+					: 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
 				onclick={() => (viewMode = 'orders')}
 			>
 				<Icon name="lucide:clipboard-list" class="size-3.5" />
@@ -159,7 +176,9 @@
 			<button
 				type="button"
 				class="flex items-center gap-1 rounded-md px-3 py-1.5 text-[12px] font-bold transition-colors
-					{viewMode === 'waiters' ? 'bg-[var(--ui-bg-elevated)] text-primary-600 dark:text-primary-400 shadow-sm' : 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
+					{viewMode === 'waiters'
+					? 'bg-[var(--ui-bg-elevated)] text-primary-600 shadow-sm dark:text-primary-400'
+					: 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
 				onclick={() => (viewMode = 'waiters')}
 			>
 				<Icon name="lucide:users" class="size-3.5" />
@@ -170,13 +189,10 @@
 
 	<!-- Stats bar -->
 	<div class="flex flex-wrap items-center gap-3">
-		{#each [
-			{ label: t('common.open'), value: stats.total, color: 'bg-[var(--ui-text-dimmed)]' },
-			{ label: t('status.pending'), value: stats.pending, color: 'bg-amber-500' },
-			{ label: 'Cooking', value: stats.preparing, color: 'bg-blue-500' },
-			{ label: 'Ready', value: stats.ready, color: 'bg-emerald-500' }
-		] as stat (stat.label)}
-			<div class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5">
+		{#each [{ label: t('common.open'), value: stats.total, color: 'bg-[var(--ui-text-dimmed)]' }, { label: t('status.pending'), value: stats.pending, color: 'bg-amber-500' }, { label: 'Cooking', value: stats.preparing, color: 'bg-blue-500' }, { label: 'Ready', value: stats.ready, color: 'bg-emerald-500' }] as stat (stat.label)}
+			<div
+				class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5"
+			>
 				<span class="size-2 rounded-full {stat.color}"></span>
 				<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">{stat.label}</span>
 				<span class="text-[14px] font-bold tabular-nums">{stat.value}</span>
@@ -208,7 +224,10 @@
 					<Select
 						size="sm"
 						value={filterWaiter}
-						options={[{ value: 'all', label: 'All waiters' }, ...waiterNames.map((w) => ({ value: w, label: w }))]}
+						options={[
+							{ value: 'all', label: 'All waiters' },
+							...waiterNames.map((w) => ({ value: w, label: w }))
+						]}
 						onchange={(e: Event) => (filterWaiter = (e.currentTarget as HTMLSelectElement).value)}
 					/>
 				</div>
@@ -217,7 +236,11 @@
 
 		<!-- Order list -->
 		{#if filteredOrders.length === 0}
-			<EmptyState icon="lucide:concierge-bell" title={t('common.noOpenTabs')} description="Orders started from the POS that aren't yet completed show up here." />
+			<EmptyState
+				icon="lucide:concierge-bell"
+				title={t('common.noOpenTabs')}
+				description="Orders started from the POS that aren't yet completed show up here."
+			/>
 		{:else}
 			<ul class="space-y-2">
 				{#each filteredOrders as o (o.id)}
@@ -231,7 +254,9 @@
 							<div class="flex items-center gap-2">
 								<span class="font-semibold">{o.data.number ?? o.id.slice(0, 8)}</span>
 								{#if (o.data as { tableId?: string }).tableId}
-									<span class="rounded bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-400">
+									<span
+										class="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+									>
 										Table {(o.data as { tableId?: string }).tableId}
 									</span>
 								{/if}
@@ -251,8 +276,12 @@
 							<Select
 								size="sm"
 								value={w}
-								options={[{ value: '', label: 'Unassigned' }, ...waiterNames.map((wn) => ({ value: wn, label: wn }))]}
-								onchange={(e: Event) => assignWaiter(o.id, (e.currentTarget as HTMLSelectElement).value)}
+								options={[
+									{ value: '', label: 'Unassigned' },
+									...waiterNames.map((wn) => ({ value: wn, label: wn }))
+								]}
+								onchange={(e: Event) =>
+									assignWaiter(o.id, (e.currentTarget as HTMLSelectElement).value)}
 							/>
 						</div>
 
@@ -273,19 +302,33 @@
 	{:else if viewMode === 'waiters'}
 		<!-- Waiter group view -->
 		{#if wg.length === 0 || (wg.length === 1 && wg[0][0] === 'Unassigned')}
-			<EmptyState icon="lucide:user-cog" title={t('restaurant.noWaiterAssignments')} description="Assign waiters to orders from the Orders view." />
+			<EmptyState
+				icon="lucide:user-cog"
+				title={t('restaurant.noWaiterAssignments')}
+				description="Assign waiters to orders from the Orders view."
+			/>
 		{:else}
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				{#each wg as [waiterName, orders] (waiterName)}
 					<div class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-4">
 						<!-- Waiter header -->
 						<div class="mb-3 flex items-center gap-2">
-							<div class="grid size-9 place-items-center rounded-full bg-primary-500/10 text-[13px] font-bold text-primary-600 dark:text-primary-400">
-								{waiterName === 'Unassigned' ? '?' : waiterName.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+							<div
+								class="grid size-9 place-items-center rounded-full bg-primary-500/10 text-[13px] font-bold text-primary-600 dark:text-primary-400"
+							>
+								{waiterName === 'Unassigned'
+									? '?'
+									: waiterName
+											.split(' ')
+											.map((n) => n[0])
+											.slice(0, 2)
+											.join('')}
 							</div>
 							<div>
 								<div class="text-[14px] font-bold">{waiterName}</div>
-								<div class="text-[11px] text-[var(--ui-text-muted)]">{orders.length} table{orders.length !== 1 ? 's' : ''}</div>
+								<div class="text-[11px] text-[var(--ui-text-muted)]">
+									{orders.length} table{orders.length !== 1 ? 's' : ''}
+								</div>
 							</div>
 						</div>
 						<!-- Orders -->
@@ -293,9 +336,13 @@
 							{#each orders as o (o.id)}
 								{@const status = (o.data.status ?? '').toLowerCase()}
 								<li class="flex items-center gap-2 rounded-lg bg-[var(--ui-bg-elevated)] px-3 py-2">
-									<span class="text-[12px] font-mono font-bold">{o.data.number ?? o.id.slice(0, 6)}</span>
+									<span class="font-mono text-[12px] font-bold"
+										>{o.data.number ?? o.id.slice(0, 6)}</span
+									>
 									{#if (o.data as { tableId?: string }).tableId}
-										<span class="text-[10px] text-[var(--ui-text-muted)]">T:{(o.data as { tableId?: string }).tableId}</span>
+										<span class="text-[10px] text-[var(--ui-text-muted)]"
+											>T:{(o.data as { tableId?: string }).tableId}</span
+										>
 									{/if}
 									<span class="ml-auto">
 										<Badge color={STATUS_COLOR[status] ?? 'neutral'}>{status}</Badge>

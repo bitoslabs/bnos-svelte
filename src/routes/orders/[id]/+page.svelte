@@ -853,7 +853,11 @@
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
 										>Driver name</span
 									>
-									<Input bind:value={trackDriver} placeholder={t('common.driverCourier')} class="w-full" />
+									<Input
+										bind:value={trackDriver}
+										placeholder={t('common.driverCourier')}
+										class="w-full"
+									/>
 								</label>
 								<label class="block sm:col-span-2">
 									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
@@ -988,7 +992,8 @@
 					</div>
 					<div class="space-y-2 px-5 py-4 text-[13px]">
 						<div class="flex justify-between">
-							<span class="text-[var(--ui-text-muted)]">{t('common.subtotal')}</span><span class="tabular-nums"
+							<span class="text-[var(--ui-text-muted)]">{t('common.subtotal')}</span><span
+								class="tabular-nums"
 								>{formatMoney((order.data as any).subtotal ?? 0, currency)}</span
 							>
 						</div>
@@ -1049,7 +1054,8 @@
 						{/if}
 						{#if order.data.taxAmount}
 							<div class="flex justify-between">
-								<span class="text-[var(--ui-text-muted)]">{t('common.tax')}</span><span class="tabular-nums"
+								<span class="text-[var(--ui-text-muted)]">{t('common.tax')}</span><span
+									class="tabular-nums"
 									>{formatMoney((order.data.taxAmount as number | undefined) ?? 0, currency)}</span
 								>
 							</div>
@@ -1154,7 +1160,9 @@
 										block
 										onclick={() => (showAddPayment = false)}>{t('common.cancel')}</Button
 									>
-									<Button size="sm" color="primary" block onclick={addPayment}>{t('common.add')}</Button>
+									<Button size="sm" color="primary" block onclick={addPayment}
+										>{t('common.add')}</Button
+									>
 								</div>
 							</div>
 						{:else}

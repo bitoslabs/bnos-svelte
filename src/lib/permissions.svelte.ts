@@ -19,14 +19,14 @@ import {
 	getRolePermissionStrings,
 	roleHasPermission
 } from '$lib/domain/permissions';
-import type {
-	Permission,
-	PermissionAction,
-	PermissionResource
-} from '$lib/domain/permissions';
+import type { Permission, PermissionAction, PermissionResource } from '$lib/domain/permissions';
 
 /** Read the active staff record (from the snapshot or the GLO collection). */
-function activeStaff(): { customPermissions?: string[]; branchIds?: string[]; status?: string } | null {
+function activeStaff(): {
+	customPermissions?: string[];
+	branchIds?: string[];
+	status?: string;
+} | null {
 	const id = tenant.state.activeStaffId;
 	if (!id) return null;
 	const obj = glo.get(TYPE.staff, id);
@@ -35,7 +35,10 @@ function activeStaff(): { customPermissions?: string[]; branchIds?: string[]; st
 	return tenant.state.activeStaffInfo;
 }
 
-function staffCanUseCurrentBranch(member: { branchIds?: string[]; status?: string } | null, branchId?: string) {
+function staffCanUseCurrentBranch(
+	member: { branchIds?: string[]; status?: string } | null,
+	branchId?: string
+) {
 	if (!member) return true;
 	if (member.status && member.status !== 'active') return false;
 	const targetBranchId = branchId ?? tenant.state.locationId;

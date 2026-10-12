@@ -6,11 +6,11 @@ BNOS (Bitcoin Network Operations System) point-of-sale & commerce, rebuilt on
 
 This is an open-source Svelte port of the original Vue/Nuxt app ([`../bdgo-os`](../bdgo-os)):
 
-| Concern | Source | How it maps here |
-| --- | --- | --- |
-| **Data standard** (Nostr kinds + GLO model) | [`../packages/bnos-core`](../packages/bnos-core) | `src/lib/nostr/*` — every record is a GLO object carrying its Nostr kind (e.g. `catalog.product` → kind `30100`, `commerce.order` → `30200`). |
-| **UX / component patterns** | Internal Svelte design-system reference | Design system (`src/app.css`), UI primitives (`src/lib/components/ui/*`), theme store, icon registry. macOS-inspired, Tailwind v4, Svelte 5 runes. |
-| **UX flows / steps** | [`../bdgo-os`](../bdgo-os) | Routes mirror bdgo-os pages 1:1: `login` → `setup/*` wizard → dashboard / POS / orders / catalog / … |
+| Concern                                     | Source                                           | How it maps here                                                                                                                                   |
+| ------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Data standard** (Nostr kinds + GLO model) | [`../packages/bnos-core`](../packages/bnos-core) | `src/lib/nostr/*` — every record is a GLO object carrying its Nostr kind (e.g. `catalog.product` → kind `30100`, `commerce.order` → `30200`).      |
+| **UX / component patterns**                 | Internal Svelte design-system reference          | Design system (`src/app.css`), UI primitives (`src/lib/components/ui/*`), theme store, icon registry. macOS-inspired, Tailwind v4, Svelte 5 runes. |
+| **UX flows / steps**                        | [`../bdgo-os`](../bdgo-os)                       | Routes mirror bdgo-os pages 1:1: `login` → `setup/*` wizard → dashboard / POS / orders / catalog / …                                               |
 
 ## Data layer
 

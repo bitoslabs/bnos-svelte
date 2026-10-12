@@ -43,7 +43,11 @@
 	} & Omit<HTMLInputAttributes, 'checked' | 'type' | 'size'> = $props();
 
 	const boxSize = $derived(
-		size === 'sm' ? 'size-3.5 rounded-[4px]' : size === 'lg' ? 'size-5 rounded-[6px]' : 'size-4 rounded-[5px]'
+		size === 'sm'
+			? 'size-3.5 rounded-[4px]'
+			: size === 'lg'
+				? 'size-5 rounded-[6px]'
+				: 'size-4 rounded-[5px]'
 	);
 	const tickSize = $derived(size === 'sm' ? 'size-2.5' : size === 'lg' ? 'size-3.5' : 'size-3');
 	const dashSize = $derived(

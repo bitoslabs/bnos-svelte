@@ -55,8 +55,12 @@
 	async function waitForHydration() {
 		let attempts = 0;
 		while (attempts < 20) {
-			const hydrated = ['commerce.order', 'commerce.payment', 'catalog.product', 'crm.customer']
-				.every((type) => glo.isHydrated(type));
+			const hydrated = [
+				'commerce.order',
+				'commerce.payment',
+				'catalog.product',
+				'crm.customer'
+			].every((type) => glo.isHydrated(type));
 			if (hydrated) return;
 			await new Promise((resolve) => setTimeout(resolve, 80));
 			attempts++;
@@ -287,7 +291,9 @@
 			<h1 class="font-display text-2xl font-bold tracking-tight">
 				{tenant.state.organizationName || t('dashboard.yourStore')}
 			</h1>
-			<div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[var(--ui-text-muted)]">
+			<div
+				class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[var(--ui-text-muted)]"
+			>
 				<span class="inline-flex items-center gap-1.5">
 					<span
 						class="relative inline-flex size-2 rounded-full {relays.online
@@ -331,7 +337,7 @@
 						</span>
 						<button
 							type="button"
-							class="grid size-5 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] focus-brand"
+							class="focus-brand grid size-5 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
 							onclick={refreshRate}
 							disabled={btcRate.loading}
 							aria-label={t('dashboard.refreshRate')}
@@ -343,11 +349,12 @@
 							/>
 						</button>
 					</div>
-					<div class="font-display text-[15px] font-bold leading-tight tabular-nums">
+					<div class="font-display text-[15px] leading-tight font-bold tabular-nums">
 						{#if btcPrice > 0}
 							{formatMoney(btcPrice, currency)}
 						{:else if btcRate.loading}
-							<span class="inline-block h-4 w-24 animate-pulse rounded bg-[var(--ui-bg-accented)]"></span>
+							<span class="inline-block h-4 w-24 animate-pulse rounded bg-[var(--ui-bg-accented)]"
+							></span>
 						{:else}
 							<span class="text-[12px] font-semibold text-[var(--ui-text-dimmed)]">
 								{t('dashboard.rateUnavailable')}
@@ -356,9 +363,7 @@
 					</div>
 					<div class="mt-0.5 flex items-center gap-1.5 text-[10px] text-[var(--ui-text-dimmed)]">
 						{#if satsPerUnit > 0}
-							<span class="tabular-nums"
-								>1 {currency} ≈ {formatNumber(satsPerUnit)} sats</span
-							>
+							<span class="tabular-nums">1 {currency} ≈ {formatNumber(satsPerUnit)} sats</span>
 							<span aria-hidden="true">·</span>
 						{/if}
 						{#if rateAge}
@@ -371,7 +376,9 @@
 					</div>
 					{#if blockHeight !== null}
 						<div
-							class="mt-1 text-[10px] tabular-nums {blockAgeMinutes >= 15 ? 'text-[var(--tone-warning-text)]' : 'text-[var(--ui-text-dimmed)]'}"
+							class="mt-1 text-[10px] tabular-nums {blockAgeMinutes >= 15
+								? 'text-[var(--tone-warning-text)]'
+								: 'text-[var(--ui-text-dimmed)]'}"
 							title="Latest Bitcoin blockchain block"
 						>
 							Block {formatInt(blockHeight)} · {blockAge}
@@ -393,10 +400,12 @@
 					<Icon name="lucide:calendar-clock" class="size-5" />
 				</div>
 				<div class="flex flex-col justify-center px-3.5 py-2">
-					<div class="font-mono text-[16px] font-bold leading-tight tabular-nums">
+					<div class="font-mono text-[16px] leading-tight font-bold tabular-nums">
 						{clock || '--:--'}
 					</div>
-					<div class="mt-0.5 text-[10px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
+					<div
+						class="mt-0.5 text-[10px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+					>
 						{todayLong}
 					</div>
 					{#if activeShift}
@@ -406,7 +415,8 @@
 							title={t('dashboard.viewShifts')}
 						>
 							<span class="live-dot !size-1.5"></span>
-							{t('dashboard.shiftRunning')} {shiftDuration}
+							{t('dashboard.shiftRunning')}
+							{shiftDuration}
 						</a>
 					{/if}
 				</div>
@@ -420,22 +430,29 @@
 			href={resolve('/transactions/shifts')}
 			class="surface-card flex flex-wrap items-center gap-3 p-3 transition-colors hover:border-[var(--ui-border-accented)]"
 		>
-			<span class="grid size-9 shrink-0 place-items-center rounded-xl bg-primary-500/10 text-primary-600 dark:text-primary-400">
+			<span
+				class="grid size-9 shrink-0 place-items-center rounded-xl bg-primary-500/10 text-primary-600 dark:text-primary-400"
+			>
 				<Icon name="lucide:lock-open" class="size-4" />
 			</span>
 			<div class="min-w-0 flex-1">
 				<div class="flex items-center gap-2">
 					<span class="text-[13px] font-semibold">{t('dashboard.shiftRunning')}</span>
-					<span class="inline-flex items-center gap-1 rounded-md bg-primary-500/10 px-1.5 py-0.5 text-[11px] font-bold text-primary-600 tabular-nums dark:text-primary-400">
+					<span
+						class="inline-flex items-center gap-1 rounded-md bg-primary-500/10 px-1.5 py-0.5 text-[11px] font-bold text-primary-600 tabular-nums dark:text-primary-400"
+					>
 						<Icon name="lucide:timer" class="size-3" />{shiftDuration}
 					</span>
 				</div>
 				<p class="text-[11.5px] text-[var(--ui-text-muted)]">
-					{shiftSummary.totalOrders} {t('dashboard.orders')} · {t('dashboard.shiftSales')}
+					{shiftSummary.totalOrders}
+					{t('dashboard.orders')} · {t('dashboard.shiftSales')}
 					{formatMoney(shiftSummary.totalSales - shiftSummary.totalRefundAmount, currency)}
 				</p>
 			</div>
-			<span class="hidden items-center gap-1 text-[12px] font-semibold text-primary-600 sm:inline-flex dark:text-primary-400">
+			<span
+				class="hidden items-center gap-1 text-[12px] font-semibold text-primary-600 sm:inline-flex dark:text-primary-400"
+			>
 				{t('dashboard.viewShifts')}
 				<Icon name="lucide:arrow-right" class="size-3.5" />
 			</span>
@@ -467,7 +484,10 @@
 		<!-- LEFT COLUMN -->
 		<div class="dashboard-column flex flex-col xl:col-span-5">
 			<!-- Today's sales (hero) -->
-			<div class="dashboard-card accent-bar surface-card" style="--accent: var(--ui-color-primary-500);">
+			<div
+				class="dashboard-card accent-bar surface-card"
+				style="--accent: var(--ui-color-primary-500);"
+			>
 				<div class="flex items-start justify-between">
 					<div>
 						<div class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
@@ -512,11 +532,15 @@
 			{#if stock.low + stock.out > 0}
 				<div class="dashboard-card surface-card">
 					<div class="mb-3 flex items-center justify-between gap-2">
-						<h3 class="flex items-center gap-2 font-display text-[15px] font-semibold tracking-tight">
+						<h3
+							class="flex items-center gap-2 font-display text-[15px] font-semibold tracking-tight"
+						>
 							<Icon name="lucide:package-x" class="size-4 text-amber-500" />
 							{t('dashboard.lowStock')}
 						</h3>
-						<span class="tone-warning rounded-md px-2 py-0.5 text-[11px] font-semibold tabular-nums">
+						<span
+							class="tone-warning rounded-md px-2 py-0.5 text-[11px] font-semibold tabular-nums"
+						>
 							{stock.low} low · {stock.out} out
 						</span>
 					</div>
@@ -525,8 +549,8 @@
 						{#each stock.items as item (item.id)}
 							<li class="flex items-center gap-2.5 text-[12.5px]">
 								<span
-									class="grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-bold {item
-										.state === 'out'
+									class="grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-bold {item.state ===
+									'out'
 										? 'tone-error'
 										: 'tone-warning'}"
 								>
@@ -536,7 +560,9 @@
 									/>
 								</span>
 								<span class="min-w-0 flex-1 truncate font-semibold">{item.name}</span>
-								<span class="shrink-0 font-mono text-[11.5px] tabular-nums text-[var(--ui-text-muted)]">
+								<span
+									class="shrink-0 font-mono text-[11.5px] text-[var(--ui-text-muted)] tabular-nums"
+								>
 									{item.stock}/{item.threshold}
 								</span>
 							</li>
@@ -572,7 +598,9 @@
 									aria-label={`${hr.label}: ${formatMoney(hr.value, currency)}`}
 									title={formatMoney(hr.value, currency)}
 								></div>
-								<span class="text-[9.5px] font-semibold text-[var(--ui-text-dimmed)]">{hr.label}</span>
+								<span class="text-[9.5px] font-semibold text-[var(--ui-text-dimmed)]"
+									>{hr.label}</span
+								>
 							</div>
 						{/each}
 					</div>
@@ -605,7 +633,10 @@
 										>
 									</div>
 									<div class="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--ui-bg-accented)]">
-										<div class="h-full rounded-full bg-primary-500" style="width: {p.percent}%"></div>
+										<div
+											class="h-full rounded-full bg-primary-500"
+											style="width: {p.percent}%"
+										></div>
 									</div>
 								</div>
 							</div>
@@ -636,7 +667,9 @@
 						{/each}
 					</div>
 				{:else}
-					<p class="mb-4 text-[12.5px] text-[var(--ui-text-dimmed)]">{t('dashboard.noOrdersToday')}</p>
+					<p class="mb-4 text-[12.5px] text-[var(--ui-text-dimmed)]">
+						{t('dashboard.noOrdersToday')}
+					</p>
 				{/if}
 
 				<div class="border-t border-[var(--ui-border-muted)] pt-3">
@@ -670,7 +703,9 @@
 			<!-- Metrics row: Net profit (today) · this week · this month -->
 			<div class="dashboard-metrics grid grid-cols-1 sm:grid-cols-3">
 				<div class="metric-card dashboard-metric-card">
-					<div class="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+					<div
+						class="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ui-text-dimmed)]"
+					>
 						<Icon name="lucide:wallet" class="size-3.5" />
 						{t('dashboard.netProfit')}
 						<span class="text-[var(--ui-text-dimmed)]">· {t('common.today')}</span>
@@ -683,34 +718,52 @@
 						{formatMoney(netProfitToday, currency)}
 					</div>
 					<div class="text-[11px] text-[var(--ui-text-muted)]">
-						{t('dashboard.expensesToday')} {formatMoney(exp.todaysTotal, currency)}
+						{t('dashboard.expensesToday')}
+						{formatMoney(exp.todaysTotal, currency)}
 						{#if m.todaysTotal > 0}
 							· {t('dashboard.margin')} {marginToday.toFixed(0)}%
 						{/if}
 					</div>
 				</div>
 				<div class="metric-card dashboard-metric-card">
-					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('common.thisWeek')}</div>
+					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+						{t('common.thisWeek')}
+					</div>
 					<div class="mt-1 font-display text-lg font-bold tabular-nums">
 						{formatMoney(m.weekTotal, currency)}
 					</div>
-					<div class="text-[11px] text-[var(--ui-text-muted)]">{m.weekCount} {t('dashboard.orders')}</div>
+					<div class="text-[11px] text-[var(--ui-text-muted)]">
+						{m.weekCount}
+						{t('dashboard.orders')}
+					</div>
 				</div>
 				<div class="metric-card dashboard-metric-card">
-					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">{t('common.thisMonth')}</div>
+					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+						{t('common.thisMonth')}
+					</div>
 					<div class="mt-1 font-display text-lg font-bold tabular-nums">
 						{formatMoney(m.monthTotal, currency)}
 					</div>
-					<div class="text-[11px] text-[var(--ui-text-muted)]">{m.monthCount} {t('dashboard.orders')}</div>
+					<div class="text-[11px] text-[var(--ui-text-muted)]">
+						{m.monthCount}
+						{t('dashboard.orders')}
+					</div>
 				</div>
 			</div>
 
 			<!-- Sales chart (7 days) -->
 			<div class="dashboard-card surface-card">
 				<div class="mb-4 flex items-center justify-between">
-					<h3 class="font-display text-[15px] font-semibold tracking-tight">{t('dashboard.salesLast7')}</h3>
-					<span class="font-display text-base font-bold text-primary-600 tabular-nums dark:text-primary-400">
-						{formatMoney(chartBars.reduce((s, b) => s + b.value, 0), currency)}
+					<h3 class="font-display text-[15px] font-semibold tracking-tight">
+						{t('dashboard.salesLast7')}
+					</h3>
+					<span
+						class="font-display text-base font-bold text-primary-600 tabular-nums dark:text-primary-400"
+					>
+						{formatMoney(
+							chartBars.reduce((s, b) => s + b.value, 0),
+							currency
+						)}
 					</span>
 				</div>
 				<div class="flex h-44 items-end justify-between gap-2">
@@ -737,8 +790,12 @@
 
 			<!-- Recent orders -->
 			<div class="surface-card overflow-hidden">
-				<div class="dashboard-card-header flex items-center justify-between border-b border-[var(--ui-border-muted)]">
-					<h3 class="font-display text-[15px] font-semibold tracking-tight">{t('dashboard.recentOrders')}</h3>
+				<div
+					class="dashboard-card-header flex items-center justify-between border-b border-[var(--ui-border-muted)]"
+				>
+					<h3 class="font-display text-[15px] font-semibold tracking-tight">
+						{t('dashboard.recentOrders')}
+					</h3>
 					<a
 						href={resolve('/orders')}
 						class="text-[12.5px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
@@ -777,11 +834,16 @@
 										<Badge color={statusColor(o.status)}>{o.status}</Badge>
 									</div>
 									<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
-										{o.items} {o.items !== 1 ? t('dashboard.items') : t('dashboard.item')} · {relativeTime(o.atMs)}
+										{o.items}
+										{o.items !== 1 ? t('dashboard.items') : t('dashboard.item')} · {relativeTime(
+											o.atMs
+										)}
 									</p>
 								</div>
 								<div class="text-right">
-									<div class="text-[13px] font-bold tabular-nums">{formatMoney(o.total, currency)}</div>
+									<div class="text-[13px] font-bold tabular-nums">
+										{formatMoney(o.total, currency)}
+									</div>
 									<div
 										class="mt-0.5 flex items-center justify-end gap-1 text-[10.5px] font-semibold text-[var(--ui-text-dimmed)]"
 									>

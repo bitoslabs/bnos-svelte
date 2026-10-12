@@ -9,7 +9,9 @@ import { createNostrPilot } from './testing/harness';
 import { nip44 } from 'nostr-tools';
 import { OBP_NOSTR_KIND } from './node/nostr-transport';
 
-const BEANS = [{ description: 'Arabica beans 1kg', quantity: 10, unit: 'kg', unitPriceMinor: 85_000 }];
+const BEANS = [
+	{ description: 'Arabica beans 1kg', quantity: 10, unit: 'kg', unitPriceMinor: 85_000 }
+];
 
 describe('Nostr transport binding', () => {
 	it('completes RFQ → quote → order over relays with KV-durable stores', async () => {

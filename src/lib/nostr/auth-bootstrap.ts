@@ -59,11 +59,14 @@ async function runBootstrap(): Promise<BootstrapResult> {
 		}
 	}
 
-	if (memberships.myStaffRecords.some((record) =>
-		(record.data.status ?? 'active') === 'suspended' ||
-		(record.data.status ?? 'active') === 'inactive' ||
-		(record.data.status ?? 'active') === 'terminated'
-	)) {
+	if (
+		memberships.myStaffRecords.some(
+			(record) =>
+				(record.data.status ?? 'active') === 'suspended' ||
+				(record.data.status ?? 'active') === 'inactive' ||
+				(record.data.status ?? 'active') === 'terminated'
+		)
+	) {
 		return { access: 'blocked', source };
 	}
 

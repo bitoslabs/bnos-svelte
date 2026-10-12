@@ -25,12 +25,18 @@ function relaysFromEnv(value: string | undefined): string[] {
 
 	try {
 		const parsed: unknown = JSON.parse(raw);
-		if (Array.isArray(parsed)) return normalizeRelayUrls(parsed.filter((url): url is string => typeof url === 'string'));
+		if (Array.isArray(parsed))
+			return normalizeRelayUrls(parsed.filter((url): url is string => typeof url === 'string'));
 	} catch {
 		/* Treat non-JSON values as a comma-separated list. */
 	}
 
-	return normalizeRelayUrls(raw.split(',').map((url) => url.trim()).filter(Boolean));
+	return normalizeRelayUrls(
+		raw
+			.split(',')
+			.map((url) => url.trim())
+			.filter(Boolean)
+	);
 }
 
 export interface RelayPermissions {
@@ -40,7 +46,9 @@ export interface RelayPermissions {
 
 /** Defaults can be overridden with the browser-safe `PUBLIC_RELAYS` env var. */
 const configuredRelays = relaysFromEnv(env.PUBLIC_RELAYS);
-export const DEFAULT_RELAYS = configuredRelays.length ? [...configuredRelays, ...BUILTIN_RELAYS] : BUILTIN_RELAYS;
+export const DEFAULT_RELAYS = configuredRelays.length
+	? [...configuredRelays, ...BUILTIN_RELAYS]
+	: BUILTIN_RELAYS;
 
 class RelayStore {
 	/** Canonical list of relay URLs (no trailing slash, wss://). */
@@ -56,14 +64,23 @@ class RelayStore {
 	private defaultPermissions = (): Record<string, RelayPermissions> =>
 		Object.fromEntries(DEFAULT_RELAYS.map((url) => [url, { read: true, write: true }]));
 
-	private normalizePermissions = (urls: string[], raw: unknown): Record<string, RelayPermissions> => {
+	private normalizePermissions = (
+		urls: string[],
+		raw: unknown
+	): Record<string, RelayPermissions> => {
 		const out: Record<string, RelayPermissions> = {};
 		const source = raw && typeof raw === 'object' ? raw : {};
 		for (const url of urls) {
 			const entry = Reflect.get(source, url);
 			out[url] = {
-				read: typeof entry === 'object' && entry !== null && 'read' in entry ? Boolean((entry as RelayPermissions).read) : true,
-				write: typeof entry === 'object' && entry !== null && 'write' in entry ? Boolean((entry as RelayPermissions).write) : true
+				read:
+					typeof entry === 'object' && entry !== null && 'read' in entry
+						? Boolean((entry as RelayPermissions).read)
+						: true,
+				write:
+					typeof entry === 'object' && entry !== null && 'write' in entry
+						? Boolean((entry as RelayPermissions).write)
+						: true
 			};
 		}
 		return out;
@@ -73,7 +90,11 @@ class RelayStore {
 		if (!browser) return;
 		localStorage.setItem(
 			STORAGE_KEY,
-			JSON.stringify({ relays: this.relays, permissions: this.permissions, primaryRelay: this.primaryRelay })
+			JSON.stringify({
+				relays: this.relays,
+				permissions: this.permissions,
+				primaryRelay: this.primaryRelay
+			})
 		);
 	};
 
@@ -159,7 +180,10 @@ class RelayStore {
 		this.permissions = Object.fromEntries(
 			Object.entries(this.permissions).filter(([relayUrl]) => relayUrl !== url)
 		);
-		this.primaryRelay = this.normalizePrimary(this.primaryRelay === url ? null : this.primaryRelay, this.relays);
+		this.primaryRelay = this.normalizePrimary(
+			this.primaryRelay === url ? null : this.primaryRelay,
+			this.relays
+		);
 		this.save();
 	};
 

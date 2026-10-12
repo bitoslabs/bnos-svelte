@@ -41,10 +41,7 @@ export interface PaymentFlowDeps {
 	/** A payment was detected (push / poll / manual check) — complete the sale. */
 	onAutoPaid(): void;
 	/** UI notifications (the caller maps these to toasts). */
-	notify(
-		kind: 'no-provider' | 'fallback' | 'invoice-error' | 'no-rate',
-		detail?: string
-	): void;
+	notify(kind: 'no-provider' | 'fallback' | 'invoice-error' | 'no-rate', detail?: string): void;
 }
 
 const QR_WINDOW_SEC = 15 * 60;
@@ -149,7 +146,14 @@ export class PaymentQrFlowStore {
 		this.lastCheck = 'none';
 		this.beginWindow();
 		if (this.deps.showOnCustomerDisplay()) {
-			this.deps.broadcastQr(result.payload, amount, method, result.kind, result.badge, result.imageUrl);
+			this.deps.broadcastQr(
+				result.payload,
+				amount,
+				method,
+				result.kind,
+				result.badge,
+				result.imageUrl
+			);
 		}
 	}
 
@@ -252,12 +256,18 @@ export class PaymentQrFlowStore {
 			if (sats <= 0) throw new Error('No BTC rate available');
 			const invoice = await provider.makeInvoice(sats * 1000, this.note || this.deps.defaultMemo());
 			this.invoice = { pr: invoice.pr, amountSats: invoice.amountSats };
-			this.memoDelivery = invoice.memoDelivery ?? (provider.id === 'lnaddress' ? 'none' : 'invoice');
+			this.memoDelivery =
+				invoice.memoDelivery ?? (provider.id === 'lnaddress' ? 'none' : 'invoice');
 			// Re-assign so the dialog re-reads `autoConfirms` — makeInvoice flips
 			// it on when the provider proves auto-confirmable (zap/verify).
 			this.provider = provider;
 			this.isInvoice = true;
-			this.result = { payload: invoice.pr, kind: 'lightning', configured: true, badge: 'lightning' };
+			this.result = {
+				payload: invoice.pr,
+				kind: 'lightning',
+				configured: true,
+				badge: 'lightning'
+			};
 			if (this.deps.showOnCustomerDisplay()) {
 				this.deps.broadcastQr(invoice.pr, amount, 'lightning', 'lightning', 'lightning');
 			}
@@ -268,7 +278,12 @@ export class PaymentQrFlowStore {
 			if (wallet) {
 				const fallback = `lightning:${wallet.address}`;
 				this.isInvoice = false;
-				this.result = { payload: fallback, kind: 'lightning', configured: true, badge: 'lightning' };
+				this.result = {
+					payload: fallback,
+					kind: 'lightning',
+					configured: true,
+					badge: 'lightning'
+				};
 				this.deps.notify('fallback', e instanceof Error ? e.message : '');
 				if (this.deps.showOnCustomerDisplay()) {
 					this.deps.broadcastQr(fallback, amount, 'lightning', 'lightning', 'lightning');

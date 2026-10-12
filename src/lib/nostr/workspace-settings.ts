@@ -136,7 +136,8 @@ export function applyWorkspaceSettingsFromOrganization() {
 	const hardware = loadHardwareSettings();
 	const nextReceipt: ReceiptSettings = {
 		...receipt,
-		storeName: (payload.receipt?.storeName ?? tenant.state.organizationName ?? receipt.storeName) || '',
+		storeName:
+			(payload.receipt?.storeName ?? tenant.state.organizationName ?? receipt.storeName) || '',
 		header: payload.receipt?.header ?? payload.receiptHeader ?? receipt.header,
 		footer: payload.receipt?.footer ?? payload.receiptFooter ?? receipt.footer,
 		paperSize: payload.receipt?.paperSize ?? payload.hardware?.paperSize ?? receipt.paperSize,
@@ -199,20 +200,16 @@ export async function syncWorkspaceSettingsToOrganization() {
 	const existingExt = org.extensions?.[BNOS_EXT_KEY];
 	const payload = currentWorkspaceSettingsPayload();
 
-	await glo.upsert(
-		TYPE.organization,
-		org.data,
-		{
-			id: org.id,
-			scope: { organizationId: org.id },
-			extensions: {
-				[BNOS_EXT_KEY]: {
-					...(existingExt && typeof existingExt === 'object' ? existingExt : {}),
-					...payload
-				}
+	await glo.upsert(TYPE.organization, org.data, {
+		id: org.id,
+		scope: { organizationId: org.id },
+		extensions: {
+			[BNOS_EXT_KEY]: {
+				...(existingExt && typeof existingExt === 'object' ? existingExt : {}),
+				...payload
 			}
 		}
-	);
+	});
 
 	notifyWorkspaceSettingsSync();
 

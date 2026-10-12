@@ -156,12 +156,7 @@ export class LnurlAddressProvider implements LightningProvider {
 				memo
 			});
 		}
-		const inv = await requestInvoice(
-			meta,
-			amountMsat,
-			memo,
-			zap ? JSON.stringify(zap) : undefined
-		);
+		const inv = await requestInvoice(meta, amountMsat, memo, zap ? JSON.stringify(zap) : undefined);
 		this.pending = {
 			pr: inv.pr,
 			verifyUrl: inv.verifyUrl,
@@ -259,10 +254,7 @@ export class BlinkProvider implements LightningProvider {
 		if (!walletId) {
 			const q = await this.gql<{
 				me?: { defaultAccount?: { wallets?: { id: string; walletCurrency: string }[] } };
-			}>(
-				`query { me { defaultAccount { wallets { id walletCurrency } } } }`,
-				{}
-			);
+			}>(`query { me { defaultAccount { wallets { id walletCurrency } } } }`, {});
 			walletId =
 				q.me?.defaultAccount?.wallets?.find((w) => w.walletCurrency === 'BTC')?.id ??
 				q.me?.defaultAccount?.wallets?.[0]?.id;
@@ -462,7 +454,10 @@ export class LndProvider implements LightningProvider {
 				'Content-Type': 'application/json',
 				'Grpc-Metadata-macaroon': this.macaroonHex
 			},
-			body: JSON.stringify({ value_msat: String(Math.round(amountMsat)), memo: memo ?? 'BNOS sale' })
+			body: JSON.stringify({
+				value_msat: String(Math.round(amountMsat)),
+				memo: memo ?? 'BNOS sale'
+			})
 		});
 		if (!res.ok)
 			throw new Error(
@@ -563,8 +558,7 @@ export function selectProviderForConfig(
 		case 'lnaddress':
 			if (cfg.lightningAddress) {
 				const v = cfg.lightningAddress.trim();
-				if (isLightningAddress(v) || isLnurlString(v))
-					return new LnurlAddressProvider(v, ctx);
+				if (isLightningAddress(v) || isLnurlString(v)) return new LnurlAddressProvider(v, ctx);
 			}
 			return null;
 		case 'blink':
@@ -609,15 +603,13 @@ export function loadDetectionContext(): LnurlDetectionContext {
 			const parsed = JSON.parse(raw) as unknown;
 			const urls: unknown[] = Array.isArray(parsed)
 				? parsed
-				: parsed && typeof parsed === 'object' && Array.isArray((parsed as { relays?: unknown[] }).relays)
+				: parsed &&
+					  typeof parsed === 'object' &&
+					  Array.isArray((parsed as { relays?: unknown[] }).relays)
 					? (parsed as { relays: unknown[] }).relays
 					: [];
 			relays = [
-				...new Set(
-					urls
-						.map((u) => String(u).trim())
-						.filter((u) => /^wss:\/\//.test(u))
-				)
+				...new Set(urls.map((u) => String(u).trim()).filter((u) => /^wss:\/\//.test(u)))
 			].slice(0, 6);
 		}
 	} catch {

@@ -503,7 +503,8 @@
 			>
 				<Icon name={seg.icon} class="size-3.5" />
 				{seg.label}
-				<span class="rounded bg-[var(--ui-bg-accented)] px-1.5 text-[10px] tabular-nums">{seg.n}</span
+				<span class="rounded bg-[var(--ui-bg-accented)] px-1.5 text-[10px] tabular-nums"
+					>{seg.n}</span
 				>
 			</button>
 		{/each}
@@ -514,7 +515,9 @@
 		<!-- Stats -->
 		<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
 			<div class="surface-card p-4">
-				<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">{t('common.total')}</p>
+				<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+					{t('common.total')}
+				</p>
 				<p class="mt-1 text-2xl font-black tabular-nums">{promos.length}</p>
 			</div>
 			<div class="surface-card p-4">
@@ -636,7 +639,8 @@
 						color="primary"
 						size="sm"
 						icon="lucide:plus"
-						onclick={() => openCreate('promotions')}>{t('common.new')}</Button>
+						onclick={() => openCreate('promotions')}>{t('common.new')}</Button
+					>
 				{/snippet}
 			</EmptyState>
 		{:else if pCtrl.viewMode === 'grid'}
@@ -831,19 +835,22 @@
 													rawOpen = true;
 												}}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-												title={t('common.viewRaw')}><Icon name="lucide:code" class="size-4" /></button
+												title={t('common.viewRaw')}
+												><Icon name="lucide:code" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => openEditPromo(p.id, p.data)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
-												title={t('common.edit')}><Icon name="lucide:pencil" class="size-4" /></button
+												title={t('common.edit')}
+												><Icon name="lucide:pencil" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => confirmDelete(p.id)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
-												title={t('common.delete')}><Icon name="lucide:trash-2" class="size-4" /></button
+												title={t('common.delete')}
+												><Icon name="lucide:trash-2" class="size-4" /></button
 											>
 										</div>
 									</td>
@@ -1108,19 +1115,22 @@
 													rawOpen = true;
 												}}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-												title={t('common.viewRaw')}><Icon name="lucide:code" class="size-4" /></button
+												title={t('common.viewRaw')}
+												><Icon name="lucide:code" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => openEditCoupon(c.id, c.data)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
-												title={t('common.edit')}><Icon name="lucide:pencil" class="size-4" /></button
+												title={t('common.edit')}
+												><Icon name="lucide:pencil" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => confirmDelete(c.id)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
-												title={t('common.delete')}><Icon name="lucide:trash-2" class="size-4" /></button
+												title={t('common.delete')}
+												><Icon name="lucide:trash-2" class="size-4" /></button
 											>
 										</div>
 									</td>
@@ -1210,7 +1220,9 @@
 		<!-- ── Coupon form ── -->
 		<div class="space-y-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.code')}</span>
+				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.code')}</span
+				>
 				<Input bind:value={cCode} placeholder="SUMMER20" class="w-full font-mono uppercase" />
 			</label>
 			<div class="grid grid-cols-2 gap-3">
@@ -1311,7 +1323,8 @@
 				<div
 					class="flex items-center gap-2 text-[12px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
 				>
-					<Icon name="lucide:percent" class="size-3.5" /> {t('common.discount')}
+					<Icon name="lucide:percent" class="size-3.5" />
+					{t('common.discount')}
 				</div>
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 					<label class="block">
@@ -1559,7 +1572,9 @@
 	{/if}
 
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (modalOpen = false)}>{t('common.cancel')}</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (modalOpen = false)}
+			>{t('common.cancel')}</Button
+		>
 		{#if tab === 'coupons'}
 			<Button color="primary" icon="lucide:check" onclick={saveCoupon}
 				>{editingId ? 'Update' : 'Create'}</Button

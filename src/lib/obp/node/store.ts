@@ -213,9 +213,7 @@ export class MemoryObpStores implements ObpStores {
 		return this.pending.get(pendingId);
 	}
 
-	async getPendingApprovalForDocument(
-		documentId: string
-	): Promise<ObpPendingApproval | undefined> {
+	async getPendingApprovalForDocument(documentId: string): Promise<ObpPendingApproval | undefined> {
 		for (const p of this.pending.values()) {
 			if (p.envelopeDraft.documentId === documentId && !p.resolvedAt) return p;
 		}

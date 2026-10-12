@@ -35,7 +35,10 @@ describe('HttpTransport', () => {
 		const endpoint = await listen((req, res) => {
 			const r = req as { method?: string; headers: Record<string, string> };
 			let raw = '';
-			(req as { on: (e: string, cb: (d?: string) => void) => void }).on('data', (d) => (raw += d ?? ''));
+			(req as { on: (e: string, cb: (d?: string) => void) => void }).on(
+				'data',
+				(d) => (raw += d ?? '')
+			);
 			(req as { on: (e: string, cb: () => void) => void }).on('end', () => {
 				seen.push({
 					body: JSON.parse(raw),
@@ -106,7 +109,9 @@ describe('handleObpInboxRequest', () => {
 		const request = new Request('http://x/obp/inbox', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify(signedRfq(pilot.buyer.keys.staff.secretKey, pilot.buyer.keys.staff.pubkey))
+			body: JSON.stringify(
+				signedRfq(pilot.buyer.keys.staff.secretKey, pilot.buyer.keys.staff.pubkey)
+			)
 		});
 		const response = await handleObpInboxRequest(pilot.seller.node, request);
 		expect(response.status).toBe(200);
@@ -142,7 +147,10 @@ describe('handleObpInboxRequest', () => {
 
 		const endpoint = await listen((req, res) => {
 			let raw = '';
-			(req as { on: (e: string, cb: (d?: string) => void) => void }).on('data', (d) => (raw += d ?? ''));
+			(req as { on: (e: string, cb: (d?: string) => void) => void }).on(
+				'data',
+				(d) => (raw += d ?? '')
+			);
 			(req as { on: (e: string, cb: () => void) => void }).on('end', async () => {
 				const response = await handleObpInboxRequest(
 					sellerKvNode,

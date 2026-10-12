@@ -24,7 +24,9 @@
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
 
 	onMount(() => {
-		dataSync.pageSync([TYPE.order, TYPE.payment, TYPE.shift, TYPE.refund], { scope: 'transactions' });
+		dataSync.pageSync([TYPE.order, TYPE.payment, TYPE.shift, TYPE.refund], {
+			scope: 'transactions'
+		});
 	});
 
 	const currency = $derived(tenant.state.currency);

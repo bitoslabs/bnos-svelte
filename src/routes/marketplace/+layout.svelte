@@ -13,11 +13,7 @@
 	import { dataSync } from '$nostr/sync.svelte';
 	import { syncWorkspaceSettingsToOrganization } from '$nostr/workspace-settings';
 	import { TYPE, isRemoteSource } from '$lib/domain';
-	import type {
-		MarketplaceConnection,
-		MarketplaceReview,
-		MarketplaceProduct
-	} from '$lib/domain';
+	import type { MarketplaceConnection, MarketplaceReview, MarketplaceProduct } from '$lib/domain';
 	import type { DashboardOrder } from '$lib/dashboard/metrics';
 	import { t } from '$lib/i18n/i18n.svelte';
 
@@ -99,7 +95,12 @@
 			>
 				{t('marketplace.enable')}
 			</Button>
-			<Button color="neutral" variant="subtle" icon="lucide:settings" href={resolve('/settings/features')}>
+			<Button
+				color="neutral"
+				variant="subtle"
+				icon="lucide:settings"
+				href={resolve('/settings/features')}
+			>
 				{t('marketplace.moduleSettings')}
 			</Button>
 		</div>
@@ -117,7 +118,10 @@
 				<div>
 					<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.marketplace')}</h1>
 					<p class="text-[12px] text-[var(--ui-text-muted)]">
-						{t('marketplace.channelSummary', { channels: connections.length, listings: listings.length })}
+						{t('marketplace.channelSummary', {
+							channels: connections.length,
+							listings: listings.length
+						})}
 					</p>
 				</div>
 			</div>

@@ -2,12 +2,7 @@
  * Identity delegation, lifecycle rules and policy engine tests.
  */
 import { describe, expect, it } from 'vitest';
-import {
-	MemoryObpRegistry,
-	checkGrant,
-	verifyDelegation,
-	type ObpKeyGrant
-} from './identity';
+import { MemoryObpRegistry, checkGrant, verifyDelegation, type ObpKeyGrant } from './identity';
 import { DefaultObpPolicy } from './policy';
 import type { ObpUnsignedEnvelope } from './types';
 
@@ -22,16 +17,20 @@ const grant = (patch: Partial<ObpKeyGrant>): ObpKeyGrant => ({
 
 describe('key grants', () => {
 	it('allows in-scope, valid grants', () => {
-		expect(
-			checkGrant(grant({}), 'invoice', 'issue', new Date('2026-10-07T00:00:00Z'))
-		).toBeNull();
+		expect(checkGrant(grant({}), 'invoice', 'issue', new Date('2026-10-07T00:00:00Z'))).toBeNull();
 	});
 
 	it('rejects revoked, future and expired grants', () => {
 		const at = new Date('2026-10-07T00:00:00Z');
-		expect(checkGrant(grant({ revokedAt: '2026-10-06T00:00:00Z' }), 'invoice', 'issue', at)?.code).toBe('OBP-E05');
-		expect(checkGrant(grant({ validFrom: '2026-10-08T00:00:00Z' }), 'invoice', 'issue', at)?.code).toBe('OBP-E05');
-		expect(checkGrant(grant({ validUntil: '2026-10-07T00:00:00Z' }), 'invoice', 'issue', at)?.code).toBe('OBP-E05');
+		expect(
+			checkGrant(grant({ revokedAt: '2026-10-06T00:00:00Z' }), 'invoice', 'issue', at)?.code
+		).toBe('OBP-E05');
+		expect(
+			checkGrant(grant({ validFrom: '2026-10-08T00:00:00Z' }), 'invoice', 'issue', at)?.code
+		).toBe('OBP-E05');
+		expect(
+			checkGrant(grant({ validUntil: '2026-10-07T00:00:00Z' }), 'invoice', 'issue', at)?.code
+		).toBe('OBP-E05');
 	});
 
 	it('rejects out-of-scope document types and actions', () => {
@@ -61,13 +60,14 @@ describe('delegation verification', () => {
 		expect('grant' in ok).toBe(true);
 
 		expect(
-			'error' in verifyDelegation(registry, {
-				issuer: 'org:unknown',
-				signerKeyId: 'g1',
-				pubkey: 'a'.repeat(64),
-				documentType: 'rfq',
-				action: 'issue'
-			})
+			'error' in
+				verifyDelegation(registry, {
+					issuer: 'org:unknown',
+					signerKeyId: 'g1',
+					pubkey: 'a'.repeat(64),
+					documentType: 'rfq',
+					action: 'issue'
+				})
 		).toBe(true);
 		expect(
 			'error' in
@@ -168,7 +168,10 @@ describe('default policy', () => {
 			role: 'owner',
 			scope: { documentTypes: ['*'], actions: ['*'], dailyLimitMinor: 5_000_000 }
 		});
-		const r = policy.evaluate(evidence, g, { approvedTodayMinor: 2_000_000, hasHumanApproval: true });
+		const r = policy.evaluate(evidence, g, {
+			approvedTodayMinor: 2_000_000,
+			hasHumanApproval: true
+		});
 		expect(r.decision).toBe('deny');
 		expect(r.error?.code).toBe('OBP-E12');
 	});

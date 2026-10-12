@@ -16,7 +16,9 @@ const PRESET = {
 	categories: [{ key: 'drinks', name: 'Drinks' }],
 	units: [{ key: 'piece', name: 'Piece', abbreviation: 'pc' }],
 	modifierGroups: [],
-	products: [{ key: 'coffee', name: 'Coffee', categoryKey: 'drinks', unitKey: 'piece', price: 2500 }]
+	products: [
+		{ key: 'coffee', name: 'Coffee', categoryKey: 'drinks', unitKey: 'piece', price: 2500 }
+	]
 };
 
 const PUBKEY = 'a'.repeat(64);
@@ -54,7 +56,13 @@ describe('parseCatalogKitEvent', () => {
 		expect(parseCatalogKitEvent(event({ pubkey: 'nope' }))).toBeNull();
 		expect(
 			parseCatalogKitEvent(
-				event({ tags: [['d', 'x'], ['t', CATALOG_KIT_TAG], ['status', 'bogus']] })
+				event({
+					tags: [
+						['d', 'x'],
+						['t', CATALOG_KIT_TAG],
+						['status', 'bogus']
+					]
+				})
 			)
 		).toBeNull();
 		expect(parseCatalogKitEvent(event({ content: 'not json' }))).toBeNull();
@@ -63,7 +71,14 @@ describe('parseCatalogKitEvent', () => {
 
 	it('parses a withdrawal without requiring a preset body', () => {
 		const kit = parseCatalogKitEvent(
-			event({ tags: [['d', 'relay-kit'], ['t', CATALOG_KIT_TAG], ['status', 'withdrawn']], content: '{}' })
+			event({
+				tags: [
+					['d', 'relay-kit'],
+					['t', CATALOG_KIT_TAG],
+					['status', 'withdrawn']
+				],
+				content: '{}'
+			})
 		);
 		expect(kit?.status).toBe('withdrawn');
 		expect(kit?.preset).toBeNull();
@@ -76,7 +91,11 @@ describe('latestActiveCatalogKits', () => {
 		const newer = event({ created_at: 200 });
 		const withdrawn = event({
 			created_at: 300,
-			tags: [['d', 'relay-kit'], ['t', CATALOG_KIT_TAG], ['status', 'withdrawn']],
+			tags: [
+				['d', 'relay-kit'],
+				['t', CATALOG_KIT_TAG],
+				['status', 'withdrawn']
+			],
 			content: '{}'
 		});
 		expect(latestActiveCatalogKits([older, newer])).toHaveLength(1);

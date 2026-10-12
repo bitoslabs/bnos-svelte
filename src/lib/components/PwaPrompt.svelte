@@ -4,7 +4,10 @@
 
 	let updateAvailable = $state(false);
 	let offlineReady = $state(false);
-	let deferredPrompt: { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> } | null = null;
+	let deferredPrompt: {
+		prompt: () => Promise<void>;
+		userChoice: Promise<{ outcome: string }>;
+	} | null = null;
 	let canInstall = $state(false);
 
 	onMount(() => {
@@ -55,7 +58,9 @@
 </script>
 
 {#if updateAvailable}
-	<div class="fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] px-4 py-3 shadow-lg">
+	<div
+		class="fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] px-4 py-3 shadow-lg"
+	>
 		<div class="text-sm">
 			<div class="font-medium">{t('pwa.updateAvailable')}</div>
 			<div class="text-[var(--text-muted)]">{t('pwa.updateReady')}</div>
@@ -67,14 +72,20 @@
 		>
 			{t('common.update')}
 		</button>
-		<button type="button" class="text-[var(--text-muted)] hover:text-[var(--text)]" onclick={dismiss}>
+		<button
+			type="button"
+			class="text-[var(--text-muted)] hover:text-[var(--text)]"
+			onclick={dismiss}
+		>
 			✕
 		</button>
 	</div>
 {/if}
 
 {#if canInstall}
-	<div class="fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] px-4 py-3 shadow-lg">
+	<div
+		class="fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] px-4 py-3 shadow-lg"
+	>
 		<div class="text-sm">
 			<div class="font-medium">{t('pwa.installApp')}</div>
 			<div class="text-[var(--text-muted)]">{t('pwa.installDesc')}</div>
@@ -86,7 +97,11 @@
 		>
 			{t('pwa.install')}
 		</button>
-		<button type="button" class="text-[var(--text-muted)] hover:text-[var(--text)]" onclick={dismissInstall}>
+		<button
+			type="button"
+			class="text-[var(--text-muted)] hover:text-[var(--text)]"
+			onclick={dismissInstall}
+		>
 			✕
 		</button>
 	</div>
@@ -94,7 +109,7 @@
 
 {#if offlineReady}
 	<div
-		class="fixed bottom-4 right-4 z-50 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] px-4 py-3 text-sm shadow-lg"
+		class="fixed right-4 bottom-4 z-50 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] px-4 py-3 text-sm shadow-lg"
 	>
 		✅ {t('pwa.offlineReady')}
 	</div>

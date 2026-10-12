@@ -23,18 +23,19 @@
 		label?: string;
 	} & Omit<HTMLInputAttributes & HTMLTextareaAttributes, 'size'> = $props();
 
-	const height = $derived(size === 'sm' ? 'h-8 px-2.5' : size === 'lg' ? 'h-11 px-4' : 'h-9.5 px-3');
+	const height = $derived(
+		size === 'sm' ? 'h-8 px-2.5' : size === 'lg' ? 'h-11 px-4' : 'h-9.5 px-3'
+	);
 </script>
 
 {#if textarea}
 	<textarea
 		bind:value
 		class={cn(
-			'w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[13.5px] text-[var(--ui-text)] placeholder:text-[var(--ui-text-dimmed)] transition-colors focus:border-[var(--ui-color-primary-500)] focus:outline-none',
+			'w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[13.5px] text-[var(--ui-text)] transition-colors placeholder:text-[var(--ui-text-dimmed)] focus:border-[var(--ui-color-primary-500)] focus:outline-none',
 			cls
 		)}
-		{...rest as HTMLTextareaAttributes}
-	></textarea>
+		{...rest as HTMLTextareaAttributes}></textarea>
 {:else}
 	<div
 		class={cn(

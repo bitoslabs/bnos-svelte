@@ -36,10 +36,7 @@ export function testRelay(url: string, timeoutMs = 6000): Promise<RelayTestResul
 	};
 
 	const timer = new Promise<RelayTestResult>((resolve) =>
-		setTimeout(
-			() => resolve(finish({ status: 'failed', message: 'Timeout' })),
-			timeoutMs
-		)
+		setTimeout(() => resolve(finish({ status: 'failed', message: 'Timeout' })), timeoutMs)
 	);
 
 	const connect = new Promise<RelayTestResult>((resolve) => {

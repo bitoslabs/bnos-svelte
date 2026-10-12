@@ -485,7 +485,9 @@
 				>New adjustment</Button
 			>
 		{:else if tab === 'counts'}
-			<Button color="primary" icon="lucide:plus" onclick={newCount}>{t('common.new') + ' ' + t('common.count')}</Button>
+			<Button color="primary" icon="lucide:plus" onclick={newCount}
+				>{t('common.new') + ' ' + t('common.count')}</Button
+			>
 		{:else}
 			<Button color="primary" icon="lucide:plus" onclick={() => openCreate(tab)}
 				>New {tab === 'adjustments'
@@ -855,7 +857,9 @@
 								direction={adjCtrl.sortDir}
 								applySort={adjCtrl.applySort}>{t('common.product')}</SortableTh
 							>
-							<th class="px-5 py-2.5">{t('common.type')}</th><th class="px-5 py-2.5 text-right">{t('common.qty')}</th>
+							<th class="px-5 py-2.5">{t('common.type')}</th><th class="px-5 py-2.5 text-right"
+								>{t('common.qty')}</th
+							>
 							<SortableTh
 								column="date"
 								active={adjCtrl.sortKey === 'date'}
@@ -891,7 +895,10 @@
 												{
 													label: t('common.viewRaw'),
 													icon: 'lucide:code',
-													onSelect: () => { rawItem = glo.get(TYPE.adjustment, a.id); rawOpen = true; }
+													onSelect: () => {
+														rawItem = glo.get(TYPE.adjustment, a.id);
+														rawOpen = true;
+													}
 												}
 											],
 											[
@@ -935,7 +942,8 @@
 						color="primary"
 						size="sm"
 						icon="lucide:plus"
-						onclick={() => openCreate('suppliers')}>{t('common.add') + ' ' + t('common.supplier')}</Button
+						onclick={() => openCreate('suppliers')}
+						>{t('common.add') + ' ' + t('common.supplier')}</Button
 					>{/snippet}
 			</EmptyState>
 		{:else}
@@ -984,7 +992,10 @@
 												{
 													label: t('common.viewRaw'),
 													icon: 'lucide:code',
-													onSelect: () => { rawItem = glo.get(TYPE.supplier, s.id); rawOpen = true; }
+													onSelect: () => {
+														rawItem = glo.get(TYPE.supplier, s.id);
+														rawOpen = true;
+													}
 												}
 											],
 											[
@@ -1077,7 +1088,10 @@
 												{
 													label: t('common.viewRaw'),
 													icon: 'lucide:code',
-													onSelect: () => { rawItem = glo.get(TYPE.purchaseOrder, o.id); rawOpen = true; }
+													onSelect: () => {
+														rawItem = glo.get(TYPE.purchaseOrder, o.id);
+														rawOpen = true;
+													}
 												}
 											],
 											[
@@ -1151,13 +1165,16 @@
 			><Input bind:value={adjQty} type="number" min="0" class="w-full" /></label
 		>
 		<label class="block"
-			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.reason')}</span
+			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.reason')}</span
 			><Input bind:value={adjReason} class="w-full" /></label
 		>
 	</div>
 	{#snippet footer()}<Button color="neutral" variant="ghost" onclick={() => (adjDlgOpen = false)}
 			>{t('common.cancel')}</Button
-		><Button color="primary" icon="lucide:check" onclick={saveQuickAdjust}>{t('common.save')}</Button>{/snippet}
+		><Button color="primary" icon="lucide:check" onclick={saveQuickAdjust}
+			>{t('common.save')}</Button
+		>{/snippet}
 </Dialog>
 
 <!-- Create Dialog (adjustments / suppliers / orders) -->
@@ -1260,7 +1277,8 @@
 	{:else if dlgKind === 'suppliers'}
 		<div class="space-y-3">
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.name')}</span
+				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					>{t('common.name')}</span
 				><Input bind:value={sName} class="w-full" /></label
 			>
 			<div class="grid grid-cols-2 gap-3">
@@ -1304,7 +1322,8 @@
 	{/if}
 	{#snippet footer()}<Button color="neutral" variant="ghost" onclick={() => (dlgOpen = false)}
 			>{t('common.cancel')}</Button
-		><Button color="primary" icon="lucide:check" onclick={save}>{t('common.save')}</Button>{/snippet}
+		><Button color="primary" icon="lucide:check" onclick={save}>{t('common.save')}</Button
+		>{/snippet}
 </Dialog>
 
 <RawDataDialog bind:open={rawOpen} data={rawItem} title="Inventory Raw Data" />

@@ -109,7 +109,11 @@
 
 	function download() {
 		const payload = isGlo
-			? { object: metaView(), data: obj.data, ...(eventView.event ? { event: eventView.event } : {}) }
+			? {
+					object: metaView(),
+					data: obj.data,
+					...(eventView.event ? { event: eventView.event } : {})
+				}
 			: obj;
 		const blob = new Blob([pretty(payload)], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
@@ -154,18 +158,28 @@
 </script>
 
 <Dialog bind:open {title} size="xl">
-	<div class="flex items-center justify-between gap-2 border-b border-[var(--ui-border-muted)] px-4 py-2.5">
+	<div
+		class="flex items-center justify-between gap-2 border-b border-[var(--ui-border-muted)] px-4 py-2.5"
+	>
 		<div class="flex items-center gap-2">
 			{#if isGlo}<Badge color="primary">{obj.type}</Badge>{/if}
 			{#if liveEvent}
-				<Badge color="success"><span class="size-1.5 rounded-full bg-emerald-500" /> Live event</Badge>
+				<Badge color="success"
+					><span class="size-1.5 rounded-full bg-emerald-500" /> Live event</Badge
+				>
 				{#if sigValid === 'yes'}
-					<Badge color="success"><Icon name="lucide:shield-check" class="mr-1 size-3" /> Verified</Badge>
+					<Badge color="success"
+						><Icon name="lucide:shield-check" class="mr-1 size-3" /> Verified</Badge
+					>
 				{:else if sigValid === 'no'}
-					<Badge color="error"><Icon name="lucide:shield-x" class="mr-1 size-3" /> Invalid sig</Badge>
+					<Badge color="error"
+						><Icon name="lucide:shield-x" class="mr-1 size-3" /> Invalid sig</Badge
+					>
 				{/if}
 			{:else if fetching}
-				<Badge color="info"><Icon name="lucide:loader-circle" class="mr-1 size-3 animate-spin" /> Fetching</Badge>
+				<Badge color="info"
+					><Icon name="lucide:loader-circle" class="mr-1 size-3 animate-spin" /> Fetching</Badge
+				>
 			{:else if isGlo}
 				<Badge color="neutral">Preview</Badge>
 			{/if}
@@ -213,14 +227,26 @@
 			<div class="space-y-3 p-4">
 				{#if isGlo}
 					<dl class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-						<div class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2">
-							<dt class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">ID</dt>
+						<div
+							class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2"
+						>
+							<dt
+								class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+							>
+								ID
+							</dt>
 							<dd class="truncate font-mono text-[11.5px]">{obj.id}</dd>
 						</div>
 						{#if liveEvent?.id ?? obj.__eventId}
-							<div class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2 sm:col-span-2">
+							<div
+								class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2 sm:col-span-2"
+							>
 								<div class="flex items-center justify-between">
-									<dt class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">Nostr event id</dt>
+									<dt
+										class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									>
+										Nostr event id
+									</dt>
 									<button
 										type="button"
 										onclick={() => copy('id')}
@@ -233,30 +259,66 @@
 								<dd class="truncate font-mono text-[11.5px]">{liveEvent?.id ?? obj.__eventId}</dd>
 							</div>
 						{/if}
-						<div class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2">
-							<dt class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">Kind</dt>
-							<dd class="font-mono text-[11.5px]">{liveEvent?.kind ?? (isGlo ? kindForType(obj.type) : '—')}</dd>
+						<div
+							class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2"
+						>
+							<dt
+								class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+							>
+								Kind
+							</dt>
+							<dd class="font-mono text-[11.5px]">
+								{liveEvent?.kind ?? (isGlo ? kindForType(obj.type) : '—')}
+							</dd>
 						</div>
-						<div class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2">
-							<dt class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">{t('toast.created')}</dt>
+						<div
+							class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2"
+						>
+							<dt
+								class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+							>
+								{t('toast.created')}
+							</dt>
 							<dd class="text-[11.5px]">{timeOf(liveEvent?.created_at ?? obj.__eventCreatedAt)}</dd>
 						</div>
-						<div class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2">
-							<dt class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">Author</dt>
-							<dd class="truncate font-mono text-[11.5px]">{trunc(liveEvent?.pubkey ?? obj.scope?.ownerPubkey, 16)}</dd>
+						<div
+							class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2"
+						>
+							<dt
+								class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+							>
+								Author
+							</dt>
+							<dd class="truncate font-mono text-[11.5px]">
+								{trunc(liveEvent?.pubkey ?? obj.scope?.ownerPubkey, 16)}
+							</dd>
 						</div>
-						<div class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2">
-							<dt class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">Visibility</dt>
+						<div
+							class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2"
+						>
+							<dt
+								class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+							>
+								Visibility
+							</dt>
 							<dd class="text-[11.5px] capitalize">{obj.visibility ?? '—'}</dd>
 						</div>
-						<div class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2">
-							<dt class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">Encrypted</dt>
+						<div
+							class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2"
+						>
+							<dt
+								class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+							>
+								Encrypted
+							</dt>
 							<dd class="text-[11.5px]">{obj.encryption ? 'Yes' : 'No'}</dd>
 						</div>
 					</dl>
 					{#if dataKeys.length}
 						<div>
-							<p class="mb-1.5 text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+							<p
+								class="mb-1.5 text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+							>
 								Data preview
 							</p>
 							<div class="flex flex-wrap gap-1.5">
@@ -271,23 +333,27 @@
 						</div>
 					{/if}
 				{:else}
-					<p class="text-[12.5px] text-[var(--ui-text-muted)]">No structured object — see the Data tab.</p>
+					<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+						No structured object — see the Data tab.
+					</p>
 				{/if}
 			</div>
 		{/if}
 
 		<!-- ── Data ── -->
 		{#if tab === 'data'}
-			<pre class="bg-[var(--ui-bg-muted)] p-4 text-[11.5px] leading-relaxed"><code>{pretty(
-					isGlo ? obj.data : obj
-				)}</code></pre>
+			<pre class="bg-[var(--ui-bg-muted)] p-4 text-[11.5px] leading-relaxed"><code
+					>{pretty(isGlo ? obj.data : obj)}</code
+				></pre>
 		{/if}
 
 		<!-- ── Nostr Event ── -->
 		{#if tab === 'event'}
 			<div class="space-y-3 p-4">
 				{#if fetching && !eventView.live}
-					<div class="flex items-center gap-2 rounded-lg border border-sky-500/30 bg-sky-500/5 px-3 py-2 text-[11.5px] text-sky-700 dark:text-sky-300">
+					<div
+						class="flex items-center gap-2 rounded-lg border border-sky-500/30 bg-sky-500/5 px-3 py-2 text-[11.5px] text-sky-700 dark:text-sky-300"
+					>
 						<Icon name="lucide:loader-circle" class="size-3.5 animate-spin" />
 						Fetching live event from relays…
 					</div>
@@ -299,19 +365,24 @@
 						>
 							<Icon name="lucide:info" class="mt-0.5 size-3.5 shrink-0" />
 							<span>
-								Reconstructed preview — the live <code class="font-mono">id</code> / <code class="font-mono">sig</code>
+								Reconstructed preview — the live <code class="font-mono">id</code> /
+								<code class="font-mono">sig</code>
 								weren't cached locally and none arrived from relays (offline or not yet published).
 							</span>
 						</div>
 					{/if}
 				{:else}
 					{#if sigValid === 'yes'}
-						<div class="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-[11.5px] text-emerald-700 dark:text-emerald-300">
+						<div
+							class="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-[11.5px] text-emerald-700 dark:text-emerald-300"
+						>
 							<Icon name="lucide:shield-check" class="size-3.5" />
 							Signature &amp; event id verified — content is authentic and untampered.
 						</div>
 					{:else if sigValid === 'no'}
-						<div class="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 text-[11.5px] text-red-600 dark:text-red-400">
+						<div
+							class="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 text-[11.5px] text-red-600 dark:text-red-400"
+						>
 							<Icon name="lucide:shield-x" class="size-3.5" />
 							Signature invalid — the id or signature does not match. This event may be corrupt or tampered.
 						</div>
@@ -325,9 +396,14 @@
 					{/if}
 					<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
 						{#each [['id', eventView.event?.id, 'id'], ['pubkey', eventView.event?.pubkey, 'pubkey'], ['sig', eventView.event?.sig, 'sig']] as [label, value, which] (label)}
-							<div class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2">
+							<div
+								class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2"
+							>
 								<div class="mb-0.5 flex items-center justify-between">
-									<span class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">{label}</span>
+									<span
+										class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+										>{label}</span
+									>
 									<button
 										type="button"
 										onclick={() => copy(which as 'id' | 'pubkey' | 'sig')}
@@ -342,17 +418,17 @@
 						{/each}
 					</div>
 				{/if}
-				<pre class="bg-[var(--ui-bg-muted)] p-4 text-[11.5px] leading-relaxed"><code>{eventView.event
-						? pretty(eventView.event)
-						: 'No event available.'}</code></pre>
+				<pre class="bg-[var(--ui-bg-muted)] p-4 text-[11.5px] leading-relaxed"><code
+						>{eventView.event ? pretty(eventView.event) : 'No event available.'}</code
+					></pre>
 			</div>
 		{/if}
 
 		<!-- ── Meta ── -->
 		{#if tab === 'meta'}
-			<pre class="bg-[var(--ui-bg-muted)] p-4 text-[11.5px] leading-relaxed"><code>{pretty(
-					metaView()
-				)}</code></pre>
+			<pre class="bg-[var(--ui-bg-muted)] p-4 text-[11.5px] leading-relaxed"><code
+					>{pretty(metaView())}</code
+				></pre>
 		{/if}
 	</div>
 </Dialog>

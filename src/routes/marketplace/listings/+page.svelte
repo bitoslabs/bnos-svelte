@@ -259,11 +259,11 @@
 		<div>
 			<h2 class="font-display text-lg font-bold tracking-tight">Listings</h2>
 			<p class="text-[12px] text-[var(--ui-text-muted)]">
-				{formatInt(filtered.length)} listings · <span
-					class="font-semibold text-emerald-600 dark:text-emerald-400">{NATIVE_STORE.label}</span
-				>{#if connections.length > 0} + {connections.length} channel{connections.length === 1
-					? ''
-					: 's'}{/if}
+				{formatInt(filtered.length)} listings ·
+				<span class="font-semibold text-emerald-600 dark:text-emerald-400"
+					>{NATIVE_STORE.label}</span
+				>{#if connections.length > 0}
+					+ {connections.length} channel{connections.length === 1 ? '' : 's'}{/if}
 			</p>
 		</div>
 		<Button
@@ -317,7 +317,9 @@
 				<p class="mt-0.5 text-xl font-black text-amber-500 tabular-nums">{lowStockCount}</p>
 			</div>
 			<div class="metric-card p-3.5">
-				<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">{t('common.views')}</p>
+				<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">
+					{t('common.views')}
+				</p>
 				<p class="mt-0.5 text-xl font-black tabular-nums">{formatInt(totalViews)}</p>
 			</div>
 		</div>
@@ -538,19 +540,22 @@
 												type="button"
 												onclick={() => viewRaw(l.id)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-												title={t('common.viewRaw')}><Icon name="lucide:code" class="size-4" /></button
+												title={t('common.viewRaw')}
+												><Icon name="lucide:code" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => openEdit(l.id, l.data)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
-												title={t('common.edit')}><Icon name="lucide:pencil" class="size-4" /></button
+												title={t('common.edit')}
+												><Icon name="lucide:pencil" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => (confirmDeleteId = l.id)}
 												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
-												title={t('common.delete')}><Icon name="lucide:trash-2" class="size-4" /></button
+												title={t('common.delete')}
+												><Icon name="lucide:trash-2" class="size-4" /></button
 											>
 										</div>
 									</td>
@@ -594,9 +599,7 @@
 									</div>
 								</div>
 							</div>
-							<Badge color={statusColor(l.data.status)}
-								>{listingStatusLabel(l.data.status)}</Badge
-							>
+							<Badge color={statusColor(l.data.status)}>{listingStatusLabel(l.data.status)}</Badge>
 						</div>
 
 						<!-- meta row -->
@@ -644,13 +647,9 @@
 							<button
 								type="button"
 								onclick={() =>
-									quickStatus(
-										l.id,
-										l.data,
-										l.data.status === 'active' ? 'paused' : 'active'
-									)}
-								class="grid size-8 place-items-center rounded-lg transition-colors {l.data.status ===
-								'active'
+									quickStatus(l.id, l.data, l.data.status === 'active' ? 'paused' : 'active')}
+								class="grid size-8 place-items-center rounded-lg transition-colors {l.data
+									.status === 'active'
 									? 'text-emerald-500 hover:bg-emerald-500/10'
 									: 'text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
 								title={l.data.status === 'active' ? 'Pause' : 'Activate'}
@@ -682,7 +681,7 @@
 					</div>
 				{/each}
 			</div>
-			<Pagination controls={controls} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
+			<Pagination {controls} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
 		{:else}
 			<!-- ═══════════════ LIST VIEW ═══════════════ -->
 			<div
@@ -743,7 +742,9 @@
 											{formatMoney(l.data.price, currency)}
 										</div>
 										{#if l.data.compareAtPrice}
-											<div class="text-[10px] text-[var(--ui-text-dimmed)] tabular-nums line-through">
+											<div
+												class="text-[10px] text-[var(--ui-text-dimmed)] tabular-nums line-through"
+											>
 												{formatMoney(l.data.compareAtPrice, currency)}
 											</div>
 										{/if}
@@ -882,10 +883,10 @@
 									? 'bg-primary-500/15 text-primary-600 ring-1 ring-primary-500/30 dark:text-primary-300'
 									: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
 							>
-								{#if fChannelIds.includes(c.id)}<Icon name="lucide:check" class="size-3" />{:else}<Icon
-										name={m.icon}
+								{#if fChannelIds.includes(c.id)}<Icon
+										name="lucide:check"
 										class="size-3"
-									/>{/if}
+									/>{:else}<Icon name={m.icon} class="size-3" />{/if}
 								{c.data.name}
 							</button>
 						{/each}
@@ -896,7 +897,8 @@
 					href="/marketplace/channels"
 					class="inline-flex items-center gap-1 text-[11px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
 				>
-					<Icon name="lucide:plus" class="size-3" />Connect external channels (TikTok, Facebook, Shopee…)
+					<Icon name="lucide:plus" class="size-3" />Connect external channels (TikTok, Facebook,
+					Shopee…)
 				</a>
 			{/if}
 
@@ -930,7 +932,9 @@
 		<div class="space-y-3 rounded-xl bg-[var(--ui-bg-accented)] p-3">
 			<div class="flex items-center justify-between">
 				<div>
-					<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('catalog.trackInventory')}</p>
+					<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
+						{t('catalog.trackInventory')}
+					</p>
 					<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">Sync stock across channels</p>
 				</div>
 				<Switch bind:checked={fTrackInv} />
@@ -947,7 +951,9 @@
 
 		<!-- Status -->
 		<div>
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{t('common.status')}</span>
+			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				>{t('common.status')}</span
+			>
 			<div class="flex flex-wrap gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
 				{#each LISTING_STATUSES as s (s.value)}
 					<button
@@ -979,7 +985,9 @@
 	</div>
 
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (modalOpen = false)}>{t('common.cancel')}</Button>
+		<Button color="neutral" variant="ghost" onclick={() => (modalOpen = false)}
+			>{t('common.cancel')}</Button
+		>
 		<Button color="primary" icon="lucide:check" disabled={!canSave || saving} onclick={save}
 			>{saving ? 'Saving…' : editingId ? 'Update' : 'Publish'}</Button
 		>
@@ -1017,7 +1025,9 @@
 				<Button color="neutral" variant="ghost" size="sm" onclick={() => (confirmDeleteId = null)}
 					>{t('common.cancel')}</Button
 				>
-				<Button color="error" size="sm" icon="lucide:trash-2" onclick={doDelete}>{t('common.delete')}</Button>
+				<Button color="error" size="sm" icon="lucide:trash-2" onclick={doDelete}
+					>{t('common.delete')}</Button
+				>
 			</div>
 		</div>
 	</div>
