@@ -6,11 +6,13 @@
  * everywhere.
  */
 
+import { version } from '../../package.json';
+
 export const site = {
 	name: 'BNOS',
 	fullName: 'Bitcoin Network Operations System',
 	tagline: 'Point-of-sale & commerce on Nostr · open source',
-	version: '0.1.0',
+	version,
 	license: 'MIT',
 
 	/** Marketing / product website. */
