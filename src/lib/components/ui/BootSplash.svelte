@@ -19,7 +19,7 @@
 </script>
 
 <div
-	class={cn('grid h-screen w-full place-items-center bg-[var(--ui-bg)]', cls)}
+	class={cn('grid h-screen w-full place-items-center bg-(--ui-bg)', cls)}
 	role="status"
 	aria-label="Loading BNOS"
 >
@@ -43,7 +43,7 @@
 			</svg>
 		</div>
 		<!-- Wordmark: BNOS display type, follows the color mode via --ui-text. -->
-		<p class="font-display text-[26px] leading-none font-bold tracking-tight text-[var(--ui-text)]">
+		<p class="font-display text-[26px] leading-none font-bold tracking-tight text-(--ui-text)">
 			BNOS
 		</p>
 		<div class="mt-1 flex flex-col items-center gap-2.5">
@@ -53,7 +53,7 @@
 					<span class="pow-boot-seg" style="animation-delay:{i * 0.12}s"></span>
 				{/each}
 			</div>
-			<p class="font-mono text-[11px] text-[var(--ui-text-dimmed)]">{status}</p>
+			<p class="font-mono text-[11px] text-(--ui-text-dimmed)">{status}</p>
 		</div>
 	</div>
 </div>

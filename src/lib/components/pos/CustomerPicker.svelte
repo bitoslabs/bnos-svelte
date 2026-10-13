@@ -91,15 +91,13 @@
 					<Icon name="lucide:user-check" class="size-4" />
 				</span>
 				<div class="min-w-0 flex-1">
-					<div class="truncate text-[12px] font-bold text-[var(--ui-text)]">{selected.name}</div>
-					<div
-						class="flex items-center gap-1.5 text-[10.5px] font-semibold text-[var(--ui-text-muted)]"
-					>
+					<div class="truncate text-[12px] font-bold text-(--ui-text)">{selected.name}</div>
+					<div class="flex items-center gap-1.5 text-[10.5px] font-semibold text-(--ui-text-muted)">
 						{#if selected.segment}
 							<span class="capitalize">{selected.segment.replace('_', ' ')}</span>
 						{/if}
 						{#if selected.points != null && selected.points > 0}
-							<span class="inline-flex items-center gap-0.5 text-[var(--tone-warning-text)]">
+							<span class="inline-flex items-center gap-0.5 text-(--tone-warning-text)">
 								<Icon name="lucide:award" class="size-3" />
 								{formatInt(selected.points)}
 							</span>
@@ -113,18 +111,18 @@
 						e.stopPropagation();
 						clear();
 					}}
-					class="grid size-6 shrink-0 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--tone-error-text)]"
+					class="grid size-6 shrink-0 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--tone-error-text)"
 				>
 					<Icon name="lucide:x" class="size-3.5" />
 				</button>
 			</div>
 		{:else}
 			<div
-				class="flex w-full items-center gap-2 rounded-lg border border-dashed border-[var(--ui-border)] px-2.5 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)]"
+				class="flex w-full items-center gap-2 rounded-lg border border-dashed border-(--ui-border) px-2.5 py-1.5 text-[12px] font-semibold text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented)"
 			>
 				<Icon name="lucide:user-plus" class="size-4" />
 				Add customer
-				<span class="ml-auto text-[10px] font-normal text-[var(--ui-text-dimmed)]"
+				<span class="ml-auto text-[10px] font-normal text-(--ui-text-dimmed)"
 					>{t('common.optional_field')}</span
 				>
 			</div>
@@ -133,7 +131,7 @@
 
 	{#snippet content()}
 		<div class="w-80">
-			<div class="border-b border-[var(--ui-border-muted)] p-2.5">
+			<div class="border-b border-(--ui-border-muted) p-2.5">
 				<Input
 					bind:value={q}
 					icon="lucide:search"
@@ -143,7 +141,7 @@
 			</div>
 			<div class="max-h-64 overflow-y-auto p-1.5">
 				{#if filtered.length === 0}
-					<p class="px-2 py-4 text-center text-[11.5px] text-[var(--ui-text-dimmed)]">
+					<p class="px-2 py-4 text-center text-[11.5px] text-(--ui-text-dimmed)">
 						No customers match “{q}”.
 					</p>
 				{:else}
@@ -151,17 +149,17 @@
 						<button
 							type="button"
 							onclick={() => pick(c)}
-							class="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-[var(--ui-bg-accented)]"
+							class="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-(--ui-bg-accented)"
 						>
 							<span
-								class="grid size-7 shrink-0 place-items-center rounded-full bg-[var(--ui-bg-muted)] text-[var(--ui-text-dimmed)]"
+								class="grid size-7 shrink-0 place-items-center rounded-full bg-(--ui-bg-muted) text-(--ui-text-dimmed)"
 							>
 								<Icon name="lucide:user" class="size-4" />
 							</span>
 							<div class="min-w-0 flex-1">
 								<div class="truncate text-[12.5px] font-semibold">{c.data.name ?? 'Unnamed'}</div>
 								{#if c.data.phone}
-									<div class="truncate text-[10.5px] text-[var(--ui-text-dimmed)]">
+									<div class="truncate text-[10.5px] text-(--ui-text-dimmed)">
 										{c.data.phone}
 									</div>
 								{/if}
@@ -173,7 +171,7 @@
 					{/each}
 				{/if}
 			</div>
-			<div class="flex items-center gap-1.5 border-t border-[var(--ui-border-muted)] p-2">
+			<div class="flex items-center gap-1.5 border-t border-(--ui-border-muted) p-2">
 				<Input
 					bind:value={walkIn}
 					icon="lucide:user-plus"

@@ -18,9 +18,9 @@
 
 <div class="setting-row flex items-center justify-between gap-4 px-5 py-4">
 	<div class="min-w-0">
-		<div class="text-[13px] font-semibold text-[var(--ui-text)]">{title}</div>
+		<div class="text-[13px] font-semibold text-(--ui-text)">{title}</div>
 		{#if description}
-			<p class="mt-0.5 text-[11px] text-[var(--ui-text-dimmed)]">{description}</p>
+			<p class="mt-0.5 text-[11px] text-(--ui-text-dimmed)">{description}</p>
 		{/if}
 	</div>
 	<div class="flex shrink-0 items-center gap-2">

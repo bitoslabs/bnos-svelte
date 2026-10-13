@@ -108,7 +108,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h2 class="font-display text-lg font-bold tracking-tight">{t('nav.promotions')}</h2>
-			<p class="text-[12px] text-[var(--ui-text-muted)]">Coupon codes & offers for your channels</p>
+			<p class="text-[12px] text-(--ui-text-muted)">Coupon codes & offers for your channels</p>
 		</div>
 		<div class="flex items-center gap-2">
 			<Button
@@ -142,7 +142,7 @@
 			<div class="mb-2 flex items-center gap-2">
 				<Icon name="lucide:ticket" class="size-4 text-primary-500" />
 				<h3 class="font-display text-[14px] font-semibold">Coupon codes</h3>
-				<span class="text-[11px] text-[var(--ui-text-dimmed)]">{coupons.length}</span>
+				<span class="text-[11px] text-(--ui-text-dimmed)">{coupons.length}</span>
 			</div>
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 				{#each coupons as c (c.id)}
@@ -167,11 +167,11 @@
 						>
 							{couponBadge(c.data)}
 						</div>
-						<div class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">
+						<div class="mt-1 text-[11.5px] text-(--ui-text-muted)">
 							{c.data.uses ?? 0}{#if c.data.maxUses}/{c.data.maxUses}{/if} redemptions
 						</div>
 						{#if c.data.minSpend}
-							<div class="mt-0.5 text-[10px] text-[var(--ui-text-dimmed)]">
+							<div class="mt-0.5 text-[10px] text-(--ui-text-dimmed)">
 								Min spend: {formatMoney(c.data.minSpend, currency)}
 							</div>
 						{/if}
@@ -181,7 +181,7 @@
 								navigator.clipboard?.writeText(c.data.code);
 								toast.success('Code copied');
 							}}
-							class="absolute top-3 right-3 grid size-7 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+							class="absolute top-3 right-3 grid size-7 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 							title="Copy code"
 						>
 							<Icon name="lucide:copy" class="size-3.5" />
@@ -207,7 +207,7 @@
 			<div class="mb-2 flex items-center gap-2">
 				<Icon name="lucide:megaphone" class="size-4 text-primary-500" />
 				<h3 class="font-display text-[14px] font-semibold">Campaigns</h3>
-				<span class="text-[11px] text-[var(--ui-text-dimmed)]">{promos.length}</span>
+				<span class="text-[11px] text-(--ui-text-dimmed)">{promos.length}</span>
 			</div>
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 				{#each promos as p (p.id)}
@@ -217,7 +217,7 @@
 							<Badge color={statusColor(p.data.status)}>{p.data.status}</Badge>
 						</div>
 						{#if p.data.description}
-							<p class="mt-0.5 line-clamp-2 text-[11px] text-[var(--ui-text-dimmed)]">
+							<p class="mt-0.5 line-clamp-2 text-[11px] text-(--ui-text-dimmed)">
 								{p.data.description}
 							</p>
 						{/if}
@@ -226,7 +226,7 @@
 						>
 							{promoBadge(p.data)}
 						</div>
-						<div class="mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">
+						<div class="mt-1 text-[10.5px] text-(--ui-text-dimmed)">
 							{p.data.currentUsage ?? 0}{#if p.data.maxUsage}/{p.data.maxUsage}{/if} uses
 						</div>
 					</div>
@@ -240,7 +240,7 @@
 <Dialog bind:open={couponOpen} title={t('common.new') + ' ' + t('common.coupon')} size="md">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.code')}</span
 			>
 			<div class="flex gap-2">
@@ -251,9 +251,7 @@
 			</div>
 		</label>
 		<div>
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Offer type</span
-			>
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Offer type</span>
 			<div class="grid grid-cols-3 gap-2">
 				{#each [{ v: 'percent', l: '% Off', i: 'lucide:percent' }, { v: 'fixed', l: 'Fixed', i: 'lucide:dollar-sign' }, { v: 'free_shipping', l: 'Free Ship', i: 'lucide:truck' }] as t (t.v)}
 					<button
@@ -261,8 +259,8 @@
 						onclick={() => (cType = t.v as typeof cType)}
 						class="rounded-lg border-2 px-2 py-2.5 text-center text-[11px] font-medium transition-all {cType ===
 						t.v
-							? 'border-[var(--ui-color-primary-500)] bg-[var(--ui-color-primary-500)]/10 text-[var(--ui-color-primary-500)]'
-							: 'border-[var(--ui-border)] hover:border-[var(--ui-border-muted)]'}"
+							? 'border-(--ui-color-primary-500) bg-(--ui-color-primary-500)/10 text-(--ui-color-primary-500)'
+							: 'border-(--ui-border) hover:border-(--ui-border-muted)'}"
 					>
 						<Icon name={t.i} class="mx-auto mb-1 block size-4" />{t.l}
 					</button>
@@ -271,7 +269,7 @@
 		</div>
 		{#if cType !== 'free_shipping'}
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Value {cType === 'percent' ? '(%)' : `(${currency})`}</span
 				>
 				<Input bind:value={cValue} type="number" min="0" class="w-full" />
@@ -279,20 +277,16 @@
 		{/if}
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Min spend</span
-				>
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Min spend</span>
 				<Input bind:value={cMinSpend} type="number" min="0" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Max uses</span
-				>
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Max uses</span>
 				<Input bind:value={cMaxUses} type="number" min="0" placeholder="∞" class="w-full" />
 			</label>
 		</div>
-		<div class="rounded-lg bg-[var(--ui-bg-accented)] p-3 text-center">
-			<span class="text-[11px] text-[var(--ui-text-dimmed)]">Preview · </span>
+		<div class="rounded-lg bg-(--ui-bg-accented) p-3 text-center">
+			<span class="text-[11px] text-(--ui-text-dimmed)">Preview · </span>
 			<span class="font-mono text-[13px] font-bold">{cCode || 'CODE'}</span>
 			<span class="ml-2 font-display font-bold text-primary-600 dark:text-primary-400"
 				>{couponStatus}</span

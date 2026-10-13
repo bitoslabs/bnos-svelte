@@ -1361,7 +1361,7 @@
 	const stockTriggerClass = $derived(
 		lowStockCount > 0
 			? 'inline-flex h-8 items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 text-[12px] font-semibold text-amber-700 transition-colors hover:bg-amber-500/15 dark:text-amber-300'
-			: 'inline-flex h-8 items-center gap-1.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'
+			: 'inline-flex h-8 items-center gap-1.5 rounded-full border border-(--ui-border) bg-(--ui-bg-muted) px-2.5 text-[12px] font-semibold text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'
 	);
 	function closeShiftFromPopover() {
 		shiftPopoverOpen = false;
@@ -1631,8 +1631,8 @@
 <svelte:head><title>{t('common.appName')} · {t('nav.pos')}</title></svelte:head>
 <svelte:window onkeydown={onKeydown} />
 
-<div class="flex h-dvh min-h-0 flex-col overflow-hidden bg-[var(--ui-bg)]">
-	<header class="app-chrome border-b border-[var(--glass-border)] px-4 py-3 sm:px-5 lg:px-6">
+<div class="flex h-dvh min-h-0 flex-col overflow-hidden bg-(--ui-bg)">
+	<header class="app-chrome border-b border-(--glass-border) px-4 py-3 sm:px-5 lg:px-6">
 		<div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 			<div class="flex min-w-0 items-center gap-3">
 				<a
@@ -1651,7 +1651,7 @@
 							{cart.isEmpty ? t('pos.ready') : t('pos.itemsCount', { count: cart.itemCount })}
 						</Badge>
 					</div>
-					<p class="truncate text-[12.5px] text-[var(--ui-text-muted)]">
+					<p class="truncate text-[12.5px] text-(--ui-text-muted)">
 						{tenant.state.organizationName || 'BNOS'} · {tenant.state.locationName ||
 							t('pos.mainBranch')} ·
 						{dateLabel} · {clockLabel}
@@ -1691,7 +1691,7 @@
 						<div class="w-80">
 							{#if openShift}
 								<div
-									class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-3.5 py-3"
+									class="flex items-center justify-between border-b border-(--ui-border-muted) px-3.5 py-3"
 								>
 									<div class="flex min-w-0 items-center gap-2">
 										<span class="relative flex size-2.5 shrink-0">
@@ -1705,7 +1705,7 @@
 											<div class="truncate text-[13px] leading-tight font-bold">
 												{openShift.data.number}
 											</div>
-											<div class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+											<div class="text-[10.5px] text-(--ui-text-dimmed)">
 												{t('common.open')} · {shiftElapsedLabel}
 											</div>
 										</div>
@@ -1715,21 +1715,21 @@
 								<div class="space-y-3 px-3.5 py-3">
 									<div class="grid grid-cols-2 gap-2 text-[11px]">
 										<div class="min-w-0">
-											<div class="text-[var(--ui-text-dimmed)]">{t('staff.roleCashier')}</div>
+											<div class="text-(--ui-text-dimmed)">{t('staff.roleCashier')}</div>
 											<div class="truncate font-semibold">
 												{openShift.data.staffName || tenant.state.activeStaffInfo?.name || '—'}
 											</div>
 										</div>
 										<div>
-											<div class="text-[var(--ui-text-dimmed)]">{t('shifts.opened')}</div>
+											<div class="text-(--ui-text-dimmed)">{t('shifts.opened')}</div>
 											<div class="font-semibold">{openedTimeLabel}</div>
 										</div>
 									</div>
 
-									<div class="rounded-xl bg-[var(--ui-bg-muted)] p-3">
+									<div class="rounded-xl bg-(--ui-bg-muted) p-3">
 										<div class="flex items-center justify-between">
 											<span
-												class="text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+												class="text-[10.5px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase"
 												>{t('pos.totalSales')}</span
 											>
 											<Badge color="primary"
@@ -1745,18 +1745,18 @@
 
 									<div class="space-y-1">
 										<div
-											class="text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+											class="text-[10.5px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase"
 										>
 											{t('pos.tenders')}
 										</div>
 										{#if tenderRows.length === 0}
-											<p class="py-1 text-center text-[11.5px] text-[var(--ui-text-dimmed)]">
+											<p class="py-1 text-center text-[11.5px] text-(--ui-text-dimmed)">
 												{t('pos.noSalesRecorded')}
 											</p>
 										{:else}
 											{#each tenderRows as t (t.label)}
 												<div class="flex items-center justify-between text-[12px]">
-													<span class="flex items-center gap-1.5 text-[var(--ui-text-muted)]"
+													<span class="flex items-center gap-1.5 text-(--ui-text-muted)"
 														><Icon name={t.icon} class="size-3.5 {t.color}" />{t.label}</span
 													>
 													<span class="font-semibold tabular-nums"
@@ -1767,31 +1767,31 @@
 										{/if}
 									</div>
 
-									<div class="space-y-1 rounded-xl border border-[var(--ui-border-muted)] p-3">
+									<div class="space-y-1 rounded-xl border border-(--ui-border-muted) p-3">
 										<div class="flex items-center justify-between text-[12px]">
-											<span class="text-[var(--ui-text-muted)]">{t('shifts.openingCash')}</span
-											><span class="tabular-nums"
+											<span class="text-(--ui-text-muted)">{t('shifts.openingCash')}</span><span
+												class="tabular-nums"
 												>{formatMoney(openShift.data.openingCash ?? 0, currency)}</span
 											>
 										</div>
 										{#if shiftSummary.totalCashIn > 0}
 											<div class="flex items-center justify-between text-[12px]">
-												<span class="text-[var(--ui-text-muted)]">{t('shifts.cashIn')}</span><span
-													class="text-[var(--tone-success-text)] tabular-nums"
+												<span class="text-(--ui-text-muted)">{t('shifts.cashIn')}</span><span
+													class="text-(--tone-success-text) tabular-nums"
 													>+{formatMoney(shiftSummary.totalCashIn, currency)}</span
 												>
 											</div>
 										{/if}
 										{#if shiftSummary.totalCashOut > 0}
 											<div class="flex items-center justify-between text-[12px]">
-												<span class="text-[var(--ui-text-muted)]">{t('shifts.cashOut')}</span><span
-													class="text-[var(--tone-error-text)] tabular-nums"
+												<span class="text-(--ui-text-muted)">{t('shifts.cashOut')}</span><span
+													class="text-(--tone-error-text) tabular-nums"
 													>−{formatMoney(shiftSummary.totalCashOut, currency)}</span
 												>
 											</div>
 										{/if}
 										<div
-											class="flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-1.5 text-[12.5px] font-bold"
+											class="flex items-center justify-between border-t border-(--ui-border-muted) pt-1.5 text-[12.5px] font-bold"
 										>
 											<span>{t('shifts.expectedDrawer')}</span><span
 												class="text-primary-600 tabular-nums dark:text-primary-400"
@@ -1801,7 +1801,7 @@
 									</div>
 								</div>
 								<div
-									class="grid grid-cols-2 gap-1.5 border-t border-[var(--ui-border-muted)] px-3.5 py-3"
+									class="grid grid-cols-2 gap-1.5 border-t border-(--ui-border-muted) px-3.5 py-3"
 								>
 									<Button
 										size="sm"
@@ -1822,12 +1822,12 @@
 							{:else}
 								<div class="px-4 py-5 text-center">
 									<div
-										class="mx-auto mb-2 grid size-11 place-items-center rounded-full bg-[var(--tone-warning-bg)] text-[var(--tone-warning-text)]"
+										class="mx-auto mb-2 grid size-11 place-items-center rounded-full bg-(--tone-warning-bg) text-(--tone-warning-text)"
 									>
 										<Icon name="lucide:lock" class="size-5" />
 									</div>
 									<div class="text-[13px] font-bold">{t('pos.noActiveShift')}</div>
-									<p class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">
+									<p class="mt-1 text-[11.5px] text-(--ui-text-muted)">
 										{t('pos.openShiftHint')}
 									</p>
 									<Button
@@ -1864,10 +1864,10 @@
 					{#snippet content()}
 						<div class="w-72">
 							<div
-								class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-3.5 py-3"
+								class="flex items-center justify-between border-b border-(--ui-border-muted) px-3.5 py-3"
 							>
 								<div class="flex items-center gap-2">
-									<Icon name="lucide:boxes" class="size-4 text-[var(--ui-text-muted)]" />
+									<Icon name="lucide:boxes" class="size-4 text-(--ui-text-muted)" />
 									<span class="text-[13px] font-bold">{t('nav.inventory')}</span>
 								</div>
 								<a
@@ -1880,17 +1880,17 @@
 							<div class="px-3.5 py-3">
 								{#if lowStockItems.length === 0}
 									<div
-										class="flex items-center gap-2.5 rounded-xl bg-[var(--tone-success-bg)] px-3 py-2.5 text-[var(--tone-success-text)]"
+										class="flex items-center gap-2.5 rounded-xl bg-(--tone-success-bg) px-3 py-2.5 text-(--tone-success-text)"
 									>
 										<Icon name="lucide:check-circle-2" class="size-4 shrink-0" />
 										<span class="text-[12px] font-semibold">{t('pos.allStocked')}</span>
 									</div>
-									<p class="mt-2 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
+									<p class="mt-2 text-center text-[10.5px] text-(--ui-text-dimmed)">
 										{t('pos.productsTracked', { count: formatInt(trackedProducts) })}
 									</p>
 								{:else}
 									<div
-										class="mb-2 text-[10.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+										class="mb-2 text-[10.5px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase"
 									>
 										{t('pos.lowCount', { count: formatInt(lowStockCount) })} · {t(
 											'pos.trackedCount',
@@ -1902,22 +1902,22 @@
 											{@const avail = availableFor(stockMap, p.id)}
 											{@const threshold = p.data.inventory?.lowStockThreshold ?? 0}
 											<li
-												class="flex items-center justify-between rounded-lg bg-[var(--ui-bg-muted)] px-2.5 py-1.5"
+												class="flex items-center justify-between rounded-lg bg-(--ui-bg-muted) px-2.5 py-1.5"
 											>
 												<span class="min-w-0 truncate text-[12px] font-semibold">{p.data.name}</span
 												>
 												<span
 													class="ml-2 shrink-0 rounded-md px-1.5 py-0.5 text-[10.5px] font-bold tabular-nums {avail <=
 													0
-														? 'bg-[var(--tone-error-bg)] text-[var(--tone-error-text)]'
-														: 'bg-[var(--tone-warning-bg)] text-[var(--tone-warning-text)]'}"
+														? 'bg-(--tone-error-bg) text-(--tone-error-text)'
+														: 'bg-(--tone-warning-bg) text-(--tone-warning-text)'}"
 													>{formatInt(avail)}{threshold ? ` / ${formatInt(threshold)}` : ''}</span
 												>
 											</li>
 										{/each}
 									</ul>
 									{#if lowStockCount > lowStockItems.length}
-										<p class="mt-2 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
+										<p class="mt-2 text-center text-[10.5px] text-(--ui-text-dimmed)">
 											{t('pos.moreCount', {
 												count: formatInt(lowStockCount - lowStockItems.length)
 											})}
@@ -1956,7 +1956,7 @@
 					<button
 						type="button"
 						onclick={() => (heldOpen = true)}
-						class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--ui-border)] px-2.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+						class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-(--ui-border) px-2.5 text-[12px] font-semibold text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 						title={t('orders.heldOrders')}
 					>
 						<Icon name="lucide:pause" class="size-3.5" />
@@ -1967,7 +1967,7 @@
 					href={resolve('/pos/customer-display')}
 					target="_blank"
 					title={t('pos.customerDisplay')}
-					class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
+					class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11.5px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented)"
 				>
 					<Icon name="lucide:monitor" class="size-3.5" />
 					{t('pos.display')}
@@ -1987,7 +1987,7 @@
 					type="button"
 					onclick={() => (shortcutsOpen = true)}
 					title={t('pos.keyboardShortcuts')}
-					class="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--ui-border)] px-2 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+					class="inline-flex h-8 items-center justify-center rounded-lg border border-(--ui-border) px-2 text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 				>
 					<Icon name="lucide:keyboard" class="size-4" />
 				</button>
@@ -2042,13 +2042,13 @@
 							{#snippet trailing()}
 								{#if scanMatch}
 									<span
-										class="inline-flex items-center gap-1 rounded-md bg-[var(--tone-success-bg)] px-1.5 py-0.5 text-[10.5px] font-bold text-[var(--tone-success-text)]"
+										class="inline-flex items-center gap-1 rounded-md bg-(--tone-success-bg) px-1.5 py-0.5 text-[10.5px] font-bold text-(--tone-success-text)"
 										title={t('pos.exactMatch')}
 									>
 										<Icon name="lucide:corner-down-left" class="size-3" />{t('common.add')}
 									</span>
 								{:else if hardwareSettings.barcodeScanner}
-									<span class="text-[10px] font-semibold text-[var(--ui-text-dimmed)]">↵ add</span>
+									<span class="text-[10px] font-semibold text-(--ui-text-dimmed)">↵ add</span>
 								{/if}
 							{/snippet}
 						</Input>
@@ -2071,7 +2071,7 @@
 									class="shrink-0 rounded-full px-3 py-1.5 text-[12.5px] font-semibold capitalize transition-colors {activeCat ===
 									cat
 										? 'bg-primary-500 text-white'
-										: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
+										: 'bg-(--ui-bg-muted) text-(--ui-text-muted) hover:bg-(--ui-bg-accented)'}"
 								>
 									{categoryLabel(cat)}
 								</button>
@@ -2093,9 +2093,9 @@
 								</button>
 							{/if}
 						</div>
-						<div class="flex items-center gap-2 text-[12px] text-[var(--ui-text-dimmed)]">
+						<div class="flex items-center gap-2 text-[12px] text-(--ui-text-dimmed)">
 							<span>{formatInt(filtered.length)} visible</span>
-							<span class="h-1 w-1 rounded-full bg-[var(--ui-text-dimmed)]"></span>
+							<span class="h-1 w-1 rounded-full bg-(--ui-text-dimmed)"></span>
 							<span>{formatMoney(cart.totals.total, currency)} cart</span>
 						</div>
 					</div>
@@ -2140,7 +2140,7 @@
 										: ''}"
 								>
 									<div
-										class="relative grid aspect-square w-full place-items-center rounded-xl bg-[var(--ui-bg-accented)] text-[var(--ui-text-dimmed)]"
+										class="relative grid aspect-square w-full place-items-center rounded-xl bg-(--ui-bg-accented) text-(--ui-text-dimmed)"
 									>
 										<Icon name="lucide:cup-soda" class="size-6 sm:size-7" />
 										{#if productImage(p.data)}
@@ -2182,11 +2182,10 @@
 										<div class="truncate text-[12.5px] font-semibold">{p.data.name}</div>
 										{#if promo && promo.savings > 0}
 											<div class="flex items-baseline gap-1">
-												<span
-													class="text-[10.5px] font-medium text-[var(--ui-text-dimmed)] line-through"
+												<span class="text-[10.5px] font-medium text-(--ui-text-dimmed) line-through"
 													>{formatMoney(p.data.price ?? 0, p.data.currency ?? currency)}</span
 												>
-												<span class="text-[12.5px] font-bold text-[var(--tone-success-text)]"
+												<span class="text-[12.5px] font-bold text-(--tone-success-text)"
 													>{formatMoney(promo.newPrice, p.data.currency ?? currency)}</span
 												>
 											</div>
@@ -2197,7 +2196,7 @@
 										{/if}
 										{#if showSats && (p.data.price ?? 0) > 0}
 											<div
-												class="flex items-center gap-0.5 text-[10px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+												class="flex items-center gap-0.5 text-[10px] font-semibold text-(--tone-warning-text) tabular-nums"
 											>
 												<Icon name="lucide:zap" class="size-2.5" />{formatInt(
 													btcRate.satsFromAmount(
@@ -2210,8 +2209,8 @@
 										{#if p.data.trackInventory}
 											<div
 												class="mt-0.5 text-[10px] {lowStock
-													? 'text-[var(--tone-warning-text)]'
-													: 'text-[var(--ui-text-dimmed)]'}"
+													? 'text-(--tone-warning-text)'
+													: 'text-(--ui-text-dimmed)'}"
 											>
 												{avail} in stock
 											</div>
@@ -2227,10 +2226,10 @@
 
 			<!-- Desktop cart sidebar (lg+) — always present; empty-state when no items -->
 			<aside
-				class="hidden min-h-0 flex-col overflow-hidden border-l border-[var(--ui-border-muted)] bg-[var(--surface-bg)] lg:flex"
+				class="hidden min-h-0 flex-col overflow-hidden border-l border-(--ui-border-muted) bg-(--surface-bg) lg:flex"
 			>
 				<header
-					class="flex items-center justify-between border-b border-[var(--ui-border-muted)] px-4 py-3"
+					class="flex items-center justify-between border-b border-(--ui-border-muted) px-4 py-3"
 				>
 					<div class="flex items-center gap-2">
 						<Icon name="lucide:shopping-cart" class="size-4 text-primary-500" />
@@ -2240,7 +2239,7 @@
 					{#if !cart.isEmpty}
 						<button
 							type="button"
-							class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
+							class="text-[11.5px] font-semibold text-(--tone-error-text) hover:underline"
 							onclick={clearCart}>{t('common.clear')}</button
 						>
 					{/if}
@@ -2250,20 +2249,20 @@
 						class="animate-fade flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 text-center"
 					>
 						<div
-							class="grid size-14 place-items-center rounded-2xl bg-[var(--ui-bg-muted)] text-[var(--ui-text-dimmed)]"
+							class="grid size-14 place-items-center rounded-2xl bg-(--ui-bg-muted) text-(--ui-text-dimmed)"
 						>
 							<Icon name="lucide:shopping-cart" class="size-7" />
 						</div>
 						<div>
-							<p class="text-[13.5px] font-bold text-[var(--ui-text)]">{t('pos.emptyCart')}</p>
-							<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
+							<p class="text-[13.5px] font-bold text-(--ui-text)">{t('pos.emptyCart')}</p>
+							<p class="mt-1 text-[12px] text-(--ui-text-muted)">
 								{t('pos.emptyCartDesc')}
 							</p>
 						</div>
 						<button
 							type="button"
 							onclick={openCustom}
-							class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--ui-bg-muted)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+							class="inline-flex items-center gap-1.5 rounded-lg bg-(--ui-bg-muted) px-3 py-1.5 text-[12px] font-semibold text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 						>
 							<Icon name="lucide:plus-circle" class="size-3.5" />
 							{t('pos.custom')}
@@ -2282,18 +2281,18 @@
 	<!-- Shift Gate Overlay (only after hydration — avoids flash on refresh) -->
 	{#if shiftsLoaded && !openShift && !shiftModalOpen}
 		<div
-			class="fixed inset-0 z-30 flex items-center justify-center bg-[var(--ui-bg)]/80 backdrop-blur-sm"
+			class="fixed inset-0 z-30 flex items-center justify-center bg-(--ui-bg)/80 backdrop-blur-sm"
 		>
 			<div
-				class="mx-4 max-w-sm rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg)] p-6 text-center shadow-xl"
+				class="mx-4 max-w-sm rounded-2xl border border-(--ui-border) bg-(--ui-bg) p-6 text-center shadow-xl"
 			>
 				<div
-					class="mx-auto mb-3 grid size-12 place-items-center rounded-full bg-[var(--tone-warning-bg)] text-[var(--tone-warning-text)]"
+					class="mx-auto mb-3 grid size-12 place-items-center rounded-full bg-(--tone-warning-bg) text-(--tone-warning-text)"
 				>
 					<Icon name="lucide:lock" class="size-6" />
 				</div>
 				<h3 class="font-display text-lg font-bold">{t('pos.noActiveShift')}</h3>
-				<p class="mt-1 text-[12.5px] text-[var(--ui-text-muted)]">
+				<p class="mt-1 text-[12.5px] text-(--ui-text-muted)">
 					Open a shift to start processing sales.
 				</p>
 				<Button
@@ -2347,18 +2346,18 @@
 		onclick={() => (cartOpen = false)}
 	></button>
 	<div
-		class="fixed inset-0 z-50 flex flex-col bg-[var(--ui-bg)] lg:hidden"
+		class="fixed inset-0 z-50 flex flex-col bg-(--ui-bg) lg:hidden"
 		role="dialog"
 		aria-modal="true"
 	>
 		<header
-			class="app-chrome flex items-center justify-between border-b border-[var(--ui-border-muted)] px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-top))]"
+			class="app-chrome flex items-center justify-between border-b border-(--ui-border-muted) px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-top))]"
 		>
 			<div class="flex items-center gap-2">
 				<button
 					type="button"
 					onclick={() => (cartOpen = false)}
-					class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+					class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 					aria-label={t('common.close')}
 				>
 					<Icon name="lucide:x" class="size-4" />
@@ -2369,7 +2368,7 @@
 			{#if !cart.isEmpty}
 				<button
 					type="button"
-					class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
+					class="text-[11.5px] font-semibold text-(--tone-error-text) hover:underline"
 					onclick={clearCart}>{t('common.clear')}</button
 				>
 			{/if}
@@ -2377,7 +2376,7 @@
 		<div class="min-h-0 flex-1 overflow-y-auto">
 			{@render cartContent()}
 		</div>
-		<div class="border-t border-[var(--ui-border-muted)] pb-[env(safe-area-inset-bottom)]">
+		<div class="border-t border-(--ui-border-muted) pb-[env(safe-area-inset-bottom)]">
 			{@render tenderBlock()}
 		</div>
 	</div>
@@ -2387,17 +2386,16 @@
 
 {#snippet cartContent()}
 	<div class="space-y-3 px-4 py-3">
-		<ul class="divide-y divide-[var(--ui-border-muted)]">
+		<ul class="divide-y divide-(--ui-border-muted)">
 			{#each cart.items as line (line.key)}
 				<li class="py-2.5">
 					<div class="flex items-center gap-2">
 						<div class="min-w-0 flex-1">
 							<div class="truncate text-[13px] font-semibold">
 								{line.name}{#if line.variantName}
-									<span class="font-normal text-[var(--ui-text-dimmed)]">· {line.variantName}</span
-									>{/if}
+									<span class="font-normal text-(--ui-text-dimmed)">· {line.variantName}</span>{/if}
 							</div>
-							<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
+							<div class="text-[11.5px] text-(--ui-text-dimmed)">
 								{formatMoney(line.unitPrice, currency)} each{#if line.modifiers?.length}
 									· +{formatMoney(
 										line.modifiers.reduce((s, m) => s + m.priceAdjustment, 0),
@@ -2405,7 +2403,7 @@
 									)}{/if}
 							</div>
 							{#if line.note}
-								<div class="mt-0.5 text-[11px] text-[var(--ui-text-muted)] italic">
+								<div class="mt-0.5 text-[11px] text-(--ui-text-muted) italic">
 									“{line.note}”
 								</div>
 							{/if}
@@ -2414,7 +2412,7 @@
 							<button
 								type="button"
 								onclick={() => cart.dec(line.key)}
-								class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+								class="grid size-7 place-items-center rounded-md bg-(--ui-bg-accented) text-(--ui-text-muted) hover:text-(--ui-text)"
 								aria-label={t('common.decrease')}
 								><Icon name="lucide:minus" class="size-3.5" /></button
 							>
@@ -2424,7 +2422,7 @@
 							<button
 								type="button"
 								onclick={() => cart.inc(line.key)}
-								class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+								class="grid size-7 place-items-center rounded-md bg-(--ui-bg-accented) text-(--ui-text-muted) hover:text-(--ui-text)"
 								aria-label={t('common.increase')}
 								><Icon name="lucide:plus" class="size-3.5" /></button
 							>
@@ -2436,15 +2434,15 @@
 							<button
 								type="button"
 								onclick={() => cart.remove(line.key)}
-								class="grid size-6 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
+								class="grid size-6 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--tone-error-bg) hover:text-(--tone-error-text)"
 								aria-label={t('common.remove')}><Icon name="lucide:x" class="size-3.5" /></button
 							>
 							<Menu
 								id={`cart-line-${line.key}`}
 								label="Line actions"
 								placement="bottom-end"
-								triggerClass="grid size-6 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-								triggerActiveClass="bg-[var(--ui-bg-accented)] text-[var(--ui-text)]"
+								triggerClass="grid size-6 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
+								triggerActiveClass="bg-(--ui-bg-accented) text-(--ui-text)"
 							>
 								{#snippet trigger()}<Icon name="lucide:ellipsis" class="size-3.5" />{/snippet}
 								<MenuItem icon="lucide:pencil-line" onclick={() => openNote(line.key)}
@@ -2458,21 +2456,21 @@
 		</ul>
 
 		<!-- order context (collapsible) -->
-		<div class="border-t border-[var(--ui-border-muted)] pt-2">
+		<div class="border-t border-(--ui-border-muted) pt-2">
 			<button
 				type="button"
 				onclick={() => (orderContextOpen = !orderContextOpen)}
-				class="flex w-full items-center justify-between text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase hover:text-[var(--ui-text-muted)]"
+				class="flex w-full items-center justify-between text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase hover:text-(--ui-text-muted)"
 			>
 				<span>Order details</span>
 				<div class="flex items-center gap-2">
 					{#if cart.totals.discountAmount > 0}
-						<span class="text-[var(--tone-success-text)]"
+						<span class="text-(--tone-success-text)"
 							>−{formatMoney(cart.totals.discountAmount, currency)}</span
 						>
 					{/if}
 					{#if cart.customerName}
-						<span class="text-[var(--ui-text-muted)] normal-case">{cart.customerName}</span>
+						<span class="text-(--ui-text-muted) normal-case">{cart.customerName}</span>
 					{/if}
 					<Icon
 						name="lucide:chevron-down"
@@ -2490,7 +2488,7 @@
 								class="flex flex-col items-center gap-0.5 rounded-lg border py-1.5 text-[10px] font-semibold capitalize transition-colors {cart.orderType ===
 								ot.value
 									? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300'
-									: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
+									: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--ui-bg-accented)'}"
 								><Icon name={ot.icon} class="size-4" />{ot.label.replace('-', ' ')}</button
 							>
 						{/each}
@@ -2513,15 +2511,15 @@
 					{#if loyaltySettings.enabled && cartCustomer}
 						<!-- Loyalty: earn preview + redeem toggle -->
 						<div
-							class="flex items-center justify-between rounded-lg bg-[var(--tone-warning-bg)] px-2.5 py-1.5"
+							class="flex items-center justify-between rounded-lg bg-(--tone-warning-bg) px-2.5 py-1.5"
 						>
 							<div
-								class="flex min-w-0 items-center gap-1.5 text-[11.5px] font-semibold text-[var(--tone-warning-text)]"
+								class="flex min-w-0 items-center gap-1.5 text-[11.5px] font-semibold text-(--tone-warning-text)"
 							>
 								<Icon name="lucide:award" class="size-4 shrink-0" />
 								<span class="truncate">{formatInt(customerPoints)} pts</span>
 								{#if loyaltyEarnPreview > 0}
-									<span class="font-normal text-[var(--ui-text-muted)]"
+									<span class="font-normal text-(--ui-text-muted)"
 										>· earn ~{formatInt(loyaltyEarnPreview)}</span
 									>
 								{/if}
@@ -2531,8 +2529,8 @@
 									type="button"
 									onclick={toggleLoyaltyRedeem}
 									class="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-[10.5px] font-bold transition-colors {loyaltyRedeemOn
-										? 'bg-[var(--tone-warning-text)] text-white'
-										: 'bg-[var(--tone-warning-text)]/15 text-[var(--tone-warning-text)] hover:bg-[var(--tone-warning-text)]/25'}"
+										? 'bg-(--tone-warning-text) text-white'
+										: 'bg-(--tone-warning-text)/15 text-(--tone-warning-text) hover:bg-(--tone-warning-text)/25'}"
 								>
 									<Icon
 										name={loyaltyRedeemOn ? 'lucide:check' : 'lucide:sparkles'}
@@ -2573,14 +2571,14 @@
 							dValue = cart.discount.value || '';
 							discountOpen = true;
 						}}
-						class="flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--ui-border)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-50"
+						class="flex w-full items-center justify-between rounded-lg border border-dashed border-(--ui-border) px-3 py-1.5 text-[12px] font-semibold text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						<span
 							><Icon name="lucide:tag" class="mr-1 inline size-3.5" />{t('common.discount')}</span
 						>
-						{#if cart.totals.discountAmount > 0}<span class="text-[var(--tone-success-text)]"
+						{#if cart.totals.discountAmount > 0}<span class="text-(--tone-success-text)"
 								>−{formatMoney(cart.totals.discountAmount, currency)}</span
-							>{:else}<span class="text-[var(--ui-text-dimmed)]">{t('common.none')}</span>{/if}
+							>{:else}<span class="text-(--ui-text-dimmed)">{t('common.none')}</span>{/if}
 					</button>
 					{#if allPromotions.length > 0}
 						<div class="space-y-1.5">
@@ -2588,31 +2586,26 @@
 								{@const pd = appliedPromoObj.data}
 								{@const savings = promoSavings(pd, cart.totals.subtotal)}
 								<div
-									class="flex items-center gap-2 rounded-lg border border-[var(--tone-success-text)]/30 bg-[var(--tone-success-bg)] px-2.5 py-1.5"
+									class="flex items-center gap-2 rounded-lg border border-(--tone-success-text)/30 bg-(--tone-success-bg) px-2.5 py-1.5"
 								>
-									<Icon
-										name={promoIcon(pd)}
-										class="size-4 shrink-0 text-[var(--tone-success-text)]"
-									/>
+									<Icon name={promoIcon(pd)} class="size-4 shrink-0 text-(--tone-success-text)" />
 									<button
 										type="button"
 										onclick={() => (promoOpen = true)}
 										class="min-w-0 flex-1 text-left"
 									>
 										<div class="flex min-w-0 items-center gap-1">
-											<span class="truncate text-[12px] font-bold text-[var(--tone-success-text)]"
+											<span class="truncate text-[12px] font-bold text-(--tone-success-text)"
 												>{promoName(pd, currency)}</span
 											>
 											{#if isAutoApplied}
 												<span
-													class="shrink-0 rounded bg-[var(--tone-success-text)]/15 px-1 py-0.5 text-[8.5px] font-bold text-[var(--tone-success-text)]"
+													class="shrink-0 rounded bg-(--tone-success-text)/15 px-1 py-0.5 text-[8.5px] font-bold text-(--tone-success-text)"
 													>AUTO</span
 												>
 											{/if}
 										</div>
-										<div
-											class="truncate text-[10.5px] font-semibold text-[var(--tone-success-text)]/80"
-										>
+										<div class="truncate text-[10.5px] font-semibold text-(--tone-success-text)/80">
 											{#if savings > 0}−{formatMoney(savings, currency)} · {promoValueLabel(
 													pd,
 													currency
@@ -2623,14 +2616,14 @@
 										type="button"
 										onclick={() => applyPromotion(null)}
 										aria-label="Remove promotion"
-										class="grid size-6 shrink-0 place-items-center rounded-md text-[var(--tone-success-text)] transition-colors hover:bg-[var(--tone-success-text)]/10"
+										class="grid size-6 shrink-0 place-items-center rounded-md text-(--tone-success-text) transition-colors hover:bg-(--tone-success-text)/10"
 									>
 										<Icon name="lucide:x" class="size-3.5" />
 									</button>
 								</div>
 							{:else if eligiblePromotions.length > 0}
 								<div
-									class="flex items-center gap-1 px-0.5 text-[9.5px] font-bold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+									class="flex items-center gap-1 px-0.5 text-[9.5px] font-bold tracking-wide text-(--ui-text-dimmed) uppercase"
 								>
 									<Icon name="lucide:sparkles" class="size-3 text-primary-500" />
 									<span>Available offers</span>
@@ -2648,7 +2641,7 @@
 											class="size-4 shrink-0 text-primary-600 dark:text-primary-400"
 										/>
 										<div class="min-w-0 flex-1">
-											<div class="truncate text-[12px] font-bold text-[var(--ui-text)]">
+											<div class="truncate text-[12px] font-bold text-(--ui-text)">
 												{promoName(pd, currency)}
 											</div>
 											<div
@@ -2671,11 +2664,11 @@
 							<button
 								type="button"
 								onclick={() => (promoOpen = true)}
-								class="flex w-full items-center justify-center gap-1 pt-0.5 text-[10.5px] font-semibold text-[var(--ui-text-dimmed)] transition-colors hover:text-[var(--ui-text-muted)]"
+								class="flex w-full items-center justify-center gap-1 pt-0.5 text-[10.5px] font-semibold text-(--ui-text-dimmed) transition-colors hover:text-(--ui-text-muted)"
 							>
 								<Icon name="lucide:ticket" class="size-3" />
 								{appliedPromoObj ? 'Change promotion' : 'View all'}
-								<span class="rounded-full bg-[var(--ui-bg-muted)] px-1.5 text-[9.5px]"
+								<span class="rounded-full bg-(--ui-bg-muted) px-1.5 text-[9.5px]"
 									>{formatInt(allPromotions.length)}</span
 								>
 							</button>
@@ -2686,20 +2679,20 @@
 		</div>
 
 		<!-- totals -->
-		<div class="space-y-1.5 border-t border-[var(--ui-border-muted)] pt-3 text-[13px]">
-			<div class="flex justify-between text-[var(--ui-text-muted)]">
+		<div class="space-y-1.5 border-t border-(--ui-border-muted) pt-3 text-[13px]">
+			<div class="flex justify-between text-(--ui-text-muted)">
 				<span>{t('common.subtotal')}</span><span class="tabular-nums"
 					>{formatMoney(cart.totals.subtotal, currency)}</span
 				>
 			</div>
 			{#if cart.totals.discountAmount > 0}
-				<div class="flex justify-between text-[var(--tone-success-text)]">
+				<div class="flex justify-between text-(--tone-success-text)">
 					<span>{t('common.discount')}</span><span class="tabular-nums"
 						>−{formatMoney(cart.totals.discountAmount, currency)}</span
 					>
 				</div>
 			{/if}
-			<div class="flex justify-between text-[var(--ui-text-muted)]">
+			<div class="flex justify-between text-(--ui-text-muted)">
 				<span
 					>Tax ({tenant.state.defaultTaxRate}%{tenant.state.taxIncludedInPrice
 						? ', incl.'
@@ -2714,7 +2707,7 @@
 			</div>
 			{#if showSats}
 				<div
-					class="flex items-center justify-end gap-1 pt-0.5 text-[11px] font-semibold text-[var(--tone-warning-text)]"
+					class="flex items-center justify-end gap-1 pt-0.5 text-[11px] font-semibold text-(--tone-warning-text)"
 					title="Live sats estimate (BTC/{currency} {btcRate.ageLabelFor(currency) || 'cached'})"
 				>
 					<Icon name="lucide:zap" class="size-3" />
@@ -2726,7 +2719,7 @@
 {/snippet}
 
 {#snippet tenderBlock()}
-	<div class="space-y-2 border-t border-[var(--ui-border-muted)] px-4 py-3">
+	<div class="space-y-2 border-t border-(--ui-border-muted) px-4 py-3">
 		<!-- Payment method selector with colors -->
 		<div class="grid grid-cols-4 gap-1.5">
 			{#each payMethods as m (m)}
@@ -2737,7 +2730,7 @@
 					m
 						? (payActiveColor[m] ??
 							'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300')
-						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
+						: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--ui-bg-accented)'}"
 				>
 					<span class={payColor[m] ?? ''}
 						><Icon name={payIcon[m] ?? 'lucide:wallet'} class="size-4" /></span
@@ -2750,7 +2743,7 @@
 		{#if method === 'lightning' && !splitMode}
 			<label class="block">
 				<span
-					class="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ui-text-muted)]"
+					class="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-(--ui-text-muted)"
 				>
 					<Icon name="lucide:notebook-pen" class="size-3.5" />Invoice description / memo
 				</span>
@@ -2761,7 +2754,7 @@
 					maxlength={120}
 					class="w-full"
 				/>
-				<span class="mt-1 block text-[10px] leading-snug text-[var(--ui-text-dimmed)]">
+				<span class="mt-1 block text-[10px] leading-snug text-(--ui-text-dimmed)">
 					Shown to the customer in supported Lightning wallets. Leave blank to use the sale items.
 				</span>
 			</label>
@@ -2774,7 +2767,7 @@
 				splitMode = !splitMode;
 				if (!splitMode) resetSplit();
 			}}
-			class="flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--ui-border)] px-3 py-1.5 text-[11.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
+			class="flex w-full items-center justify-between rounded-lg border border-dashed border-(--ui-border) px-3 py-1.5 text-[11.5px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented)"
 		>
 			<span><Icon name="lucide:split" class="mr-1 inline size-3.5" />Split payment</span>
 			{#if splitMode}<Badge color="primary">ON</Badge>{/if}
@@ -2783,9 +2776,7 @@
 		{#if splitMode}
 			<!-- Split payment mode -->
 			{#if splitPayments.length > 0}
-				<ul
-					class="divide-y divide-[var(--ui-border-muted)] rounded-lg border border-[var(--ui-border)]"
-				>
+				<ul class="divide-y divide-(--ui-border-muted) rounded-lg border border-(--ui-border)">
 					{#each splitPayments as sp, i (i)}
 						<li class="flex items-center justify-between px-2.5 py-1.5 text-[12px]">
 							<span class="flex items-center gap-1.5 capitalize">
@@ -2799,7 +2790,7 @@
 								<button
 									type="button"
 									onclick={() => removeSplitPayment(i)}
-									class="text-[var(--tone-error-text)] hover:underline"
+									class="text-(--tone-error-text) hover:underline"
 								>
 									<Icon name="lucide:x" class="size-3.5" />
 								</button>
@@ -2812,8 +2803,8 @@
 			<!-- Remaining balance -->
 			<div
 				class="rounded-lg px-3 py-2 text-center {splitRemaining <= 0.01
-					? 'bg-[var(--tone-success-bg)] text-[var(--tone-success-text)]'
-					: 'bg-[var(--ui-bg-accented)]'}"
+					? 'bg-(--tone-success-bg) text-(--tone-success-text)'
+					: 'bg-(--ui-bg-accented)'}"
 			>
 				<span class="text-[11px] font-semibold tracking-wide uppercase opacity-70">Remaining</span>
 				<div class="font-display text-xl font-bold tabular-nums">
@@ -2831,7 +2822,7 @@
 							class="flex items-center justify-center gap-1 rounded-lg border py-1 text-[10.5px] font-semibold capitalize transition-colors {splitMethod ===
 							m
 								? (payActiveColor[m] ?? 'border-primary-500 bg-primary-500/10')
-								: 'border-[var(--ui-border)] text-[var(--ui-text-muted)]'}"
+								: 'border-(--ui-border) text-(--ui-text-muted)'}"
 						>
 							<span class={payColor[m] ?? ''}
 								><Icon name={payIcon[m] ?? 'lucide:wallet'} class="size-3" /></span
@@ -2855,7 +2846,7 @@
 						onclick={() => {
 							splitAmount = Math.ceil(splitRemaining);
 						}}
-						class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2 text-[10.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
+						class="shrink-0 rounded-lg border border-(--ui-border) px-2 text-[10.5px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented)"
 						>Exact</button
 					>
 					<Button
@@ -2900,20 +2891,20 @@
 					<button
 						type="button"
 						onclick={() => quickTip(10)}
-						class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2 py-1.5 text-[10.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
+						class="shrink-0 rounded-lg border border-(--ui-border) px-2 py-1.5 text-[10.5px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented)"
 						>10%</button
 					>
 					<button
 						type="button"
 						onclick={() => quickTip(15)}
-						class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2 py-1.5 text-[10.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
+						class="shrink-0 rounded-lg border border-(--ui-border) px-2 py-1.5 text-[10.5px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented)"
 						>15%</button
 					>
 					{#if tipAmount > 0}
 						<button
 							type="button"
 							onclick={() => (tipAmount = 0)}
-							class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2 py-1.5 text-[10.5px] font-semibold text-[var(--tone-error-text)] hover:bg-[var(--ui-bg-accented)]"
+							class="shrink-0 rounded-lg border border-(--ui-border) px-2 py-1.5 text-[10.5px] font-semibold text-(--tone-error-text) hover:bg-(--ui-bg-accented)"
 						>
 							<Icon name="lucide:x" class="size-3.5" />
 						</button>
@@ -2923,7 +2914,7 @@
 
 			<!-- Grand total with tip -->
 			{#if tipAmount > 0}
-				<div class="flex justify-between text-[12.5px] text-[var(--ui-text-muted)]">
+				<div class="flex justify-between text-[12.5px] text-(--ui-text-muted)">
 					<span>Tip</span><span class="tabular-nums">+{formatMoney(tipAmount, currency)}</span>
 				</div>
 				<div class="flex justify-between font-display text-[15px] font-bold">
@@ -2933,7 +2924,7 @@
 				</div>
 				{#if showSats}
 					<div
-						class="flex items-center justify-end gap-1 text-[11px] font-semibold text-[var(--tone-warning-text)]"
+						class="flex items-center justify-end gap-1 text-[11px] font-semibold text-(--tone-warning-text)"
 						title="Live sats estimate (BTC/{currency})"
 					>
 						<Icon name="lucide:zap" class="size-3" />
@@ -2955,7 +2946,7 @@
 				{#if typeof tendered === 'number' && tendered > 0}
 					{#if underPayment}
 						<div
-							class="rounded-lg bg-[var(--tone-warning-bg)] px-3 py-2 text-center text-[var(--tone-warning-text)]"
+							class="rounded-lg bg-(--tone-warning-bg) px-3 py-2 text-center text-(--tone-warning-text)"
 						>
 							<Icon name="lucide:triangle-alert" class="mb-0.5 inline size-4" />
 							<div class="text-[11px] font-semibold tracking-wide uppercase">Insufficient cash</div>
@@ -2965,7 +2956,7 @@
 						</div>
 					{:else}
 						<div
-							class="rounded-lg bg-[var(--tone-success-bg)] px-3 py-2 text-center text-[var(--tone-success-text)]"
+							class="rounded-lg bg-(--tone-success-bg) px-3 py-2 text-center text-(--tone-success-text)"
 						>
 							<span class="text-[11px] font-semibold tracking-wide uppercase opacity-70"
 								>{t('pos.change')}</span
@@ -2982,7 +2973,7 @@
 						<button
 							type="button"
 							onclick={() => (tendered = quick)}
-							class="rounded-lg border border-[var(--ui-border)] py-1.5 text-[11px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
+							class="rounded-lg border border-(--ui-border) py-1.5 text-[11px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented)"
 							>{formatMoney(quick, currency).replace(/\.00$/, '')}</button
 						>
 					{/each}
@@ -3001,7 +2992,7 @@
 					<button
 						type="button"
 						onclick={() => (tendered = grandTotal)}
-						class="shrink-0 rounded-lg border border-[var(--ui-border)] px-2.5 py-1.5 text-[10.5px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
+						class="shrink-0 rounded-lg border border-(--ui-border) px-2.5 py-1.5 text-[10.5px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented)"
 						title={t('common.setExactAmount')}>Exact</button
 					>
 				</div>
@@ -3046,7 +3037,7 @@
 					class="flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-[13px] transition-colors {chosenVariant ===
 					v.id
 						? 'border-primary-500 bg-primary-500/10'
-						: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
+						: 'border-(--ui-border) hover:bg-(--ui-bg-accented)'}"
 				>
 					<span class="font-semibold">{v.name}</span>
 					<span class="font-bold tabular-nums"
@@ -3072,7 +3063,7 @@
 				<div>
 					<div class="mb-1.5 flex items-center justify-between">
 						<span class="text-[12.5px] font-semibold">{g.name}</span>
-						<span class="text-[10.5px] tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+						<span class="text-[10.5px] tracking-wide text-(--ui-text-dimmed) uppercase"
 							>{g.selectionType === 'single' || g.singleChoice ? 'pick one' : 'pick any'}{g.required
 								? ' · required'
 								: ''}</span
@@ -3091,18 +3082,18 @@
 									)}
 								class="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-[13px] transition-colors {picked
 									? 'border-primary-500 bg-primary-500/10'
-									: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
+									: 'border-(--ui-border) hover:bg-(--ui-bg-accented)'}"
 							>
 								<span class="flex items-center gap-2"
 									><span
 										class="grid size-4 place-items-center rounded-full border {picked
 											? 'border-primary-500 bg-primary-500 text-white'
-											: 'border-[var(--ui-border-muted)]'}"
+											: 'border-(--ui-border-muted)'}"
 										>{#if picked}<Icon name="lucide:check" class="size-2.5" />{/if}</span
 									>{opt.name}</span
 								>
 								{#if (opt.priceAdjustment ?? opt.price ?? 0) > 0}<span
-										class="text-[11.5px] text-[var(--ui-text-muted)]"
+										class="text-[11.5px] text-(--ui-text-muted)"
 										>+{formatMoney(opt.priceAdjustment ?? opt.price ?? 0, currency)}</span
 									>{/if}
 							</button>
@@ -3152,7 +3143,7 @@
 					onclick={() => (dType = v as 'percent' | 'fixed')}
 					class="rounded-lg border py-2 text-[12.5px] font-semibold transition-colors {dType === v
 						? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300'
-						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)]'}">{lbl}</button
+						: 'border-(--ui-border) text-(--ui-text-muted)'}">{lbl}</button
 				>
 			{/each}
 		</div>
@@ -3162,7 +3153,7 @@
 					<button
 						type="button"
 						onclick={() => (dValue = pct)}
-						class="rounded-lg border border-[var(--ui-border)] py-1.5 text-[11px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]"
+						class="rounded-lg border border-(--ui-border) py-1.5 text-[11px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented)"
 						>{pct}%</button
 					>
 				{/each}
@@ -3180,7 +3171,7 @@
 		{#if cart.totals.discountAmount > 0}
 			<button
 				type="button"
-				class="text-[11.5px] font-semibold text-[var(--tone-error-text)] hover:underline"
+				class="text-[11.5px] font-semibold text-(--tone-error-text) hover:underline"
 				onclick={() => {
 					cart.setDiscount({ type: 'percent', value: 0 });
 					discountOpen = false;
@@ -3212,12 +3203,12 @@
 			<button
 				type="button"
 				onclick={() => applyPromotion(null)}
-				class="flex w-full items-center gap-3 rounded-lg border border-[var(--tone-error-bg)] bg-[var(--tone-error-bg)]/50 p-3 text-left transition-colors hover:bg-[var(--tone-error-bg)]"
+				class="flex w-full items-center gap-3 rounded-lg border border-(--tone-error-bg) bg-(--tone-error-bg)/50 p-3 text-left transition-colors hover:bg-(--tone-error-bg)"
 			>
-				<Icon name="lucide:x-circle" class="size-5 shrink-0 text-[var(--tone-error-text)]" />
+				<Icon name="lucide:x-circle" class="size-5 shrink-0 text-(--tone-error-text)" />
 				<div class="min-w-0">
-					<p class="text-[13px] font-semibold text-[var(--tone-error-text)]">Remove promotion</p>
-					<p class="truncate text-[11px] text-[var(--ui-text-muted)]">
+					<p class="text-[13px] font-semibold text-(--tone-error-text)">Remove promotion</p>
+					<p class="truncate text-[11px] text-(--ui-text-muted)">
 						{#if appliedPromoObj}{promoName(appliedPromoObj.data, currency)} — clears the discount too{/if}
 					</p>
 				</div>
@@ -3236,13 +3227,13 @@
 				class="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors {applied
 					? 'border-primary-500 bg-primary-500/10'
 					: elig.ok
-						? 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] hover:bg-[var(--ui-bg-accented)]'
-						: 'cursor-not-allowed border-dashed border-[var(--ui-border-muted)] opacity-55'}"
+						? 'border-(--ui-border) bg-(--ui-bg-muted) hover:bg-(--ui-bg-accented)'
+						: 'cursor-not-allowed border-dashed border-(--ui-border-muted) opacity-55'}"
 			>
 				<div
 					class="grid size-10 shrink-0 place-items-center rounded-lg text-white {applied
 						? 'bg-gradient-to-br from-primary-400 to-primary-600'
-						: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]'}"
+						: 'bg-(--ui-bg-accented) text-(--ui-text-muted)'}"
 				>
 					<Icon name={promoIcon(d)} class="size-5" />
 				</div>
@@ -3258,7 +3249,7 @@
 							>
 						{/if}
 					</div>
-					<p class="truncate text-[11.5px] text-[var(--ui-text-muted)]">
+					<p class="truncate text-[11.5px] text-(--ui-text-muted)">
 						{promoValueLabel(d, currency)}{#if savings > 0}
 							· save {formatMoney(savings, currency)}{/if}
 					</p>
@@ -3267,12 +3258,12 @@
 					<Icon name="lucide:check-circle-2" class="size-5 shrink-0 text-primary-500" />
 				{:else if !elig.ok}
 					<span
-						class="shrink-0 rounded-full bg-[var(--tone-warning-bg)] px-2 py-0.5 text-[10px] font-semibold text-[var(--tone-warning-text)]"
+						class="shrink-0 rounded-full bg-(--tone-warning-bg) px-2 py-0.5 text-[10px] font-semibold text-(--tone-warning-text)"
 						>{elig.reason}</span
 					>
 				{:else if !auto}
 					<span
-						class="shrink-0 rounded-full bg-[var(--ui-bg-accented)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ui-text-muted)]"
+						class="shrink-0 rounded-full bg-(--ui-bg-accented) px-2 py-0.5 text-[10px] font-semibold text-(--ui-text-muted)"
 						>Manual</span
 					>
 				{:else}
@@ -3281,7 +3272,7 @@
 			</button>
 		{/each}
 		{#if allPromotions.length === 0}
-			<p class="py-6 text-center text-[12.5px] text-[var(--ui-text-muted)]">
+			<p class="py-6 text-center text-[12.5px] text-(--ui-text-muted)">
 				No active promotions. Create some in
 				<a
 					class="font-semibold text-primary-600 hover:underline dark:text-primary-400"
@@ -3306,7 +3297,7 @@
 			description={t('orders.parkSale')}
 		/>
 	{:else}
-		<ul class="divide-y divide-[var(--ui-border-muted)]">
+		<ul class="divide-y divide-(--ui-border-muted)">
 			{#each cart.held as h (h.id)}
 				{@const heldTotal = h.items.reduce(
 					(s, l) =>
@@ -3320,7 +3311,7 @@
 						<div class="text-[13px] font-semibold capitalize">
 							{h.orderType.replace('_', '-')} · {formatInt(h.items.length)} items
 						</div>
-						<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
+						<div class="text-[11.5px] text-(--ui-text-dimmed)">
 							{h.customerName ?? t('pos.walkIn')} · {formatMoney(heldTotal, currency)}
 						</div>
 					</div>
@@ -3364,14 +3355,14 @@
 							class="size-8 {checkoutProgressStage === 'synced' ? '' : 'animate-spin'}"
 						/>
 					</div>
-					<h2 class="mt-3 font-display text-xl font-black tracking-tight text-[var(--ui-text)]">
+					<h2 class="mt-3 font-display text-xl font-black tracking-tight text-(--ui-text)">
 						{checkoutProgressStage === 'synced' ? 'Payment received' : 'Pending payment'}
 					</h2>
-					<p class="mt-0.5 font-mono text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+					<p class="mt-0.5 font-mono text-[11px] font-semibold text-(--ui-text-dimmed)">
 						ORDER · PROCESSING
 					</p>
 					<p
-						class="mt-1 font-display text-[2.2rem] leading-none font-black text-[var(--ui-text)] tabular-nums"
+						class="mt-1 font-display text-[2.2rem] leading-none font-black text-(--ui-text) tabular-nums"
 					>
 						{formatMoney(grandTotal, currency)}
 					</p>
@@ -3386,14 +3377,14 @@
 							/>{method}</span
 						>
 						<span
-							class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[var(--ui-text-muted)]"
+							class="inline-flex items-center gap-1 rounded-full bg-(--ui-bg-muted) px-2.5 py-1 text-(--ui-text-muted)"
 							><Icon name="lucide:shopping-bag" class="size-3.5" />{cart.orderType.replace(
 								'_',
 								' '
 							)}</span
 						>
 						<span
-							class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[var(--ui-text-muted)]"
+							class="inline-flex items-center gap-1 rounded-full bg-(--ui-bg-muted) px-2.5 py-1 text-(--ui-text-muted)"
 							><Icon name="lucide:hash" class="size-3.5" />{cart.itemCount} items</span
 						>
 					</div>
@@ -3430,7 +3421,7 @@
 						<div
 							class="flex items-center gap-1.5 {checkoutProgressStage === 'synced'
 								? 'text-emerald-700 dark:text-emerald-300'
-								: 'text-[var(--ui-text-dimmed)]'}"
+								: 'text-(--ui-text-dimmed)'}"
 						>
 							<Icon
 								name={checkoutProgressStage === 'synced'
@@ -3442,7 +3433,7 @@
 						<div
 							class="flex items-center gap-1.5 {checkoutProgressStage === 'synced'
 								? 'text-emerald-700 dark:text-emerald-300'
-								: 'text-[var(--ui-text-dimmed)]'}"
+								: 'text-(--ui-text-dimmed)'}"
 						>
 							<Icon
 								name={checkoutProgressStage === 'synced'
@@ -3454,7 +3445,7 @@
 					</div>
 				</div>
 				<p
-					class="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[var(--ui-text-dimmed)]"
+					class="flex items-center justify-center gap-1.5 text-[11px] font-medium text-(--ui-text-dimmed)"
 				>
 					<Icon name="lucide:shield-check" class="size-3.5" />Do not close or click again while
 					processing.
@@ -3470,7 +3461,7 @@
 				onClose={() => (receiptOpen = false)}
 			/>
 			<ul
-				class="mt-4 divide-y divide-[var(--ui-border-muted)] border-t border-[var(--ui-border-muted)] pt-3 text-[12.5px]"
+				class="mt-4 divide-y divide-(--ui-border-muted) border-t border-(--ui-border-muted) pt-3 text-[12.5px]"
 			>
 				{#each s.items as it (it.key)}
 					<li class="flex justify-between py-1.5">
@@ -3487,14 +3478,14 @@
 					</li>
 				{/each}
 			</ul>
-			<dl class="mt-2 space-y-1 border-t border-[var(--ui-border-muted)] pt-2 text-[12px]">
-				<div class="flex justify-between text-[var(--ui-text-muted)]">
+			<dl class="mt-2 space-y-1 border-t border-(--ui-border-muted) pt-2 text-[12px]">
+				<div class="flex justify-between text-(--ui-text-muted)">
 					<span>{t('common.subtotal')}</span><span class="tabular-nums"
 						>{formatMoney(s.totals.subtotal, currency)}</span
 					>
 				</div>
 				{#if s.totals.discountAmount > 0}
-					<div class="flex justify-between text-[var(--tone-success-text)]">
+					<div class="flex justify-between text-(--tone-success-text)">
 						<span class="truncate"
 							>Discount{#if s.promotion?.name}
 								· {s.promotion.name}{/if}</span
@@ -3502,19 +3493,19 @@
 						<span class="tabular-nums">−{formatMoney(s.totals.discountAmount, currency)}</span>
 					</div>
 				{:else if s.promotion?.name}
-					<div class="flex items-center gap-1.5 text-[var(--ui-text-muted)]">
+					<div class="flex items-center gap-1.5 text-(--ui-text-muted)">
 						<Icon name="lucide:ticket-percent" class="size-3.5 shrink-0" />
 						<span class="truncate">{s.promotion.name}</span>
 					</div>
 				{/if}
-				<div class="flex justify-between text-[var(--ui-text-muted)]">
+				<div class="flex justify-between text-(--ui-text-muted)">
 					<span>{t('common.tax')}</span><span class="tabular-nums"
 						>{formatMoney(s.totals.tax, currency)}</span
 					>
 				</div>
 				{#if s.totalSats}
 					<div
-						class="flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-1.5 text-[12px] font-semibold text-[var(--tone-warning-text)]"
+						class="flex items-center justify-between border-t border-(--ui-border-muted) pt-1.5 text-[12px] font-semibold text-(--tone-warning-text)"
 					>
 						<span class="flex items-center gap-1"
 							><Icon name="lucide:zap" class="size-3.5" />Sats</span
@@ -3539,9 +3530,7 @@
 	<Dialog bind:open={customOpen} title="Custom item" size="sm">
 		<div class="space-y-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Item name</span
-				>
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Item name</span>
 				<Input
 					bind:value={customName}
 					icon="lucide:pencil-line"
@@ -3551,7 +3540,7 @@
 			</label>
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.price')}</span
 					>
 					<Input
@@ -3565,7 +3554,7 @@
 					/>
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.quantity')}</span
 					>
 					<Input
@@ -3591,20 +3580,20 @@
 	<Dialog open={shiftModalOpen} title={openShift ? 'Close shift' : 'Open shift'} size="sm">
 		{#if openShift}
 			<div class="space-y-3">
-				<div class="rounded-lg bg-[var(--ui-bg-muted)] px-3 py-2 text-[12.5px]">
+				<div class="rounded-lg bg-(--ui-bg-muted) px-3 py-2 text-[12.5px]">
 					<div class="font-semibold">{openShift.data.number}</div>
-					<div class="text-[var(--ui-text-muted)]">
+					<div class="text-(--ui-text-muted)">
 						Opened: {new Intl.DateTimeFormat('en-US', {
 							hour: 'numeric',
 							minute: '2-digit'
 						}).format(new Date(openShift.data.openedAt))}
 					</div>
-					<div class="text-[var(--ui-text-muted)]">
+					<div class="text-(--ui-text-muted)">
 						Opening cash: {formatMoney(openShift.data.openingCash ?? 0, currency)}
 					</div>
 				</div>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Counted closing cash</span
 					>
 					<Input
@@ -3621,13 +3610,13 @@
 		{:else}
 			<div class="space-y-3">
 				<div
-					class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2.5 text-[12.5px] text-[var(--ui-text-muted)]"
+					class="rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-2.5 text-[12.5px] text-(--ui-text-muted)"
 				>
 					<Icon name="lucide:info" class="mr-1 inline size-3.5" />
 					{t('pos.noActiveShift')}.
 				</div>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Opening cash (optional)</span
 					>
 					<Input
@@ -3641,7 +3630,7 @@
 					/>
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Cashier name (optional)</span
 					>
 					<Input
@@ -3678,7 +3667,7 @@
 				description="Completed sales will appear here."
 			/>
 		{:else}
-			<ul class="divide-y divide-[var(--ui-border-muted)]">
+			<ul class="divide-y divide-(--ui-border-muted)">
 				{#each recentOrders as o (o.id)}
 					{@const orderData = recordValue(o.data)}
 					{@const total =
@@ -3703,7 +3692,7 @@
 						<button
 							type="button"
 							onclick={() => gotoOrder(o.id)}
-							class="flex w-full items-center justify-between py-2.5 text-left transition-colors hover:bg-[var(--ui-bg-accented)]"
+							class="flex w-full items-center justify-between py-2.5 text-left transition-colors hover:bg-(--ui-bg-accented)"
 						>
 							<div class="min-w-0">
 								<div class="text-[13px] font-semibold">
@@ -3711,7 +3700,7 @@
 										(o.data as { number?: string }).number ??
 										o.id.slice(0, 8)}
 								</div>
-								<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">{orderTime}</div>
+								<div class="text-[11.5px] text-(--ui-text-dimmed)">{orderTime}</div>
 							</div>
 							<div class="flex items-center gap-2">
 								<span class="text-[13px] font-bold tabular-nums"
@@ -3723,7 +3712,7 @@
 								<Badge color={statusColor((o.data as { status?: string }).status ?? 'pending')}
 									>{(o.data as { status?: string }).status ?? 'pending'}</Badge
 								>
-								<Icon name="lucide:chevron-right" class="size-4 text-[var(--ui-text-dimmed)]" />
+								<Icon name="lucide:chevron-right" class="size-4 text-(--ui-text-dimmed)" />
 							</div>
 						</button>
 					</li>
@@ -3748,14 +3737,14 @@
 	<div class="space-y-1.5">
 		{#each POS_SHORTCUTS as s (s.key)}
 			<div
-				class="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-[var(--ui-bg-accented)]"
+				class="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-(--ui-bg-accented)"
 			>
 				<span class="flex items-center gap-2 text-[12.5px] font-medium">
-					<Icon name={s.icon} class="size-4 text-[var(--ui-text-dimmed)]" />
+					<Icon name={s.icon} class="size-4 text-(--ui-text-dimmed)" />
 					{s.label}
 				</span>
 				<kbd
-					class="rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--ui-text-muted)]"
+					class="rounded-md border border-(--ui-border) bg-(--ui-bg-muted) px-2 py-0.5 font-mono text-[11px] font-semibold text-(--ui-text-muted)"
 					>{s.key}</kbd
 				>
 			</div>

@@ -38,7 +38,7 @@
 			<BnosMark class="size-12" />
 		</div>
 		<h1 class="font-display text-3xl font-extrabold tracking-tight">{site.name}</h1>
-		<p class="mx-auto mt-3 max-w-xl text-[14px] leading-relaxed text-[var(--ui-text-muted)]">
+		<p class="mx-auto mt-3 max-w-xl text-[14px] leading-relaxed text-(--ui-text-muted)">
 			{site.fullName} — {site.tagline}
 		</p>
 		<div class="mt-5 flex flex-wrap justify-center gap-2">
@@ -50,7 +50,7 @@
 				href={site.website.url}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="inline-flex items-center gap-2 rounded-xl border border-[var(--ui-border)] px-4 py-2.5 text-[13px] font-bold text-[var(--ui-text)]"
+				class="inline-flex items-center gap-2 rounded-xl border border-(--ui-border) px-4 py-2.5 text-[13px] font-bold text-(--ui-text)"
 				><Icon name="lucide:globe" class="size-4" />{site.website.label}</a
 			>
 		</div>
@@ -60,11 +60,11 @@
 		<div class="mb-3 flex items-end justify-between gap-3">
 			<div>
 				<h2 class="font-display text-xl font-bold tracking-tight">Project links</h2>
-				<p class="mt-1 text-[12.5px] text-[var(--ui-text-muted)]">
+				<p class="mt-1 text-[12.5px] text-(--ui-text-muted)">
 					Explore BNOS, contribute code, or report a problem.
 				</p>
 			</div>
-			<Icon name="lucide:external-link" class="size-4 text-[var(--ui-text-dimmed)]" />
+			<Icon name="lucide:external-link" class="size-4 text-(--ui-text-dimmed)" />
 		</div>
 		<div class="grid gap-2 sm:grid-cols-2">
 			{#each aboutLinks as link (link.label)}
@@ -72,18 +72,18 @@
 					href={link.href}
 					target="_blank"
 					rel="noopener noreferrer"
-					class="group flex items-center gap-3 rounded-xl border border-[var(--ui-border)] bg-[var(--surface-bg)] p-3.5 transition hover:border-primary-500/40 hover:bg-[var(--ui-bg-accented)]"
+					class="group flex items-center gap-3 rounded-xl border border-(--ui-border) bg-(--surface-bg) p-3.5 transition hover:border-primary-500/40 hover:bg-(--ui-bg-accented)"
 					><span
 						class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400"
 						><Icon name={link.icon} class="size-4" /></span
 					><span class="min-w-0 flex-1"
-						><span class="block text-[13px] font-semibold text-[var(--ui-text)]">{link.label}</span
-						><span class="mt-0.5 block truncate text-[11px] text-[var(--ui-text-dimmed)]"
+						><span class="block text-[13px] font-semibold text-(--ui-text)">{link.label}</span><span
+							class="mt-0.5 block truncate text-[11px] text-(--ui-text-dimmed)"
 							>{link.description}</span
 						></span
 					><Icon
 						name="lucide:arrow-up-right"
-						class="size-3.5 shrink-0 text-[var(--ui-text-dimmed)] transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+						class="size-3.5 shrink-0 text-(--ui-text-dimmed) transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
 					/></a
 				>
 			{/each}
@@ -96,7 +96,7 @@
 	<section class="mt-10">
 		<div class="mb-3">
 			<h2 class="font-display text-xl font-bold tracking-tight">Legal & transparency</h2>
-			<p class="mt-1 text-[12.5px] text-[var(--ui-text-muted)]">
+			<p class="mt-1 text-[12.5px] text-(--ui-text-muted)">
 				Read the public documents before using BNOS.
 			</p>
 		</div>
@@ -104,10 +104,10 @@
 			{#each legalLinks as link (link.href)}
 				<a
 					href={resolve(link.href)}
-					class="rounded-xl border border-[var(--ui-border)] bg-[var(--surface-bg)] p-4 transition hover:border-primary-500/40 hover:bg-[var(--ui-bg-accented)]"
+					class="rounded-xl border border-(--ui-border) bg-(--surface-bg) p-4 transition hover:border-primary-500/40 hover:bg-(--ui-bg-accented)"
 					><Icon name={link.icon} class="size-5 text-primary-500" /><span
 						class="mt-2 block text-[13px] font-semibold">{link.label}</span
-					><span class="mt-1 block text-[11px] leading-relaxed text-[var(--ui-text-dimmed)]"
+					><span class="mt-1 block text-[11px] leading-relaxed text-(--ui-text-dimmed)"
 						>{link.description}</span
 					><span
 						class="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-primary-600 dark:text-primary-400"
@@ -119,7 +119,7 @@
 	</section>
 
 	<footer
-		class="mt-10 border-t border-[var(--ui-border-muted)] pt-5 text-center text-[11px] leading-relaxed text-[var(--ui-text-dimmed)]"
+		class="mt-10 border-t border-(--ui-border-muted) pt-5 text-center text-[11px] leading-relaxed text-(--ui-text-dimmed)"
 	>
 		© {new Date().getFullYear()}
 		{site.name} contributors · {site.license} licensed · Built on Nostr/GLO<br /><a

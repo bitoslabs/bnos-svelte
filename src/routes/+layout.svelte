@@ -192,7 +192,7 @@
 				data-collapsed={sidebarState.collapsed || undefined}
 				class="app-sidebar-shell app-chrome sticky top-0 hidden h-screen {sidebarState.collapsed
 					? 'w-16'
-					: 'w-64'} shrink-0 border-r border-[var(--glass-border)] transition-[width] duration-200 ease-in-out lg:flex lg:flex-col"
+					: 'w-64'} shrink-0 border-r border-(--glass-border) transition-[width] duration-200 ease-in-out lg:flex lg:flex-col"
 			>
 				<AppSidebar />
 			</aside>
@@ -206,7 +206,7 @@
 				onclick={() => (drawerOpen = false)}
 			></button>
 			<aside
-				class="app-sidebar-shell app-chrome animate-slide-in-left fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-[var(--glass-border)] lg:hidden"
+				class="app-sidebar-shell app-chrome animate-slide-in-left fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-(--glass-border) lg:hidden"
 			>
 				<AppSidebar onnavigate={() => (drawerOpen = false)} />
 			</aside>
@@ -235,14 +235,14 @@
 
 {#if !isPublicRoute && postLoginSyncState === 'checking-workspace'}
 	<div
-		class="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--ui-bg)]/80 backdrop-blur-sm"
+		class="fixed inset-0 z-[100] flex items-center justify-center bg-(--ui-bg)/80 backdrop-blur-sm"
 	>
 		<div
-			class="flex flex-col items-center gap-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--surface-bg)] p-8 shadow-2xl"
+			class="flex flex-col items-center gap-4 rounded-2xl border border-(--ui-border) bg-(--surface-bg) p-8 shadow-2xl"
 		>
 			<div class="relative">
 				<div
-					class="size-12 animate-spin rounded-full border-[3px] border-[var(--ui-border)] border-t-primary-500"
+					class="size-12 animate-spin rounded-full border-[3px] border-(--ui-border) border-t-primary-500"
 				></div>
 				<div class="absolute inset-0 grid place-items-center">
 					<Icon name="lucide:zap" class="size-5 text-primary-500" />
@@ -250,7 +250,7 @@
 			</div>
 			<div class="text-center">
 				<p class="font-display text-[15px] font-bold">{t('layout.checkingWorkspace')}</p>
-				<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
+				<p class="mt-1 text-[12px] text-(--ui-text-muted)">
 					{t('layout.checkingWorkspaceDesc')}
 				</p>
 			</div>

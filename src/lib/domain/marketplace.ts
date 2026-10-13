@@ -111,7 +111,7 @@ export function channelMeta(t?: string | null): ChannelMeta {
 			value: 'custom',
 			label: t ? String(t) : 'Custom',
 			icon: 'lucide:plug',
-			color: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]',
+			color: 'bg-(--ui-bg-accented) text-(--ui-text-muted)',
 			blurb: ''
 		}
 	);

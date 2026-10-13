@@ -208,7 +208,7 @@
 	/>
 
 	<!-- Quick alerts -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:bell" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.generalAlerts')}</h2>
@@ -221,13 +221,17 @@
 					<Icon name="lucide:music" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">{t('settings.notificationSound')}</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+					<div class="text-[13px] font-semibold">{t('settings.notificationSound')}</div>
+					<p class="text-[11px] text-(--ui-text-dimmed)">
 						{t('settings.notificationSoundDesc')}
 					</p>
 				</div>
 			</div>
-			<Switch bind:checked={notifySound} onCheckedChange={save} />
+			<Switch
+				bind:checked={notifySound}
+				onCheckedChange={save}
+				label={t('settings.notificationSound')}
+			/>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div class="flex items-start gap-3">
@@ -237,11 +241,15 @@
 					<Icon name="lucide:circle-check" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">{t('settings.orderComplete')}</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.orderCompleteDesc')}</p>
+					<div class="text-[13px] font-semibold">{t('settings.orderComplete')}</div>
+					<p class="text-[11px] text-(--ui-text-dimmed)">{t('settings.orderCompleteDesc')}</p>
 				</div>
 			</div>
-			<Switch bind:checked={notifyOrderComplete} onCheckedChange={save} />
+			<Switch
+				bind:checked={notifyOrderComplete}
+				onCheckedChange={save}
+				label={t('settings.orderComplete')}
+			/>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div class="flex items-start gap-3">
@@ -251,11 +259,15 @@
 					<Icon name="lucide:box" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">{t('settings.lowStockAlerts')}</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.lowStockAlertsDesc')}</p>
+					<div class="text-[13px] font-semibold">{t('settings.lowStockAlerts')}</div>
+					<p class="text-[11px] text-(--ui-text-dimmed)">{t('settings.lowStockAlertsDesc')}</p>
 				</div>
 			</div>
-			<Switch bind:checked={notifyLowStock} onCheckedChange={save} />
+			<Switch
+				bind:checked={notifyLowStock}
+				onCheckedChange={save}
+				label={t('settings.lowStockAlerts')}
+			/>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div class="flex items-start gap-3">
@@ -265,32 +277,40 @@
 					<Icon name="lucide:chart-pie" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">{t('settings.dailySummary')}</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.dailySummaryDesc')}</p>
+					<div class="text-[13px] font-semibold">{t('settings.dailySummary')}</div>
+					<p class="text-[11px] text-(--ui-text-dimmed)">{t('settings.dailySummaryDesc')}</p>
 				</div>
 			</div>
-			<Switch bind:checked={notifyDailySummary} onCheckedChange={save} />
+			<Switch
+				bind:checked={notifyDailySummary}
+				onCheckedChange={save}
+				label={t('settings.dailySummary')}
+			/>
 		</div>
 	</section>
 
 	<!-- Category groups -->
 	{#each groups as g (g.category)}
-		<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+		<section class="surface-card divide-y divide-(--ui-border-muted)">
 			<div class="flex items-center gap-2 px-5 py-3">
 				<Icon name={g.icon} class="size-4 text-primary-500" />
 				<h2 class="font-display text-[14px] font-semibold">{g.category}</h2>
 				<span
-					class="ml-auto rounded-full bg-[var(--ui-bg-accented)] px-2 py-0.5 text-[10px] font-medium text-[var(--ui-text-dimmed)]"
+					class="ml-auto rounded-full bg-(--ui-bg-accented) px-2 py-0.5 text-[10px] font-medium text-(--ui-text-dimmed)"
 					>{enabledCount(g.types)}/{g.types.length}</span
 				>
 			</div>
 			{#each g.types as nt (nt.key)}
 				<div class="flex items-center justify-between gap-4 px-5 py-4">
 					<div>
-						<label class="text-[13px] font-semibold">{nt.label}</label>
-						<p class="text-[11px] text-[var(--ui-text-dimmed)]">{nt.desc}</p>
+						<div class="text-[13px] font-semibold">{nt.label}</div>
+						<p class="text-[11px] text-(--ui-text-dimmed)">{nt.desc}</p>
 					</div>
-					<Switch checked={prefs[nt.key]} onCheckedChange={() => togglePref(nt.key)} />
+					<Switch
+						checked={prefs[nt.key]}
+						onCheckedChange={() => togglePref(nt.key)}
+						label={nt.label}
+					/>
 				</div>
 			{/each}
 		</section>

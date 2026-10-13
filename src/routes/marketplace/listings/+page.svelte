@@ -258,7 +258,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h2 class="font-display text-lg font-bold tracking-tight">Listings</h2>
-			<p class="text-[12px] text-[var(--ui-text-muted)]">
+			<p class="text-[12px] text-(--ui-text-muted)">
 				{formatInt(filtered.length)} listings ·
 				<span class="font-semibold text-emerald-600 dark:text-emerald-400"
 					>{NATIVE_STORE.label}</span
@@ -309,15 +309,15 @@
 		<!-- Stats -->
 		<div class="grid grid-cols-3 gap-3">
 			<div class="metric-card p-3.5">
-				<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">Active</p>
+				<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">Active</p>
 				<p class="mt-0.5 text-xl font-black text-emerald-500 tabular-nums">{activeCount}</p>
 			</div>
 			<div class="metric-card p-3.5">
-				<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">Low stock</p>
+				<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">Low stock</p>
 				<p class="mt-0.5 text-xl font-black text-amber-500 tabular-nums">{lowStockCount}</p>
 			</div>
 			<div class="metric-card p-3.5">
-				<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">
+				<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">
 					{t('common.views')}
 				</p>
 				<p class="mt-0.5 text-xl font-black tabular-nums">{formatInt(totalViews)}</p>
@@ -329,23 +329,23 @@
 			<div class="relative min-w-48 flex-1">
 				<Icon
 					name="lucide:search"
-					class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--ui-text-dimmed)]"
+					class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-(--ui-text-dimmed)"
 				/>
 				<input
 					bind:value={search}
 					placeholder="Search listings…"
-					class="w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] py-2 pr-3 pl-9 text-[13px] placeholder:text-[var(--ui-text-dimmed)] focus:border-[var(--ui-color-primary-500)] focus:outline-none"
+					class="w-full rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) py-2 pr-3 pl-9 text-[13px] placeholder:text-(--ui-text-dimmed) focus:border-(--ui-color-primary-500) focus:outline-none"
 				/>
 			</div>
 			<!-- status pills -->
-			<div class="flex items-center gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
+			<div class="flex items-center gap-1 rounded-lg bg-(--ui-bg-accented) p-1">
 				<button
 					type="button"
 					onclick={() => (statusFilter = '')}
 					class="rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all {statusFilter ===
 					''
-						? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-						: 'text-[var(--ui-text-muted)]'}">{t('common.all')}</button
+						? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+						: 'text-(--ui-text-muted)'}">{t('common.all')}</button
 				>
 				{#each LISTING_STATUSES as s (s.value)}
 					<button
@@ -353,15 +353,15 @@
 						onclick={() => (statusFilter = statusFilter === s.value ? '' : s.value)}
 						class="flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {statusFilter ===
 						s.value
-							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-							: 'text-[var(--ui-text-muted)]'}"
+							? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+							: 'text-(--ui-text-muted)'}"
 					>
 						<Icon name={s.icon} class="size-3" />
 						{s.label}
 					</button>
 				{/each}
 			</div>
-			<span class="ml-1 text-[11px] text-[var(--ui-text-dimmed)]">{filtered.length} items</span>
+			<span class="ml-1 text-[11px] text-(--ui-text-dimmed)">{filtered.length} items</span>
 			<!-- view mode toggle -->
 			<div class="segmented ml-auto flex items-center gap-0.5">
 				<button
@@ -369,8 +369,8 @@
 					onclick={() => controls.setViewMode('list')}
 					class="grid size-8 place-items-center rounded-md transition-colors {controls.viewMode ===
 					'list'
-						? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-						: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
+						? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+						: 'text-(--ui-text-dimmed) hover:text-(--ui-text)'}"
 					title={t('common.listView')}><Icon name="lucide:list" class="size-4" /></button
 				>
 				<button
@@ -378,8 +378,8 @@
 					onclick={() => controls.setViewMode('grid')}
 					class="grid size-8 place-items-center rounded-md transition-colors {controls.viewMode ===
 					'grid'
-						? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-						: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
+						? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+						: 'text-(--ui-text-dimmed) hover:text-(--ui-text)'}"
 					title={t('common.gridView')}><Icon name="lucide:layout-grid" class="size-4" /></button
 				>
 				<button
@@ -387,8 +387,8 @@
 					onclick={() => controls.setViewMode('table')}
 					class="grid size-8 place-items-center rounded-md transition-colors {controls.viewMode ===
 					'table'
-						? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-						: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
+						? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+						: 'text-(--ui-text-dimmed) hover:text-(--ui-text)'}"
 					title={t('common.tableView')}><Icon name="lucide:table" class="size-4" /></button
 				>
 			</div>
@@ -422,11 +422,11 @@
 									applySort={controls.applySort}>{t('common.stock')}</SortableTh
 								>
 								<th
-									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.status')}</th
 								>
 								<th
-									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.channel')}</th
 								>
 								<SortableTh
@@ -439,13 +439,13 @@
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr>
 						</thead>
-						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+						<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 							{#each controls.pagedList as l (l.id)}
-								<tr class="hover:bg-[var(--ui-bg-accented)]/40">
+								<tr class="hover:bg-(--ui-bg-accented)/40">
 									<td class="px-5 py-3">
 										<div class="flex items-center gap-3">
 											<div
-												class="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]"
+												class="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-(--ui-bg-accented) text-(--ui-text-muted)"
 											>
 												{#if listingCover(l.data)}
 													<img
@@ -460,7 +460,7 @@
 											<div class="min-w-0">
 												<div class="truncate font-semibold">{l.data.productName}</div>
 												{#if l.data.sku}
-													<div class="font-mono text-[11px] text-[var(--ui-text-dimmed)]">
+													<div class="font-mono text-[11px] text-(--ui-text-dimmed)">
 														{l.data.sku}
 													</div>
 												{/if}
@@ -472,9 +472,7 @@
 											{formatMoney(l.data.price, currency)}
 										</div>
 										{#if l.data.compareAtPrice}
-											<div
-												class="text-[10px] text-[var(--ui-text-dimmed)] tabular-nums line-through"
-											>
+											<div class="text-[10px] text-(--ui-text-dimmed) tabular-nums line-through">
 												{formatMoney(l.data.compareAtPrice, currency)}
 											</div>
 										{/if}
@@ -486,10 +484,10 @@
 											{:else if (l.data.stock ?? 0) <= 5}
 												<span class="text-amber-500">{l.data.stock ?? 0}</span>
 											{:else}
-												<span class="text-[var(--ui-text-muted)]">{l.data.stock ?? 0}</span>
+												<span class="text-(--ui-text-muted)">{l.data.stock ?? 0}</span>
 											{/if}
 										{:else}
-											<span class="text-[var(--ui-text-dimmed)]">—</span>
+											<span class="text-(--ui-text-dimmed)">—</span>
 										{/if}
 									</td>
 									<td class="px-5 py-3">
@@ -506,13 +504,13 @@
 											</span>
 											{#if l.data.channelIds.length > 0}
 												<span
-													class="rounded-full bg-[var(--ui-bg-muted)] px-1.5 py-0.5 text-[9px] font-medium text-[var(--ui-text-muted)]"
+													class="rounded-full bg-(--ui-bg-muted) px-1.5 py-0.5 text-[9px] font-medium text-(--ui-text-muted)"
 													>+{l.data.channelIds.length}</span
 												>
 											{/if}
 										</div>
 									</td>
-									<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
+									<td class="px-5 py-3 text-right text-(--ui-text-muted) tabular-nums"
 										>{formatInt(l.data.views ?? 0)}</td
 									>
 									<td class="px-5 py-3">
@@ -528,7 +526,7 @@
 												class="grid size-8 place-items-center rounded-lg transition-colors {l.data
 													.status === 'active'
 													? 'text-emerald-500 hover:bg-emerald-500/10'
-													: 'text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
+													: 'text-(--ui-text-dimmed) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'}"
 												title={l.data.status === 'active' ? 'Pause' : 'Activate'}
 											>
 												<Icon
@@ -539,21 +537,21 @@
 											<button
 												type="button"
 												onclick={() => viewRaw(l.id)}
-												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+												class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 												title={t('common.viewRaw')}
 												><Icon name="lucide:code" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => openEdit(l.id, l.data)}
-												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
+												class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-blue-500/10 hover:text-blue-500"
 												title={t('common.edit')}
 												><Icon name="lucide:pencil" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => (confirmDeleteId = l.id)}
-												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
+												class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-red-500/10 hover:text-red-500"
 												title={t('common.delete')}
 												><Icon name="lucide:trash-2" class="size-4" /></button
 											>
@@ -574,7 +572,7 @@
 						<div class="flex items-start justify-between gap-2">
 							<div class="flex min-w-0 items-center gap-2.5">
 								<div
-									class="grid size-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]"
+									class="grid size-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-(--ui-bg-accented) text-(--ui-text-muted)"
 								>
 									{#if listingCover(l.data)}
 										<img
@@ -592,7 +590,7 @@
 										{formatMoney(l.data.price, currency)}
 										{#if l.data.compareAtPrice}
 											<span
-												class="ml-1 text-[10px] font-normal text-[var(--ui-text-dimmed)] tabular-nums line-through"
+												class="ml-1 text-[10px] font-normal text-(--ui-text-dimmed) tabular-nums line-through"
 												>{formatMoney(l.data.compareAtPrice, currency)}</span
 											>
 										{/if}
@@ -604,7 +602,7 @@
 
 						<!-- meta row -->
 						<div
-							class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[var(--ui-text-dimmed)]"
+							class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-(--ui-text-dimmed)"
 						>
 							{#if l.data.inventoryTracked}
 								<span class="flex items-center gap-1">
@@ -633,7 +631,7 @@
 								<span
 									class="inline-flex items-center gap-0.5 rounded-full {ch.native
 										? 'bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-600 dark:text-emerald-400'
-										: 'bg-[var(--ui-bg-muted)] px-1.5 py-0.5 text-[9px] font-medium text-[var(--ui-text-muted)]'}"
+										: 'bg-(--ui-bg-muted) px-1.5 py-0.5 text-[9px] font-medium text-(--ui-text-muted)'}"
 								>
 									<Icon name={ch.icon} class="size-2.5" />{ch.label}
 								</span>
@@ -642,7 +640,7 @@
 
 						<!-- actions -->
 						<div
-							class="mt-3 flex items-center justify-end gap-1 border-t border-[var(--ui-border-muted)] pt-2.5"
+							class="mt-3 flex items-center justify-end gap-1 border-t border-(--ui-border-muted) pt-2.5"
 						>
 							<button
 								type="button"
@@ -651,7 +649,7 @@
 								class="grid size-8 place-items-center rounded-lg transition-colors {l.data
 									.status === 'active'
 									? 'text-emerald-500 hover:bg-emerald-500/10'
-									: 'text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
+									: 'text-(--ui-text-dimmed) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'}"
 								title={l.data.status === 'active' ? 'Pause' : 'Activate'}
 							>
 								<Icon
@@ -662,38 +660,38 @@
 							<button
 								type="button"
 								onclick={() => viewRaw(l.id)}
-								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+								class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 								title={t('common.viewRaw')}><Icon name="lucide:code" class="size-4" /></button
 							>
 							<button
 								type="button"
 								onclick={() => openEdit(l.id, l.data)}
-								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
+								class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-blue-500/10 hover:text-blue-500"
 								title={t('common.edit')}><Icon name="lucide:pencil" class="size-4" /></button
 							>
 							<button
 								type="button"
 								onclick={() => (confirmDeleteId = l.id)}
-								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
+								class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-red-500/10 hover:text-red-500"
 								title={t('common.delete')}><Icon name="lucide:trash-2" class="size-4" /></button
 							>
 						</div>
 					</div>
 				{/each}
 			</div>
-			<Pagination {controls} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
+			<Pagination {controls} class="mt-3 rounded-xl border border-(--ui-border)" />
 		{:else}
 			<!-- ═══════════════ LIST VIEW ═══════════════ -->
 			<div
-				class="overflow-hidden rounded-2xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-elevated)]"
+				class="overflow-hidden rounded-2xl border border-(--ui-border-muted) bg-(--ui-bg-elevated)"
 			>
-				<div class="divide-y divide-[var(--ui-border-muted)]">
+				<div class="divide-y divide-(--ui-border-muted)">
 					{#each controls.pagedList as l (l.id)}
-						<div class="group p-4 transition-colors hover:bg-[var(--ui-bg-muted)] sm:p-5">
+						<div class="group p-4 transition-colors hover:bg-(--ui-bg-muted) sm:p-5">
 							<div class="flex items-start justify-between gap-3">
 								<div class="flex min-w-0 items-start gap-3">
 									<div
-										class="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]"
+										class="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-(--ui-bg-accented) text-(--ui-text-muted)"
 									>
 										{#if listingCover(l.data)}
 											<img
@@ -718,7 +716,7 @@
 											{/if}
 										</div>
 										{#if l.data.sku}
-											<p class="mt-0.5 font-mono text-[11px] text-[var(--ui-text-dimmed)]">
+											<p class="mt-0.5 font-mono text-[11px] text-(--ui-text-dimmed)">
 												{l.data.sku}
 											</p>
 										{/if}
@@ -728,7 +726,7 @@
 												<span
 													class="inline-flex items-center gap-0.5 rounded-full {ch.native
 														? 'bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-600 dark:text-emerald-400'
-														: 'bg-[var(--ui-bg-muted)] px-1.5 py-0.5 text-[9px] font-medium text-[var(--ui-text-muted)]'}"
+														: 'bg-(--ui-bg-muted) px-1.5 py-0.5 text-[9px] font-medium text-(--ui-text-muted)'}"
 												>
 													<Icon name={ch.icon} class="size-2.5" />{ch.label}
 												</span>
@@ -742,9 +740,7 @@
 											{formatMoney(l.data.price, currency)}
 										</div>
 										{#if l.data.compareAtPrice}
-											<div
-												class="text-[10px] text-[var(--ui-text-dimmed)] tabular-nums line-through"
-											>
+											<div class="text-[10px] text-(--ui-text-dimmed) tabular-nums line-through">
 												{formatMoney(l.data.compareAtPrice, currency)}
 											</div>
 										{/if}
@@ -810,12 +806,12 @@
 	<div class="max-h-[70vh] space-y-4 overflow-y-auto">
 		<!-- Product -->
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>Product <span class="text-red-500">*</span></span
 			>
 			{#if editingId}
 				<div
-					class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[13px] font-medium"
+					class="rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-2 text-[13px] font-medium"
 				>
 					{productName(fProductId)}
 				</div>
@@ -824,7 +820,7 @@
 					<select
 						bind:value={fProductId}
 						onchange={onProductChange}
-						class="w-full appearance-none rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] py-2.5 pr-9 pl-3 text-[13px] font-medium focus:border-[var(--ui-color-primary-500)] focus:outline-none"
+						class="w-full appearance-none rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) py-2.5 pr-9 pl-3 text-[13px] font-medium focus:border-(--ui-color-primary-500) focus:outline-none"
 					>
 						{#each availableProducts as p (p.id)}
 							<option value={p.id}
@@ -835,7 +831,7 @@
 					</select>
 					<Icon
 						name="lucide:chevron-down"
-						class="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-[var(--ui-text-dimmed)]"
+						class="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-(--ui-text-dimmed)"
 					/>
 				</div>
 			{/if}
@@ -843,7 +839,7 @@
 
 		<!-- Where this listing appears -->
 		<div class="space-y-2.5">
-			<span class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="block text-[12px] font-semibold text-(--ui-text-muted)"
 				>Where this listing appears</span
 			>
 			<!-- Native web store: always on, locked (your storefront reads active listings) -->
@@ -857,7 +853,7 @@
 				</div>
 				<div class="min-w-0 flex-1">
 					<p class="text-[12.5px] font-bold">{NATIVE_STORE.label}</p>
-					<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+					<p class="text-[10.5px] text-(--ui-text-dimmed)">
 						Live on your storefront ({NATIVE_STORE.storefront}) — always on
 					</p>
 				</div>
@@ -867,9 +863,9 @@
 			<!-- Optional external distribution (not required) -->
 			{#if connections.length > 0}
 				<div class="pt-0.5">
-					<p class="mb-1.5 text-[11px] font-medium text-[var(--ui-text-dimmed)]">
+					<p class="mb-1.5 text-[11px] font-medium text-(--ui-text-dimmed)">
 						Also distribute to external channels
-						<span class="text-[var(--ui-text-dimmed)]">(optional)</span>
+						<span class="text-(--ui-text-dimmed)">(optional)</span>
 					</p>
 					<div class="flex flex-wrap gap-1.5">
 						{#each connections as c (c.id)}
@@ -881,7 +877,7 @@
 									c.id
 								)
 									? 'bg-primary-500/15 text-primary-600 ring-1 ring-primary-500/30 dark:text-primary-300'
-									: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+									: 'bg-(--ui-bg-muted) text-(--ui-text-muted)'}"
 							>
 								{#if fChannelIds.includes(c.id)}<Icon
 										name="lucide:check"
@@ -903,7 +899,7 @@
 			{/if}
 
 			{#if fChannelIds.length > 0}
-				<p class="flex items-center gap-1 text-[10.5px] text-[var(--ui-text-dimmed)]">
+				<p class="flex items-center gap-1 text-[10.5px] text-(--ui-text-dimmed)">
 					<Icon name="lucide:send" class="size-3" />
 					Publishing to {NATIVE_STORE.label} + {fChannelIds.length} channel{fChannelIds.length === 1
 						? ''
@@ -915,13 +911,13 @@
 		<!-- Pricing -->
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Price ({currency}) <span class="text-red-500">*</span></span
 				>
 				<Input bind:value={fPrice} type="number" min="0" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Compare-at price</span
 				>
 				<Input bind:value={fCompareAt} type="number" min="0" placeholder="0.00" class="w-full" />
@@ -929,19 +925,19 @@
 		</div>
 
 		<!-- Inventory -->
-		<div class="space-y-3 rounded-xl bg-[var(--ui-bg-accented)] p-3">
+		<div class="space-y-3 rounded-xl bg-(--ui-bg-accented) p-3">
 			<div class="flex items-center justify-between">
 				<div>
-					<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
+					<p class="text-[12px] font-semibold text-(--ui-text-muted)">
 						{t('catalog.trackInventory')}
 					</p>
-					<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">Sync stock across channels</p>
+					<p class="text-[10.5px] text-(--ui-text-dimmed)">Sync stock across channels</p>
 				</div>
 				<Switch bind:checked={fTrackInv} />
 			</div>
 			{#if fTrackInv}
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Stock quantity</span
 					>
 					<Input bind:value={fStock} type="number" min="0" class="w-full" />
@@ -951,18 +947,18 @@
 
 		<!-- Status -->
 		<div>
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.status')}</span
 			>
-			<div class="flex flex-wrap gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
+			<div class="flex flex-wrap gap-1 rounded-lg bg-(--ui-bg-accented) p-1">
 				{#each LISTING_STATUSES as s (s.value)}
 					<button
 						type="button"
 						onclick={() => (fStatus = s.value)}
 						class="flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all {fStatus ===
 						s.value
-							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-							: 'text-[var(--ui-text-muted)]'}"
+							? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+							: 'text-(--ui-text-muted)'}"
 					>
 						<Icon name={s.icon} class="size-3" />{s.label}
 					</button>
@@ -971,7 +967,7 @@
 		</div>
 
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.description')}</span
 			>
 			<Input
@@ -1008,7 +1004,7 @@
 			aria-label={t('common.cancel')}
 		></button>
 		<div
-			class="animate-rise relative w-full max-w-sm rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-5 shadow-2xl"
+			class="animate-rise relative w-full max-w-sm rounded-2xl border border-(--ui-border) bg-(--ui-bg-elevated) p-5 shadow-2xl"
 		>
 			<div class="flex items-center gap-3">
 				<div class="grid size-10 place-items-center rounded-xl bg-red-500/10 text-red-500">
@@ -1016,7 +1012,7 @@
 				</div>
 				<div>
 					<p class="font-display text-[14px] font-bold">Delete listing?</p>
-					<p class="text-[11.5px] text-[var(--ui-text-dimmed)]">
+					<p class="text-[11.5px] text-(--ui-text-dimmed)">
 						It will be unpublished from all channels.
 					</p>
 				</div>

@@ -32,22 +32,22 @@
 	<textarea
 		bind:value
 		class={cn(
-			'w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[13.5px] text-[var(--ui-text)] transition-colors placeholder:text-[var(--ui-text-dimmed)] focus:border-[var(--ui-color-primary-500)] focus:outline-none',
+			'w-full rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-2 text-[13.5px] text-(--ui-text) transition-colors placeholder:text-(--ui-text-dimmed) focus:border-(--ui-color-primary-500) focus:outline-none',
 			cls
 		)}
 		{...rest as HTMLTextareaAttributes}></textarea>
 {:else}
 	<div
 		class={cn(
-			'inline-flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] transition-colors focus-within:border-[var(--ui-color-primary-500)]',
+			'inline-flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) transition-colors focus-within:border-(--ui-color-primary-500)',
 			height,
 			cls
 		)}
 	>
-		{#if icon}<Icon name={icon} class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />{/if}
+		{#if icon}<Icon name={icon} class="size-4 shrink-0 text-(--ui-text-dimmed)" />{/if}
 		<input
 			bind:value
-			class="min-w-0 flex-1 bg-transparent text-[13.5px] text-[var(--ui-text)] placeholder:text-[var(--ui-text-dimmed)] focus:outline-none"
+			class="min-w-0 flex-1 bg-transparent text-[13.5px] text-(--ui-text) placeholder:text-(--ui-text-dimmed) focus:outline-none"
 			{...rest as HTMLInputAttributes}
 		/>
 		{#if trailing}

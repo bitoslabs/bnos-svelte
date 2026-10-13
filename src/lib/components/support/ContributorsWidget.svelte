@@ -57,7 +57,7 @@
 </script>
 
 <section
-	class="surface-card rounded-2xl border border-[var(--ui-border-muted)] {compact
+	class="surface-card rounded-2xl border border-(--ui-border-muted) {compact
 		? 'p-4'
 		: 'p-5 sm:p-6'}"
 >
@@ -69,14 +69,14 @@
 		</div>
 		<div>
 			<h2 class="font-display text-[18px] font-extrabold tracking-tight">Contributors</h2>
-			<p class="mt-1 text-[12.5px] leading-relaxed text-[var(--ui-text-muted)]">
+			<p class="mt-1 text-[12.5px] leading-relaxed text-(--ui-text-muted)">
 				People helping BNOS grow as an open, independent commerce system.
 			</p>
 		</div>
 	</div>
 	<div class="mt-4 space-y-2">
 		{#each people as person (person.npub)}<div
-				class="flex items-center gap-3 rounded-xl border border-[var(--ui-border-muted)] p-3"
+				class="flex items-center gap-3 rounded-xl border border-(--ui-border-muted) p-3"
 			>
 				{#if person.picture}<img
 						src={person.picture}
@@ -94,7 +94,7 @@
 						rel="noopener noreferrer"
 						class="block truncate text-[13.5px] font-bold hover:text-primary-500">{person.name}</a
 					>
-					<p class="truncate font-mono text-[10.5px] text-[var(--ui-text-dimmed)]">
+					<p class="truncate font-mono text-[10.5px] text-(--ui-text-dimmed)">
 						{truncateNpub(person.npub, 14, 10)}
 					</p>
 				</div>
@@ -102,7 +102,7 @@
 					type="button"
 					title="Copy npub"
 					onclick={() => copyNpub(person.npub)}
-					class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition hover:bg-[var(--ui-bg-accented)] hover:text-primary-500"
+					class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition hover:bg-(--ui-bg-accented) hover:text-primary-500"
 					><Icon
 						name={copied === person.npub ? 'lucide:check' : 'lucide:copy'}
 						class="size-4"

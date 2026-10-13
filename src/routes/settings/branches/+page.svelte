@@ -24,7 +24,7 @@
 		<h1 class="mt-4 font-display text-lg font-bold tracking-tight">
 			{t('settings.branchesMoved')}
 		</h1>
-		<p class="mt-2 text-[13px] text-[var(--ui-text-muted)]">
+		<p class="mt-2 text-[13px] text-(--ui-text-muted)">
 			{t('settings.branchesMovedDesc')} <strong>{t('settings.workspace')}</strong>
 			{t('settings.branchesMovedDesc2')}
 		</p>

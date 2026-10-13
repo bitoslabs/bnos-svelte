@@ -27,14 +27,14 @@
 	class={cn(
 		'px-5 py-2.5 text-[11px] font-semibold tracking-wider uppercase',
 		align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left',
-		active ? 'text-[var(--ui-text)]' : 'text-[var(--ui-text-dimmed)]'
+		active ? 'text-(--ui-text)' : 'text-(--ui-text-dimmed)'
 	)}
 >
 	{#if applySort}
 		<button
 			type="button"
 			class={cn(
-				'inline-flex cursor-pointer items-center gap-1 transition-colors hover:text-[var(--ui-text)]',
+				'inline-flex cursor-pointer items-center gap-1 transition-colors hover:text-(--ui-text)',
 				align === 'right' ? 'flex-row-reverse' : ''
 			)}
 			onclick={() => applySort(column)}

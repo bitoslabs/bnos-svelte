@@ -407,7 +407,7 @@
 								<Badge color="neutral" variant="outline">{t('settings.builtIn')}</Badge>
 							{/if}
 						</div>
-						<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">ID: {m.id}</p>
+						<p class="mt-0.5 text-[11.5px] text-(--ui-text-dimmed)">ID: {m.id}</p>
 						{#if methodReadiness(m).state === 'ready'}
 							<span
 								class="mt-1 inline-flex items-center gap-1 text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400"
@@ -434,7 +434,7 @@
 						<button
 							type="button"
 							onclick={() => handleToggle(m.id)}
-							class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-muted)] transition hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+							class="grid size-8 place-items-center rounded-lg text-(--ui-text-muted) transition hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 							title={m.enabled ? 'Disable' : 'Enable'}
 						>
 							<Icon name={m.enabled ? 'lucide:eye' : 'lucide:eye-off'} class="size-4" />
@@ -442,7 +442,7 @@
 						<button
 							type="button"
 							onclick={() => openEdit(m)}
-							class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-muted)] transition hover:bg-[var(--ui-bg-accented)] hover:text-primary-500"
+							class="grid size-8 place-items-center rounded-lg text-(--ui-text-muted) transition hover:bg-(--ui-bg-accented) hover:text-primary-500"
 							title={t('common.edit')}
 						>
 							<Icon name="lucide:pencil" class="size-4" />
@@ -451,7 +451,7 @@
 							<button
 								type="button"
 								onclick={() => handleDelete(m)}
-								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-muted)] transition hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
+								class="grid size-8 place-items-center rounded-lg text-(--ui-text-muted) transition hover:bg-(--tone-error-bg) hover:text-(--tone-error-text)"
 								title={t('common.delete')}
 							>
 								<Icon name="lucide:trash-2" class="size-4" />
@@ -473,28 +473,36 @@
 		<!-- Label -->
 		<div class="space-y-1.5">
 			<label
-				class="block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+				for="pm-label"
+				class="block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 			>
 				{t('settings.label')}
 			</label>
-			<Input bind:value={formLabel} placeholder="e.g. Cash, Card, Bank Transfer" class="w-full" />
+			<Input
+				id="pm-label"
+				bind:value={formLabel}
+				placeholder="e.g. Cash, Card, Bank Transfer"
+				class="w-full"
+			/>
 		</div>
 
 		<!-- ID (only for new / non-builtin) -->
 		{#if !editing || !editing.builtin}
 			<div class="space-y-1.5">
 				<label
-					class="block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					for="pm-id"
+					class="block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 				>
 					ID {#if editing}(read-only){/if}
 				</label>
 				<Input
+					id="pm-id"
 					bind:value={formId}
 					placeholder={t('settings.autoSlug')}
 					class="w-full"
 					{...editing ? { disabled: true } : {}}
 				/>
-				<p class="text-[10px] text-[var(--ui-text-dimmed)]">
+				<p class="text-[10px] text-(--ui-text-dimmed)">
 					{t('settings.methodIdDesc')}
 				</p>
 			</div>
@@ -502,11 +510,13 @@
 
 		<!-- Icon picker -->
 		<div class="space-y-1.5">
-			<label
-				class="block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+			<div
+				class="block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
+				role="group"
+				aria-label={t('settings.icon')}
 			>
 				{t('settings.icon')}
-			</label>
+			</div>
 			<div class="flex flex-wrap gap-2">
 				{#each ICON_OPTIONS as opt (opt.value)}
 					<button
@@ -516,7 +526,7 @@
 						class="grid size-10 place-items-center rounded-xl border transition {formIcon ===
 						opt.value
 							? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
-							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-border-accented)] hover:text-[var(--ui-text)]'}"
+							: 'border-(--ui-border) text-(--ui-text-muted) hover:border-(--ui-border-accented) hover:text-(--ui-text)'}"
 					>
 						<Icon name={opt.value} class="size-5" />
 					</button>
@@ -524,7 +534,7 @@
 			</div>
 			<!-- Live preview -->
 			<div class="flex items-center gap-2 pt-1">
-				<span class="text-[11px] text-[var(--ui-text-dimmed)]">Preview:</span>
+				<span class="text-[11px] text-(--ui-text-dimmed)">Preview:</span>
 				<div
 					class="grid size-8 place-items-center rounded-lg {TYPE_STYLES[formType] ??
 						TYPE_STYLES.other}"
@@ -536,11 +546,13 @@
 
 		<!-- Type -->
 		<div class="space-y-1.5">
-			<label
-				class="block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+			<div
+				class="block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
+				role="group"
+				aria-label={t('common.type')}
 			>
 				{t('common.type')}
-			</label>
+			</div>
 			<div class="flex flex-wrap gap-1.5">
 				{#each TYPE_OPTIONS as opt (opt.value)}
 					<button
@@ -549,7 +561,7 @@
 						class="rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition {formType ===
 						opt.value
 							? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
-							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
+							: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'}"
 					>
 						{opt.label}
 					</button>

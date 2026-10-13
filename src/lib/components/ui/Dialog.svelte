@@ -58,7 +58,7 @@
 			in:scale={{ duration: 160, start: 0.96 }}
 			out:scale={{ duration: 120, start: 0.98 }}
 			class={cn(
-				'relative flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] shadow-2xl shadow-black/20',
+				'relative flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl border border-(--ui-border) bg-(--ui-bg-elevated) shadow-2xl shadow-black/20',
 				width
 			)}
 			role="dialog"
@@ -66,14 +66,14 @@
 		>
 			{#if title}
 				<header
-					class="flex items-center justify-between gap-3 border-b border-[var(--ui-border-muted)] px-5 py-3.5"
+					class="flex items-center justify-between gap-3 border-b border-(--ui-border-muted) px-5 py-3.5"
 				>
 					<h2 class="font-display text-[15px] font-semibold tracking-tight">{title}</h2>
 					<button
 						type="button"
 						onclick={() => dismissible && (open = false)}
 						disabled={!dismissible}
-						class="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+						class="grid size-8 shrink-0 place-items-center rounded-lg text-(--ui-text-dimmed) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 						aria-label={t('common.close')}
 					>
 						<Icon name="lucide:x" class="size-4" />
@@ -85,7 +85,7 @@
 			</div>
 			{#if footer}
 				<footer
-					class="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--ui-border-muted)] px-5 py-3.5"
+					class="flex shrink-0 items-center justify-end gap-2 border-t border-(--ui-border-muted) px-5 py-3.5"
 				>
 					{@render footer()}
 				</footer>

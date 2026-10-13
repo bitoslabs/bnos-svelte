@@ -43,16 +43,16 @@
 <div class={cn('flex flex-wrap items-center gap-2', className)}>
 	<!-- search -->
 	<div
-		class="relative inline-flex min-w-[180px] flex-1 items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] transition-colors focus-within:border-[var(--ui-color-primary-500)]"
+		class="relative inline-flex min-w-[180px] flex-1 items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) transition-colors focus-within:border-(--ui-color-primary-500)"
 	>
 		<Icon
 			name="lucide:search"
-			class="pointer-events-none absolute left-3 size-4 text-[var(--ui-text-dimmed)]"
+			class="pointer-events-none absolute left-3 size-4 text-(--ui-text-dimmed)"
 		/>
 		<input
 			bind:value={search}
 			placeholder={searchPlaceholder}
-			class="h-9 w-full rounded-lg bg-transparent pr-3 pl-9 text-[13.5px] text-[var(--ui-text)] placeholder:text-[var(--ui-text-dimmed)] focus:outline-none"
+			class="h-9 w-full rounded-lg bg-transparent pr-3 pl-9 text-[13.5px] text-(--ui-text) placeholder:text-(--ui-text-dimmed) focus:outline-none"
 		/>
 	</div>
 
@@ -65,11 +65,11 @@
 		<!-- sort key -->
 		{#if sortItems.length > 1}
 			<div
-				class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+				class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
 			>
 				<select
 					bind:value={sortKey}
-					class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium text-[var(--ui-text)] focus:outline-none"
+					class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium text-(--ui-text) focus:outline-none"
 					onchange={(e) => applySort?.((e.currentTarget as HTMLSelectElement).value)}
 				>
 					{#each sortItems as opt (opt.key)}
@@ -78,7 +78,7 @@
 				</select>
 				<Icon
 					name="lucide:chevron-down"
-					class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+					class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
 				/>
 			</div>
 		{/if}
@@ -86,7 +86,7 @@
 		<!-- direction toggle -->
 		<button
 			type="button"
-			class="grid size-9 place-items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+			class="grid size-9 place-items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 			title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
 			onclick={() => applySort?.(sortKey)}
 		>
@@ -105,8 +105,8 @@
 						class={cn(
 							'grid size-8 place-items-center rounded-md transition-colors',
 							viewMode === 'grid'
-								? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-								: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'
+								? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+								: 'text-(--ui-text-dimmed) hover:text-(--ui-text)'
 						)}
 						title={t('common.gridView')}
 						onclick={() => setViewMode('grid')}
@@ -120,8 +120,8 @@
 						class={cn(
 							'grid size-8 place-items-center rounded-md transition-colors',
 							viewMode === 'table'
-								? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-								: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'
+								? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+								: 'text-(--ui-text-dimmed) hover:text-(--ui-text)'
 						)}
 						title={t('common.tableView')}
 						onclick={() => setViewMode('table')}
@@ -135,8 +135,8 @@
 						class={cn(
 							'grid size-8 place-items-center rounded-md transition-colors',
 							viewMode === 'list'
-								? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-								: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'
+								? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+								: 'text-(--ui-text-dimmed) hover:text-(--ui-text)'
 						)}
 						title={t('common.listView')}
 						onclick={() => setViewMode('list')}

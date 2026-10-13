@@ -81,7 +81,7 @@
 			description={t('topbar.caughtUpDesc')}
 		/>
 	{:else}
-		<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
+		<div class="surface-card divide-y divide-(--ui-border-muted)">
 			{#each items as n (n.id)}
 				<div
 					class="group flex items-start gap-3 px-4 py-3.5 {n.read ? '' : 'bg-primary-500/[0.05]'}"
@@ -97,16 +97,16 @@
 							<div class="text-[13px] font-semibold">{n.title}</div>
 						</div>
 						{#if n.description}
-							<div class="text-[12px] text-[var(--ui-text-muted)]">{n.description}</div>
+							<div class="text-[12px] text-(--ui-text-muted)">{n.description}</div>
 						{/if}
 					</div>
-					<span class="shrink-0 text-[11px] text-[var(--ui-text-dimmed)]">
+					<span class="shrink-0 text-[11px] text-(--ui-text-dimmed)">
 						{relativeTime(n.at)}
 					</span>
 					<button
 						type="button"
 						onclick={() => (n.read ? notifications.remove(n.id) : notifications.markRead(n.id))}
-						class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--ui-text-dimmed)] opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+						class="grid size-7 shrink-0 place-items-center rounded-md text-(--ui-text-dimmed) opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 						aria-label={n.read ? t('topbar.removeNotification') : t('topbar.markAsRead')}
 						title={n.read ? t('topbar.removeNotification') : t('topbar.markAsRead')}
 					>

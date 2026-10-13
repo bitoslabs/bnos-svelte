@@ -63,10 +63,10 @@
 			'pointer-events-none grid shrink-0 place-items-center border-2 transition-colors',
 			boxSize,
 			active
-				? 'border-[var(--ui-color-primary-500)] bg-primary-500 text-white'
-				: 'border-[var(--ui-border-accented)] bg-[var(--ui-bg-muted)] text-transparent group-hover/check:border-[var(--ui-color-primary-500)]',
+				? 'border-(--ui-color-primary-500) bg-primary-500 text-white'
+				: 'border-(--ui-border-accented) bg-(--ui-bg-muted) text-transparent group-hover/check:border-(--ui-color-primary-500)',
 			// focus ring driven by the visually-hidden native input
-			'peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--ui-color-primary-500)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--ui-bg)]'
+			'peer-focus-visible:ring-2 peer-focus-visible:ring-(--ui-color-primary-500) peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-(--ui-bg)'
 		)
 	);
 
@@ -121,10 +121,10 @@
 			{#if children}
 				{@render children()}
 			{:else if label}
-				<span class={cn('block font-medium text-[var(--ui-text)]', textSize)}>{label}</span>
+				<span class={cn('block font-medium text-(--ui-text)', textSize)}>{label}</span>
 			{/if}
 			{#if description}
-				<span class="mt-0.5 block text-[11.5px] text-[var(--ui-text-dimmed)]">{description}</span>
+				<span class="mt-0.5 block text-[11.5px] text-(--ui-text-dimmed)">{description}</span>
 			{/if}
 		</span>
 	{/if}

@@ -372,9 +372,7 @@
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.reports')}</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
-				Derived live from signed order records
-			</p>
+			<p class="text-[12.5px] text-(--ui-text-muted)">Derived live from signed order records</p>
 		</div>
 		<Button
 			variant="subtle"
@@ -394,7 +392,7 @@
 				class="rounded-lg px-3 py-1.5 text-[13px] font-semibold tabular-nums transition-colors
 					{rangePreset === rp.key
 					? 'bg-primary-500 text-white'
-					: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)] hover:text-[var(--ui-text)]'}"
+					: 'bg-(--ui-bg-accented) text-(--ui-text-muted) hover:bg-(--interactive-hover-bg) hover:text-(--ui-text)'}"
 				onclick={() => (rangePreset = rp.key)}
 			>
 				{rp.label}
@@ -404,13 +402,13 @@
 			<div class="flex items-center gap-1.5">
 				<input
 					type="date"
-					class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2.5 py-1.5 text-[13px] text-[var(--ui-text)] outline-none focus:border-primary-500"
+					class="rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2.5 py-1.5 text-[13px] text-(--ui-text) outline-none focus:border-primary-500"
 					bind:value={customStart}
 				/>
-				<span class="text-[12px] text-[var(--ui-text-dimmed)]">→</span>
+				<span class="text-[12px] text-(--ui-text-dimmed)">→</span>
 				<input
 					type="date"
-					class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2.5 py-1.5 text-[13px] text-[var(--ui-text)] outline-none focus:border-primary-500"
+					class="rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2.5 py-1.5 text-[13px] text-(--ui-text) outline-none focus:border-primary-500"
 					bind:value={customEnd}
 				/>
 			</div>
@@ -419,17 +417,17 @@
 
 	<!-- Loading state -->
 	{#if isLoading && !hasData}
-		<div class="flex h-64 flex-col items-center justify-center gap-3 text-[var(--ui-text-dimmed)]">
+		<div class="flex h-64 flex-col items-center justify-center gap-3 text-(--ui-text-dimmed)">
 			<Icon name="lucide:loader-circle" class="size-8 animate-spin" />
 			<span class="text-[13px]">Loading orders…</span>
 		</div>
 	{:else if !hasData}
 		<!-- Empty state -->
 		<div class="surface-card flex h-64 flex-col items-center justify-center gap-3">
-			<Icon name="lucide:chart-no-axes-column" class="size-10 text-[var(--ui-text-dimmed)]" />
+			<Icon name="lucide:chart-no-axes-column" class="size-10 text-(--ui-text-dimmed)" />
 			<div class="text-center">
 				<p class="font-display text-[15px] font-semibold">No data for this period</p>
-				<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+				<p class="text-[12.5px] text-(--ui-text-muted)">
 					Try a different date range, or make some sales first.
 				</p>
 			</div>
@@ -471,8 +469,7 @@
 		<div class="grid grid-cols-2 gap-3 lg:grid-cols-3">
 			<div class="surface-card p-4">
 				<div class="mb-2 flex items-center justify-between">
-					<span
-						class="text-[11.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+					<span class="text-[11.5px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase"
 						>{t('dashboard.revenue')}</span
 					>
 					<Icon name="lucide:trending-up" class="size-4 text-emerald-600 dark:text-emerald-400" />
@@ -485,8 +482,7 @@
 			</div>
 			<div class="surface-card p-4">
 				<div class="mb-2 flex items-center justify-between">
-					<span
-						class="text-[11.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+					<span class="text-[11.5px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase"
 						>Expenses</span
 					>
 					<Icon name="lucide:trending-down" class="size-4 text-rose-500" />
@@ -495,15 +491,14 @@
 					{formatMoney(totalExpenses, currency)}
 				</div>
 				{#if expenseBreakdown.length > 0}
-					<div class="mt-1 text-[11px] text-[var(--ui-text-dimmed)]">
+					<div class="mt-1 text-[11px] text-(--ui-text-dimmed)">
 						{expenseBreakdown.length} categories
 					</div>
 				{/if}
 			</div>
 			<div class="surface-card p-4">
 				<div class="mb-2 flex items-center justify-between">
-					<span
-						class="text-[11.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+					<span class="text-[11.5px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase"
 						>Net Profit</span
 					>
 					<Icon
@@ -520,7 +515,7 @@
 				>
 					{formatMoney(netProfit, currency)}
 				</div>
-				<div class="mt-0.5 text-[12px] font-semibold text-[var(--ui-text-dimmed)] tabular-nums">
+				<div class="mt-0.5 text-[12px] font-semibold text-(--ui-text-dimmed) tabular-nums">
 					{totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0'}% margin
 				</div>
 			</div>
@@ -556,7 +551,7 @@
 						<div class="group relative flex flex-1 flex-col items-center gap-1.5">
 							<!-- Tooltip -->
 							<div
-								class="pointer-events-none absolute -top-8 z-10 hidden rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] px-2 py-1 text-[11px] font-semibold whitespace-nowrap tabular-nums shadow-md group-hover:block"
+								class="pointer-events-none absolute -top-8 z-10 hidden rounded-md border border-(--ui-border) bg-(--ui-bg-elevated) px-2 py-1 text-[11px] font-semibold whitespace-nowrap tabular-nums shadow-md group-hover:block"
 							>
 								{formatMoney(day.total, currency)}
 							</div>
@@ -564,10 +559,10 @@
 								class="w-full rounded-t-md transition-all
 									{day.total > 0
 									? 'bg-gradient-to-t from-primary-500/30 to-primary-500 hover:from-primary-500/50 hover:to-primary-400'
-									: 'bg-[var(--ui-bg-accented)]'}"
+									: 'bg-(--ui-bg-accented)'}"
 								style="height: {Math.max(3, (day.total / maxRevenueDay) * 160)}px"
 							></div>
-							<span class="text-[10px] font-semibold text-[var(--ui-text-dimmed)]">
+							<span class="text-[10px] font-semibold text-(--ui-text-dimmed)">
 								{day.label}
 							</span>
 						</div>
@@ -579,9 +574,7 @@
 			<div class="surface-card p-5">
 				<h2 class="mb-4 font-display text-[15px] font-semibold tracking-tight">Payment Methods</h2>
 				{#if paymentBreakdown.length === 0}
-					<div
-						class="flex h-32 items-center justify-center text-[12.5px] text-[var(--ui-text-dimmed)]"
-					>
+					<div class="flex h-32 items-center justify-center text-[12.5px] text-(--ui-text-dimmed)">
 						No payment data
 					</div>
 				{:else}
@@ -594,13 +587,13 @@
 										<span class="font-semibold">{pm.label}</span>
 									</div>
 									<div class="flex items-center gap-2 tabular-nums">
-										<span class="text-[var(--ui-text-muted)]">
+										<span class="text-(--ui-text-muted)">
 											{formatMoney(pm.total, currency)}
 										</span>
 										<span class="font-semibold">{pm.percent.toFixed(0)}%</span>
 									</div>
 								</div>
-								<div class="h-2 overflow-hidden rounded-full bg-[var(--ui-bg-accented)]">
+								<div class="h-2 overflow-hidden rounded-full bg-(--ui-bg-accented)">
 									<div
 										class="h-full rounded-full transition-all"
 										style="width: {pm.percent}%; background: {pm.color}"
@@ -617,9 +610,7 @@
 		<div class="surface-card p-5">
 			<h2 class="mb-4 font-display text-[15px] font-semibold tracking-tight">Expense Breakdown</h2>
 			{#if expenseBreakdown.length === 0}
-				<div
-					class="flex h-32 items-center justify-center text-[12.5px] text-[var(--ui-text-dimmed)]"
-				>
+				<div class="flex h-32 items-center justify-center text-[12.5px] text-(--ui-text-dimmed)">
 					No expenses in this period
 				</div>
 			{:else}
@@ -630,14 +621,14 @@
 								<div class="flex items-center gap-1.5">
 									<span style="color: {ec.color}"><Icon name={ec.icon} class="size-3.5" /></span>
 									<span class="font-semibold">{ec.label}</span>
-									<span class="text-[10px] text-[var(--ui-text-dimmed)]">({ec.count})</span>
+									<span class="text-[10px] text-(--ui-text-dimmed)">({ec.count})</span>
 								</div>
 								<div class="flex items-center gap-2 tabular-nums">
-									<span class="text-[var(--ui-text-muted)]">{formatMoney(ec.total, currency)}</span>
+									<span class="text-(--ui-text-muted)">{formatMoney(ec.total, currency)}</span>
 									<span class="font-semibold">{ec.percent.toFixed(0)}%</span>
 								</div>
 							</div>
-							<div class="h-2 overflow-hidden rounded-full bg-[var(--ui-bg-accented)]">
+							<div class="h-2 overflow-hidden rounded-full bg-(--ui-bg-accented)">
 								<div
 									class="h-full rounded-full transition-all"
 									style="width: {ec.percent}%; background: {ec.color}"
@@ -654,8 +645,8 @@
 			<div class="mb-4 flex items-center justify-between">
 				<h2 class="font-display text-[15px] font-semibold tracking-tight">Sales by Hour</h2>
 				{#if peakHour && peakHour.total > 0}
-					<span class="text-[12px] text-[var(--ui-text-muted)]">
-						Peak: <span class="font-semibold text-[var(--ui-text)]">{peakHour.label}</span>
+					<span class="text-[12px] text-(--ui-text-muted)">
+						Peak: <span class="font-semibold text-(--ui-text)">{peakHour.label}</span>
 						· <span class="tabular-nums">{formatMoney(peakHour.total, currency)}</span>
 					</span>
 				{/if}
@@ -664,7 +655,7 @@
 				{#each hourlySales as hr (hr.hour)}
 					<div class="group relative flex flex-1 flex-col items-center gap-1">
 						<div
-							class="pointer-events-none absolute -top-8 z-10 hidden rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] px-2 py-1 text-[11px] font-semibold whitespace-nowrap tabular-nums shadow-md group-hover:block"
+							class="pointer-events-none absolute -top-8 z-10 hidden rounded-md border border-(--ui-border) bg-(--ui-bg-elevated) px-2 py-1 text-[11px] font-semibold whitespace-nowrap tabular-nums shadow-md group-hover:block"
 						>
 							{formatMoney(hr.total, currency)} · {hr.count} orders
 						</div>
@@ -675,7 +666,7 @@
 								: 'bg-gradient-to-t from-blue-500/30 to-blue-500'}"
 							style="height: {Math.max(3, (hr.total / maxHourTotal) * 130)}px"
 						></div>
-						<span class="text-[10px] font-semibold text-[var(--ui-text-dimmed)]">{hr.label}</span>
+						<span class="text-[10px] font-semibold text-(--ui-text-dimmed)">{hr.label}</span>
 					</div>
 				{/each}
 			</div>
@@ -686,7 +677,7 @@
 			<h2 class="mb-4 font-display text-[15px] font-semibold tracking-tight">Top Products</h2>
 			{#if topProducts.length === 0}
 				<div
-					class="flex h-32 items-center justify-center gap-2 text-[12.5px] text-[var(--ui-text-dimmed)]"
+					class="flex h-32 items-center justify-center gap-2 text-[12.5px] text-(--ui-text-dimmed)"
 				>
 					<Icon name="lucide:package-open" class="size-5" />
 					No product sales in this period.
@@ -696,7 +687,7 @@
 					<table class="w-full text-left text-[13px]">
 						<thead>
 							<tr
-								class="border-b border-[var(--ui-border)] text-[11.5px] tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+								class="border-b border-(--ui-border) text-[11.5px] tracking-wide text-(--ui-text-dimmed) uppercase"
 							>
 								<th class="py-2 pr-3 font-semibold">#</th>
 								<th class="py-2 pr-3 font-semibold">{t('common.product')}</th>
@@ -708,15 +699,15 @@
 						<tbody>
 							{#each topProducts as p, i (p.name + i)}
 								<tr
-									class="border-b border-[var(--ui-border)]/50 transition-colors hover:bg-[var(--ui-bg-accented)]/50"
+									class="border-b border-(--ui-border)/50 transition-colors hover:bg-(--ui-bg-accented)/50"
 								>
-									<td class="py-2.5 pr-3 text-[var(--ui-text-dimmed)] tabular-nums">{i + 1}</td>
+									<td class="py-2.5 pr-3 text-(--ui-text-dimmed) tabular-nums">{i + 1}</td>
 									<td class="py-2.5 pr-3 font-semibold">{p.name}</td>
 									<td class="py-2.5 pr-3 text-right tabular-nums">{formatInt(p.qty)}</td>
 									<td class="py-2.5 pr-3 text-right tabular-nums">
 										{formatMoney(p.revenue, currency)}
 									</td>
-									<td class="py-2.5 text-right text-[var(--ui-text-muted)] tabular-nums">
+									<td class="py-2.5 text-right text-(--ui-text-muted) tabular-nums">
 										{totalRevenue > 0 ? ((p.revenue / totalRevenue) * 100).toFixed(1) : '0.0'}%
 									</td>
 								</tr>
@@ -738,9 +729,7 @@
 })}
 	<div class="surface-card p-4">
 		<div class="mb-2 flex items-center justify-between">
-			<span
-				class="text-[11.5px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
-			>
+			<span class="text-[11.5px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase">
 				{props.label}
 			</span>
 			<Icon name={props.icon} class="size-4 {props.accent}" />
@@ -754,10 +743,10 @@
 			>
 				<span class="mr-0.5">{props.change >= 0 ? '▲' : '▼'}</span>
 				{fmtPct(props.change)}
-				<span class="font-normal text-[var(--ui-text-dimmed)]"> vs prev</span>
+				<span class="font-normal text-(--ui-text-dimmed)"> vs prev</span>
 			</div>
 		{:else}
-			<div class="mt-0.5 text-[12px] text-[var(--ui-text-dimmed)]">— vs prev</div>
+			<div class="mt-0.5 text-[12px] text-(--ui-text-dimmed)">— vs prev</div>
 		{/if}
 	</div>
 {/snippet}

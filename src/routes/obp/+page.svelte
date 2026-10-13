@@ -178,7 +178,7 @@
 			<Icon name="lucide:file-signature" class="size-8" />
 		</div>
 		<h1 class="mt-5 font-display text-2xl font-bold tracking-tight">OBP Purchasing</h1>
-		<p class="mx-auto mt-2 max-w-md text-[13.5px] leading-relaxed text-[var(--ui-text-muted)]">
+		<p class="mx-auto mt-2 max-w-md text-[13.5px] leading-relaxed text-(--ui-text-muted)">
 			Open Business Protocol pilot: exchange signed RFQs, quotes, orders, invoices and payment
 			receipts directly with your suppliers' nodes — no shared database.
 		</p>
@@ -208,7 +208,7 @@
 				</div>
 				<div>
 					<h1 class="font-display text-xl font-bold tracking-tight">OBP Purchasing</h1>
-					<p class="text-[12px] text-[var(--ui-text-muted)]">
+					<p class="text-[12px] text-(--ui-text-muted)">
 						{obpNode.counterparties.length} counterparties · {relays.writableNormalized.length} relays
 						{#if outboxPending}
 							· {outboxPending} queued
@@ -250,7 +250,7 @@
 
 		{#if obpNode.status !== 'running'}
 			<div
-				class="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg)] p-4 text-[13px] text-[var(--ui-text-muted)]"
+				class="rounded-2xl border border-(--ui-border) bg-(--ui-bg) p-4 text-[13px] text-(--ui-text-muted)"
 			>
 				{#if obpNode.blockers.length}
 					<ul class="list-inside list-disc space-y-1">
@@ -262,22 +262,20 @@
 					Start the node to send and receive signed OBP documents over Nostr.
 				{/if}
 				{#if obpNode.error}
-					<p class="mt-2 text-[var(--tone-error-text)]">{obpNode.error}</p>
+					<p class="mt-2 text-(--tone-error-text)">{obpNode.error}</p>
 				{/if}
 			</div>
 		{/if}
 
 		{#if message}
-			<div
-				class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg)] px-4 py-2.5 text-[12.5px]"
-			>
+			<div class="rounded-xl border border-(--ui-border) bg-(--ui-bg) px-4 py-2.5 text-[12.5px]">
 				{message}
 			</div>
 		{/if}
 
 		<!-- RFQ composer -->
 		{#if obpNode.status === 'running' && suppliers.length && drafts.length}
-			<div class="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg)] p-4">
+			<div class="rounded-2xl border border-(--ui-border) bg-(--ui-bg) p-4">
 				<h2 class="mb-3 text-[13px] font-semibold">Request a quote</h2>
 				<div class="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
 					<select class="obp-select" bind:value={chosenSupplier}>
@@ -304,17 +302,17 @@
 						Send RFQ
 					</Button>
 				</div>
-				<p class="mt-2 text-[11.5px] text-[var(--ui-text-muted)]">
+				<p class="mt-2 text-[11.5px] text-(--ui-text-muted)">
 					The local draft keeps its id and kind; the RFQ is linked via the OBP link store.
 				</p>
 			</div>
 		{/if}
 
 		<!-- Documents -->
-		<div class="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg)]">
+		<div class="overflow-hidden rounded-2xl border border-(--ui-border) bg-(--ui-bg)">
 			<table class="w-full text-left text-[13px]">
 				<thead
-					class="border-b border-[var(--ui-border)] text-[11.5px] tracking-wide text-[var(--ui-text-muted)] uppercase"
+					class="border-b border-(--ui-border) text-[11.5px] tracking-wide text-(--ui-text-muted) uppercase"
 				>
 					<tr>
 						<th class="px-4 py-2.5 font-semibold">Document</th>
@@ -327,21 +325,21 @@
 				<tbody>
 					{#if documents.length === 0}
 						<tr
-							><td colspan="5" class="px-4 py-6 text-center text-[var(--ui-text-muted)]"
+							><td colspan="5" class="px-4 py-6 text-center text-(--ui-text-muted)"
 								>No OBP documents yet.</td
 							></tr
 						>
 					{/if}
 					{#each documents as doc (doc.documentId)}
 						<tr
-							class="cursor-pointer border-b border-[var(--ui-border)] last:border-0 hover:bg-[var(--ui-bg-hover)]"
+							class="cursor-pointer border-b border-(--ui-border) last:border-0 hover:bg-(--ui-bg-hover)"
 							onclick={() => void selectDoc(doc)}
-							class:bg-[var(--ui-bg-active)]={selected?.doc.documentId === doc.documentId}
+							class:bg-(--ui-bg-active)={selected?.doc.documentId === doc.documentId}
 						>
 							<td class="px-4 py-2.5 font-semibold"
 								>{TYPE_LABEL[doc.documentType] ?? doc.documentType}</td
 							>
-							<td class="px-4 py-2.5 text-[var(--ui-text-muted)]">
+							<td class="px-4 py-2.5 text-(--ui-text-muted)">
 								{doc.issuer === ourOrgId ? doc.recipient : doc.issuer}
 							</td>
 							<td class="px-4 py-2.5 text-right tabular-nums">{amount(doc)}</td>
@@ -363,7 +361,7 @@
 
 		<!-- Selected document detail -->
 		{#if selected}
-			<div class="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg)] p-4">
+			<div class="rounded-2xl border border-(--ui-border) bg-(--ui-bg) p-4">
 				<div class="mb-3 flex flex-wrap items-center justify-between gap-2">
 					<h2 class="text-[13px] font-semibold">
 						{TYPE_LABEL[selected.doc.documentType] ?? selected.doc.documentType}
@@ -388,11 +386,11 @@
 				<ol class="space-y-1.5 text-[12.5px]">
 					{#each selected.log as entry (entry.at + entry.action)}
 						<li class="flex items-center gap-2">
-							<span class="text-[var(--ui-text-muted)] tabular-nums"
+							<span class="text-(--ui-text-muted) tabular-nums"
 								>{new Date(entry.at).toLocaleString()}</span
 							>
 							<span class="font-semibold">{entry.action}</span>
-							<span class="text-[var(--ui-text-muted)]"
+							<span class="text-(--ui-text-muted)"
 								>from {entry.from === 'us' ? 'us' : entry.from.slice(0, 18) + '…'}</span
 							>
 							<span
@@ -411,9 +409,9 @@
 
 		<!-- Audit tail -->
 		{#if audit.length}
-			<div class="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg)] p-4">
+			<div class="rounded-2xl border border-(--ui-border) bg-(--ui-bg) p-4">
 				<h2 class="mb-2 text-[13px] font-semibold">Audit trail</h2>
-				<ul class="space-y-1 text-[11.5px] text-[var(--ui-text-muted)]">
+				<ul class="space-y-1 text-[11.5px] text-(--ui-text-muted)">
 					{#each audit as entry (entry.at + entry.detail)}
 						<li>
 							<span class="tabular-nums">{new Date(entry.at).toLocaleTimeString()}</span> · {entry.detail}

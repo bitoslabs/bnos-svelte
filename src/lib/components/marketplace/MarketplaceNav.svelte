@@ -40,7 +40,7 @@
 	class="no-scrollbar -mx-5 mb-5 overflow-x-auto px-5 sm:mx-0 sm:px-0"
 	aria-label={t('nav.sectionMarketplace')}
 >
-	<div class="flex w-max min-w-full gap-1 border-b border-[var(--ui-border-muted)] pb-px">
+	<div class="flex w-max min-w-full gap-1 border-b border-(--ui-border-muted) pb-px">
 		{#each items as it (it.to)}
 			{@const isActive = active(it.to, it.exact)}
 			{@const count = it.countKey ? counts[it.countKey] : undefined}
@@ -51,7 +51,7 @@
 					'group relative flex items-center gap-1.5 px-3 py-2.5 text-[13px] font-semibold whitespace-nowrap transition-colors',
 					isActive
 						? 'text-primary-600 dark:text-primary-400'
-						: 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'
+						: 'text-(--ui-text-muted) hover:text-(--ui-text)'
 				)}
 			>
 				<Icon
@@ -60,7 +60,7 @@
 						'size-4 shrink-0 transition-colors',
 						isActive
 							? 'text-primary-500'
-							: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'
+							: 'text-(--ui-text-dimmed) group-hover:text-(--ui-text-muted)'
 					)}
 				/>
 				{it.label}

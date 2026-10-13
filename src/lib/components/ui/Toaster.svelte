@@ -26,33 +26,31 @@
 			<Icon
 				name={item.icon ?? iconFor[item.color ?? 'neutral']}
 				class="mt-0.5 size-4.5 shrink-0 {item.color === 'error' || item.color === 'warning'
-					? 'text-[var(--tone-error-text)]'
+					? 'text-(--tone-error-text)'
 					: item.color === 'success'
-						? 'text-[var(--tone-success-text)]'
-						: 'text-[var(--ui-color-primary-500)]'}"
+						? 'text-(--tone-success-text)'
+						: 'text-(--ui-color-primary-500)'}"
 			/>
 			<div class="min-w-0 flex-1">
-				<div
-					class="flex items-center gap-2 text-[13px] font-semibold text-[var(--ui-text-highlighted)]"
-				>
+				<div class="flex items-center gap-2 text-[13px] font-semibold text-(--ui-text-highlighted)">
 					<span class="truncate">{toast.renderText(item.title)}</span>
 					{#if (item.count ?? 1) > 1}
 						<span
-							class="rounded-full bg-[var(--ui-bg-accented)] px-1.5 py-0.5 text-[10px] text-[var(--ui-text-muted)]"
+							class="rounded-full bg-(--ui-bg-accented) px-1.5 py-0.5 text-[10px] text-(--ui-text-muted)"
 						>
 							x{item.count}
 						</span>
 					{/if}
 				</div>
 				{#if item.description}
-					<div class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
+					<div class="mt-0.5 text-[12px] text-(--ui-text-muted)">
 						{toast.renderText(item.description)}
 					</div>
 				{/if}
 			</div>
 			<button
 				type="button"
-				class="grid size-5 shrink-0 place-items-center rounded text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]"
+				class="grid size-5 shrink-0 place-items-center rounded text-(--ui-text-dimmed) hover:text-(--ui-text)"
 				onclick={() => toast.dismiss(item.id)}
 				aria-label={t('common.close')}
 			>

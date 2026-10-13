@@ -109,29 +109,29 @@
 		<div class="space-y-5">
 			<!-- Basic info -->
 			<section class="surface-card space-y-4 p-5">
-				<h3 class="text-[13px] font-semibold tracking-wider text-[var(--ui-text-muted)] uppercase">
+				<h3 class="text-[13px] font-semibold tracking-wider text-(--ui-text-muted) uppercase">
 					{t('settings.basic')}
 				</h3>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.storeNameOnReceipt')}</span
 					>
 					<Input bind:value={storeName} class="w-full" />
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.header')}</span
 					>
 					<Input bind:value={header} class="w-full" />
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.footer')}</span
 					>
 					<Input bind:value={footer} textarea class="w-full" />
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.paperSize')}</span
 					>
 					<Select
@@ -147,12 +147,12 @@
 
 			<!-- Logo & Tax ID -->
 			<section class="surface-card space-y-4 p-5">
-				<h3 class="text-[13px] font-semibold tracking-wider text-[var(--ui-text-muted)] uppercase">
+				<h3 class="text-[13px] font-semibold tracking-wider text-(--ui-text-muted) uppercase">
 					{t('settings.branding')}
 				</h3>
 				<div>
 					<div class="mb-1.5 flex items-center justify-between">
-						<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('settings.receiptLogoUrl')}</span
 						>
 						<Switch checked={showLogo} onCheckedChange={(v) => (showLogo = v)} />
@@ -167,7 +167,7 @@
 				</div>
 				<div>
 					<div class="mb-1.5 flex items-center justify-between">
-						<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('settings.taxId')}</span
 						>
 						<Switch checked={showTaxId} onCheckedChange={(v) => (showTaxId = v)} />
@@ -183,7 +183,7 @@
 
 			<!-- QR Code -->
 			<section class="surface-card space-y-4 p-5">
-				<h3 class="text-[13px] font-semibold tracking-wider text-[var(--ui-text-muted)] uppercase">
+				<h3 class="text-[13px] font-semibold tracking-wider text-(--ui-text-muted) uppercase">
 					{t('settings.qrCode')}
 				</h3>
 				<div class="flex items-center justify-between">
@@ -192,7 +192,7 @@
 				</div>
 				{#if showQr}
 					<label class="block">
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('settings.qrDataDesc')}</span
 						>
 						<Input
@@ -207,7 +207,7 @@
 
 			<!-- Show/hide fields -->
 			<section class="surface-card space-y-3 p-5">
-				<h3 class="text-[13px] font-semibold tracking-wider text-[var(--ui-text-muted)] uppercase">
+				<h3 class="text-[13px] font-semibold tracking-wider text-(--ui-text-muted) uppercase">
 					{t('settings.visibleFields')}
 				</h3>
 				<div class="flex items-center justify-between py-1">
@@ -265,13 +265,11 @@
 
 		<!-- Preview -->
 		<div class="surface-card p-5">
-			<div
-				class="mb-3 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-			>
+			<div class="mb-3 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 				{t('settings.preview')}
 			</div>
 			<div
-				class="mx-auto max-w-[14rem] rounded-lg border border-dashed border-[var(--ui-border-accented)] bg-white p-4 font-mono text-[11px] text-neutral-900"
+				class="mx-auto max-w-[14rem] rounded-lg border border-dashed border-(--ui-border-accented) bg-white p-4 font-mono text-[11px] text-neutral-900"
 			>
 				{#if showLogo && logoUrl}
 					<div class="mb-2 flex justify-center">

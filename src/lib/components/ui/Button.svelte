@@ -41,46 +41,45 @@
 				color: 'neutral',
 				variant: 'solid',
 				class:
-					'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] border border-[var(--ui-border)] hover:bg-[var(--interactive-hover-bg)]'
+					'bg-(--ui-bg-elevated) text-(--ui-text) border border-(--ui-border) hover:bg-(--interactive-hover-bg)'
 			},
 			{
 				color: 'neutral',
 				variant: 'subtle',
 				class:
-					'bg-[var(--ui-bg-muted)] text-[var(--ui-text)] border-[var(--ui-border)] hover:bg-[var(--interactive-hover-bg)]'
+					'bg-(--ui-bg-muted) text-(--ui-text) border-(--ui-border) hover:bg-(--interactive-hover-bg)'
 			},
 			{
 				color: 'neutral',
 				variant: 'soft',
 				class:
-					'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--interactive-hover-bg)]'
+					'bg-(--ui-bg-accented) text-(--ui-text-muted) hover:text-(--ui-text) hover:bg-(--interactive-hover-bg)'
 			},
 			{
 				color: 'neutral',
 				variant: 'ghost',
-				class:
-					'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'
+				class: 'text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'
 			},
 			{
 				color: 'error',
 				variant: 'solid',
-				class: 'bg-[var(--tone-error-text)] text-white hover:opacity-90'
+				class: 'bg-(--tone-error-text) text-white hover:opacity-90'
 			},
 			{
 				color: 'error',
 				variant: 'subtle',
 				class:
-					'bg-[var(--tone-error-bg)] text-[var(--tone-error-text)] border-[var(--danger-border)] hover:opacity-90'
+					'bg-(--tone-error-bg) text-(--tone-error-text) border-(--danger-border) hover:opacity-90'
 			},
 			{
 				color: 'error',
 				variant: 'soft',
-				class: 'bg-[var(--tone-error-bg)] text-[var(--tone-error-text)] hover:opacity-90'
+				class: 'bg-(--tone-error-bg) text-(--tone-error-text) hover:opacity-90'
 			},
 			{
 				color: 'error',
 				variant: 'ghost',
-				class: 'text-[var(--tone-error-text)] hover:bg-[var(--tone-error-bg)]'
+				class: 'text-(--tone-error-text) hover:bg-(--tone-error-bg)'
 			}
 		],
 		defaultVariants: { color: 'neutral', variant: 'solid', size: 'md' }

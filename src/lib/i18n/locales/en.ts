@@ -423,7 +423,17 @@ export const en = {
 		collapseSidebar: 'Collapse sidebar',
 		collapse: 'Collapse',
 		expand: 'Expand',
-		goDashboard: 'Go to BNOS dashboard'
+		goDashboard: 'Go to BNOS dashboard',
+		syncWorkspace: 'Sync workspace',
+		syncWorkspaceHint: 'Pull your company and data from relays',
+		configureOrganization: 'Configure organization',
+		configureOrganizationHint: 'Set up your company, branch and currency',
+		syncWorkspaceDone: 'Workspace synced',
+		syncWorkspaceDoneDesc: 'Your company and data are up to date.',
+		syncWorkspaceEmpty: 'Nothing to sync yet',
+		syncWorkspaceEmptyDesc:
+			'No synced workspace found. Configure your organization to get started.',
+		syncWorkspaceFailed: 'Sync failed'
 	},
 	toast: {
 		preferencesSaved: 'Preferences saved',
@@ -1309,7 +1319,22 @@ export const en = {
 		title: 'Account Restricted'
 	},
 	resolve: {
-		title: 'Resolving'
+		title: 'Resolving',
+		chooseTitle: 'Set up this device',
+		chooseDesc: 'Do you want to restore a setup you already have, or start a new one?',
+		syncTitle: 'Sync my existing setup',
+		syncDesc: 'Restore your company, catalog and data from your relays.',
+		newTitle: 'Create a new setup',
+		newDesc: 'Start a brand-new workspace for this identity.',
+		waitingNote:
+			'We found a staff login, but the owner device has not synced this workspace yet. Sync once the owner device is online, or start a new setup.',
+		notFoundTitle: 'No synced workspace found',
+		notFoundDesc:
+			'We could not find a workspace for this identity on your relays. Try syncing again, or start a new setup.',
+		syncingTitle: 'Restoring your setup',
+		syncingDesc: 'Looking up your workspace on the relays…',
+		tryAgain: 'Try sync again',
+		continueOffline: 'Continue offline'
 	},
 	workspace: {
 		companies: 'Companies'

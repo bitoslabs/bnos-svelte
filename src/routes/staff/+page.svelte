@@ -457,7 +457,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.staff')}</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+			<p class="text-[12.5px] text-(--ui-text-muted)">
 				{staff.length} member{staff.length === 1 ? '' : 's'} · kind 30500
 			</p>
 		</div>
@@ -489,7 +489,7 @@
 				<Icon name="lucide:users" class="size-4.5" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
+				<div class="text-[11px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase">
 					{t('common.total')}
 				</div>
 				<div class="font-display text-xl font-bold tabular-nums">{stats.total}</div>
@@ -497,12 +497,12 @@
 		</div>
 		<div class="surface-card flex items-center gap-3 p-3">
 			<div
-				class="grid size-9 place-items-center rounded-lg bg-[var(--tone-success-bg)] text-[var(--tone-success-text)]"
+				class="grid size-9 place-items-center rounded-lg bg-(--tone-success-bg) text-(--tone-success-text)"
 			>
 				<Icon name="lucide:user-check" class="size-4.5" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
+				<div class="text-[11px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase">
 					Active
 				</div>
 				<div class="font-display text-xl font-bold tabular-nums">{stats.active}</div>
@@ -510,12 +510,12 @@
 		</div>
 		<div class="surface-card flex items-center gap-3 p-3">
 			<div
-				class="grid size-9 place-items-center rounded-lg bg-[var(--tone-neutral-bg)] text-[var(--ui-text-muted)]"
+				class="grid size-9 place-items-center rounded-lg bg-(--tone-neutral-bg) text-(--ui-text-muted)"
 			>
 				<Icon name="lucide:user-minus" class="size-4.5" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
+				<div class="text-[11px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase">
 					{t('common.inactive')}
 				</div>
 				<div class="font-display text-xl font-bold tabular-nums">{stats.inactive}</div>
@@ -523,12 +523,12 @@
 		</div>
 		<div class="surface-card flex items-center gap-3 p-3">
 			<div
-				class="grid size-9 place-items-center rounded-lg bg-[var(--tone-info-bg)] text-[var(--tone-info-text)]"
+				class="grid size-9 place-items-center rounded-lg bg-(--tone-info-bg) text-(--tone-info-text)"
 			>
 				<Icon name="lucide:briefcase" class="size-4.5" />
 			</div>
 			<div class="min-w-0">
-				<div class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
+				<div class="text-[11px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase">
 					Roles
 				</div>
 				<div class="truncate text-[12.5px] font-semibold">
@@ -586,7 +586,7 @@
 						</div>
 						<div class="min-w-0 flex-1">
 							<div class="truncate font-semibold">{s.data.name}</div>
-							<div class="flex items-center gap-1.5 text-[12px] text-[var(--ui-text-muted)]">
+							<div class="flex items-center gap-1.5 text-[12px] text-(--ui-text-muted)">
 								<Icon name={roleIcon[s.data.role] ?? 'lucide:user'} class="size-3.5" />
 								{ROLE_LABELS[s.data.role] ?? s.data.role}
 							</div>
@@ -594,8 +594,8 @@
 						<span
 							class="absolute top-3 right-3 size-2.5 rounded-full {(s.data.status ?? 'active') ===
 							'active'
-								? 'bg-[var(--tone-success-text)]'
-								: 'bg-[var(--ui-text-dimmed)]'}"
+								? 'bg-(--tone-success-text)'
+								: 'bg-(--ui-text-dimmed)'}"
 							title={s.data.status ?? 'active'}
 						></span>
 					</div>
@@ -615,7 +615,7 @@
 					</div>
 
 					{#if s.data.email || s.data.phone || s.data.npub}
-						<div class="space-y-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
+						<div class="space-y-0.5 text-[11.5px] text-(--ui-text-dimmed)">
 							{#if s.data.email}
 								<div class="flex items-center gap-1.5">
 									<Icon name="lucide:at-sign" class="size-3" />{s.data.email}
@@ -635,9 +635,7 @@
 						</div>
 					{/if}
 
-					<div
-						class="flex items-center justify-end gap-1 border-t border-[var(--ui-border-muted)] pt-2"
-					>
+					<div class="flex items-center justify-end gap-1 border-t border-(--ui-border-muted) pt-2">
 						{#if canWrite}
 							<Button
 								size="sm"
@@ -654,7 +652,7 @@
 				</div>
 			{/each}
 		</div>
-		<Pagination {controls} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
+		<Pagination {controls} class="mt-3 rounded-xl border border-(--ui-border)" />
 	{:else}
 		<div class="data-panel">
 			<table class="table-surface w-full text-left">
@@ -683,20 +681,19 @@
 						<th class="w-10 px-5 py-2.5"></th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+				<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 					{#each controls.pagedList as s (s.id)}
 						<tr>
 							<td class="px-5 py-3 font-semibold">{s.data.name}</td>
 							<td class="px-5 py-3">
-								<div class="flex items-center gap-1.5 text-[var(--ui-text-muted)]">
+								<div class="flex items-center gap-1.5 text-(--ui-text-muted)">
 									<Icon name={roleIcon[s.data.role] ?? 'lucide:user'} class="size-3.5" />
 									{ROLE_LABELS[s.data.role] ?? s.data.role}
 								</div>
 							</td>
-							<td class="px-5 py-3 text-[var(--ui-text-muted)]"
-								>{s.data.email ?? s.data.phone ?? '—'}</td
+							<td class="px-5 py-3 text-(--ui-text-muted)">{s.data.email ?? s.data.phone ?? '—'}</td
 							>
-							<td class="px-5 py-3 text-[var(--ui-text-dimmed)]">
+							<td class="px-5 py-3 text-(--ui-text-dimmed)">
 								{#if s.data.npub}
 									<span class="font-mono text-[11px]">{truncateNpub(s.data.npub, 10, 4)}</span>
 								{:else}—{/if}
@@ -711,7 +708,7 @@
 									{#if canWrite}
 										<button
 											type="button"
-											class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+											class="grid size-7 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 											onclick={() => openEdit(s)}
 											aria-label={t('common.edit')}
 										>
@@ -740,9 +737,9 @@
 	<div class="space-y-3">
 		<!-- Identity / pubkey -->
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">
 				Nostr pubkey (npub){#if !editingId}
-					<span class="text-[var(--tone-error-text)]">*</span>{/if}
+					<span class="text-(--tone-error-text)">*</span>{/if}
 			</span>
 			<div class="flex items-center gap-2">
 				<Input
@@ -771,17 +768,17 @@
 				/>
 			</div>
 			{#if pubkeyState === 'invalid'}
-				<span class="mt-1 block text-[11px] text-[var(--tone-error-text)]">Invalid pubkey</span>
+				<span class="mt-1 block text-[11px] text-(--tone-error-text)">Invalid pubkey</span>
 			{:else if pubkeyState === 'valid'}
-				<span class="mt-1 block text-[11px] text-[var(--tone-success-text)]">Valid</span>
+				<span class="mt-1 block text-[11px] text-(--tone-success-text)">Valid</span>
 			{:else}
-				<span class="mt-1 block text-[11px] text-[var(--ui-text-dimmed)]">
+				<span class="mt-1 block text-[11px] text-(--ui-text-dimmed)">
 					Links this staff member to a Nostr identity for login & permissions.
 				</span>
 			{/if}
 			{#if generatedNsec && showNsec}
 				<span
-					class="mt-2 block rounded-lg border border-[var(--tone-warning-text)]/40 bg-[var(--tone-warning-bg)] p-2 font-mono text-[10.5px] break-all"
+					class="mt-2 block rounded-lg border border-(--tone-warning-text)/40 bg-(--tone-warning-bg) p-2 font-mono text-[10.5px] break-all"
 				>
 					⚠ Back up this nsec — it won't be shown again:<br />{generatedNsec}
 				</span>
@@ -790,13 +787,13 @@
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Name <span class="text-[var(--tone-error-text)]">*</span></span
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
+					>Name <span class="text-(--tone-error-text)">*</span></span
 				>
 				<Input bind:value={form.name} icon="lucide:user" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.displayName')}</span
 				>
 				<Input bind:value={form.displayName} class="w-full" />
@@ -805,7 +802,7 @@
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.role')}</span
 				>
 				<Select
@@ -815,7 +812,7 @@
 				/>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.company')}</span
 				>
 				<Input value={tenant.state.organizationName || '—'} disabled class="w-full" />
@@ -824,13 +821,13 @@
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.email')}</span
 				>
 				<Input bind:value={form.email} icon="lucide:at-sign" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.phone')}</span
 				>
 				<Input bind:value={form.phone} icon="lucide:phone" class="w-full" />
@@ -839,14 +836,13 @@
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Employee code</span
 				>
 				<Input bind:value={form.employeeCode} placeholder="EMP-001" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Department</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Department</span
 				>
 				<Input bind:value={form.department} placeholder="Front of house" class="w-full" />
 			</label>
@@ -854,8 +850,7 @@
 
 		<!-- PIN -->
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">POS PIN</span
-			>
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">POS PIN</span>
 			<div class="flex items-center gap-2">
 				<Input
 					bind:value={form.pin}
@@ -874,7 +869,7 @@
 					>
 				{/if}
 			</div>
-			<span class="mt-1 block text-[11px] text-[var(--ui-text-dimmed)]">
+			<span class="mt-1 block text-[11px] text-(--ui-text-dimmed)">
 				{editingId && staff.find((s) => s.id === editingId)?.data.pinHash && !form.pin
 					? '✓ PIN set (hashed)'
 					: 'Stored as a SHA-256 hash, never plaintext.'}
@@ -883,15 +878,13 @@
 
 		<!-- Hourly rate -->
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Hourly rate</span
-			>
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Hourly rate</span>
 			<Input bind:value={form.hourlyRate} type="number" min="0" step="0.5" class="w-full" />
 		</label>
 
 		<!-- Status -->
 		<div>
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.status')}</span
 			>
 			<div class="flex flex-wrap gap-2">
@@ -902,7 +895,7 @@
 						class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium capitalize transition-all {form.status ===
 						status
 							? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300'
-							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
+							: 'border-(--ui-border) text-(--ui-text-muted) hover:border-(--ui-text-dimmed)'}"
 					>
 						{status.replace('_', ' ')}
 					</button>
@@ -912,10 +905,8 @@
 
 		<!-- Branch assignment -->
 		<div>
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Branches</span
-			>
-			<span class="mb-2 block text-[11px] text-[var(--ui-text-dimmed)]">
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Branches</span>
+			<span class="mb-2 block text-[11px] text-(--ui-text-dimmed)">
 				Empty selection grants company-wide access.
 			</span>
 			<div class="space-y-1.5">
@@ -923,17 +914,17 @@
 					<Checkbox
 						checked={form.branchIds.includes(branch.id)}
 						onCheckedChange={() => toggleBranch(branch.id)}
-						class="items-center gap-2 rounded-lg border border-[var(--ui-border)] px-3 py-2 text-[12.5px] hover:bg-[var(--ui-bg-accented)]"
+						class="items-center gap-2 rounded-lg border border-(--ui-border) px-3 py-2 text-[12.5px] hover:bg-(--ui-bg-accented)"
 						>{(branch.data as { name?: string }).name ?? branch.id}</Checkbox
 					>
 				{:else}
-					<span class="text-[11px] text-[var(--ui-text-dimmed)]">No branches configured.</span>
+					<span class="text-[11px] text-(--ui-text-dimmed)">No branches configured.</span>
 				{/each}
 			</div>
 		</div>
 
 		<!-- Custom permissions -->
-		<div class="rounded-xl border border-[var(--ui-border)] p-3">
+		<div class="rounded-xl border border-(--ui-border) p-3">
 			<div class="flex items-center justify-between">
 				<span class="text-[12.5px] font-bold">Customize permissions</span>
 				<Switch checked={form.useCustomPermissions} onCheckedChange={onCustomToggle} />
@@ -942,7 +933,7 @@
 				<div class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
 					{#each PERMISSION_RESOURCES as res (res.id)}
 						<div>
-							<p class="mb-1 text-[10.5px] font-bold text-[var(--ui-text-dimmed)] uppercase">
+							<p class="mb-1 text-[10.5px] font-bold text-(--ui-text-dimmed) uppercase">
 								{res.name}
 							</p>
 							<div class="flex flex-wrap gap-x-2 gap-y-0.5">

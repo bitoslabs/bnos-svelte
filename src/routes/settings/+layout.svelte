@@ -27,7 +27,7 @@
 			{#if !isIndex}
 				<a
 					href={resolve('/settings')}
-					class="settings-layout-back mb-4 inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] lg:hidden"
+					class="settings-layout-back mb-4 inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text) lg:hidden"
 				>
 					<Icon name="lucide:arrow-left" class="size-4" />
 					{t('settings.allSettings')}

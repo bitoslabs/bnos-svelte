@@ -428,6 +428,8 @@
 		<div class="relative z-10 flex justify-center gap-2 pb-8">
 			{#each Array(SLIDES) as _, i (i)}
 				<button
+					type="button"
+					aria-label={`Slide ${i + 1}`}
 					onclick={() => (currentSlide = i)}
 					class="h-1.5 rounded-full transition-all {currentSlide === i
 						? 'w-8 bg-primary-500'

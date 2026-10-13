@@ -137,7 +137,7 @@
 
 		<div class="flex items-center gap-1.5">
 			<span
-				class="mr-2 hidden text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase sm:inline"
+				class="mr-2 hidden text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase sm:inline"
 			>
 				Setup · step {idx + 1} of {setupSteps.length}
 			</span>
@@ -146,7 +146,7 @@
 				type="button"
 				onclick={manualResolve}
 				disabled={resolvingWorkspace}
-				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:opacity-50"
+				class="grid size-9 place-items-center rounded-lg text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text) disabled:opacity-50"
 				aria-label={t('common.resolveWorkspace')}
 				title={t('common.resolveWorkspace')}
 			>
@@ -160,7 +160,7 @@
 			<button
 				type="button"
 				onclick={() => setMode(mode.current === 'dark' ? 'light' : 'dark')}
-				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+				class="grid size-9 place-items-center rounded-lg text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 				aria-label={t('common.toggleTheme')}
 				title={t('common.toggleTheme')}
 			>
@@ -183,7 +183,7 @@
 			<button
 				type="button"
 				onclick={signOut}
-				class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
+				class="grid size-9 place-items-center rounded-lg text-(--ui-text-muted) transition-colors hover:bg-(--tone-error-bg) hover:text-(--tone-error-text)"
 				aria-label={t('common.signOut')}
 				title={t('common.signOut')}
 			>
@@ -196,18 +196,16 @@
 	<div class="mb-8 space-y-2">
 		<div class="flex items-end justify-between gap-4">
 			<div>
-				<div
-					class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-				>
+				<div class="text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 					{currentStep?.label}
 				</div>
-				<div class="text-[13px] text-[var(--ui-text-muted)]">{currentStep?.description}</div>
+				<div class="text-[13px] text-(--ui-text-muted)">{currentStep?.description}</div>
 			</div>
-			<div class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
+			<div class="text-[12px] font-semibold text-(--ui-text-muted)">
 				{Math.round(progress)}%
 			</div>
 		</div>
-		<div class="h-1.5 w-full overflow-hidden rounded-full bg-[var(--ui-bg-accented)]">
+		<div class="h-1.5 w-full overflow-hidden rounded-full bg-(--ui-bg-accented)">
 			<div
 				class="h-full rounded-full bg-primary-500 transition-all duration-500"
 				style="width: {progress}%"
@@ -227,15 +225,15 @@
 							class="flex items-center gap-3 rounded-lg px-3 py-2 {active
 								? 'is-active-surface'
 								: done
-									? 'text-[var(--ui-text-muted)]'
-									: 'text-[var(--ui-text-dimmed)]'}"
+									? 'text-(--ui-text-muted)'
+									: 'text-(--ui-text-dimmed)'}"
 						>
 							<span
 								class="grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-bold {active
 									? 'bg-primary-500 text-white'
 									: done
 										? 'bg-primary-500/15 text-primary-600 dark:text-primary-400'
-										: 'bg-[var(--ui-bg-accented)]'}"
+										: 'bg-(--ui-bg-accented)'}"
 							>
 								{#if done}<Icon name="lucide:check" class="size-3.5" />{:else}{i + 1}{/if}
 							</span>
@@ -257,11 +255,11 @@
 			{#if !isDone}
 				<!-- Nav buttons -->
 				<div
-					class="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 border-t border-[var(--ui-border-muted)] bg-[var(--ui-bg)] pt-4 pb-1 sm:flex-row sm:items-center sm:justify-between"
+					class="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 border-t border-(--ui-border-muted) bg-(--ui-bg) pt-4 pb-1 sm:flex-row sm:items-center sm:justify-between"
 				>
 					<button
 						type="button"
-						class="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] disabled:opacity-40"
+						class="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented) disabled:opacity-40"
 						onclick={() => go(-1)}
 						disabled={idx <= 0}
 					>
@@ -269,12 +267,12 @@
 					</button>
 					<div class="flex flex-col items-stretch gap-2 sm:items-end">
 						{#if blockedReason}
-							<div class="flex items-center gap-1.5 text-[12px] text-[var(--tone-error-text)]">
+							<div class="flex items-center gap-1.5 text-[12px] text-(--tone-error-text)">
 								<Icon name="lucide:circle-alert" class="size-3.5" />
 								{blockedReason}
 							</div>
 						{:else if isOptionalStep}
-							<div class="text-[12px] text-[var(--ui-text-dimmed)]">Samples are optional.</div>
+							<div class="text-[12px] text-(--ui-text-dimmed)">Samples are optional.</div>
 						{/if}
 						<button
 							type="button"

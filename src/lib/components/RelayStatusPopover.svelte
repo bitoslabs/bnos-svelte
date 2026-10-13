@@ -60,7 +60,7 @@
 					class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75"
 				></span>{/if}
 			<span
-				class="relative inline-flex size-2.5 rounded-full ring-2 ring-[var(--surface-bg)] {relays.online
+				class="relative inline-flex size-2.5 rounded-full ring-2 ring-(--surface-bg) {relays.online
 					? 'bg-emerald-500'
 					: 'bg-amber-500'}"
 			></span>
@@ -83,7 +83,7 @@
 					<span class="text-[13px] font-semibold"
 						>{relays.online ? t('common.connected') : t('common.offline')}</span
 					>
-					<span class="text-[11px] text-[var(--ui-text-dimmed)]"
+					<span class="text-[11px] text-(--ui-text-dimmed)"
 						>{t('topbar.relaysActive', {
 							active: relays.activeRelays.length,
 							total: relays.relays.length
@@ -115,16 +115,13 @@
 
 			{#if relays.relays.length === 0}
 				<div
-					class="rounded-lg border border-dashed border-[var(--ui-border-muted)] px-3 py-6 text-center"
+					class="rounded-lg border border-dashed border-(--ui-border-muted) px-3 py-6 text-center"
 				>
-					<Icon
-						name="lucide:radio-off"
-						class="mx-auto mb-1.5 size-5 text-[var(--ui-text-dimmed)]"
-					/>
-					<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
+					<Icon name="lucide:radio-off" class="mx-auto mb-1.5 size-5 text-(--ui-text-dimmed)" />
+					<p class="text-[12px] font-semibold text-(--ui-text-muted)">
 						{t('topbar.noRelays')}
 					</p>
-					<p class="mt-0.5 text-[11px] text-[var(--ui-text-dimmed)]">
+					<p class="mt-0.5 text-[11px] text-(--ui-text-dimmed)">
 						{t('topbar.noRelaysDesc')}
 					</p>
 				</div>
@@ -134,12 +131,12 @@
 						{@const active = relays.isActive(url)}
 						{@const isPrimary = relays.primaryRelay === url}
 						<li
-							class="flex items-center gap-2.5 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-2.5 py-2"
+							class="flex items-center gap-2.5 rounded-lg border border-(--ui-border-muted) bg-(--ui-bg-muted) px-2.5 py-2"
 						>
 							<span
 								class="size-2 shrink-0 rounded-full {active
 									? 'bg-emerald-500'
-									: 'bg-[var(--ui-text-dimmed)]'}"
+									: 'bg-(--ui-text-dimmed)'}"
 							></span>
 							<div class="min-w-0 flex-1">
 								<div class="flex items-center gap-1">
@@ -154,7 +151,7 @@
 								<span
 									class="text-[10px] font-semibold {active
 										? 'text-emerald-600 dark:text-emerald-400'
-										: 'text-[var(--ui-text-dimmed)]'}"
+										: 'text-(--ui-text-dimmed)'}"
 									>{active ? t('common.active') : t('common.inactive')}</span
 								>
 							</div>
@@ -166,7 +163,7 @@
 							<button
 								type="button"
 								onclick={() => relays.remove(url)}
-								class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
+								class="grid size-7 shrink-0 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--tone-error-bg) hover:text-(--tone-error-text)"
 								aria-label={t('common.removeRelay')}
 								title={t('common.removeRelay')}><Icon name="lucide:x" class="size-3.5" /></button
 							>
@@ -179,7 +176,7 @@
 				type="button"
 				onclick={syncAllData}
 				disabled={syncState === 'syncing'}
-				class="mt-1 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-60"
+				class="mt-1 flex w-full items-center justify-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-(--ui-bg-accented) disabled:cursor-not-allowed disabled:opacity-60"
 			>
 				<Icon
 					name={syncIcon}

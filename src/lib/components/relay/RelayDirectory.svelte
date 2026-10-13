@@ -137,7 +137,7 @@
 		}
 		if (s?.status === 'testing') return 'bg-sky-400 animate-pulse';
 		if (s?.status === 'failed') return 'bg-rose-500';
-		return 'bg-[var(--ui-text-dimmed)]';
+		return 'bg-(--ui-text-dimmed)';
 	}
 
 	// --- Latency probing (concurrency-limited) -------------------------------
@@ -198,19 +198,17 @@
 
 <section class={cn('surface-card overflow-hidden', cls)}>
 	<!-- Header -->
-	<div
-		class="flex flex-wrap items-center gap-3 border-b border-[var(--ui-border-muted)] px-5 py-3.5"
-	>
+	<div class="flex flex-wrap items-center gap-3 border-b border-(--ui-border-muted) px-5 py-3.5">
 		<div
 			class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400"
 		>
 			<Icon name="lucide:telescope" class="size-5" />
 		</div>
 		<div class="min-w-0 flex-1">
-			<h3 class="font-display text-[14px] font-semibold text-[var(--ui-text)]">
+			<h3 class="font-display text-[14px] font-semibold text-(--ui-text)">
 				{t('relayDirectory.title')}
 			</h3>
-			<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
+			<p class="mt-0.5 text-[11.5px] text-(--ui-text-dimmed)">
 				{t('relayDirectory.description')}
 			</p>
 		</div>
@@ -228,23 +226,23 @@
 
 	<!-- Toolbar -->
 	<div
-		class="flex flex-wrap items-center gap-2 border-b border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-4 py-2.5"
+		class="flex flex-wrap items-center gap-2 border-b border-(--ui-border-muted) bg-(--ui-bg-muted) px-4 py-2.5"
 	>
 		<label
-			class="relative inline-flex h-8 min-w-[160px] flex-1 items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--surface-bg)] px-2.5 transition-colors focus-within:border-[var(--ui-color-primary-500)]"
+			class="relative inline-flex h-8 min-w-[160px] flex-1 items-center gap-2 rounded-lg border border-(--ui-border) bg-(--surface-bg) px-2.5 transition-colors focus-within:border-(--ui-color-primary-500)"
 		>
-			<Icon name="lucide:search" class="size-3.5 shrink-0 text-[var(--ui-text-dimmed)]" />
+			<Icon name="lucide:search" class="size-3.5 shrink-0 text-(--ui-text-dimmed)" />
 			<input
 				bind:value={query}
 				type="text"
 				placeholder={t('relayDirectory.search')}
-				class="min-w-0 flex-1 bg-transparent text-[12.5px] text-[var(--ui-text)] placeholder:text-[var(--ui-text-dimmed)] focus:outline-none"
+				class="min-w-0 flex-1 bg-transparent text-[12.5px] text-(--ui-text) placeholder:text-(--ui-text-dimmed) focus:outline-none"
 			/>
 			{#if query}
 				<button
 					type="button"
 					onclick={() => (query = '')}
-					class="grid size-5 place-items-center rounded text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+					class="grid size-5 place-items-center rounded text-(--ui-text-dimmed) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 					aria-label={t('common.resetFilters')}
 				>
 					<Icon name="lucide:x" class="size-3.5" />
@@ -254,7 +252,7 @@
 
 		<!-- Region segmented control -->
 		<div
-			class="inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--surface-bg)] p-0.5"
+			class="inline-flex items-center rounded-lg border border-(--ui-border) bg-(--surface-bg) p-0.5"
 		>
 			{#each regionFilters as opt (opt.value)}
 				<button
@@ -264,7 +262,7 @@
 						'inline-flex h-7 items-center rounded-md px-2 text-[11.5px] font-semibold transition-colors',
 						region === opt.value
 							? 'bg-primary-500 text-white'
-							: 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'
+							: 'text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'
 					)}
 				>
 					{opt.label}
@@ -283,7 +281,7 @@
 						'inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[11.5px] font-semibold transition-colors',
 						sort === opt.value
 							? 'border-primary-500/40 bg-primary-500/10 text-primary-600 dark:text-primary-400'
-							: 'border-[var(--ui-border)] bg-[var(--surface-bg)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'
+							: 'border-(--ui-border) bg-(--surface-bg) text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'
 					)}
 				>
 					<Icon name={opt.icon} class="size-3.5" />
@@ -297,22 +295,22 @@
 	{#if filtered.length === 0}
 		<div class="px-5 py-10 text-center">
 			<Icon name="lucide:party-popper" class="mx-auto mb-2 size-6 text-emerald-500" />
-			<p class="text-[13px] font-semibold text-[var(--ui-text-muted)]">
+			<p class="text-[13px] font-semibold text-(--ui-text-muted)">
 				{t('relayDirectory.empty')}
 			</p>
-			<p class="mt-1 text-[11.5px] text-[var(--ui-text-dimmed)]">
+			<p class="mt-1 text-[11.5px] text-(--ui-text-dimmed)">
 				{t('relayDirectory.emptyHint')}
 			</p>
 		</div>
 	{:else}
-		<ul class="divide-y divide-[var(--ui-border-muted)]">
+		<ul class="divide-y divide-(--ui-border-muted)">
 			{#each pageItems as r (r.url)}
 				{@const added = addedSet.has(r.url)}
 				{@const isPrimary = relays.primaryRelay === r.url}
 				{@const meta = r.tier === 'paid' ? null : latencyMeta(r.url)}
 				{@const dot = dotClass(r.url)}
 				<li
-					class="group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-[var(--ui-bg-muted)]"
+					class="group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-(--ui-bg-muted)"
 				>
 					<!-- Latency/status dot -->
 					<span class="mt-1.5 size-2.5 shrink-0 rounded-full {dot}" aria-hidden="true"></span>
@@ -320,7 +318,7 @@
 					<div class="min-w-0 flex-1">
 						<!-- Name + identity badges -->
 						<div class="flex flex-wrap items-center gap-1.5">
-							<span class="text-[13px] font-semibold text-[var(--ui-text)]">{r.name}</span>
+							<span class="text-[13px] font-semibold text-(--ui-text)">{r.name}</span>
 							{#if isPrimary}
 								<Badge color="primary"
 									><Icon name="lucide:star" class="size-3" />{t('common.primary')}</Badge
@@ -338,10 +336,10 @@
 							{/if}
 						</div>
 
-						<p class="mt-0.5 truncate font-mono text-[11px] text-[var(--ui-text-dimmed)]">
+						<p class="mt-0.5 truncate font-mono text-[11px] text-(--ui-text-dimmed)">
 							{r.url}
 						</p>
-						<p class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">{r.description}</p>
+						<p class="mt-1 text-[11.5px] text-(--ui-text-muted)">{r.description}</p>
 
 						<!-- Meta + latency -->
 						<div class="mt-2 flex flex-wrap items-center gap-1.5">
@@ -394,7 +392,7 @@
 								<button
 									type="button"
 									onclick={() => probeOne(r)}
-									class="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[var(--ui-text-dimmed)] transition-colors hover:text-[var(--ui-text)]"
+									class="inline-flex items-center gap-1 text-[10.5px] font-semibold text-(--ui-text-dimmed) transition-colors hover:text-(--ui-text)"
 								>
 									<Icon name="lucide:activity" class="size-3" />
 									{t('common.test')}
@@ -408,7 +406,7 @@
 
 		<!-- Footer: range + pagination (limit/offset) -->
 		<div
-			class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-4 py-2.5 text-[11px] text-[var(--ui-text-dimmed)]"
+			class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-(--ui-border-muted) bg-(--ui-bg-muted) px-4 py-2.5 text-[11px] text-(--ui-text-dimmed)"
 		>
 			<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
 				<span class="inline-flex items-center gap-1.5">
@@ -428,7 +426,7 @@
 				<span class="inline-flex items-center gap-1.5">
 					<span class="hidden sm:inline">{t('relayDirectory.perPage')}</span>
 					<span
-						class="inline-flex items-center rounded-md border border-[var(--ui-border)] bg-[var(--surface-bg)] p-0.5"
+						class="inline-flex items-center rounded-md border border-(--ui-border) bg-(--surface-bg) p-0.5"
 					>
 						{#each PAGE_SIZE_OPTIONS as opt (opt)}
 							<button
@@ -438,7 +436,7 @@
 									'inline-flex h-6 min-w-6 items-center justify-center rounded px-1.5 text-[11px] font-bold transition-colors',
 									pageSize === opt
 										? 'bg-primary-500 text-white'
-										: 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'
+										: 'text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'
 								)}
 							>
 								{opt}
@@ -456,13 +454,11 @@
 							disabled={safePage <= 1}
 							aria-label={t('relayDirectory.prev')}
 							title={t('relayDirectory.prev')}
-							class="grid size-6 place-items-center rounded-md border border-[var(--ui-border)] bg-[var(--surface-bg)] text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:cursor-not-allowed disabled:opacity-40"
+							class="grid size-6 place-items-center rounded-md border border-(--ui-border) bg-(--surface-bg) text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text) disabled:cursor-not-allowed disabled:opacity-40"
 						>
 							<Icon name="lucide:chevron-left" class="size-3.5" />
 						</button>
-						<span
-							class="min-w-[64px] text-center text-[11px] font-semibold text-[var(--ui-text-muted)]"
-						>
+						<span class="min-w-[64px] text-center text-[11px] font-semibold text-(--ui-text-muted)">
 							{t('relayDirectory.page', { page: safePage, total: totalPages })}
 						</span>
 						<button
@@ -471,7 +467,7 @@
 							disabled={safePage >= totalPages}
 							aria-label={t('relayDirectory.next')}
 							title={t('relayDirectory.next')}
-							class="grid size-6 place-items-center rounded-md border border-[var(--ui-border)] bg-[var(--surface-bg)] text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:cursor-not-allowed disabled:opacity-40"
+							class="grid size-6 place-items-center rounded-md border border-(--ui-border) bg-(--surface-bg) text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text) disabled:cursor-not-allowed disabled:opacity-40"
 						>
 							<Icon name="lucide:chevron-right" class="size-3.5" />
 						</button>
@@ -483,12 +479,12 @@
 
 	<!-- Show-added toggle -->
 	<label
-		class="flex cursor-pointer items-center gap-2 px-4 py-2.5 text-[11.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-muted)]"
+		class="flex cursor-pointer items-center gap-2 px-4 py-2.5 text-[11.5px] font-medium text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-muted)"
 	>
 		<input
 			type="checkbox"
 			bind:checked={showAdded}
-			class="size-3.5 accent-[var(--ui-color-primary-500)]"
+			class="size-3.5 accent-(--ui-color-primary-500)"
 		/>
 		{t('relayDirectory.showAdded')}
 	</label>

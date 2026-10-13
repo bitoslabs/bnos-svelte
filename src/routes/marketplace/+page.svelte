@@ -95,7 +95,7 @@
 				<Icon name="lucide:dollar-sign" class="size-4.5" />
 			</div>
 			<div class="min-w-0">
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Channel revenue</div>
+				<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Channel revenue</div>
 				<div class="truncate font-display text-lg font-bold tabular-nums">
 					{formatMoney(summary.allTimeTotal, currency)}
 				</div>
@@ -108,7 +108,7 @@
 				<Icon name="lucide:shopping-bag" class="size-4.5" />
 			</div>
 			<div class="min-w-0">
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Orders</div>
+				<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Orders</div>
 				<div class="font-display text-lg font-bold tabular-nums">
 					{formatInt(summary.allTimeCount)}
 				</div>
@@ -121,7 +121,7 @@
 				<Icon name="lucide:mouse-pointer-click" class="size-4.5" />
 			</div>
 			<div class="min-w-0">
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Conversion</div>
+				<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Conversion</div>
 				<div class="font-display text-lg font-bold tabular-nums">{conversionRate.toFixed(1)}%</div>
 			</div>
 		</div>
@@ -132,7 +132,7 @@
 				<Icon name="lucide:star" class="size-4.5" />
 			</div>
 			<div class="min-w-0">
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Avg. rating</div>
+				<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Avg. rating</div>
 				<div class="font-display text-lg font-bold tabular-nums">
 					{avgRating > 0 ? avgRating.toFixed(2) : '—'}
 				</div>
@@ -188,19 +188,17 @@
 						<div class="px-5 pt-2 pb-6 text-center">
 							<Icon name="lucide:party-popper" class="mx-auto size-7 text-emerald-500" />
 							<p class="mt-2 text-[13px] font-semibold">You're all caught up</p>
-							<p class="text-[11.5px] text-[var(--ui-text-dimmed)]">
-								No pending marketplace orders.
-							</p>
+							<p class="text-[11.5px] text-(--ui-text-dimmed)">No pending marketplace orders.</p>
 						</div>
 					{:else}
-						<div class="divide-y divide-[var(--ui-border-muted)]">
+						<div class="divide-y divide-(--ui-border-muted)">
 							{#each ordersToAct as o (o.id)}
 								<a
 									href={resolve(`/orders/${o.id}`)}
-									class="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-[var(--ui-bg-accented)]/50"
+									class="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-(--ui-bg-accented)/50"
 								>
 									<div
-										class="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]"
+										class="grid size-8 shrink-0 place-items-center rounded-lg bg-(--ui-bg-accented) text-(--ui-text-muted)"
 									>
 										<Icon name={sourceIcon(o.source)} class="size-4" />
 									</div>
@@ -209,14 +207,14 @@
 											<span class="font-mono text-[12.5px] font-semibold">{o.number}</span>
 											<Badge color={statusColor(o.status)}>{statusLabel(o.status)}</Badge>
 										</div>
-										<p class="truncate text-[11px] text-[var(--ui-text-dimmed)]">
+										<p class="truncate text-[11px] text-(--ui-text-dimmed)">
 											{sourceLabel(o.source)}{#if o.customerName}
 												· {o.customerName}{/if}
 										</p>
 									</div>
 									<div class="text-right">
 										<div class="font-semibold tabular-nums">{formatMoney(o.total, currency)}</div>
-										<div class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+										<div class="text-[10.5px] text-(--ui-text-dimmed)">
 											{relativeTime(o.atMs)}
 										</div>
 									</div>
@@ -244,7 +242,7 @@
 						Manage
 					</Button>
 				</div>
-				<div class="divide-y divide-[var(--ui-border-muted)]">
+				<div class="divide-y divide-(--ui-border-muted)">
 					{#each connections.slice(0, 5) as c (c.id)}
 						{@const m = channelMeta(c.data.type)}
 						{@const rev = channelRevenue.get(c.id)}
@@ -259,7 +257,7 @@
 										<span class="live-dot" aria-label="connected"></span>
 									{/if}
 								</div>
-								<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+								<p class="text-[10.5px] text-(--ui-text-dimmed)">
 									{rev
 										? `${rev.count} orders · ${formatMoney(rev.total, currency)}`
 										: 'No orders yet'}
@@ -299,20 +297,18 @@
 					</Button>
 				</div>
 				<div
-					class="grid grid-cols-1 divide-y divide-[var(--ui-border-muted)] sm:grid-cols-2 sm:divide-x lg:grid-cols-3"
+					class="grid grid-cols-1 divide-y divide-(--ui-border-muted) sm:grid-cols-2 sm:divide-x lg:grid-cols-3"
 				>
 					{#each listings.slice(0, 6) as l (l.id)}
 						<div class="flex items-center gap-3 px-5 py-3.5">
 							<div
-								class="grid size-10 shrink-0 place-items-center rounded-lg bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]"
+								class="grid size-10 shrink-0 place-items-center rounded-lg bg-(--ui-bg-accented) text-(--ui-text-muted)"
 							>
 								<Icon name="lucide:package" class="size-4.5" />
 							</div>
 							<div class="min-w-0 flex-1">
 								<p class="truncate text-[12.5px] font-semibold">{l.data.productName}</p>
-								<div
-									class="mt-0.5 flex items-center gap-2 text-[10.5px] text-[var(--ui-text-dimmed)]"
-								>
+								<div class="mt-0.5 flex items-center gap-2 text-[10.5px] text-(--ui-text-dimmed)">
 									<Badge color={statusColor(l.data.status)}
 										>{listingStatusLabel(l.data.status)}</Badge
 									>
@@ -322,7 +318,7 @@
 							<div class="text-right">
 								<div class="font-semibold tabular-nums">{formatMoney(l.data.price, currency)}</div>
 								{#if (l.data.conversions ?? 0) > 0}
-									<div class="text-[10px] text-[var(--ui-text-dimmed)]">
+									<div class="text-[10px] text-(--ui-text-dimmed)">
 										{l.data.conversions} sold
 									</div>
 								{/if}
@@ -349,7 +345,7 @@
 								</div>
 								<div>
 									<p class="text-[12.5px] font-semibold">{r.data.customerName}</p>
-									<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+									<p class="text-[10.5px] text-(--ui-text-dimmed)">
 										{r.data.channelName ?? 'Verified buyer'}
 									</p>
 								</div>
@@ -359,7 +355,7 @@
 							</span>
 						</div>
 						{#if r.data.body}
-							<p class="mt-2 line-clamp-2 text-[12px] text-[var(--ui-text-muted)]">
+							<p class="mt-2 line-clamp-2 text-[12px] text-(--ui-text-muted)">
 								"{r.data.body}"
 							</p>
 						{/if}

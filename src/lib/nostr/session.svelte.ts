@@ -45,12 +45,17 @@ const APP_STORAGE_PREFIXES = [
 	'bnos-os:',
 	'bnos:',
 	'nostr_npub',
-	'nostr_pubkey',
-	'nostr_privkey',
+	// Canonical auth keys (mirror BNOS_AUTH_STORAGE_KEYS) + their legacy twin.
+	// `nostrUser` (BNOS_AUTH_STORAGE_KEYS.LEGACY_BNOS_SPACE_USER) MUST be wiped:
+	// leaving it behind lets `session.load()` resurrect a signed-out session on
+	// /login, which then bounces the user straight back into the app.
+	BNOS_AUTH_STORAGE_KEYS.PUBKEY,
+	BNOS_AUTH_STORAGE_KEYS.PRIVKEY,
+	BNOS_AUTH_STORAGE_KEYS.LOGIN_METHOD,
+	BNOS_AUTH_STORAGE_KEYS.LEGACY_BNOS_SPACE_USER,
 	'nostr_login',
 	'nostr_auto_sync',
 	'nostr_profile',
-	'nostr_profile_kind0',
 	'pos-global',
 	'active-workspace',
 	'active-company',
@@ -60,6 +65,15 @@ const APP_STORAGE_PREFIXES = [
 	'setup-'
 ];
 const PRESERVE_ON_LOGOUT = new Set(['bnos-os:relays']);
+
+/**
+ * Await `p` but never longer than `ms`. Storage cleanup (IndexedDB / Cache API)
+ * can hang — e.g. when another tab holds the DB — and that must never block the
+ * caller's redirect back to /login.
+ */
+function bounded<T>(p: Promise<T>, ms: number): Promise<T | void> {
+	return Promise.race([p, new Promise<void>((r) => setTimeout(r, ms))]);
+}
 
 class SessionStore {
 	/** Current auth snapshot, or null when signed out. */
@@ -201,7 +215,7 @@ class SessionStore {
 
 		// 3. IndexedDB (idb-keyval) — wipe all GLO collections + publish queue
 		try {
-			await idbClear();
+			await bounded(idbClear(), 1500);
 		} catch (e) {
 			/* best effort */
 		}
@@ -209,8 +223,10 @@ class SessionStore {
 		// 4. Cache API — delete any cached responses
 		if ('caches' in window) {
 			try {
-				const cacheNames = await window.caches.keys();
-				await Promise.all(cacheNames.map((name) => window.caches.delete(name)));
+				const cacheNames = await bounded(window.caches.keys(), 1500);
+				if (cacheNames) {
+					await bounded(Promise.all(cacheNames.map((name) => window.caches.delete(name))), 1500);
+				}
 			} catch (e) {
 				/* best effort */
 			}

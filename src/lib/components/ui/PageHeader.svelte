@@ -32,7 +32,7 @@
 		primary: 'bg-primary-500/10 text-primary-600 dark:text-primary-400',
 		amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
 		success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-		neutral: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]'
+		neutral: 'bg-(--ui-bg-accented) text-(--ui-text-muted)'
 	};
 </script>
 
@@ -50,7 +50,7 @@
 	<div class="min-w-0 flex-1">
 		<h2 class="font-display text-[16px] font-semibold tracking-tight">{title}</h2>
 		{#if description}
-			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">{description}</p>
+			<p class="mt-0.5 text-[12px] text-(--ui-text-muted)">{description}</p>
 		{/if}
 	</div>
 	{#if actions}

@@ -152,36 +152,24 @@
 		meta={t('settings.businessConfigManaged')}
 	>
 		<div class="px-5 py-4">
-			<p class="mb-3 text-[11px] text-[var(--ui-text-dimmed)]">
+			<p class="mb-3 text-[11px] text-(--ui-text-dimmed)">
 				{t('settings.businessConfigNote')}
 			</p>
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-				<div
-					class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3.5 py-2.5"
-				>
-					<p
-						class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-					>
+				<div class="rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) px-3.5 py-2.5">
+					<p class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 						{t('settings.activeCompany')}
 					</p>
 					<p class="truncate text-[13px] font-bold">{activeCompany}</p>
 				</div>
-				<div
-					class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3.5 py-2.5"
-				>
-					<p
-						class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-					>
+				<div class="rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) px-3.5 py-2.5">
+					<p class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 						{t('common.currency')}
 					</p>
 					<p class="text-[13px] font-bold">{tenant.state.currency}</p>
 				</div>
-				<div
-					class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3.5 py-2.5"
-				>
-					<p
-						class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-					>
+				<div class="rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) px-3.5 py-2.5">
+					<p class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 						{t('common.tax')}
 					</p>
 					<p class="text-[13px] font-bold">{taxLabel}</p>
@@ -204,8 +192,8 @@
 	<SettingsSection icon="lucide:globe" title={t('settings.language')}>
 		<div class="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-start">
 			<div class="shrink-0 sm:w-44">
-				<label class="text-[13px] font-semibold">{t('settings.language')}</label>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.languageDesc')}</p>
+				<div class="text-[13px] font-semibold">{t('settings.language')}</div>
+				<p class="text-[11px] text-(--ui-text-dimmed)">{t('settings.languageDesc')}</p>
 			</div>
 			<div class="sm:w-72">
 				<LanguageSwitcher />
@@ -217,8 +205,8 @@
 	<SettingsSection icon="lucide:credit-card" title={t('settings.paymentCheckout')}>
 		<div class="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-start">
 			<div class="shrink-0 sm:w-44">
-				<label class="text-[13px] font-semibold">{t('settings.defaultPayment')}</label>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.defaultPaymentDesc')}</p>
+				<div class="text-[13px] font-semibold">{t('settings.defaultPayment')}</div>
+				<p class="text-[11px] text-(--ui-text-dimmed)">{t('settings.defaultPaymentDesc')}</p>
 			</div>
 			<div class="flex flex-wrap gap-2">
 				{#each paymentOptions as m (m.id)}
@@ -228,7 +216,7 @@
 						class="inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-[12px] font-semibold transition-all {defaultPayment ===
 						m.id
 							? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
-							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
+							: 'border-(--ui-border) text-(--ui-text-muted) hover:border-(--ui-text-dimmed)'}"
 					>
 						<Icon name={m.icon} class="size-3.5" />{m.label}
 					</button>

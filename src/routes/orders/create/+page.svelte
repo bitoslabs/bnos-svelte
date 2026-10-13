@@ -403,18 +403,18 @@
 				<h1 class="font-display text-xl font-bold tracking-tight">
 					{t('common.new') + ' ' + t('common.order')}
 				</h1>
-				<p class="text-[12px] text-[var(--ui-text-muted)]">Create a manual order</p>
+				<p class="text-[12px] text-(--ui-text-muted)">Create a manual order</p>
 			</div>
 		</div>
 		{#if lines.length > 0}
 			<div
-				class="flex items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5"
+				class="flex items-center gap-2 rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1.5"
 			>
 				<Icon name="lucide:shopping-cart" class="size-4 text-primary-500" />
-				<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="text-[12px] font-semibold text-(--ui-text-muted)"
 					>{itemCount} item{itemCount === 1 ? '' : 's'}</span
 				>
-				<span class="text-[var(--ui-text-dimmed)]">·</span>
+				<span class="text-(--ui-text-dimmed)">·</span>
 				<span class="font-display text-[13px] font-bold tabular-nums"
 					>{formatMoney(total, currency ?? 'USD')}</span
 				>
@@ -426,7 +426,7 @@
 		<!-- ═══ LEFT ═══ -->
 		<div class="space-y-4 lg:col-span-2">
 			<!-- ════ Add items (hero) ════ -->
-			<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+			<section class="surface-card divide-y divide-(--ui-border-muted)">
 				<div class="flex items-center justify-between gap-2 px-5 py-3">
 					<div class="flex items-center gap-2">
 						<Icon name="lucide:scan-barcode" class="size-4 text-primary-500" />
@@ -435,7 +435,7 @@
 						</h2>
 					</div>
 					<span
-						class="hidden items-center gap-1 rounded-md border border-[var(--ui-border)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--ui-text-dimmed)] sm:inline-flex"
+						class="hidden items-center gap-1 rounded-md border border-(--ui-border) px-1.5 py-0.5 text-[10px] font-medium text-(--ui-text-dimmed) sm:inline-flex"
 					>
 						<kbd class="font-mono">/</kbd> to search
 					</span>
@@ -444,9 +444,9 @@
 				<!-- Smart search -->
 				<div class="relative px-5 pt-4">
 					<div
-						class="flex items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2.5 transition-colors focus-within:border-primary-500"
+						class="flex items-center gap-2 rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-2.5 transition-colors focus-within:border-primary-500"
 					>
-						<Icon name="lucide:search" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
+						<Icon name="lucide:search" class="size-4 shrink-0 text-(--ui-text-dimmed)" />
 						<input
 							bind:this={productInput}
 							bind:value={productQuery}
@@ -455,12 +455,12 @@
 							onkeydown={onProductKeydown}
 							type="text"
 							placeholder="Scan barcode or search by name / SKU…"
-							class="min-w-0 flex-1 bg-transparent text-[14px] text-[var(--ui-text)] placeholder:text-[var(--ui-text-dimmed)] focus:outline-none"
+							class="min-w-0 flex-1 bg-transparent text-[14px] text-(--ui-text) placeholder:text-(--ui-text-dimmed) focus:outline-none"
 						/>
 						{#if productQuery}
 							<button
 								type="button"
-								class="grid size-5 place-items-center rounded text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]"
+								class="grid size-5 place-items-center rounded text-(--ui-text-dimmed) hover:text-(--ui-text)"
 								onclick={() => {
 									productQuery = '';
 									productInput?.focus();
@@ -469,7 +469,7 @@
 								<Icon name="lucide:x" class="size-3.5" />
 							</button>
 						{/if}
-						<span class="hidden text-[10px] font-medium text-[var(--ui-text-dimmed)] sm:inline">
+						<span class="hidden text-[10px] font-medium text-(--ui-text-dimmed) sm:inline">
 							↵ add
 						</span>
 					</div>
@@ -477,7 +477,7 @@
 					<!-- Live results dropdown -->
 					{#if showProductResults}
 						<div
-							class="absolute inset-x-5 z-30 mt-1.5 overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] shadow-xl shadow-black/10"
+							class="absolute inset-x-5 z-30 mt-1.5 overflow-hidden rounded-xl border border-(--ui-border) bg-(--ui-bg-elevated) shadow-xl shadow-black/10"
 							role="listbox"
 						>
 							{#each filteredProducts as p, i (p.id)}
@@ -497,7 +497,7 @@
 									class="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors {highlighted ===
 									i
 										? 'bg-primary-500/10'
-										: 'hover:bg-[var(--ui-bg-accented)]'}"
+										: 'hover:bg-(--ui-bg-accented)'}"
 								>
 									{#if img}
 										<img src={img} alt="" class="size-9 shrink-0 rounded-lg object-cover" />
@@ -510,7 +510,7 @@
 									{/if}
 									<div class="min-w-0 flex-1">
 										<div class="truncate text-[13px] font-semibold">{(p.data as any).name}</div>
-										<div class="flex items-center gap-1.5 text-[11px] text-[var(--ui-text-dimmed)]">
+										<div class="flex items-center gap-1.5 text-[11px] text-(--ui-text-dimmed)">
 											{#if (p.data as any).sku}<span class="font-mono">{(p.data as any).sku}</span
 												>{/if}
 											{#if (p.data as any).barcode}
@@ -535,12 +535,12 @@
 					{#if lines.length === 0}
 						<div class="flex flex-col items-center justify-center py-12 text-center">
 							<div
-								class="grid size-12 place-items-center rounded-2xl bg-[var(--ui-bg-muted)] text-[var(--ui-text-dimmed)]"
+								class="grid size-12 place-items-center rounded-2xl bg-(--ui-bg-muted) text-(--ui-text-dimmed)"
 							>
 								<Icon name="lucide:package-open" class="size-6" />
 							</div>
 							<p class="mt-3 text-[13px] font-medium">No items yet</p>
-							<p class="mt-0.5 text-[12px] text-[var(--ui-text-dimmed)]">
+							<p class="mt-0.5 text-[12px] text-(--ui-text-dimmed)">
 								Scan a barcode or search above to add products
 							</p>
 							{#if products.length === 0}
@@ -550,7 +550,7 @@
 							{/if}
 						</div>
 					{:else}
-						<ul class="divide-y divide-[var(--ui-border-muted)]">
+						<ul class="divide-y divide-(--ui-border-muted)">
 							{#each lines as line (line.id)}
 								<li class="flex items-center gap-3 py-2.5">
 									<div
@@ -562,7 +562,7 @@
 										<div class="truncate text-[13px] font-semibold">
 											{line.name ?? line.productName}
 										</div>
-										<div class="text-[11px] text-[var(--ui-text-dimmed)] tabular-nums">
+										<div class="text-[11px] text-(--ui-text-dimmed) tabular-nums">
 											{formatMoney(line.unitPrice ?? (line as any).price ?? 0, currency ?? 'USD')}
 											each
 										</div>
@@ -573,7 +573,7 @@
 											type="button"
 											onclick={() => decQty(line.id ?? '')}
 											aria-label={t('common.decrease')}
-											class="grid size-7 place-items-center rounded-lg border border-[var(--ui-border)] text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)]"
+											class="grid size-7 place-items-center rounded-lg border border-(--ui-border) text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented)"
 										>
 											<Icon name="lucide:minus" class="size-3.5" />
 										</button>
@@ -583,13 +583,13 @@
 												setQty(line.id ?? '', +(e.currentTarget as HTMLInputElement).value)}
 											type="number"
 											min="1"
-											class="h-7 w-10 rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-center text-[13px] font-semibold tabular-nums focus:outline-none"
+											class="h-7 w-10 rounded-md border border-(--ui-border) bg-(--ui-bg-muted) text-center text-[13px] font-semibold tabular-nums focus:outline-none"
 										/>
 										<button
 											type="button"
 											onclick={() => incQty(line.id ?? '')}
 											aria-label={t('common.increase')}
-											class="grid size-7 place-items-center rounded-lg border border-[var(--ui-border)] text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)]"
+											class="grid size-7 place-items-center rounded-lg border border-(--ui-border) text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented)"
 										>
 											<Icon name="lucide:plus" class="size-3.5" />
 										</button>
@@ -604,7 +604,7 @@
 										type="button"
 										onclick={() => removeLine(line.id ?? '')}
 										aria-label={t('common.remove')}
-										class="grid size-7 shrink-0 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-[var(--tone-error-text)]"
+										class="grid size-7 shrink-0 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-red-500/10 hover:text-(--tone-error-text)"
 									>
 										<Icon name="lucide:trash-2" class="size-3.5" />
 									</button>
@@ -612,9 +612,9 @@
 							{/each}
 						</ul>
 						<div
-							class="mt-1 flex items-center justify-between border-t border-[var(--ui-border-muted)] px-1 pt-3 text-[13px]"
+							class="mt-1 flex items-center justify-between border-t border-(--ui-border-muted) px-1 pt-3 text-[13px]"
 						>
-							<span class="text-[var(--ui-text-muted)]">{t('common.subtotal')}</span>
+							<span class="text-(--ui-text-muted)">{t('common.subtotal')}</span>
 							<span class="font-semibold tabular-nums"
 								>{formatMoney(subtotal, currency ?? 'USD')}</span
 							>
@@ -624,13 +624,13 @@
 			</section>
 
 			<!-- ════ Customer ════ -->
-			<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+			<section class="surface-card divide-y divide-(--ui-border-muted)">
 				<div class="flex items-center justify-between gap-2 px-5 py-3">
 					<div class="flex items-center gap-2">
 						<Icon name="lucide:user-round" class="size-4 text-primary-500" />
 						<h2 class="font-display text-[14px] font-semibold">
 							Customer
-							<span class="text-[12px] font-normal text-[var(--ui-text-dimmed)]">(optional)</span>
+							<span class="text-[12px] font-normal text-(--ui-text-dimmed)">(optional)</span>
 						</h2>
 					</div>
 					<Button size="sm" variant="soft" icon="lucide:user-plus" onclick={() => (qcOpen = true)}
@@ -656,7 +656,7 @@
 									{customerName}
 								</div>
 								{#if orderType === 'delivery' && shipping.phone}
-									<div class="truncate text-[11px] text-[var(--ui-text-muted)]">
+									<div class="truncate text-[11px] text-(--ui-text-muted)">
 										{shipping.phone}
 									</div>
 								{/if}
@@ -674,9 +674,9 @@
 						<!-- Search combobox -->
 						<div class="relative">
 							<div
-								class="flex items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2.5 transition-colors focus-within:border-primary-500"
+								class="flex items-center gap-2 rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-2.5 transition-colors focus-within:border-primary-500"
 							>
-								<Icon name="lucide:search" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
+								<Icon name="lucide:search" class="size-4 shrink-0 text-(--ui-text-dimmed)" />
 								<input
 									bind:this={customerInput}
 									bind:value={customerQuery}
@@ -684,7 +684,7 @@
 									onblur={() => setTimeout(() => (customerFocused = false), 150)}
 									type="text"
 									placeholder="Search customer by name, phone or email…"
-									class="min-w-0 flex-1 bg-transparent text-[14px] placeholder:text-[var(--ui-text-dimmed)] focus:outline-none"
+									class="min-w-0 flex-1 bg-transparent text-[14px] placeholder:text-(--ui-text-dimmed) focus:outline-none"
 								/>
 								<button
 									type="button"
@@ -697,17 +697,17 @@
 
 							{#if showCustomerResults}
 								<div
-									class="absolute inset-x-0 z-30 mt-1.5 overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] shadow-xl shadow-black/10"
+									class="absolute inset-x-0 z-30 mt-1.5 overflow-hidden rounded-xl border border-(--ui-border) bg-(--ui-bg-elevated) shadow-xl shadow-black/10"
 								>
 									{#each filteredCustomers as c (c.id)}
 										<button
 											type="button"
 											onmousedown={(e) => e.preventDefault()}
 											onclick={() => selectCustomer(c)}
-											class="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[var(--ui-bg-accented)]"
+											class="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-(--ui-bg-accented)"
 										>
 											<div
-												class="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--ui-bg-muted)] text-[11px] font-bold text-[var(--ui-text-muted)]"
+												class="grid size-8 shrink-0 place-items-center rounded-full bg-(--ui-bg-muted) text-[11px] font-bold text-(--ui-text-muted)"
 											>
 												{(c.data.name ?? '?').charAt(0).toUpperCase()}
 											</div>
@@ -715,7 +715,7 @@
 												<div class="truncate text-[13px] font-semibold">
 													{c.data.name ?? 'Unknown'}
 												</div>
-												<div class="truncate text-[11px] text-[var(--ui-text-dimmed)]">
+												<div class="truncate text-[11px] text-(--ui-text-dimmed)">
 													{[c.data.phone, c.data.email].filter(Boolean).join(' · ') || 'No contact'}
 												</div>
 											</div>
@@ -725,7 +725,7 @@
 										</button>
 									{/each}
 									{#if customers.length === 0}
-										<div class="px-3 py-4 text-center text-[12px] text-[var(--ui-text-dimmed)]">
+										<div class="px-3 py-4 text-center text-[12px] text-(--ui-text-dimmed)">
 											No customers yet — create one with “New”.
 										</div>
 									{/if}
@@ -737,7 +737,7 @@
 			</section>
 
 			<!-- ════ Order type & source ════ -->
-			<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+			<section class="surface-card divide-y divide-(--ui-border-muted)">
 				<div class="flex items-center gap-2 px-5 py-3">
 					<Icon name="lucide:tag" class="size-4 text-primary-500" />
 					<h2 class="font-display text-[14px] font-semibold">Type, source & priority</h2>
@@ -745,7 +745,7 @@
 				<div class="space-y-4 px-5 py-4">
 					<div>
 						<span
-							class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+							class="mb-2 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 							>Order type</span
 						>
 						<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -755,7 +755,7 @@
 									class="flex items-center justify-center gap-1.5 rounded-xl border-2 p-2.5 text-[13px] font-medium transition-all {orderType ===
 									ot.value
 										? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
-										: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
+										: 'border-(--ui-border) text-(--ui-text-muted) hover:border-(--ui-text-dimmed)'}"
 									onclick={() => (orderType = ot.value)}
 								>
 									<Icon name={ot.icon} class="size-4" />
@@ -766,7 +766,7 @@
 					</div>
 					<div>
 						<span
-							class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+							class="mb-2 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 							>{t('common.source')}</span
 						>
 						<div class="flex flex-wrap gap-1.5">
@@ -776,7 +776,7 @@
 									class="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition-all {source ===
 									os.value
 										? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
-										: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
+										: 'border-(--ui-border) text-(--ui-text-muted) hover:border-(--ui-text-dimmed)'}"
 									onclick={() => (source = os.value)}
 								>
 									<Icon name={os.icon} class="size-3.5 shrink-0" />
@@ -787,7 +787,7 @@
 						{#if source === 'other'}
 							<label class="mt-2 block">
 								<span
-									class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+									class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 									>Custom source / reference</span
 								>
 								<Input
@@ -799,7 +799,7 @@
 						{/if}
 					</div>
 					<div class="flex items-center gap-3">
-						<span class="text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						<span class="text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 							>Priority</span
 						>
 						<div class="flex gap-2">
@@ -813,7 +813,7 @@
 											: p === 'vip'
 												? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
 												: 'bg-primary-500/15 text-primary-600 dark:text-primary-400'
-										: 'border border-[var(--ui-border)] text-[var(--ui-text-muted)]'}"
+										: 'border border-(--ui-border) text-(--ui-text-muted)'}"
 									onclick={() => (priority = p as 'normal' | 'rush' | 'vip')}
 								>
 									{p}
@@ -826,20 +826,20 @@
 
 			<!-- Dine-in options -->
 			{#if orderType === 'dine_in'}
-				<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+				<section class="surface-card divide-y divide-(--ui-border-muted)">
 					<div class="flex items-center gap-2 px-5 py-3">
 						<Icon name="lucide:chef-hat" class="size-4 text-primary-500" />
 						<h2 class="font-display text-[14px] font-semibold">Dine-in details</h2>
 					</div>
 					<div class="grid grid-cols-2 gap-3 px-5 py-4">
 						<label class="block">
-							<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 								>{t('common.table')}</span
 							>
 							<Input bind:value={tableId} placeholder="e.g. A1, 5" class="w-full" />
 						</label>
 						<label class="block">
-							<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 								>Covers / guests</span
 							>
 							<Input
@@ -856,7 +856,7 @@
 
 			<!-- Shipping (delivery) -->
 			{#if orderType === 'delivery'}
-				<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+				<section class="surface-card divide-y divide-(--ui-border-muted)">
 					<div class="flex items-center gap-2 px-5 py-3">
 						<Icon name="lucide:truck" class="size-4 text-primary-500" />
 						<h2 class="font-display text-[14px] font-semibold">Shipping / delivery</h2>
@@ -864,7 +864,7 @@
 					<div class="space-y-3 px-5 py-4">
 						<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>Recipient name</span
 								>
 								<Input
@@ -874,7 +874,7 @@
 								/>
 							</label>
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>{t('common.phone')}</span
 								>
 								<Input
@@ -886,7 +886,7 @@
 							</label>
 						</div>
 						<label class="block">
-							<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 								>{t('common.address')}</span
 							>
 							<Input
@@ -899,13 +899,13 @@
 						</label>
 						<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>{t('common.city')}</span
 								>
 								<Input bind:value={shipping.city} placeholder={t('common.city')} class="w-full" />
 							</label>
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>State</span
 								>
 								<Input
@@ -915,7 +915,7 @@
 								/>
 							</label>
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>Zip code</span
 								>
 								<Input bind:value={shipping.zipCode} placeholder="00000" class="w-full" />
@@ -923,7 +923,7 @@
 						</div>
 						<div class="grid grid-cols-2 gap-3">
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>Delivery fee</span
 								>
 								<Input
@@ -935,7 +935,7 @@
 								/>
 							</label>
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>Delivery provider</span
 								>
 								<Input
@@ -947,22 +947,21 @@
 						</div>
 
 						<div
-							class="space-y-3 rounded-xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)]/40 p-3"
+							class="space-y-3 rounded-xl border border-(--ui-border-muted) bg-(--ui-bg-muted)/40 p-3"
 						>
 							<div class="flex items-center gap-2">
 								<Icon name="lucide:package-check" class="size-3.5 text-primary-500" />
-								<span
-									class="text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+								<span class="text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 									>Tracking & fulfilment</span
 								>
 							</div>
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>Shipping status</span
 								>
 								<select
 									bind:value={shipping.shippingStatus}
-									class="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[13px] capitalize focus:outline-none"
+									class="w-full rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-2 text-[13px] capitalize focus:outline-none"
 								>
 									{#each SHIPPING_STATUSES as ss (ss.value)}
 										<option value={ss.value}>{ss.label}</option>
@@ -971,7 +970,7 @@
 							</label>
 							<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 								<label class="block">
-									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+									<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 										>Tracking number</span
 									>
 									<Input
@@ -982,7 +981,7 @@
 									/>
 								</label>
 								<label class="block">
-									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+									<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 										>Est. delivery</span
 									>
 									<Input
@@ -992,7 +991,7 @@
 									/>
 								</label>
 								<label class="block">
-									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+									<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 										>Driver name</span
 									>
 									<Input
@@ -1002,7 +1001,7 @@
 									/>
 								</label>
 								<label class="block">
-									<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+									<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 										>Driver phone</span
 									>
 									<Input
@@ -1015,7 +1014,7 @@
 							</div>
 						</div>
 						<label class="block">
-							<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 								>Delivery notes</span
 							>
 							<Input
@@ -1032,7 +1031,7 @@
 
 			<!-- Pickup info -->
 			{#if orderType === 'pickup'}
-				<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+				<section class="surface-card divide-y divide-(--ui-border-muted)">
 					<div class="flex items-center gap-2 px-5 py-3">
 						<Icon name="lucide:package" class="size-4 text-primary-500" />
 						<h2 class="font-display text-[14px] font-semibold">Pickup info</h2>
@@ -1040,7 +1039,7 @@
 					<div class="space-y-3 px-5 py-4">
 						<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>Pickup name</span
 								>
 								<Input
@@ -1050,7 +1049,7 @@
 								/>
 							</label>
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>{t('common.phone')}</span
 								>
 								<Input
@@ -1063,13 +1062,13 @@
 						</div>
 						<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>Ready time</span
 								>
 								<Input bind:value={pickup.pickupTime} type="datetime-local" class="w-full" />
 							</label>
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>Pickup location</span
 								>
 								<Input
@@ -1084,14 +1083,14 @@
 			{/if}
 
 			<!-- Notes & tags -->
-			<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+			<section class="surface-card divide-y divide-(--ui-border-muted)">
 				<div class="flex items-center gap-2 px-5 py-3">
 					<Icon name="lucide:file-text" class="size-4 text-primary-500" />
 					<h2 class="font-display text-[14px] font-semibold">Notes & tags</h2>
 				</div>
 				<div class="space-y-3 px-5 py-4">
 					<label class="block">
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Order notes</span
 						>
 						<Input
@@ -1103,7 +1102,7 @@
 						/>
 					</label>
 					<label class="block">
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Tags (comma separated)</span
 						>
 						<Input bind:value={tagsInput} placeholder="e.g. catering, event, VIP" class="w-full" />
@@ -1115,14 +1114,14 @@
 		<!-- ═══ RIGHT — sticky summary ═══ -->
 		<div class="space-y-4 lg:sticky lg:top-20 lg:h-fit">
 			<!-- Status -->
-			<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+			<section class="surface-card divide-y divide-(--ui-border-muted)">
 				<div class="flex items-center gap-2 px-5 py-3">
 					<Icon name="lucide:clock" class="size-4 text-primary-500" />
 					<h2 class="font-display text-[14px] font-semibold">{t('common.status')}</h2>
 				</div>
 				<div class="px-5 py-4">
 					<span
-						class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						class="mb-2 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 						>Initial status</span
 					>
 					<div class="flex flex-wrap gap-2">
@@ -1131,7 +1130,7 @@
 								type="button"
 								class="rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all {status === s
 									? 'bg-primary-500 text-white'
-									: 'border border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
+									: 'border border-(--ui-border) text-(--ui-text-muted) hover:border-(--ui-text-dimmed)'}"
 								onclick={() => (status = s)}
 							>
 								{titleCase(s)}
@@ -1147,20 +1146,20 @@
 			</section>
 
 			<!-- Totals & payment -->
-			<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+			<section class="surface-card divide-y divide-(--ui-border-muted)">
 				<div class="flex items-center gap-2 px-5 py-3">
 					<Icon name="lucide:wallet" class="size-4 text-primary-500" />
 					<h2 class="font-display text-[14px] font-semibold">Totals & payment</h2>
 				</div>
 				<div class="space-y-2.5 px-5 py-4 text-[13px]">
 					<div class="flex justify-between">
-						<span class="text-[var(--ui-text-muted)]">{t('common.subtotal')}</span>
+						<span class="text-(--ui-text-muted)">{t('common.subtotal')}</span>
 						<span class="tabular-nums">{formatMoney(subtotal, currency ?? 'USD')}</span>
 					</div>
 					<div class="flex items-center justify-between gap-3">
-						<span class="text-[var(--ui-text-muted)]">{t('common.discount')}</span>
+						<span class="text-(--ui-text-muted)">{t('common.discount')}</span>
 						<div
-							class="inline-flex items-center gap-1 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2 focus-within:border-primary-500"
+							class="inline-flex items-center gap-1 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2 focus-within:border-primary-500"
 						>
 							<input
 								bind:value={discountAmount}
@@ -1173,20 +1172,20 @@
 					</div>
 					{#if taxAmount > 0}
 						<div class="flex justify-between">
-							<span class="text-[var(--ui-text-muted)]">Tax ({defaultTaxRate}%)</span>
+							<span class="text-(--ui-text-muted)">Tax ({defaultTaxRate}%)</span>
 							<span class="tabular-nums">{formatMoney(taxAmount, currency ?? 'USD')}</span>
 						</div>
 					{/if}
 					{#if deliveryFee > 0}
 						<div class="flex justify-between">
-							<span class="text-[var(--ui-text-muted)]">Delivery fee</span>
+							<span class="text-(--ui-text-muted)">Delivery fee</span>
 							<span class="tabular-nums">{formatMoney(deliveryFee, currency ?? 'USD')}</span>
 						</div>
 					{/if}
 					<div class="flex items-center justify-between gap-3">
-						<span class="text-[var(--ui-text-muted)]">Tip</span>
+						<span class="text-(--ui-text-muted)">Tip</span>
 						<div
-							class="inline-flex items-center gap-1 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2 focus-within:border-primary-500"
+							class="inline-flex items-center gap-1 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2 focus-within:border-primary-500"
 						>
 							<input
 								bind:value={tipAmount}
@@ -1198,22 +1197,22 @@
 						</div>
 					</div>
 					<div
-						class="flex justify-between border-t border-[var(--ui-border-muted)] pt-2.5 font-display text-[17px] font-bold"
+						class="flex justify-between border-t border-(--ui-border-muted) pt-2.5 font-display text-[17px] font-bold"
 					>
 						<span>{t('common.total')}</span>
 						<span class="tabular-nums">{formatMoney(total, currency ?? 'USD')}</span>
 					</div>
 					{#if showSats}
 						<div
-							class="flex items-center justify-end gap-1 text-[12px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+							class="flex items-center justify-end gap-1 text-[12px] font-semibold text-(--tone-warning-text) tabular-nums"
 						>
 							<Icon name="lucide:zap" class="size-3.5" />≈ {formatInt(totalSats)} sats
 						</div>
 					{/if}
 
-					<div class="border-t border-[var(--ui-border-muted)] pt-3">
+					<div class="border-t border-(--ui-border-muted) pt-3">
 						<span
-							class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+							class="mb-2 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 							>Payment method</span
 						>
 						<div class="grid grid-cols-2 gap-2">
@@ -1223,7 +1222,7 @@
 									class="flex flex-col items-center justify-center gap-0.5 rounded-xl border px-2 py-2 text-[12px] font-medium transition-all {paymentMethod ===
 									pm.value
 										? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
-										: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
+										: 'border-(--ui-border) text-(--ui-text-muted) hover:border-(--ui-text-dimmed)'}"
 									onclick={() => (paymentMethod = pm.value)}
 								>
 									<Icon name={pm.icon} class="size-4" />
@@ -1266,26 +1265,26 @@
 <Dialog bind:open={qcOpen} title={t('common.new') + ' ' + t('common.customer')} size="sm">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Name <span class="text-[var(--tone-error-text)]">*</span></span
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
+				>Name <span class="text-(--tone-error-text)">*</span></span
 			>
 			<Input bind:value={qcName} placeholder={t('common.fullName')} class="w-full" autofocus />
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.phone')}</span
 				>
 				<Input bind:value={qcPhone} type="tel" placeholder="020 xx xxx xxx" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.email')}</span
 				>
 				<Input bind:value={qcEmail} type="email" placeholder="name@email.com" class="w-full" />
 			</label>
 		</div>
-		<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+		<p class="text-[11px] text-(--ui-text-dimmed)">
 			The customer is saved to your directory and selected for this order.
 		</p>
 	</div>

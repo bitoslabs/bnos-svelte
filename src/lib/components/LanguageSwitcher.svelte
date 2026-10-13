@@ -33,7 +33,7 @@
 				? 'w-full justify-start'
 				: ''} {current === locale
 				? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
-				: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'} {size ===
+				: 'border-(--ui-border) text-(--ui-text-muted) hover:border-(--ui-text-dimmed) hover:text-(--ui-text)'} {size ===
 			'sm'
 				? 'px-2 py-1 text-[11px]'
 				: ''}"

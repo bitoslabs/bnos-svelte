@@ -481,9 +481,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.promotions')}</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
-				Discount campaigns, coupons & BOGO offers
-			</p>
+			<p class="text-[12.5px] text-(--ui-text-muted)">Discount campaigns, coupons & BOGO offers</p>
 		</div>
 		<Button color="primary" icon="lucide:plus" onclick={() => openCreate(tab)}>
 			New {tab === 'coupons' ? 'coupon' : 'promotion'}
@@ -498,14 +496,12 @@
 				onclick={() => (tab = seg.id)}
 				class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {tab ===
 				seg.id
-					? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-					: 'text-[var(--ui-text-muted)]'}"
+					? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+					: 'text-(--ui-text-muted)'}"
 			>
 				<Icon name={seg.icon} class="size-3.5" />
 				{seg.label}
-				<span class="rounded bg-[var(--ui-bg-accented)] px-1.5 text-[10px] tabular-nums"
-					>{seg.n}</span
-				>
+				<span class="rounded bg-(--ui-bg-accented) px-1.5 text-[10px] tabular-nums">{seg.n}</span>
 			</button>
 		{/each}
 	</div>
@@ -515,22 +511,22 @@
 		<!-- Stats -->
 		<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
 			<div class="surface-card p-4">
-				<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+				<p class="text-[11px] tracking-wider text-(--ui-text-dimmed) uppercase">
 					{t('common.total')}
 				</p>
 				<p class="mt-1 text-2xl font-black tabular-nums">{promos.length}</p>
 			</div>
 			<div class="surface-card p-4">
-				<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">Active</p>
+				<p class="text-[11px] tracking-wider text-(--ui-text-dimmed) uppercase">Active</p>
 				<p class="mt-1 text-2xl font-black text-emerald-500 tabular-nums">{activeCount}</p>
 			</div>
 			<div class="surface-card p-4">
-				<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">Scheduled</p>
+				<p class="text-[11px] tracking-wider text-(--ui-text-dimmed) uppercase">Scheduled</p>
 				<p class="mt-1 text-2xl font-black text-blue-500 tabular-nums">{scheduledCount}</p>
 			</div>
 			<div class="surface-card p-4">
-				<p class="text-[11px] tracking-wider text-[var(--ui-text-dimmed)] uppercase">Expired</p>
-				<p class="mt-1 text-2xl font-black text-[var(--ui-text-dimmed)] tabular-nums">
+				<p class="text-[11px] tracking-wider text-(--ui-text-dimmed) uppercase">Expired</p>
+				<p class="mt-1 text-2xl font-black text-(--ui-text-dimmed) tabular-nums">
 					{expiredCount}
 				</p>
 			</div>
@@ -541,25 +537,25 @@
 			<div class="relative">
 				<Icon
 					name="lucide:search"
-					class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--ui-text-dimmed)]"
+					class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-(--ui-text-dimmed)"
 				/>
 				<input
 					bind:value={searchQuery}
 					type="text"
 					placeholder="Search promotions..."
-					class="w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] py-2.5 pr-3 pl-9 text-[13px] text-[var(--ui-text)] placeholder:text-[var(--ui-text-dimmed)] focus:border-[var(--ui-color-primary-500)] focus:outline-none"
+					class="w-full rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) py-2.5 pr-3 pl-9 text-[13px] text-(--ui-text) placeholder:text-(--ui-text-dimmed) focus:border-(--ui-color-primary-500) focus:outline-none"
 				/>
 			</div>
 			<div class="flex flex-wrap items-center gap-2">
 				<!-- Type filter pills -->
-				<div class="flex items-center gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
+				<div class="flex items-center gap-1 rounded-lg bg-(--ui-bg-accented) p-1">
 					<button
 						type="button"
 						onclick={() => (filterType = '')}
 						class="rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {filterType ===
 						''
-							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-							: 'text-[var(--ui-text-muted)]'}"
+							? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+							: 'text-(--ui-text-muted)'}"
 					>
 						All Types
 					</button>
@@ -569,8 +565,8 @@
 							onclick={() => (filterType = filterType === pt.value ? '' : pt.value)}
 							class="flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {filterType ===
 							pt.value
-								? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-								: 'text-[var(--ui-text-muted)]'}"
+								? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+								: 'text-(--ui-text-muted)'}"
 						>
 							<Icon name={pt.icon} class="size-3" />
 							{pt.label}
@@ -578,21 +574,21 @@
 					{/each}
 				</div>
 				<!-- Status filter -->
-				<div class="flex items-center gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
+				<div class="flex items-center gap-1 rounded-lg bg-(--ui-bg-accented) p-1">
 					{#each STATUS_FILTERS as sf (sf.value)}
 						<button
 							type="button"
 							onclick={() => (filterStatus = filterStatus === sf.value ? '' : sf.value)}
 							class="rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {filterStatus ===
 							sf.value
-								? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-								: 'text-[var(--ui-text-muted)]'}"
+								? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+								: 'text-(--ui-text-muted)'}"
 						>
 							{sf.label}
 						</button>
 					{/each}
 				</div>
-				<span class="ml-1 text-[11px] text-[var(--ui-text-dimmed)]">
+				<span class="ml-1 text-[11px] text-(--ui-text-dimmed)">
 					{filteredPromos.length} items
 				</span>
 				<div class="segmented ml-auto flex items-center gap-0.5">
@@ -601,8 +597,8 @@
 						onclick={() => pCtrl.setViewMode('list')}
 						class="grid size-8 place-items-center rounded-md transition-colors {pCtrl.viewMode ===
 						'list'
-							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
+							? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+							: 'text-(--ui-text-dimmed) hover:text-(--ui-text)'}"
 						title={t('common.listView')}><Icon name="lucide:list" class="size-4" /></button
 					>
 					<button
@@ -610,8 +606,8 @@
 						onclick={() => pCtrl.setViewMode('grid')}
 						class="grid size-8 place-items-center rounded-md transition-colors {pCtrl.viewMode ===
 						'grid'
-							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
+							? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+							: 'text-(--ui-text-dimmed) hover:text-(--ui-text)'}"
 						title={t('common.gridView')}><Icon name="lucide:layout-grid" class="size-4" /></button
 					>
 					<button
@@ -619,8 +615,8 @@
 						onclick={() => pCtrl.setViewMode('table')}
 						class="grid size-8 place-items-center rounded-md transition-colors {pCtrl.viewMode ===
 						'table'
-							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
+							? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+							: 'text-(--ui-text-dimmed) hover:text-(--ui-text)'}"
 						title={t('common.tableView')}><Icon name="lucide:table" class="size-4" /></button
 					>
 				</div>
@@ -653,13 +649,13 @@
 								<div
 									class="grid size-10 shrink-0 place-items-center rounded-xl {PROMO_TYPE_COLOR[
 										p.data.type
-									] ?? 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]'}"
+									] ?? 'bg-(--ui-bg-accented) text-(--ui-text-muted)'}"
 								>
 									<Icon name={PROMO_TYPE_ICON[p.data.type] ?? 'lucide:tag'} class="size-5" />
 								</div>
 								<div class="min-w-0">
 									<div class="truncate font-semibold">{p.data.name}</div>
-									<div class="truncate text-[11px] text-[var(--ui-text-muted)]">
+									<div class="truncate text-[11px] text-(--ui-text-muted)">
 										{promoTypeLabel(p.data.type)} · {promoValueLabel(p.data)}
 									</div>
 								</div>
@@ -667,12 +663,12 @@
 							<Badge color={promoStatusBadgeColor(ps)}>{promoStatusLabel(ps)}</Badge>
 						</div>
 						{#if p.data.description}
-							<p class="mt-2 line-clamp-2 text-[11.5px] text-[var(--ui-text-muted)]">
+							<p class="mt-2 line-clamp-2 text-[11.5px] text-(--ui-text-muted)">
 								{p.data.description}
 							</p>
 						{/if}
 						<div
-							class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[var(--ui-text-dimmed)]"
+							class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-(--ui-text-dimmed)"
 						>
 							{#if p.data.maxUsage && p.data.maxUsage > 0}
 								<span>{p.data.currentUsage ?? 0}/{p.data.maxUsage} uses</span>
@@ -690,14 +686,14 @@
 							{/if}
 						</div>
 						<div
-							class="mt-3 flex items-center justify-end gap-1 border-t border-[var(--ui-border-muted)] pt-2.5"
+							class="mt-3 flex items-center justify-end gap-1 border-t border-(--ui-border-muted) pt-2.5"
 						>
 							<button
 								type="button"
 								onclick={() => togglePromoActive(p.id, p.data)}
 								class="grid size-8 place-items-center rounded-lg transition-colors {p.data.active
 									? 'text-emerald-500 hover:bg-emerald-500/10'
-									: 'text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)]'}"
+									: 'text-(--ui-text-dimmed) hover:bg-(--ui-bg-accented)'}"
 								title={p.data.active ? 'Deactivate' : 'Activate'}
 								><Icon
 									name={p.data.active ? 'lucide:circle-check' : 'lucide:circle-x'}
@@ -710,26 +706,26 @@
 									rawItem = glo.get(TYPE.promotion, p.id);
 									rawOpen = true;
 								}}
-								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+								class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 								title={t('common.viewRaw')}><Icon name="lucide:code" class="size-4" /></button
 							>
 							<button
 								type="button"
 								onclick={() => openEditPromo(p.id, p.data)}
-								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
+								class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-blue-500/10 hover:text-blue-500"
 								title={t('common.edit')}><Icon name="lucide:pencil" class="size-4" /></button
 							>
 							<button
 								type="button"
 								onclick={() => confirmDelete(p.id)}
-								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
+								class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-red-500/10 hover:text-red-500"
 								title={t('common.delete')}><Icon name="lucide:trash-2" class="size-4" /></button
 							>
 						</div>
 					</div>
 				{/each}
 			</div>
-			<Pagination controls={pCtrl} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
+			<Pagination controls={pCtrl} class="mt-3 rounded-xl border border-(--ui-border)" />
 		{:else if pCtrl.viewMode === 'table'}
 			<div class="data-panel">
 				<div class="overflow-x-auto">
@@ -743,7 +739,7 @@
 									applySort={pCtrl.applySort}>{t('common.promotion')}</SortableTh
 								>
 								<th
-									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.type')}</th
 								>
 								<SortableTh
@@ -760,53 +756,51 @@
 									applySort={pCtrl.applySort}>{t('common.status')}</SortableTh
 								>
 								<th
-									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.usage')}</th
 								>
 								<th
-									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.validity')}</th
 								>
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr>
 						</thead>
-						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+						<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 							{#each pCtrl.pagedList as p (p.id)}
 								{@const ps = promoStatus(p.data)}
-								<tr class="hover:bg-[var(--ui-bg-accented)]/40">
+								<tr class="hover:bg-(--ui-bg-accented)/40">
 									<td class="px-5 py-3">
 										<div class="flex items-center gap-3">
 											<div
 												class="grid size-8 shrink-0 place-items-center rounded-lg {PROMO_TYPE_COLOR[
 													p.data.type
-												] ?? 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]'}"
+												] ?? 'bg-(--ui-bg-accented) text-(--ui-text-muted)'}"
 											>
 												<Icon name={PROMO_TYPE_ICON[p.data.type] ?? 'lucide:tag'} class="size-4" />
 											</div>
 											<div class="min-w-0">
 												<div class="font-semibold">{p.data.name}</div>
 												{#if p.data.description}
-													<div class="line-clamp-1 text-[11px] text-[var(--ui-text-dimmed)]">
+													<div class="line-clamp-1 text-[11px] text-(--ui-text-dimmed)">
 														{p.data.description}
 													</div>
 												{/if}
 											</div>
 										</div>
 									</td>
-									<td class="px-5 py-3 text-[var(--ui-text-muted)]"
-										>{promoTypeLabel(p.data.type)}</td
-									>
+									<td class="px-5 py-3 text-(--ui-text-muted)">{promoTypeLabel(p.data.type)}</td>
 									<td class="px-5 py-3 text-right font-semibold tabular-nums"
 										>{promoValueLabel(p.data)}</td
 									>
 									<td class="px-5 py-3"
 										><Badge color={promoStatusBadgeColor(ps)}>{promoStatusLabel(ps)}</Badge></td
 									>
-									<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
+									<td class="px-5 py-3 text-right text-(--ui-text-muted) tabular-nums"
 										>{#if p.data.maxUsage && p.data.maxUsage > 0}{p.data.currentUsage ?? 0}/{p.data
 												.maxUsage}{:else}∞{/if}</td
 									>
-									<td class="px-5 py-3 text-[11px] text-[var(--ui-text-dimmed)]"
+									<td class="px-5 py-3 text-[11px] text-(--ui-text-dimmed)"
 										>{#if p.data.validFrom || p.data.validUntil}{#if p.data.validFrom}{new Date(
 													p.data.validFrom
 												).toLocaleDateString()}{/if}→{#if p.data.validUntil}{new Date(
@@ -821,7 +815,7 @@
 												class="grid size-8 place-items-center rounded-lg transition-colors {p.data
 													.active
 													? 'text-emerald-500 hover:bg-emerald-500/10'
-													: 'text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)]'}"
+													: 'text-(--ui-text-dimmed) hover:bg-(--ui-bg-accented)'}"
 												title={p.data.active ? 'Deactivate' : 'Activate'}
 												><Icon
 													name={p.data.active ? 'lucide:circle-check' : 'lucide:circle-x'}
@@ -834,21 +828,21 @@
 													rawItem = glo.get(TYPE.promotion, p.id);
 													rawOpen = true;
 												}}
-												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+												class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 												title={t('common.viewRaw')}
 												><Icon name="lucide:code" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => openEditPromo(p.id, p.data)}
-												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
+												class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-blue-500/10 hover:text-blue-500"
 												title={t('common.edit')}
 												><Icon name="lucide:pencil" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => confirmDelete(p.id)}
-												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
+												class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-red-500/10 hover:text-red-500"
 												title={t('common.delete')}
 												><Icon name="lucide:trash-2" class="size-4" /></button
 											>
@@ -863,50 +857,48 @@
 			</div>
 		{:else}
 			<div
-				class="overflow-hidden rounded-2xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-elevated)]"
+				class="overflow-hidden rounded-2xl border border-(--ui-border-muted) bg-(--ui-bg-elevated)"
 			>
-				<div class="divide-y divide-[var(--ui-border-muted)]">
+				<div class="divide-y divide-(--ui-border-muted)">
 					{#each pCtrl.pagedList as p (p.id)}
 						{@const ps = promoStatus(p.data)}
-						<div class="group p-5 transition-colors hover:bg-[var(--ui-bg-muted)]">
+						<div class="group p-5 transition-colors hover:bg-(--ui-bg-muted)">
 							<div class="flex items-start justify-between gap-3">
 								<div class="flex min-w-0 items-start gap-3">
 									<!-- Type icon -->
 									<div
 										class="grid size-10 shrink-0 place-items-center rounded-xl {PROMO_TYPE_COLOR[
 											p.data.type
-										] ?? 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]'}"
+										] ?? 'bg-(--ui-bg-accented) text-(--ui-text-muted)'}"
 									>
 										<Icon name={PROMO_TYPE_ICON[p.data.type] ?? 'lucide:tag'} class="size-5" />
 									</div>
 									<div class="min-w-0">
 										<div class="flex items-center gap-2">
-											<p class="truncate text-[14px] font-bold text-[var(--ui-text)]">
+											<p class="truncate text-[14px] font-bold text-(--ui-text)">
 												{p.data.name}
 											</p>
 											<Badge color={promoStatusBadgeColor(ps)}>{promoStatusLabel(ps)}</Badge>
 										</div>
 										{#if p.data.description}
-											<p class="mt-0.5 truncate text-[11.5px] text-[var(--ui-text-dimmed)]">
+											<p class="mt-0.5 truncate text-[11.5px] text-(--ui-text-dimmed)">
 												{p.data.description}
 											</p>
 										{/if}
 										<!-- Meta row -->
 										<div class="mt-1.5 flex flex-wrap items-center gap-3">
-											<span class="flex items-center gap-1 text-[10px] text-[var(--ui-text-muted)]">
+											<span class="flex items-center gap-1 text-[10px] text-(--ui-text-muted)">
 												<Icon name="lucide:tag" class="size-3" />
 												{promoTypeLabel(p.data.type)}
 											</span>
 											<span
-												class="flex items-center gap-1 text-[10px] font-semibold text-[var(--ui-text-muted)]"
+												class="flex items-center gap-1 text-[10px] font-semibold text-(--ui-text-muted)"
 											>
 												<Icon name="lucide:wallet" class="size-3" />
 												{promoValueLabel(p.data)}
 											</span>
 											{#if p.data.minimumSpend}
-												<span
-													class="flex items-center gap-1 text-[10px] text-[var(--ui-text-muted)]"
-												>
+												<span class="flex items-center gap-1 text-[10px] text-(--ui-text-muted)">
 													<Icon name="lucide:shopping-cart" class="size-3" />
 													Min: {formatMoney(p.data.minimumSpend, currency)}
 												</span>
@@ -915,18 +907,17 @@
 										<!-- Usage + dates -->
 										<div class="mt-1 flex flex-wrap items-center gap-3">
 											{#if p.data.maxUsage && p.data.maxUsage > 0}
-												<span class="text-[10px] text-[var(--ui-text-dimmed)]">
+												<span class="text-[10px] text-(--ui-text-dimmed)">
 													Usage: {p.data.currentUsage ?? 0}/{p.data.maxUsage}
 													{#if (p.data.currentUsage ?? 0) >= p.data.maxUsage}<span
 															class="text-amber-500">· Limit reached</span
 														>{/if}
 												</span>
 											{:else}
-												<span class="text-[10px] text-[var(--ui-text-dimmed)]">Unlimited usage</span
-												>
+												<span class="text-[10px] text-(--ui-text-dimmed)">Unlimited usage</span>
 											{/if}
 											{#if p.data.validFrom || p.data.validUntil}
-												<span class="text-[10px] text-[var(--ui-text-dimmed)]">
+												<span class="text-[10px] text-(--ui-text-dimmed)">
 													{#if p.data.validFrom}{new Date(
 															p.data.validFrom
 														).toLocaleDateString()}{/if}
@@ -957,7 +948,7 @@
 													</span>
 												{/each}
 												{#if (p.data.categoryIds?.length ?? 0) > 3 || (p.data.productIds?.length ?? 0) > 2}
-													<span class="text-[9px] text-[var(--ui-text-dimmed)]">
+													<span class="text-[9px] text-(--ui-text-dimmed)">
 														+{Math.max(0, (p.data.categoryIds?.length ?? 0) - 3) +
 															Math.max(0, (p.data.productIds?.length ?? 0) - 2)} more
 													</span>
@@ -974,7 +965,7 @@
 										class="grid size-8 place-items-center rounded-lg transition-colors {p.data
 											.active
 											? 'text-emerald-500 hover:bg-emerald-500/10'
-											: 'text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)]'}"
+											: 'text-(--ui-text-dimmed) hover:bg-(--ui-bg-accented)'}"
 										title={p.data.active ? 'Deactivate' : 'Activate'}
 									>
 										<Icon
@@ -988,7 +979,7 @@
 											rawItem = glo.get(TYPE.promotion, p.id);
 											rawOpen = true;
 										}}
-										class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+										class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 										title={t('common.viewRaw')}
 									>
 										<Icon name="lucide:code" class="size-4" />
@@ -996,7 +987,7 @@
 									<button
 										type="button"
 										onclick={() => openEditPromo(p.id, p.data)}
-										class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
+										class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-blue-500/10 hover:text-blue-500"
 										title={t('common.edit')}
 									>
 										<Icon name="lucide:pencil" class="size-4" />
@@ -1004,7 +995,7 @@
 									<button
 										type="button"
 										onclick={() => confirmDelete(p.id)}
-										class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
+										class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-red-500/10 hover:text-red-500"
 										title={t('common.delete')}
 									>
 										<Icon name="lucide:trash-2" class="size-4" />
@@ -1015,7 +1006,7 @@
 					{/each}
 				</div>
 			</div>
-			<Pagination controls={pCtrl} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
+			<Pagination controls={pCtrl} class="mt-3 rounded-xl border border-(--ui-border)" />
 		{/if}
 
 		<!-- ═══════════════ COUPONS TAB ═══════════════ -->
@@ -1064,11 +1055,11 @@
 									applySort={cCtrl.applySort}>{t('common.code')}</SortableTh
 								>
 								<th
-									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.type')}</th
 								>
 								<th
-									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.value')}</th
 								>
 								<SortableTh
@@ -1079,7 +1070,7 @@
 									applySort={cCtrl.applySort}>{t('common.usage')}</SortableTh
 								>
 								<th
-									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>Min spend</th
 								>
 								<SortableTh
@@ -1091,16 +1082,16 @@
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr>
 						</thead>
-						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+						<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 							{#each cCtrl.pagedList as c (c.id)}
-								<tr class="hover:bg-[var(--ui-bg-accented)]/40">
+								<tr class="hover:bg-(--ui-bg-accented)/40">
 									<td class="px-5 py-3 font-mono font-semibold">{c.data.code}</td>
-									<td class="px-5 py-3 text-[var(--ui-text-muted)] capitalize">{c.data.type}</td>
+									<td class="px-5 py-3 text-(--ui-text-muted) capitalize">{c.data.type}</td>
 									<td class="px-5 py-3 text-right font-semibold tabular-nums">{badge(c.data)}</td>
-									<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
+									<td class="px-5 py-3 text-right text-(--ui-text-muted) tabular-nums"
 										>{c.data.uses ?? 0}{#if c.data.maxUses}/{c.data.maxUses}{/if}</td
 									>
-									<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
+									<td class="px-5 py-3 text-right text-(--ui-text-muted) tabular-nums"
 										>{#if c.data.minSpend}{formatMoney(c.data.minSpend, currency)}{:else}—{/if}</td
 									>
 									<td class="px-5 py-3"
@@ -1114,21 +1105,21 @@
 													rawItem = glo.get(TYPE.coupon, c.id);
 													rawOpen = true;
 												}}
-												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+												class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 												title={t('common.viewRaw')}
 												><Icon name="lucide:code" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => openEditCoupon(c.id, c.data)}
-												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
+												class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-blue-500/10 hover:text-blue-500"
 												title={t('common.edit')}
 												><Icon name="lucide:pencil" class="size-4" /></button
 											>
 											<button
 												type="button"
 												onclick={() => confirmDelete(c.id)}
-												class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
+												class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-red-500/10 hover:text-red-500"
 												title={t('common.delete')}
 												><Icon name="lucide:trash-2" class="size-4" /></button
 											>
@@ -1147,23 +1138,21 @@
 					<div class="accent-bar surface-card p-5" style="--accent:var(--color-amber-accent);">
 						<div class="flex items-start justify-between">
 							<div
-								class="grid size-10 place-items-center rounded-xl bg-[var(--tone-warning-bg)] text-[var(--tone-warning-text)]"
+								class="grid size-10 place-items-center rounded-xl bg-(--tone-warning-bg) text-(--tone-warning-text)"
 							>
 								<Icon name="lucide:ticket" class="size-5" />
 							</div>
 							<Badge color={statusColor(c.data.status)}>{c.data.status}</Badge>
 						</div>
 						<div class="mt-3 font-mono text-lg font-bold tracking-wider">{c.data.code}</div>
-						<div
-							class="font-display text-2xl font-bold text-[var(--tone-warning-text)] tabular-nums"
-						>
+						<div class="font-display text-2xl font-bold text-(--tone-warning-text) tabular-nums">
 							{badge(c.data)}
 						</div>
-						<div class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">
+						<div class="mt-1 text-[11.5px] text-(--ui-text-muted)">
 							{c.data.uses ?? 0}{#if c.data.maxUses}/{c.data.maxUses}{/if} uses
 						</div>
 						{#if c.data.minSpend}
-							<div class="mt-0.5 text-[10px] text-[var(--ui-text-dimmed)]">
+							<div class="mt-0.5 text-[10px] text-(--ui-text-dimmed)">
 								Min spend: {formatMoney(c.data.minSpend, currency)}
 							</div>
 						{/if}
@@ -1174,7 +1163,7 @@
 									rawItem = glo.get(TYPE.coupon, c.id);
 									rawOpen = true;
 								}}
-								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+								class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 								title={t('common.viewRaw')}
 							>
 								<Icon name="lucide:code" class="size-4" />
@@ -1182,7 +1171,7 @@
 							<button
 								type="button"
 								onclick={() => openEditCoupon(c.id, c.data)}
-								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-blue-500/10 hover:text-blue-500"
+								class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-blue-500/10 hover:text-blue-500"
 								title={t('common.edit')}
 							>
 								<Icon name="lucide:pencil" class="size-4" />
@@ -1190,7 +1179,7 @@
 							<button
 								type="button"
 								onclick={() => confirmDelete(c.id)}
-								class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-red-500/10 hover:text-red-500"
+								class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-red-500/10 hover:text-red-500"
 								title={t('common.delete')}
 							>
 								<Icon name="lucide:trash-2" class="size-4" />
@@ -1199,7 +1188,7 @@
 					</div>
 				{/each}
 			</div>
-			<Pagination controls={cCtrl} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
+			<Pagination controls={cCtrl} class="mt-3 rounded-xl border border-(--ui-border)" />
 		{/if}
 	{/if}
 </div>
@@ -1220,14 +1209,14 @@
 		<!-- ── Coupon form ── -->
 		<div class="space-y-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.code')}</span
 				>
 				<Input bind:value={cCode} placeholder="SUMMER20" class="w-full font-mono uppercase" />
 			</label>
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.type')}</span
 					>
 					<Select
@@ -1241,7 +1230,7 @@
 					/>
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Value {cType === 'percent' ? '(%)' : `(${currency})`}</span
 					>
 					<Input bind:value={cValue} type="number" min="0" class="w-full" />
@@ -1249,20 +1238,20 @@
 			</div>
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Min spend (optional)</span
 					>
 					<Input bind:value={cMinSpend} type="number" min="0" class="w-full" />
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Max uses (optional)</span
 					>
 					<Input bind:value={cMax} type="number" min="0" class="w-full" />
 				</label>
 			</div>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.description')}</span
 				>
 				<Input bind:value={cDesc} class="w-full" />
@@ -1274,18 +1263,18 @@
 			<!-- Section: Basic -->
 			<div class="space-y-3">
 				<div
-					class="flex items-center gap-2 text-[12px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					class="flex items-center gap-2 text-[12px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 				>
 					<Icon name="lucide:info" class="size-3.5" /> Basic
 				</div>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Name <span class="text-red-500">*</span></span
 					>
 					<Input bind:value={fName} placeholder="Happy Hour" class="w-full" />
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.description')}</span
 					>
 					<Input
@@ -1297,7 +1286,7 @@
 					/>
 				</label>
 				<div>
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.type')}</span
 					>
 					<div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -1307,8 +1296,8 @@
 								onclick={() => setPromoType(pt.value)}
 								class="rounded-lg border-2 px-2 py-2.5 text-center text-[11px] font-medium transition-all {fType ===
 								pt.value
-									? 'border-[var(--ui-color-primary-500)] bg-[var(--ui-color-primary-500)]/10 text-[var(--ui-color-primary-500)]'
-									: 'border-[var(--ui-border)] hover:border-[var(--ui-border-muted)]'}"
+									? 'border-(--ui-color-primary-500) bg-(--ui-color-primary-500)/10 text-(--ui-color-primary-500)'
+									: 'border-(--ui-border) hover:border-(--ui-border-muted)'}"
 							>
 								<Icon name={pt.icon} class="mx-auto mb-1 block size-4" />
 								{pt.label}
@@ -1321,14 +1310,14 @@
 			<!-- Section: Discount -->
 			<div class="space-y-3">
 				<div
-					class="flex items-center gap-2 text-[12px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					class="flex items-center gap-2 text-[12px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 				>
 					<Icon name="lucide:percent" class="size-3.5" />
 					{t('common.discount')}
 				</div>
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 					<label class="block">
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
+						<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">
 							{isPercentType(fType) ? 'Discount %' : `Discount (${currency})`}
 							<span class="text-red-500">*</span>
 						</span>
@@ -1343,14 +1332,14 @@
 							/>
 							{#if isPercentType(fType)}
 								<span
-									class="absolute top-1/2 right-3 -translate-y-1/2 text-[12px] text-[var(--ui-text-dimmed)]"
+									class="absolute top-1/2 right-3 -translate-y-1/2 text-[12px] text-(--ui-text-dimmed)"
 									>%</span
 								>
 							{/if}
 						</div>
 					</label>
 					<label class="block">
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Minimum spend</span
 						>
 						<Input
@@ -1365,13 +1354,13 @@
 				{#if fType === 'bogo'}
 					<div class="grid grid-cols-2 gap-3">
 						<label class="block">
-							<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 								>Buy quantity <span class="text-red-500">*</span></span
 							>
 							<Input bind:value={fBuyQuantity} type="number" min="1" class="w-full" />
 						</label>
 						<label class="block">
-							<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 								>Get quantity <span class="text-red-500">*</span></span
 							>
 							<Input bind:value={fGetQuantity} type="number" min="1" class="w-full" />
@@ -1383,19 +1372,19 @@
 			<!-- Section: Schedule -->
 			<div class="space-y-3">
 				<div
-					class="flex items-center gap-2 text-[12px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					class="flex items-center gap-2 text-[12px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 				>
 					<Icon name="lucide:calendar" class="size-3.5" /> Schedule
 				</div>
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 					<label class="block">
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Valid from</span
 						>
 						<Input bind:value={fValidFrom} type="datetime-local" class="w-full" />
 					</label>
 					<label class="block">
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Valid until</span
 						>
 						<Input bind:value={fValidUntil} type="datetime-local" class="w-full" />
@@ -1406,21 +1395,21 @@
 				{/if}
 
 				<!-- Time restrictions -->
-				<div class="space-y-3 rounded-xl bg-[var(--ui-bg-accented)] p-4">
+				<div class="space-y-3 rounded-xl bg-(--ui-bg-accented) p-4">
 					<div class="flex items-center justify-between">
-						<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Time restrictions</p>
+						<p class="text-[12px] font-semibold text-(--ui-text-muted)">Time restrictions</p>
 						<Switch bind:checked={fEnableTimeRestrictions} />
 					</div>
 					{#if fEnableTimeRestrictions}
 						<div class="grid grid-cols-2 gap-3">
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>Start time</span
 								>
 								<Input bind:value={fStartTime} type="time" class="w-full" />
 							</label>
 							<label class="block">
-								<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>End time</span
 								>
 								<Input bind:value={fEndTime} type="time" class="w-full" />
@@ -1434,8 +1423,8 @@
 									class="grid size-9 place-items-center rounded-lg text-[11px] font-bold transition-all {fDaysOfWeek.includes(
 										day.value
 									)
-										? 'bg-[var(--ui-color-primary-500)] text-white'
-										: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+										? 'bg-(--ui-color-primary-500) text-white'
+										: 'bg-(--ui-bg-muted) text-(--ui-text-muted)'}"
 								>
 									{day.label}
 								</button>
@@ -1448,12 +1437,12 @@
 			<!-- Section: Limits -->
 			<div class="space-y-3">
 				<div
-					class="flex items-center gap-2 text-[12px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					class="flex items-center gap-2 text-[12px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 				>
 					<Icon name="lucide:gauge" class="size-3.5" /> Limits
 				</div>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Max usage count (0 = unlimited)</span
 					>
 					<Input
@@ -1469,24 +1458,24 @@
 			<!-- Section: Targeting -->
 			<div class="space-y-3">
 				<div
-					class="flex items-center gap-2 text-[12px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					class="flex items-center gap-2 text-[12px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 				>
 					<Icon name="lucide:target" class="size-3.5" /> Targeting
 				</div>
-				<div class="space-y-3 rounded-xl bg-[var(--ui-bg-accented)] p-4">
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+				<div class="space-y-3 rounded-xl bg-(--ui-bg-accented) p-4">
+					<p class="text-[11px] text-(--ui-text-dimmed)">
 						Applies to specific products, categories, or everything.
 					</p>
 					<!-- Mode selector -->
-					<div class="flex gap-1 rounded-lg bg-[var(--ui-bg-muted)] p-1">
+					<div class="flex gap-1 rounded-lg bg-(--ui-bg-muted) p-1">
 						{#each [{ id: 'all' as const, label: t('common.all') + ' ' + t('nav.products') }, { id: 'categories' as const, label: t('catalog.categories') }, { id: 'products' as const, label: t('nav.products') }] as mode (mode.id)}
 							<button
 								type="button"
 								onclick={() => setApplicabilityMode(mode.id)}
 								class="flex-1 rounded-md px-3 py-1.5 text-[11px] font-semibold transition-all {fApplicabilityMode ===
 								mode.id
-									? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-									: 'text-[var(--ui-text-muted)]'}"
+									? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+									: 'text-(--ui-text-muted)'}"
 							>
 								{mode.label}
 							</button>
@@ -1503,7 +1492,7 @@
 										cat.id
 									)
 										? 'bg-blue-500/15 text-blue-500 ring-1 ring-blue-500/30'
-										: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+										: 'bg-(--ui-bg-muted) text-(--ui-text-muted)'}"
 								>
 									{#if fSelectedCategoryIds.includes(cat.id)}<Icon
 											name="lucide:check"
@@ -1525,7 +1514,7 @@
 										prod.id
 									)
 										? 'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30'
-										: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+										: 'bg-(--ui-bg-muted) text-(--ui-text-muted)'}"
 								>
 									{#if fSelectedProductIds.includes(prod.id)}<Icon
 											name="lucide:check"
@@ -1537,7 +1526,7 @@
 						</div>
 					{/if}
 					{#if (fApplicabilityMode === 'categories' && categories.length === 0) || (fApplicabilityMode === 'products' && products.length === 0)}
-						<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+						<p class="text-[11px] text-(--ui-text-dimmed)">
 							No {fApplicabilityMode} available.
 						</p>
 					{/if}
@@ -1545,10 +1534,10 @@
 			</div>
 
 			<!-- Section: Active toggle -->
-			<div class="flex items-center justify-between rounded-xl bg-[var(--ui-bg-accented)] p-3">
+			<div class="flex items-center justify-between rounded-xl bg-(--ui-bg-accented) p-3">
 				<div>
-					<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Active</p>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+					<p class="text-[12px] font-semibold text-(--ui-text-muted)">Active</p>
+					<p class="text-[11px] text-(--ui-text-dimmed)">
 						Inactive promotions won't apply at checkout.
 					</p>
 				</div>
@@ -1598,7 +1587,7 @@
 			aria-label="Cancel delete"
 		></button>
 		<div
-			class="animate-in relative w-full max-w-sm scale-96 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-5 shadow-2xl"
+			class="animate-in relative w-full max-w-sm scale-96 rounded-2xl border border-(--ui-border) bg-(--ui-bg-elevated) p-5 shadow-2xl"
 		>
 			<div class="flex items-center gap-3">
 				<div class="grid size-10 place-items-center rounded-xl bg-red-500/10 text-red-500">
@@ -1608,7 +1597,7 @@
 					<p class="font-display text-[14px] font-bold">
 						Delete {tab === 'coupons' ? 'coupon' : 'promotion'}?
 					</p>
-					<p class="text-[11.5px] text-[var(--ui-text-dimmed)]">This action cannot be undone.</p>
+					<p class="text-[11.5px] text-(--ui-text-dimmed)">This action cannot be undone.</p>
 				</div>
 			</div>
 			<div class="mt-4 flex justify-end gap-2">

@@ -51,7 +51,7 @@
 		description={t('settings.featuresDesc')}
 	/>
 
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:layout-grid" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.modules')}</h2>
@@ -65,13 +65,13 @@
 							key
 						)
 							? 'bg-primary-500/10 text-primary-600 dark:text-primary-400'
-							: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-dimmed)]'}"
+							: 'bg-(--ui-bg-muted) text-(--ui-text-dimmed)'}"
 					>
 						<Icon name={f.icon} class="size-4.5" />
 					</div>
 					<div class="min-w-0">
 						<p class="text-[13px] leading-tight font-semibold">{f.label}</p>
-						<p class="mt-0.5 text-[11px] text-[var(--ui-text-dimmed)]">{f.description}</p>
+						<p class="mt-0.5 text-[11px] text-(--ui-text-dimmed)">{f.description}</p>
 					</div>
 				</div>
 				<Switch checked={features.isEnabled(key)} onCheckedChange={() => toggle(key)} />
@@ -127,10 +127,10 @@
 	</SettingsSection>
 
 	<div
-		class="flex items-center gap-3 rounded-xl border border-[var(--tone-warning-border)] bg-[var(--tone-warning-bg)] px-4 py-3"
+		class="flex items-center gap-3 rounded-xl border border-(--tone-warning-border) bg-(--tone-warning-bg) px-4 py-3"
 	>
-		<Icon name="lucide:info" class="size-4 shrink-0 text-[var(--tone-warning-text)]" />
-		<p class="text-[11px] text-[var(--tone-warning-text)]">
+		<Icon name="lucide:info" class="size-4 shrink-0 text-(--tone-warning-text)" />
+		<p class="text-[11px] text-(--tone-warning-text)">
 			{t('settings.featureTogglesNote')}
 		</p>
 	</div>

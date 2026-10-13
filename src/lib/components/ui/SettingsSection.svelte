@@ -33,7 +33,7 @@
 
 <section
 	class={cn(
-		'surface-card settings-section divide-y divide-[var(--ui-border-muted)]',
+		'surface-card settings-section divide-y divide-(--ui-border-muted)',
 		danger && 'danger-surface',
 		cls
 	)}
@@ -43,28 +43,25 @@
 			{#if icon}
 				<Icon
 					name={icon}
-					class={cn(
-						'size-4 shrink-0',
-						danger ? 'text-[var(--tone-error-text)]' : 'text-primary-500'
-					)}
+					class={cn('size-4 shrink-0', danger ? 'text-(--tone-error-text)' : 'text-primary-500')}
 				/>
 			{/if}
 			<div class="min-w-0">
 				{#if title}
 					<h3
 						class="font-display text-[14px] font-semibold {danger
-							? 'text-[var(--tone-error-text)]'
-							: 'text-[var(--ui-text)]'}"
+							? 'text-(--tone-error-text)'
+							: 'text-(--ui-text)'}"
 					>
 						{title}
 					</h3>
 				{/if}
 				{#if description}
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">{description}</p>
+					<p class="text-[11px] text-(--ui-text-dimmed)">{description}</p>
 				{/if}
 			</div>
 			{#if meta}
-				<span class="ml-auto text-[10px] font-medium text-[var(--ui-text-dimmed)]">{meta}</span>
+				<span class="ml-auto text-[10px] font-medium text-(--ui-text-dimmed)">{meta}</span>
 			{:else if actions}
 				<div class="ml-auto flex items-center gap-2">{@render actions()}</div>
 			{/if}

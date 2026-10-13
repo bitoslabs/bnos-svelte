@@ -16,7 +16,7 @@
 
 {#if label}
 	<label class="block">
-		<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">{label}</span>
+		<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">{label}</span>
 		<Input
 			bind:value
 			type="number"

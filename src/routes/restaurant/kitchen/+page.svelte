@@ -89,9 +89,11 @@
 		);
 	}
 
-	const tickets = $derived(buildTickets());
-	// touch tick so derived re-evaluates on interval
-	void tick;
+	const tickets = $derived.by(() => {
+		// `tick` is read so tickets (and their elapsed times) rebuild each interval.
+		void tick;
+		return buildTickets();
+	});
 
 	const stats = $derived({
 		new: tickets.filter((t) => t.status === 'new').length,
@@ -190,11 +192,11 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">Kitchen display</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+			<p class="text-[12.5px] text-(--ui-text-muted)">
 				Prep tickets from active orders · kind 30211
 			</p>
 		</div>
-		<div class="flex items-center gap-3 text-[10px] text-[var(--ui-text-dimmed)]">
+		<div class="flex items-center gap-3 text-[10px] text-(--ui-text-dimmed)">
 			<span class="flex items-center gap-1"
 				><span class="size-2 rounded-full bg-emerald-400"></span> &lt;10min</span
 			>
@@ -218,9 +220,7 @@
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
 			{#each COLUMNS as col (col.status)}
 				{@const list = tickets.filter((t) => t.status === col.status)}
-				<div
-					class="flex flex-col rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
-				>
+				<div class="flex flex-col rounded-xl border border-(--ui-border) bg-(--ui-bg-muted)">
 					<!-- Column header -->
 					<div
 						class="flex items-center justify-between rounded-t-xl border-t-4 {col.color} px-3 py-2.5"
@@ -230,7 +230,7 @@
 							<span class="text-[13px] font-bold">{col.label}</span>
 						</div>
 						<span
-							class="rounded-md bg-[var(--ui-bg-accented)] px-1.5 py-0.5 text-[11px] font-bold tabular-nums"
+							class="rounded-md bg-(--ui-bg-accented) px-1.5 py-0.5 text-[11px] font-bold tabular-nums"
 							>{list.length}</span
 						>
 					</div>
@@ -239,7 +239,7 @@
 					<div class="flex-1 space-y-2 overflow-y-auto p-2" style="max-height: 70vh;">
 						{#each list as t (t.id)}
 							<div
-								class="rounded-lg border bg-[var(--ui-bg-elevated)] p-3 transition-all hover:shadow-md
+								class="rounded-lg border bg-(--ui-bg-elevated) p-3 transition-all hover:shadow-md
 								{t.priority === 'rush' ? 'ring-2 ring-red-500' : ''}
 								{t.priority === 'vip' ? 'ring-2 ring-amber-500' : ''}"
 							>
@@ -293,7 +293,7 @@
 											<span class="flex-1">{item.name}</span>
 										</li>
 										{#if item.notes}
-											<li class="ml-5 text-[11px] text-[var(--ui-text-muted)] italic">
+											<li class="ml-5 text-[11px] text-(--ui-text-muted) italic">
 												"{item.notes}"
 											</li>
 										{/if}
@@ -313,9 +313,7 @@
 								{/if}
 							</div>
 						{:else}
-							<div class="py-6 text-center text-[12px] text-[var(--ui-text-dimmed)]">
-								No tickets
-							</div>
+							<div class="py-6 text-center text-[12px] text-(--ui-text-dimmed)">No tickets</div>
 						{/each}
 					</div>
 				</div>

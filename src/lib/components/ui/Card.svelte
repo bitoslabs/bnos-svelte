@@ -36,7 +36,7 @@
 							{title}
 						</h3>{/if}
 					{#if description}
-						<p class="mt-0.5 text-[12.5px] text-[var(--ui-text-muted)]">{description}</p>
+						<p class="mt-0.5 text-[12.5px] text-(--ui-text-muted)">{description}</p>
 					{/if}
 				</div>
 			</div>

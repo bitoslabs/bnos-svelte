@@ -81,7 +81,7 @@
 			<Icon name="lucide:globe" class="size-8" />
 		</div>
 		<h1 class="mt-5 font-display text-2xl font-bold tracking-tight">{t('nav.marketplace')}</h1>
-		<p class="mx-auto mt-2 max-w-md text-[13.5px] leading-relaxed text-[var(--ui-text-muted)]">
+		<p class="mx-auto mt-2 max-w-md text-[13.5px] leading-relaxed text-(--ui-text-muted)">
 			{t('marketplace.intro')}
 		</p>
 		<div class="mt-6 flex items-center justify-center gap-2">
@@ -117,7 +117,7 @@
 				</div>
 				<div>
 					<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.marketplace')}</h1>
-					<p class="text-[12px] text-[var(--ui-text-muted)]">
+					<p class="text-[12px] text-(--ui-text-muted)">
 						{t('marketplace.channelSummary', {
 							channels: connections.length,
 							listings: listings.length

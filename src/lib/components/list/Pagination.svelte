@@ -37,17 +37,17 @@
 
 <div
 	class={cn(
-		'sticky bottom-0 z-20 border-t border-[var(--ui-border-muted)] bg-[var(--surface-bg)] px-5 py-3 backdrop-blur',
+		'sticky bottom-0 z-20 border-t border-(--ui-border-muted) bg-(--surface-bg) px-5 py-3 backdrop-blur',
 		className
 	)}
 >
 	<div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 		<!-- rows-per-page + range -->
-		<div class="flex items-center gap-3 text-[12px] text-[var(--ui-text-muted)]">
+		<div class="flex items-center gap-3 text-[12px] text-(--ui-text-muted)">
 			<label class="flex items-center gap-2">
 				<span>Rows</span>
 				<div
-					class="relative inline-flex items-center rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+					class="relative inline-flex items-center rounded-md border border-(--ui-border) bg-(--ui-bg-muted)"
 				>
 					<select
 						value={controls.pageSize}
@@ -62,7 +62,7 @@
 					</select>
 					<Icon
 						name="lucide:chevron-down"
-						class="pointer-events-none absolute right-1.5 size-3 text-[var(--ui-text-dimmed)]"
+						class="pointer-events-none absolute right-1.5 size-3 text-(--ui-text-dimmed)"
 					/>
 				</div>
 			</label>
@@ -79,7 +79,7 @@
 		<div class="flex items-center gap-1">
 			<button
 				type="button"
-				class="grid size-8 place-items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:pointer-events-none disabled:opacity-40"
+				class="grid size-8 place-items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text) disabled:pointer-events-none disabled:opacity-40"
 				title={t('common.previous')}
 				aria-label="Previous page"
 				disabled={controls.page <= 1}
@@ -90,14 +90,14 @@
 
 			{#each pageNumbers as p (p)}
 				{#if p === '…'}
-					<span class="px-1 text-[12px] text-[var(--ui-text-dimmed)]">…</span>
+					<span class="px-1 text-[12px] text-(--ui-text-dimmed)">…</span>
 				{:else}
 					<button
 						type="button"
 						class="grid size-8 min-w-8 place-items-center rounded-lg px-2 text-[12px] font-semibold tabular-nums transition-colors {p ===
 						controls.page
 							? 'bg-primary-500 text-white'
-							: 'border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
+							: 'border border-(--ui-border) bg-(--ui-bg-muted) text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'}"
 						onclick={() => controls.setPage(p)}
 						aria-current={p === controls.page ? 'page' : undefined}
 						aria-label="Page {p}"
@@ -109,7 +109,7 @@
 
 			<button
 				type="button"
-				class="grid size-8 place-items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] disabled:pointer-events-none disabled:opacity-40"
+				class="grid size-8 place-items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text) disabled:pointer-events-none disabled:opacity-40"
 				title={t('common.next')}
 				aria-label="Next page"
 				disabled={controls.page >= controls.totalPages}

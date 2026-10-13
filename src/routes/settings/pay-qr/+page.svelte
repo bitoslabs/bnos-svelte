@@ -132,7 +132,7 @@
 	</PageHeader>
 
 	<!-- QR scheme picker -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:layout-grid" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.qrScheme')}</h2>
@@ -144,7 +144,7 @@
 					class="flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all {cfg.qrScheme ===
 					s.id
 						? 'border-primary-500 bg-primary-500/10'
-						: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
+						: 'border-(--ui-border) hover:bg-(--ui-bg-accented)'}"
 					onclick={() => (cfg.qrScheme = s.id)}
 				>
 					<span
@@ -155,14 +155,14 @@
 						<Icon name={s.icon} class="size-4" />
 						{s.label}
 					</span>
-					<span class="text-[10.5px] text-[var(--ui-text-dimmed)]">{s.desc}</span>
+					<span class="text-[10.5px] text-(--ui-text-dimmed)">{s.desc}</span>
 				</button>
 			{/each}
 		</div>
 	</section>
 
 	<!-- Scheme-specific config -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:settings-2" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">
@@ -177,15 +177,17 @@
 		{#if cfg.qrScheme === 'promptpay'}
 			<div class="px-5 py-4">
 				<label
-					class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					for="payqr-promptpay-id"
+					class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 					>{t('settings.promptPayId')}</label
 				>
 				<Input
+					id="payqr-promptpay-id"
 					bind:value={cfg.promptpayId}
 					placeholder="0812345678 or national ID"
 					class="w-full"
 				/>
-				<p class="mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">
+				<p class="mt-1 text-[10.5px] text-(--ui-text-dimmed)">
 					{t('settings.promptPayIdDesc')}
 				</p>
 			</div>
@@ -193,30 +195,42 @@
 			<div class="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-2">
 				<div>
 					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						for="payqr-vietqr-bin"
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 						>{t('settings.bankBinCode')}</label
 					>
-					<Input bind:value={cfg.vietqrBin} placeholder="970436 (Vietcombank)" class="w-full" />
-					<p class="mt-1 text-[10.5px] text-[var(--ui-text-dimmed)]">
+					<Input
+						id="payqr-vietqr-bin"
+						bind:value={cfg.vietqrBin}
+						placeholder="970436 (Vietcombank)"
+						class="w-full"
+					/>
+					<p class="mt-1 text-[10.5px] text-(--ui-text-dimmed)">
 						{t('settings.bankBinCodeDesc')}
 					</p>
 				</div>
 				<div>
 					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						for="payqr-vietqr-account"
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 						>{t('settings.accountNumber')}</label
 					>
-					<Input bind:value={cfg.vietqrAccount} placeholder="0011001234567" class="w-full" />
+					<Input
+						id="payqr-vietqr-account"
+						bind:value={cfg.vietqrAccount}
+						placeholder="0011001234567"
+						class="w-full"
+					/>
 				</div>
 			</div>
 		{:else}
 			<div class="space-y-4 px-5 py-4">
 				<div
-					class="flex items-start justify-between gap-3 rounded-xl bg-[var(--ui-bg-muted)] p-3.5 sm:items-center"
+					class="flex items-start justify-between gap-3 rounded-xl bg-(--ui-bg-muted) p-3.5 sm:items-center"
 				>
 					<div class="min-w-0 flex-1">
 						<p class="text-[13px] font-semibold">Use a static bank QR image</p>
-						<p class="mt-0.5 text-[11px] leading-relaxed break-words text-[var(--ui-text-dimmed)]">
+						<p class="mt-0.5 text-[11px] leading-relaxed break-words text-(--ui-text-dimmed)">
 							Upload the QR issued by your bank. It is shown as-is at checkout; the sale amount is
 							not embedded in it.
 						</p>
@@ -241,10 +255,12 @@
 					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 						<div>
 							<label
-								class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+								for="payqr-bank-account-name"
+								class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 								>{t('settings.accountName')}</label
 							>
 							<Input
+								id="payqr-bank-account-name"
 								bind:value={cfg.bankAccountName}
 								placeholder="Bitdigo Co., Ltd."
 								class="w-full"
@@ -252,17 +268,29 @@
 						</div>
 						<div>
 							<label
-								class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+								for="payqr-bank-account-number"
+								class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 								>{t('settings.accountNumber')}</label
 							>
-							<Input bind:value={cfg.bankAccountNumber} placeholder="1234 5678 90" class="w-full" />
+							<Input
+								id="payqr-bank-account-number"
+								bind:value={cfg.bankAccountNumber}
+								placeholder="1234 5678 90"
+								class="w-full"
+							/>
 						</div>
 						<div class="sm:col-span-2">
 							<label
-								class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+								for="payqr-bank-name"
+								class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 								>{t('settings.bankName')}</label
 							>
-							<Input bind:value={cfg.bankName} placeholder="e.g. Kasikornbank" class="w-full" />
+							<Input
+								id="payqr-bank-name"
+								bind:value={cfg.bankName}
+								placeholder="e.g. Kasikornbank"
+								class="w-full"
+							/>
 						</div>
 					</div>
 				{/if}
@@ -271,7 +299,7 @@
 	</section>
 
 	<!-- Live preview -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:eye" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.livePreview')}</h2>
@@ -283,7 +311,7 @@
 					class="w-28"
 					placeholder={t('common.amount')}
 				/>
-				<span class="text-[11px] text-[var(--ui-text-dimmed)]">{currency}</span>
+				<span class="text-[11px] text-(--ui-text-dimmed)">{currency}</span>
 			</div>
 		</div>
 		<div class="flex flex-col items-center gap-3 px-5 py-6 sm:flex-row sm:items-start sm:gap-6">
@@ -293,24 +321,24 @@
 					<img
 						src={qrPreview.imageUrl}
 						alt="Static bank payment QR preview"
-						class="size-[180px] rounded-xl border border-[var(--ui-border)] bg-white object-contain p-2"
+						class="size-[180px] rounded-xl border border-(--ui-border) bg-white object-contain p-2"
 					/>
-					<span class="text-[11px] font-semibold text-[var(--ui-text-muted)]">Static bank QR</span>
+					<span class="text-[11px] font-semibold text-(--ui-text-muted)">Static bank QR</span>
 				</div>
 			{:else if qrPreview?.configured}
 				<div class="flex flex-col items-center gap-2">
 					<QrCode value={qrPreview.payload} size={180} badge={qrPreview.badge} />
-					<span class="text-[11px] font-semibold text-[var(--ui-text-muted)] capitalize">
+					<span class="text-[11px] font-semibold text-(--ui-text-muted) capitalize">
 						{qrPreview.kind} · {previewAmount.toFixed(2)}
 						{currency}
 					</span>
 				</div>
 			{:else}
 				<div
-					class="flex size-[180px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--ui-border)] p-4 text-center"
+					class="flex size-[180px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-(--ui-border) p-4 text-center"
 				>
-					<Icon name="lucide:qr-code" class="size-8 text-[var(--ui-text-dimmed)]" />
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+					<Icon name="lucide:qr-code" class="size-8 text-(--ui-text-dimmed)" />
+					<p class="text-[11px] text-(--ui-text-dimmed)">
 						{qrPreview?.hint ?? t('settings.notConfigured')}
 					</p>
 				</div>
@@ -318,7 +346,7 @@
 
 			<div class="flex-1">
 				<h3 class="text-[13px] font-bold">{t('settings.whatCustomersSee')}</h3>
-				<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
+				<p class="mt-1 text-[12px] text-(--ui-text-muted)">
 					When the cashier selects <span class="font-semibold">QR</span> at checkout, this code is
 					shown in the POS dialog and — if enabled — on the customer-facing display.
 					{#if qrPreview?.imageUrl}
@@ -328,11 +356,11 @@
 				{#if qrPreview?.payload}
 					<details class="mt-3">
 						<summary
-							class="cursor-pointer text-[11px] font-semibold text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+							class="cursor-pointer text-[11px] font-semibold text-(--ui-text-muted) hover:text-(--ui-text)"
 							>{t('settings.rawPayload')}</summary
 						>
 						<code
-							class="mt-1 block rounded-lg bg-[var(--ui-bg-muted)] p-2 font-mono text-[10px] break-all text-[var(--ui-text-muted)]"
+							class="mt-1 block rounded-lg bg-(--ui-bg-muted) p-2 font-mono text-[10px] break-all text-(--ui-text-muted)"
 							>{qrPreview.payload}</code
 						>
 					</details>
@@ -342,25 +370,25 @@
 	</section>
 
 	<!-- Lightning address (single source: Settings → Bitcoin) -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:zap" class="size-4 text-amber-500" />
 			<h2 class="font-display text-[14px] font-semibold">
 				{t('settings.lightningAddressHeading')}
 			</h2>
-			<span class="ml-auto text-[9.5px] font-medium text-[var(--ui-text-dimmed)]"
+			<span class="ml-auto text-[9.5px] font-medium text-(--ui-text-dimmed)"
 				>{t('settings.managedInBitcoin')}</span
 			>
 		</div>
 		<div class="px-5 py-4">
 			{#if lightningAddr}
-				<div class="flex items-center gap-4 rounded-xl bg-[var(--ui-bg-muted)] p-4">
+				<div class="flex items-center gap-4 rounded-xl bg-(--ui-bg-muted) p-4">
 					<QrCode value={`lightning:${lightningAddr}`} size={120} badge="lightning" />
 					<div class="min-w-0">
 						<p class="text-[12px] font-bold text-amber-600 dark:text-amber-400">
 							lightning:{lightningAddr}
 						</p>
-						<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+						<p class="text-[10.5px] text-(--ui-text-dimmed)">
 							At checkout the POS fetches a real amount-locked invoice (LNURL-pay). Customers scan
 							with any Lightning wallet.
 						</p>
@@ -378,10 +406,10 @@
 				>
 					<Icon name="lucide:zap-off" class="size-5 shrink-0 text-amber-500" />
 					<div class="min-w-0">
-						<p class="text-[12.5px] font-semibold text-[var(--ui-text)]">
+						<p class="text-[12.5px] font-semibold text-(--ui-text)">
 							{t('settings.noLightningYet')}
 						</p>
-						<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+						<p class="text-[10.5px] text-(--ui-text-dimmed)">
 							The POS shows a static fallback QR but can't fetch amount-locked invoices. Add one to
 							accept Lightning.
 						</p>
@@ -398,28 +426,31 @@
 	</section>
 
 	<!-- Checkout behaviour -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:monitor" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.checkoutBehaviour')}</h2>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
-				<label class="text-[13px] font-semibold">{t('settings.showQrOnCustomerDisplay')}</label>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+				<div class="text-[13px] font-semibold">{t('settings.showQrOnCustomerDisplay')}</div>
+				<p class="text-[11px] text-(--ui-text-dimmed)">
 					{t('settings.showQrOnCustomerDisplayDesc')}
 				</p>
 			</div>
-			<Switch bind:checked={cfg.showOnCustomerDisplay} />
+			<Switch
+				bind:checked={cfg.showOnCustomerDisplay}
+				label={t('settings.showQrOnCustomerDisplay')}
+			/>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
-				<label class="text-[13px] font-semibold">{t('settings.confirmSaleOnPaid')}</label>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+				<div class="text-[13px] font-semibold">{t('settings.confirmSaleOnPaid')}</div>
+				<p class="text-[11px] text-(--ui-text-dimmed)">
 					{t('settings.confirmSaleOnPaidDesc')}
 				</p>
 			</div>
-			<Switch bind:checked={cfg.confirmOnPaid} />
+			<Switch bind:checked={cfg.confirmOnPaid} label={t('settings.confirmSaleOnPaid')} />
 		</div>
 	</section>
 

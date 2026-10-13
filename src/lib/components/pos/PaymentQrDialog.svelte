@@ -98,13 +98,13 @@
 				return {
 					icon: 'lucide:mail',
 					text: 'Delivered as a payment note to your receiving wallet (Lightning Address providers set the customer-visible text themselves).',
-					cls: 'text-[var(--ui-text-muted)]'
+					cls: 'text-(--ui-text-muted)'
 				};
 			case 'zap':
 				return {
 					icon: 'lucide:zap',
 					text: 'Attached to the zap receipt in your Nostr notifications.',
-					cls: 'text-[var(--ui-text-muted)]'
+					cls: 'text-(--ui-text-muted)'
 				};
 			default:
 				// Static fallback QR (no live invoice) vs a live invoice whose
@@ -114,7 +114,7 @@
 					text: !flow.isInvoice
 						? 'Static address QR — the customer\u2019s wallet creates the payment itself, so no memo can travel.'
 						: 'This provider accepts no memo — the customer sees the provider\u2019s own description.',
-					cls: 'text-[var(--ui-text-muted)]'
+					cls: 'text-(--ui-text-muted)'
 				};
 		}
 	});
@@ -139,16 +139,16 @@
 						<Icon name={isLightning ? 'lucide:zap' : 'lucide:qr-code'} class="size-4" />
 					</div>
 					<div>
-						<p class="text-[12px] font-bold text-[var(--ui-text)]">
+						<p class="text-[12px] font-bold text-(--ui-text)">
 							{isLightning ? 'Lightning checkout' : 'QR checkout'}
 						</p>
-						<p class="text-[10px] font-medium text-[var(--ui-text-dimmed)]">
+						<p class="text-[10px] font-medium text-(--ui-text-dimmed)">
 							{isLightning ? 'Secure wallet payment' : 'Secure scan to pay'}
 						</p>
 					</div>
 				</div>
 				<span
-					class="rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[10px] font-bold text-[var(--ui-text-muted)] capitalize"
+					class="rounded-full bg-(--ui-bg-muted) px-2.5 py-1 text-[10px] font-bold text-(--ui-text-muted) capitalize"
 				>
 					{flow.result.kind}
 				</span>
@@ -156,9 +156,7 @@
 
 			<!-- Amount hero: the number the customer owes. -->
 			<div class="text-center">
-				<p
-					class="text-[10.5px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-				>
+				<p class="text-[10.5px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 					{t('pos.amountDue')}
 				</p>
 				<p class="font-display text-[32px] leading-tight font-black tabular-nums">
@@ -166,7 +164,7 @@
 				</p>
 				{#if showSats || isLightning}
 					<p
-						class="flex items-center justify-center gap-1 text-[11px] font-semibold text-[var(--tone-warning-text)]"
+						class="flex items-center justify-center gap-1 text-[11px] font-semibold text-(--tone-warning-text)"
 					>
 						<Icon name="lucide:zap" class="size-3" />≈ {formatInt(satsHint)} sats
 					</p>
@@ -181,7 +179,7 @@
 							? 'text-emerald-600 dark:text-emerald-400'
 							: s.state === 'active'
 								? 'text-amber-700 dark:text-amber-300'
-								: 'text-[var(--ui-text-dimmed)]'}"
+								: 'text-(--ui-text-dimmed)'}"
 					>
 						{#if s.state === 'done'}
 							<Icon name="lucide:check-circle-2" class="size-3.5 shrink-0" />
@@ -193,8 +191,7 @@
 								<span class="relative inline-flex size-3.5 rounded-full bg-amber-500"></span>
 							</span>
 						{:else}
-							<span class="size-3.5 shrink-0 rounded-full border-2 border-[var(--ui-border)]"
-							></span>
+							<span class="size-3.5 shrink-0 rounded-full border-2 border-(--ui-border)"></span>
 						{/if}
 						<span class="truncate">{s.label}</span>
 					</div>
@@ -204,19 +201,17 @@
 			<!-- QR stage: skeleton while fetching, dim on expiry, check on paid. -->
 			<div class="relative">
 				<div
-					class="rounded-2xl border border-[var(--ui-border)] bg-white p-3 shadow-sm transition-all duration-500 {qrDimmed
+					class="rounded-2xl border border-(--ui-border) bg-white p-3 shadow-sm transition-all duration-500 {qrDimmed
 						? 'scale-[0.97] opacity-40 grayscale'
 						: ''}"
 				>
 					{#if flow.fetching}
 						<div
-							class="flex size-[224px] flex-col items-center justify-center gap-3 text-[var(--ui-text-dimmed)]"
+							class="flex size-[224px] flex-col items-center justify-center gap-3 text-(--ui-text-dimmed)"
 						>
 							<Icon name="lucide:loader-circle" class="size-8 animate-spin text-amber-500" />
 							<span class="text-[11.5px] font-semibold">Generating Lightning invoice…</span>
-							<span class="text-[10px] text-[var(--ui-text-dimmed)]"
-								>Contacting wallet provider</span
-							>
+							<span class="text-[10px] text-(--ui-text-dimmed)">Contacting wallet provider</span>
 						</div>
 					{:else if flow.result.imageUrl}
 						<img
@@ -227,7 +222,7 @@
 					{:else if flow.result.payload}
 						<QrCode value={flow.result.payload} size={224} badge={flow.result.badge} />
 					{:else}
-						<div class="flex size-[224px] items-center justify-center text-[var(--ui-text-dimmed)]">
+						<div class="flex size-[224px] items-center justify-center text-(--ui-text-dimmed)">
 							<Icon name="lucide:qr-code" class="size-8" />
 						</div>
 					{/if}
@@ -253,7 +248,7 @@
 				<div class="w-full max-w-[260px]">
 					<div
 						class="h-1.5 overflow-hidden rounded-full {urgent
-							? 'bg-[var(--tone-error-bg)]'
+							? 'bg-(--tone-error-bg)'
 							: 'bg-amber-500/15'}"
 					>
 						<div
@@ -265,8 +260,8 @@
 					</div>
 					<p
 						class="mt-1 flex items-center justify-center gap-1 text-[11px] font-semibold {urgent
-							? 'text-[var(--tone-error-text)]'
-							: 'text-[var(--ui-text-muted)]'}"
+							? 'text-(--tone-error-text)'
+							: 'text-(--ui-text-muted)'}"
 					>
 						<Icon name="lucide:clock" class="size-3.5" />
 						{#if flow.expired}
@@ -283,7 +278,7 @@
 				<div
 					class="flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold {flow.watching
 						? 'border-amber-500/15 bg-amber-500/5 text-amber-700 dark:text-amber-300'
-						: 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+						: 'border-(--ui-border) bg-(--ui-bg-muted) text-(--ui-text-muted)'}"
 				>
 					{#if flow.watching}
 						<span class="relative flex size-2">
@@ -316,7 +311,7 @@
 					{:else}
 						<button
 							type="button"
-							class="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--surface-bg)] px-3 py-2 text-[11.5px] font-semibold text-[var(--ui-text)] transition-colors hover:border-primary-500/40 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:text-primary-400"
+							class="flex w-full items-center justify-center gap-2 rounded-xl border border-(--ui-border) bg-(--surface-bg) px-3 py-2 text-[11.5px] font-semibold text-(--ui-text) transition-colors hover:border-primary-500/40 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:text-primary-400"
 							onclick={() => flow.checkNow()}
 							disabled={flow.checking || flow.fetching}
 						>
@@ -328,16 +323,16 @@
 						</button>
 					{/if}
 					{#if flow.lastCheck === 'pending'}
-						<p class="text-center text-[10.5px] font-medium text-[var(--ui-text-muted)]">
+						<p class="text-center text-[10.5px] font-medium text-(--ui-text-muted)">
 							No payment yet — the invoice is still unpaid. Check again after the customer pays.
 						</p>
 					{:else if flow.lastCheck === 'unknown'}
-						<p class="text-center text-[10.5px] font-medium text-[var(--ui-text-muted)]">
+						<p class="text-center text-[10.5px] font-medium text-(--ui-text-muted)">
 							This provider exposes no payment status — confirm in your wallet app, then tap
-							<span class="font-semibold text-[var(--ui-text)]">Mark paid</span>.
+							<span class="font-semibold text-(--ui-text)">Mark paid</span>.
 						</p>
 					{:else if flow.lastCheck === 'error'}
-						<p class="text-center text-[10.5px] font-medium text-[var(--tone-error-text)]">
+						<p class="text-center text-[10.5px] font-medium text-(--tone-error-text)">
 							Check failed — could not reach the provider. Try again.
 						</p>
 					{/if}
@@ -354,7 +349,7 @@
 				{/if}
 				{#if flow.provider?.label}
 					<span
-						class="rounded-full bg-[var(--ui-bg-accented)] px-2 py-0.5 text-[9.5px] font-bold text-[var(--ui-text-muted)]"
+						class="rounded-full bg-(--ui-bg-accented) px-2 py-0.5 text-[9.5px] font-bold text-(--ui-text-muted)"
 						>{flow.provider.label}</span
 					>
 				{/if}
@@ -370,7 +365,7 @@
 						<Icon name="lucide:message-square-text" class="size-3.5" />Invoice memo
 					</div>
 					<p
-						class="text-[12.5px] leading-relaxed font-medium break-words whitespace-pre-wrap text-[var(--ui-text)]"
+						class="text-[12.5px] leading-relaxed font-medium break-words whitespace-pre-wrap text-(--ui-text)"
 					>
 						{flow.note}
 					</p>
@@ -388,7 +383,7 @@
 				<div class="flex w-full items-center justify-center gap-3">
 					<button
 						type="button"
-						class="flex items-center gap-1 text-[11px] font-semibold text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+						class="flex items-center gap-1 text-[11px] font-semibold text-(--ui-text-muted) hover:text-(--ui-text)"
 						onclick={() =>
 							navigator.clipboard
 								?.writeText(flow.result?.payload ?? '')
@@ -407,7 +402,7 @@
 					{#if isLightning && !flow.expired && flow.provider}
 						<button
 							type="button"
-							class="flex items-center gap-1 text-[11px] font-semibold text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+							class="flex items-center gap-1 text-[11px] font-semibold text-(--ui-text-muted) hover:text-(--ui-text)"
 							onclick={() => flow.regenerate()}
 						>
 							<Icon name="lucide:refresh-cw" class="size-3.5" />{flow.isInvoice

@@ -54,19 +54,19 @@
 
 	{#if syncState === 'syncing'}
 		<h2 class="font-display text-2xl font-bold tracking-tight">Confirming your workspace…</h2>
-		<p class="mt-2 max-w-sm text-[13.5px] text-[var(--ui-text-muted)]">
+		<p class="mt-2 max-w-sm text-[13.5px] text-(--ui-text-muted)">
 			Saving <strong>{tenant.state.organizationName}</strong> to your primary relay.
 		</p>
 		<a
 			href={resolve('/')}
-			class="mt-8 text-[12.5px] font-semibold text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]"
+			class="mt-8 text-[12.5px] font-semibold text-(--ui-text-dimmed) hover:text-(--ui-text)"
 			onclick={() => goto(resolve('/'), { replaceState: true })}
 		>
 			Skip & enter →
 		</a>
 	{:else}
 		<h2 class="font-display text-2xl font-bold tracking-tight">You're all set!</h2>
-		<p class="mt-2 max-w-sm text-[13.5px] text-[var(--ui-text-muted)]">
+		<p class="mt-2 max-w-sm text-[13.5px] text-(--ui-text-muted)">
 			<strong>{tenant.state.organizationName}</strong> is live on Nostr. Start a sale, build your catalog,
 			and track every order — all signed by your key.
 		</p>

@@ -83,7 +83,7 @@
 						</h1>
 						<Badge color={statusColor(txStatus)}>{txStatus}</Badge>
 					</div>
-					<p class="text-[12px] text-[var(--ui-text-muted)] capitalize">
+					<p class="text-[12px] text-(--ui-text-muted) capitalize">
 						{txType} · {txDate ? relativeTime(txDate as string) : '—'}
 					</p>
 				</div>
@@ -124,7 +124,7 @@
 							/>
 						</div>
 						<div>
-							<div class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
+							<div class="text-[12px] font-semibold text-(--ui-text-muted)">
 								{t('common.amount')}
 							</div>
 							<div class="font-display text-2xl font-bold tabular-nums">
@@ -135,29 +135,29 @@
 				</div>
 
 				<!-- Details -->
-				<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
+				<div class="surface-card divide-y divide-(--ui-border-muted)">
 					<div class="px-5 py-3">
 						<h2 class="font-display text-[14px] font-semibold">{t('common.details')}</h2>
 					</div>
-					<div class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+					<div class="divide-y divide-(--ui-border-muted) text-[13px]">
 						<div class="flex items-center gap-3 px-5 py-3">
-							<Icon name="lucide:hash" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-								class="text-[var(--ui-text-muted)]">ID</span
+							<Icon name="lucide:hash" class="size-4 text-(--ui-text-dimmed)" /><span
+								class="text-(--ui-text-muted)">ID</span
 							><span class="ml-auto font-mono text-[12px]">{(id ?? '').slice(0, 16)}</span>
 						</div>
 						<div class="flex items-center gap-3 px-5 py-3">
-							<Icon name="lucide:type" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-								class="text-[var(--ui-text-muted)]">{t('common.type')}</span
+							<Icon name="lucide:type" class="size-4 text-(--ui-text-dimmed)" /><span
+								class="text-(--ui-text-muted)">{t('common.type')}</span
 							><span class="ml-auto font-semibold capitalize">{txType}</span>
 						</div>
 						<div class="flex items-center gap-3 px-5 py-3">
-							<Icon name="lucide:circle-dot" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-								class="text-[var(--ui-text-muted)]">{t('common.status')}</span
+							<Icon name="lucide:circle-dot" class="size-4 text-(--ui-text-dimmed)" /><span
+								class="text-(--ui-text-muted)">{t('common.status')}</span
 							><span class="ml-auto"><Badge color={statusColor(txStatus)}>{txStatus}</Badge></span>
 						</div>
 						<div class="flex items-center gap-3 px-5 py-3">
-							<Icon name="lucide:clock" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-								class="text-[var(--ui-text-muted)]">{t('common.date')}</span
+							<Icon name="lucide:clock" class="size-4 text-(--ui-text-dimmed)" /><span
+								class="text-(--ui-text-muted)">{t('common.date')}</span
 							><span class="ml-auto font-semibold"
 								>{txDate ? relativeTime(txDate as string) : '—'}</span
 							>
@@ -165,8 +165,8 @@
 						{#if txType === 'order' && order?.data.type}<div
 								class="flex items-center gap-3 px-5 py-3"
 							>
-								<Icon name="lucide:utensils" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-									class="text-[var(--ui-text-muted)]">Order type</span
+								<Icon name="lucide:utensils" class="size-4 text-(--ui-text-dimmed)" /><span
+									class="text-(--ui-text-muted)">Order type</span
 								><span class="ml-auto font-semibold capitalize"
 									>{(order.data as any).type?.replace(/_/g, ' ')}</span
 								>
@@ -174,16 +174,16 @@
 						{#if txType === 'payment' && payment?.data.method}<div
 								class="flex items-center gap-3 px-5 py-3"
 							>
-								<Icon name="lucide:wallet" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-									class="text-[var(--ui-text-muted)]">{t('common.method')}</span
+								<Icon name="lucide:wallet" class="size-4 text-(--ui-text-dimmed)" /><span
+									class="text-(--ui-text-muted)">{t('common.method')}</span
 								><span class="ml-auto font-semibold capitalize">{(payment.data as any).method}</span
 								>
 							</div>{/if}
 						{#if txType === 'order' && order?.data.customerName}<div
 								class="flex items-center gap-3 px-5 py-3"
 							>
-								<Icon name="lucide:user" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-									class="text-[var(--ui-text-muted)]">{t('common.customer')}</span
+								<Icon name="lucide:user" class="size-4 text-(--ui-text-dimmed)" /><span
+									class="text-(--ui-text-muted)">{t('common.customer')}</span
 								><span class="ml-auto font-semibold">{order.data.customerName}</span>
 							</div>{/if}
 					</div>
@@ -203,7 +203,7 @@
 									><th class="px-5 py-2.5 text-right">{t('common.total')}</th></tr
 								></thead
 							>
-							<tbody class="divide-y divide-[var(--ui-border-muted)]">
+							<tbody class="divide-y divide-(--ui-border-muted)">
 								{#each order.data.lines as line (line.id)}
 									<tr
 										><td class="px-5 py-3 font-semibold">{line.name}</td><td
@@ -226,31 +226,31 @@
 			<div class="space-y-4">
 				<!-- Totals (if order) -->
 				{#if txType === 'order' && order}
-					<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
+					<div class="surface-card divide-y divide-(--ui-border-muted)">
 						<div class="px-5 py-3">
 							<h2 class="font-display text-[14px] font-semibold">{t('orders.summary')}</h2>
 						</div>
 						<div class="space-y-2 px-5 py-4 text-[13px]">
 							<div class="flex justify-between">
-								<span class="text-[var(--ui-text-muted)]">{t('common.subtotal')}</span><span
+								<span class="text-(--ui-text-muted)">{t('common.subtotal')}</span><span
 									class="tabular-nums"
 									>{formatMoney((order.data as any).subtotal ?? 0, currency)}</span
 								>
 							</div>
 							{#if order.data.taxAmount}<div class="flex justify-between">
-									<span class="text-[var(--ui-text-muted)]">{t('common.tax')}</span><span
+									<span class="text-(--ui-text-muted)">{t('common.tax')}</span><span
 										class="tabular-nums"
 										>{formatMoney((order.data as any).taxAmount ?? 0, currency)}</span
 									>
 								</div>{/if}
 							{#if order.data.discount}<div class="flex justify-between">
-									<span class="text-[var(--ui-text-muted)]">{t('common.discount')}</span><span
-										class="text-[var(--tone-error-text)] tabular-nums"
+									<span class="text-(--ui-text-muted)">{t('common.discount')}</span><span
+										class="text-(--tone-error-text) tabular-nums"
 										>−{formatMoney((order.data as any).discount ?? 0, currency)}</span
 									>
 								</div>{/if}
 							<div
-								class="flex justify-between border-t border-[var(--ui-border-muted)] pt-2 font-display text-[15px] font-bold"
+								class="flex justify-between border-t border-(--ui-border-muted) pt-2 font-display text-[15px] font-bold"
 							>
 								<span>{t('common.total')}</span><span class="tabular-nums"
 									>{formatMoney((order.data as any).total ?? 0, currency)}</span
@@ -262,21 +262,20 @@
 
 				<!-- Related payments -->
 				{#if orderPayments.length > 0}
-					<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
+					<div class="surface-card divide-y divide-(--ui-border-muted)">
 						<div class="px-5 py-3">
 							<h2 class="font-display text-[14px] font-semibold">Payments</h2>
 						</div>
 						{#each orderPayments as p (p.id)}
 							<div class="px-5 py-3 text-[13px]">
 								<div class="flex items-center justify-between">
-									<span class="text-[var(--ui-text-muted)] capitalize"
-										>{(p.data as any).method}</span
+									<span class="text-(--ui-text-muted) capitalize">{(p.data as any).method}</span
 									><Badge color={statusColor(p.data.status ?? 'paid')}
 										>{p.data.status ?? 'paid'}</Badge
 									>
 								</div>
 								<div class="mt-1 flex justify-between">
-									<span class="text-[var(--ui-text-dimmed)]"
+									<span class="text-(--ui-text-dimmed)"
 										>{relativeTime((p.data as any).occurredAt ?? '')}</span
 									><span class="font-semibold tabular-nums"
 										>{formatMoney((p.data as any).amount ?? 0, currency)}</span
@@ -289,14 +288,14 @@
 
 				<!-- Payment details (if payment) -->
 				{#if txType === 'payment' && payment}
-					<div class="surface-card divide-y divide-[var(--ui-border-muted)]">
+					<div class="surface-card divide-y divide-(--ui-border-muted)">
 						<div class="px-5 py-3">
 							<h2 class="font-display text-[14px] font-semibold">Payment info</h2>
 						</div>
-						<div class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+						<div class="divide-y divide-(--ui-border-muted) text-[13px]">
 							{#if payment.data.orderId}<div class="flex items-center gap-3 px-5 py-3">
-									<Icon name="lucide:link" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-										class="text-[var(--ui-text-muted)]">{t('common.order')}</span
+									<Icon name="lucide:link" class="size-4 text-(--ui-text-dimmed)" /><span
+										class="text-(--ui-text-muted)">{t('common.order')}</span
 									><a
 										href="/transactions/{payment.data.orderId}"
 										class="ml-auto font-mono text-[12px] text-primary-500"
@@ -304,15 +303,15 @@
 									>
 								</div>{/if}
 							{#if payment.data.cashReceived}<div class="flex items-center gap-3 px-5 py-3">
-									<Icon name="lucide:banknote" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-										class="text-[var(--ui-text-muted)]">Cash received</span
+									<Icon name="lucide:banknote" class="size-4 text-(--ui-text-dimmed)" /><span
+										class="text-(--ui-text-muted)">Cash received</span
 									><span class="ml-auto tabular-nums"
 										>{formatMoney(payment.data.cashReceived, currency)}</span
 									>
 								</div>{/if}
 							{#if payment.data.changeGiven}<div class="flex items-center gap-3 px-5 py-3">
-									<Icon name="lucide:coins" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-										class="text-[var(--ui-text-muted)]">{t('pos.change')}</span
+									<Icon name="lucide:coins" class="size-4 text-(--ui-text-dimmed)" /><span
+										class="text-(--ui-text-muted)">{t('pos.change')}</span
 									><span class="ml-auto tabular-nums"
 										>{formatMoney(payment.data.changeGiven, currency)}</span
 									>

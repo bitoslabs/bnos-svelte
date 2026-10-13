@@ -73,16 +73,16 @@
 
 	<!-- Relay list -->
 	{#if relays.relays.length === 0}
-		<div class="rounded-xl border border-dashed border-[var(--ui-border)] px-4 py-8 text-center">
-			<Icon name="lucide:radio-off" class="mx-auto mb-2 size-6 text-[var(--ui-text-dimmed)]" />
-			<p class="text-[12.5px] font-semibold text-[var(--ui-text-muted)]">No relays configured</p>
-			<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
+		<div class="rounded-xl border border-dashed border-(--ui-border) px-4 py-8 text-center">
+			<Icon name="lucide:radio-off" class="mx-auto mb-2 size-6 text-(--ui-text-dimmed)" />
+			<p class="text-[12.5px] font-semibold text-(--ui-text-muted)">No relays configured</p>
+			<p class="mt-0.5 text-[11.5px] text-(--ui-text-dimmed)">
 				Add a relay above to sync data across devices.
 			</p>
 		</div>
 	{:else}
 		<ul
-			class="divide-y divide-[var(--ui-border-muted)] overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--surface-bg)]"
+			class="divide-y divide-(--ui-border-muted) overflow-hidden rounded-xl border border-(--ui-border) bg-(--surface-bg)"
 		>
 			{#each relays.relays as url (url)}
 				{@const state = relayTests[url]}
@@ -92,7 +92,7 @@
 					<span
 						class="size-2 shrink-0 rounded-full transition-colors"
 						class:bg-primary-500={relays.isActive(url)}
-						class:bg-[var(--ui-text-dimmed)]={!relays.isActive(url)}
+						class:bg-(--ui-text-dimmed)={!relays.isActive(url)}
 					></span>
 
 					<!-- URL + meta -->
@@ -100,7 +100,7 @@
 						<div class="flex items-center gap-1.5">
 							<span
 								class={cn(
-									'truncate font-mono text-[var(--ui-text)]',
+									'truncate font-mono text-(--ui-text)',
 									compact ? 'text-[11.5px]' : 'text-[12.5px]'
 								)}
 							>
@@ -121,8 +121,8 @@
 								class:dark:text-emerald-400={state?.status === 'ok'}
 								class:text-amber-600={state?.status === 'testing'}
 								class:dark:text-amber-400={state?.status === 'testing'}
-								class:text-[var(--tone-error-text)]={state?.status === 'failed'}
-								class:text-[var(--ui-text-dimmed)]={!state || state.status === 'idle'}
+								class:text-(--tone-error-text)={state?.status === 'failed'}
+								class:text-(--ui-text-dimmed)={!state || state.status === 'idle'}
 							>
 								{relayTestLabel(state)}
 							</span>
@@ -136,10 +136,10 @@
 							class="grid size-7 place-items-center rounded-md transition-colors"
 							class:bg-primary-500={isPrimary}
 							class:text-white={isPrimary}
-							class:bg-[var(--ui-bg-accented)]={!isPrimary}
-							class:text-[var(--ui-text-muted)]={!isPrimary}
-							class:hover:bg-[var(--interactive-hover-bg)]={!isPrimary}
-							class:hover:text-[var(--ui-text)]={!isPrimary}
+							class:bg-(--ui-bg-accented)={!isPrimary}
+							class:text-(--ui-text-muted)={!isPrimary}
+							class:hover:bg-(--interactive-hover-bg)={!isPrimary}
+							class:hover:text-(--ui-text)={!isPrimary}
 							onclick={() => relays.setPrimary(url)}
 							aria-label={t('common.setPrimary')}
 							aria-pressed={isPrimary}
@@ -151,9 +151,9 @@
 							type="button"
 							class="inline-flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 text-[11px] font-bold transition-colors"
 							class:is-active-badge={relays.canRead(url)}
-							class:bg-[var(--ui-bg-accented)]={!relays.canRead(url)}
-							class:text-[var(--ui-text-dimmed)]={!relays.canRead(url)}
-							class:hover:bg-[var(--interactive-hover-bg)]={!relays.canRead(url)}
+							class:bg-(--ui-bg-accented)={!relays.canRead(url)}
+							class:text-(--ui-text-dimmed)={!relays.canRead(url)}
+							class:hover:bg-(--interactive-hover-bg)={!relays.canRead(url)}
 							onclick={() => toggleRead(url)}
 							aria-label="Toggle read for {url}"
 							aria-pressed={relays.canRead(url)}
@@ -165,9 +165,9 @@
 							type="button"
 							class="inline-flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 text-[11px] font-bold transition-colors"
 							class:is-active-badge={relays.canWrite(url)}
-							class:bg-[var(--ui-bg-accented)]={!relays.canWrite(url)}
-							class:text-[var(--ui-text-dimmed)]={!relays.canWrite(url)}
-							class:hover:bg-[var(--interactive-hover-bg)]={!relays.canWrite(url)}
+							class:bg-(--ui-bg-accented)={!relays.canWrite(url)}
+							class:text-(--ui-text-dimmed)={!relays.canWrite(url)}
+							class:hover:bg-(--interactive-hover-bg)={!relays.canWrite(url)}
 							onclick={() => toggleWrite(url)}
 							aria-label="Toggle write for {url}"
 							aria-pressed={relays.canWrite(url)}
@@ -177,7 +177,7 @@
 						</button>
 						<button
 							type="button"
-							class="grid size-7 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--interactive-hover-bg)] hover:text-[var(--ui-text)] disabled:cursor-wait disabled:opacity-60"
+							class="grid size-7 place-items-center rounded-md bg-(--ui-bg-accented) text-(--ui-text-muted) transition-colors hover:bg-(--interactive-hover-bg) hover:text-(--ui-text) disabled:cursor-wait disabled:opacity-60"
 							onclick={() => runTest(url)}
 							disabled={state?.status === 'testing'}
 							aria-label="Test connection for {url}"
@@ -199,7 +199,7 @@
 					<!-- Remove -->
 					<button
 						type="button"
-						class="grid size-7 shrink-0 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
+						class="grid size-7 shrink-0 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--tone-error-bg) hover:text-(--tone-error-text)"
 						onclick={() => {
 							relays.remove(url);
 							const { [url]: _removed, ...rest } = relayTests;
@@ -237,7 +237,7 @@
 				Test all
 			</Button>
 		</div>
-		<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+		<p class="text-[11px] text-(--ui-text-dimmed)">
 			{relays.readableRelays.length} read · {relays.writableRelays.length} write ·
 			{DEFAULT_RELAYS.length} defaults available · star one primary relay for fastest sync
 		</p>

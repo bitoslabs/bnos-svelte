@@ -39,7 +39,7 @@
 	></button>
 	<div
 		class={cn(
-			'animate-fade fixed top-0 z-50 flex h-screen flex-col border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl outline-none',
+			'animate-fade fixed top-0 z-50 flex h-screen flex-col border-(--glass-border) bg-(--glass-bg) backdrop-blur-xl outline-none',
 			width,
 			side === 'left' ? 'left-0 border-r' : 'right-0 border-l'
 		)}
@@ -48,18 +48,18 @@
 	>
 		{#if title}
 			<header
-				class="flex items-start justify-between gap-3 border-b border-[var(--ui-border-muted)] px-5 py-4"
+				class="flex items-start justify-between gap-3 border-b border-(--ui-border-muted) px-5 py-4"
 			>
 				<div class="min-w-0">
 					<h2 class="font-display text-[15px] font-semibold tracking-tight">{title}</h2>
-					{#if subtitle}<p class="mt-0.5 truncate text-[12px] text-[var(--ui-text-muted)]">
+					{#if subtitle}<p class="mt-0.5 truncate text-[12px] text-(--ui-text-muted)">
 							{subtitle}
 						</p>{/if}
 				</div>
 				<button
 					type="button"
 					onclick={() => (open = false)}
-					class="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+					class="grid size-8 shrink-0 place-items-center rounded-lg text-(--ui-text-dimmed) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 					aria-label={t('common.close')}
 				>
 					<Icon name="lucide:x" class="size-4" />
@@ -70,7 +70,7 @@
 			{#if children}{@render children()}{/if}
 		</div>
 		{#if footer}
-			<footer class="border-t border-[var(--ui-border-muted)] px-5 py-3.5">
+			<footer class="border-t border-(--ui-border-muted) px-5 py-3.5">
 				{@render footer()}
 			</footer>
 		{/if}

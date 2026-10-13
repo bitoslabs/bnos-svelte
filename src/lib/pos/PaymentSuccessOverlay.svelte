@@ -178,14 +178,21 @@
 <!-- Backdrop: tinted radial glow + blur. Tap anywhere to dismiss (terminal). -->
 <div
 	class="fixed inset-0 z-[100] flex items-center justify-center"
-	class:cursor-pointer={isLight}
-	onclick={isLight ? dismiss : undefined}
 	role="status"
 	aria-live="polite"
 	aria-label={t('pos.paymentReceived')}
 	in:fade={{ duration: 120 }}
 	out:fade={{ duration: 200 }}
 >
+	<!-- Full-screen dismiss target (terminal only); sits behind the card. -->
+	{#if isLight}
+		<button
+			type="button"
+			class="absolute inset-0 cursor-pointer"
+			aria-label={t('common.close')}
+			onclick={dismiss}
+		></button>
+	{/if}
 	<!-- Ambient glow + scrim -->
 	<div
 		class="pointer-events-none absolute inset-0 {isLight
@@ -212,7 +219,7 @@
 	<!-- Card -->
 	<div
 		class="ps-pop relative z-10 mx-4 w-full max-w-sm rounded-3xl text-center shadow-2xl {isLight
-			? 'border border-[var(--ui-border-muted)] bg-[var(--surface-bg)] px-6 pt-7 pb-5 text-[var(--ui-text)]'
+			? 'border border-(--ui-border-muted) bg-(--surface-bg) px-6 pt-7 pb-5 text-(--ui-text)'
 			: 'border border-white/10 bg-white/[0.04] px-8 pt-10 pb-8 text-white backdrop-blur-xl'}"
 		onclick={(e) => e.stopPropagation()}
 		role="presentation"
@@ -254,14 +261,14 @@
 		<!-- Headline -->
 		<h2
 			class="ps-fade-up mt-4 font-display text-2xl font-black tracking-tight {isLight
-				? 'text-[var(--ui-text)]'
+				? 'text-(--ui-text)'
 				: 'text-white'}"
 		>
 			{variant === 'display' ? 'Thank You!' : 'Payment received'}
 		</h2>
 		<p
 			class="ps-fade-up mt-0.5 font-mono text-[12px] font-semibold {isLight
-				? 'text-[var(--ui-text-dimmed)]'
+				? 'text-(--ui-text-dimmed)'
 				: 'text-white/50'}"
 		>
 			{sale.number}
@@ -271,7 +278,7 @@
 		<div class="ps-fade-up ps-fade-up-2 mt-2">
 			<span
 				class="font-display text-[2.6rem] leading-none font-black tabular-nums {isLight
-					? 'text-[var(--ui-text)]'
+					? 'text-(--ui-text)'
 					: 'text-white'}"
 			>
 				{formatMoney(displayTotal, currency)}
@@ -291,7 +298,7 @@
 			</span>
 			<span
 				class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 capitalize {isLight
-					? 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'
+					? 'bg-(--ui-bg-muted) text-(--ui-text-muted)'
 					: 'bg-white/10 text-white/70'}"
 			>
 				<Icon name="lucide:bag" class="size-3.5" />
@@ -299,7 +306,7 @@
 			</span>
 			<span
 				class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 {isLight
-					? 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'
+					? 'bg-(--ui-bg-muted) text-(--ui-text-muted)'
 					: 'bg-white/10 text-white/70'}"
 			>
 				<Icon name="lucide:hash" class="size-3.5" />
@@ -310,7 +317,7 @@
 		{#if hasTip}
 			<div
 				class="ps-fade-up ps-fade-up-3 mt-2 text-[12px] font-medium {isLight
-					? 'text-[var(--ui-text-muted)]'
+					? 'text-(--ui-text-muted)'
 					: 'text-white/60'}"
 			>
 				Includes {formatMoney(tip, currency)} tip
@@ -321,19 +328,19 @@
 		{#if hasChange}
 			<div
 				class="ps-fade-up ps-fade-up-3 mt-4 overflow-hidden rounded-2xl border-2 border-dashed {isLight
-					? 'border-[var(--tone-success-text)]/40 bg-[var(--tone-success-bg)]'
+					? 'border-(--tone-success-text)/40 bg-(--tone-success-bg)'
 					: 'border-emerald-400/40 bg-emerald-400/10'}"
 			>
 				<div
 					class="px-4 pt-2.5 pb-2 text-[10.5px] font-bold tracking-[0.12em] uppercase {isLight
-						? 'text-[var(--tone-success-text)]'
+						? 'text-(--tone-success-text)'
 						: 'text-emerald-300'}"
 				>
 					Change due to customer
 				</div>
 				<div
 					class="px-4 pb-3 font-display text-[2rem] leading-none font-black tabular-nums {isLight
-						? 'text-[var(--tone-success-text)]'
+						? 'text-(--tone-success-text)'
 						: 'text-emerald-300'}"
 				>
 					{formatMoney(sale.change, currency)}
@@ -341,7 +348,7 @@
 				{#if hasTendered}
 					<div
 						class="flex items-center justify-between border-t px-4 py-1.5 text-[11px] {isLight
-							? 'border-[var(--tone-success-text)]/15 text-[var(--ui-text-muted)]'
+							? 'border-(--tone-success-text)/15 text-(--ui-text-muted)'
 							: 'border-emerald-400/15 text-white/55'}"
 					>
 						<span>{t('pos.tendered')}</span><span class="tabular-nums"
@@ -367,7 +374,7 @@
 		{#if sale.promotion?.name}
 			<div
 				class="ps-fade-up ps-fade-up-3 mt-2 inline-flex items-center gap-1.5 text-[11.5px] font-semibold {isLight
-					? 'text-[var(--tone-success-text)]'
+					? 'text-(--tone-success-text)'
 					: 'text-emerald-300'}"
 			>
 				<Icon name="lucide:ticket-percent" class="size-3.5" />
@@ -380,7 +387,7 @@
 			<div class="mt-5">
 				<div
 					class="mx-auto h-1 w-28 overflow-hidden rounded-full {isLight
-						? 'bg-[var(--ui-border-muted)]'
+						? 'bg-(--ui-border-muted)'
 						: 'bg-white/10'}"
 				>
 					<div
@@ -390,16 +397,14 @@
 				</div>
 				<p
 					class="mt-2 text-[10.5px] font-medium {isLight
-						? 'text-[var(--ui-text-dimmed)]'
+						? 'text-(--ui-text-dimmed)'
 						: 'text-white/40'}"
 				>
 					Tap anywhere to continue
 				</p>
 			</div>
 		{:else if isLight}
-			<p class="mt-5 text-[10.5px] font-medium text-[var(--ui-text-dimmed)]">
-				Tap anywhere to continue
-			</p>
+			<p class="mt-5 text-[10.5px] font-medium text-(--ui-text-dimmed)">Tap anywhere to continue</p>
 		{/if}
 	</div>
 </div>
