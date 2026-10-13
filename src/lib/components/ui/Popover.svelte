@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { browser } from '$app/environment';
 	import { cn } from '$lib/utils/cn';
+	import { t } from '$lib/i18n/i18n.svelte';
 
 	let {
 		open = $bindable(false),
@@ -9,6 +11,7 @@
 		title,
 		triggerClass = 'inline-grid size-9.5 place-items-center rounded-lg text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text) focus-visible:outline-none',
 		triggerActiveClass = '',
+		sheetOnMobile = true,
 		trigger,
 		content,
 		class: cls
@@ -24,6 +27,9 @@
 		/** Extra classes applied only while open (e.g. a focus ring). Falls back to
 		 *  the standard accent highlight when omitted. */
 		triggerActiveClass?: string;
+		/** On phones, render as a full-width bottom sheet instead of a
+		 *  trigger-anchored panel. Set false for small menus. */
+		sheetOnMobile?: boolean;
 		trigger: Snippet;
 		content: Snippet;
 		class?: string;
@@ -33,6 +39,74 @@
 	let root = $state<HTMLElement>();
 	let triggerEl = $state<HTMLButtonElement>();
 	let panelEl = $state<HTMLElement>();
+
+	// ── Drag-to-close (bottom sheet) ───────────────────────────────────────
+	// Pull the grabber down to dismiss. `animateIn` is switched off on the
+	// first drag so the intro animation can't fight the inline transform.
+	let dragY = $state(0);
+	let dragging = $state(false);
+	let animateIn = $state(true);
+	let dragStartY = 0;
+	let dragStartT = 0;
+
+	function sheetDragStart(e: PointerEvent) {
+		if (!panelEl || e.button !== 0) return;
+		dragging = true;
+		animateIn = false;
+		dragStartY = e.clientY;
+		dragStartT = e.timeStamp;
+		dragY = 0;
+		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+	}
+	function sheetDragMove(e: PointerEvent) {
+		if (!dragging) return;
+		dragY = Math.max(0, e.clientY - dragStartY);
+	}
+	function sheetDragEnd(e: PointerEvent) {
+		if (!dragging) return;
+		dragging = false;
+		const height = panelEl?.offsetHeight ?? 320;
+		const flick = e.timeStamp - dragStartT < 250 && dragY > 48;
+		if (flick || dragY > Math.max(96, height * 0.28)) open = false;
+		dragY = 0;
+	}
+
+	// ── Responsive presentation ────────────────────────────────────────────
+	// On phones a trigger-anchored panel is cramped and thumb-unreachable, so
+	// switch to a bottom sheet. Tracked reactively so rotation / resize swaps
+	// the presentation without a reload.
+	let isMobile = $state(false);
+	$effect(() => {
+		if (!browser) return;
+		const mq = window.matchMedia('(max-width: 639px)');
+		isMobile = mq.matches;
+		const onChange = (e: MediaQueryListEvent) => (isMobile = e.matches);
+		mq.addEventListener('change', onChange);
+		return () => mq.removeEventListener('change', onChange);
+	});
+	const asSheet = $derived(sheetOnMobile && isMobile);
+
+	// Reset drag/animation state each time the sheet opens.
+	$effect(() => {
+		if (open) {
+			dragY = 0;
+			dragging = false;
+			animateIn = true;
+		}
+	});
+
+	// The sheet lives in the top layer so it escapes the top bar's stacking
+	// context (and paints above the mobile bottom tab bar). Svelte 5 delegates
+	// to `document`, so handlers keep working after the manual move.
+	function portal(node: HTMLElement) {
+		if (!browser) return;
+		document.body.appendChild(node);
+		return {
+			destroy() {
+				node.remove();
+			}
+		};
+	}
 
 	const FOCUSABLE =
 		'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -52,6 +126,7 @@
 	$effect(() => {
 		if (!open) return;
 		const panel = panelEl;
+		const sheet = asSheet;
 		const focusables = () =>
 			panel
 				? Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
@@ -63,7 +138,8 @@
 		(focusables()[0] ?? panel)?.focus();
 
 		const onDoc = (e: PointerEvent) => {
-			if (root && !root.contains(e.target as Node)) open = false;
+			const target = e.target as Node;
+			if (root && !root.contains(target) && !panel?.contains(target)) open = false;
 		};
 		const onKey = (e: KeyboardEvent) => {
 			if (e.key === 'Escape') {
@@ -95,7 +171,7 @@
 			document.removeEventListener('keydown', onKey);
 			// Return focus to the trigger on keyboard/Escape close, but not when
 			// the user moved focus elsewhere via an outside click.
-			if (triggerEl?.isConnected && root?.contains(document.activeElement)) {
+			if (triggerEl?.isConnected && (sheet || root?.contains(document.activeElement))) {
 				triggerEl.focus();
 			}
 		};
@@ -119,7 +195,44 @@
 		{@render trigger()}
 	</button>
 
-	{#if open}
+	{#if open && asSheet}
+		<div use:portal class="fixed inset-0 z-[95]">
+			<button
+				type="button"
+				aria-label={t('common.close')}
+				tabindex="-1"
+				class="animate-fade absolute inset-0 bg-black/45 backdrop-blur-[2px]"
+				onclick={() => (open = false)}
+			></button>
+			<div
+				bind:this={panelEl}
+				id={panelId}
+				tabindex="-1"
+				role="dialog"
+				aria-modal="true"
+				class={cn(
+					'absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col overflow-hidden rounded-t-2xl border border-(--ui-border) bg-(--surface-bg) pb-[env(safe-area-inset-bottom)] text-(--ui-text) shadow-(--shadow-pop) outline-none',
+					!dragging && 'transition-transform duration-200 ease-out',
+					animateIn && !dragging && 'animate-sheet-up'
+				)}
+				style:transform={dragY > 0 ? `translateY(${dragY}px)` : undefined}
+			>
+				<div
+					role="presentation"
+					class="flex shrink-0 cursor-grab touch-none justify-center pt-2.5 pb-1.5 active:cursor-grabbing"
+					onpointerdown={sheetDragStart}
+					onpointermove={sheetDragMove}
+					onpointerup={sheetDragEnd}
+					onpointercancel={sheetDragEnd}
+				>
+					<span class="h-1 w-9 rounded-full bg-(--ui-border-accented)" aria-hidden="true"></span>
+				</div>
+				<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+					{@render content()}
+				</div>
+			</div>
+		</div>
+	{:else if open}
 		<div
 			bind:this={panelEl}
 			id={panelId}

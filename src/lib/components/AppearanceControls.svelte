@@ -45,7 +45,7 @@
 							m.key === 'light'
 								? 'bg-(--ui-bg-muted)'
 								: m.key === 'dark'
-									? 'bg-(--ui-bg-inverse)'
+									? 'bg-neutral-900'
 									: 'bg-(--ui-bg-accented)'
 						)}
 					>

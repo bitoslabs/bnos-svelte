@@ -173,12 +173,12 @@
 			</button>
 
 			<!-- Quick settings -->
-			<Popover bind:open={quickOpen} align="end" side="bottom">
+			<Popover bind:open={quickOpen} align="end" side="bottom" class="w-72">
 				{#snippet trigger()}
 					<Icon name="lucide:sliders-horizontal" class="size-[18px]" />
 				{/snippet}
 				{#snippet content()}
-					<div class="w-72 p-1">
+					<div class="w-full p-1">
 						<AppearanceControls />
 					</div>
 				{/snippet}

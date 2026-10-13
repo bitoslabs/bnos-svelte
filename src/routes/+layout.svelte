@@ -258,7 +258,7 @@
 	</div>
 {/if}
 
-<ModeWatcher />
+<ModeWatcher themeColors={{ light: '#f5f6f7', dark: '#0a0a0c' }} />
 <Toaster />
 <PwaPrompt />
 <OfflineBadge />

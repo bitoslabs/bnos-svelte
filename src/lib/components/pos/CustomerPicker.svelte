@@ -130,7 +130,7 @@
 	{/snippet}
 
 	{#snippet content()}
-		<div class="w-80">
+		<div class="w-full">
 			<div class="border-b border-(--ui-border-muted) p-2.5">
 				<Input
 					bind:value={q}

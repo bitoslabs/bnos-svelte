@@ -1228,6 +1228,9 @@
 	.animate-slide-in-left {
 		animation: os-slide-in-left 0.3s cubic-bezier(0.22, 0.7, 0.3, 1) both;
 	}
+	.animate-sheet-up {
+		animation: os-sheet-up 0.32s cubic-bezier(0.22, 0.7, 0.3, 1) both;
+	}
 	@keyframes os-rise {
 		from {
 			opacity: 0;
@@ -1244,6 +1247,16 @@
 		}
 		to {
 			opacity: 1;
+		}
+	}
+	@keyframes os-sheet-up {
+		from {
+			opacity: 0.6;
+			transform: translateY(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
 		}
 	}
 	@keyframes os-slide-in-left {

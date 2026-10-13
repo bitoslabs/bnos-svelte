@@ -36,7 +36,7 @@
 	};
 </script>
 
-<header class={cn('page-header flex items-center gap-3', cls)}>
+<header class={cn('page-header flex flex-wrap items-center gap-3', cls)}>
 	{#if icon}
 		<div
 			class="page-header-icon grid size-10 shrink-0 place-items-center rounded-xl {accentClasses[
@@ -54,7 +54,9 @@
 		{/if}
 	</div>
 	{#if actions}
-		<div class="flex shrink-0 items-center gap-2">
+		<div
+			class="flex w-full shrink-0 flex-wrap items-center justify-end gap-2 sm:w-auto sm:justify-start"
+		>
 			{@render actions()}
 		</div>
 	{/if}
