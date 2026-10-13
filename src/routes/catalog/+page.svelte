@@ -1064,12 +1064,12 @@
 	</div>
 
 	<!-- tabs -->
-	<div class="segmented inline-flex w-fit gap-1 p-1">
+	<div class="segmented flex w-fit max-w-full gap-1 overflow-x-auto p-1">
 		{#each tabs as t (t.id)}
 			<button
 				type="button"
 				onclick={() => (tab = t.id)}
-				class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {tab ===
+				class="inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {tab ===
 				t.id
 					? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
 					: 'text-(--ui-text-muted)'}"
@@ -1300,60 +1300,62 @@
 			</EmptyState>
 		{:else}
 			<div class="data-panel">
-				<table class="table-surface w-full text-left">
-					<thead
-						><tr>
-							<SortableTh
-								column="name"
-								active={catCtrl.sortKey === 'name'}
-								direction={catCtrl.sortDir}
-								applySort={catCtrl.applySort}>{t('common.category')}</SortableTh
-							>
-							<SortableTh
-								column="order"
-								active={catCtrl.sortKey === 'order'}
-								direction={catCtrl.sortDir}
-								align="right"
-								applySort={catCtrl.applySort}>{t('common.order')}</SortableTh
-							>
-							<th class="w-10 px-5 py-2.5"></th>
-						</tr></thead
-					>
-					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
-						{#each catCtrl.pagedList as c (c.id)}
-							<tr>
-								<td class="px-5 py-3"
-									><div class="flex items-center gap-2 font-semibold">
-										{#if c.data.icon}<Icon
-												name={c.data.icon}
-												class="size-4 text-(--ui-text-dimmed)"
-											/>{/if}{c.data.name}
-									</div>
-									{#if c.data.description}<div class="text-[11.5px] text-(--ui-text-dimmed)">
-											{c.data.description}
-										</div>{/if}</td
+				<div class="overflow-x-auto">
+					<table class="table-surface w-full text-left">
+						<thead
+							><tr>
+								<SortableTh
+									column="name"
+									active={catCtrl.sortKey === 'name'}
+									direction={catCtrl.sortDir}
+									applySort={catCtrl.applySort}>{t('common.category')}</SortableTh
 								>
-								<td class="px-5 py-3 text-right text-(--ui-text-muted) tabular-nums"
-									>{c.data.sortOrder ?? 0}</td
+								<SortableTh
+									column="order"
+									active={catCtrl.sortKey === 'order'}
+									direction={catCtrl.sortDir}
+									align="right"
+									applySort={catCtrl.applySort}>{t('common.order')}</SortableTh
 								>
-								<td class="px-5 py-3 text-right">
-									<div class="flex items-center justify-end gap-1">
-										<button
-											type="button"
-											class="grid size-7 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
-											onclick={() => openEditCategory(c.id)}
-											aria-label={t('common.edit')}
-											title={t('common.edit')}
-										>
-											<Icon name="lucide:pencil-line" class="size-3.5" />
-										</button>
-										<RowActions actions={catActions(c)} />
-									</div>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+								<th class="w-10 px-5 py-2.5"></th>
+							</tr></thead
+						>
+						<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
+							{#each catCtrl.pagedList as c (c.id)}
+								<tr>
+									<td class="px-5 py-3"
+										><div class="flex items-center gap-2 font-semibold">
+											{#if c.data.icon}<Icon
+													name={c.data.icon}
+													class="size-4 text-(--ui-text-dimmed)"
+												/>{/if}{c.data.name}
+										</div>
+										{#if c.data.description}<div class="text-[11.5px] text-(--ui-text-dimmed)">
+												{c.data.description}
+											</div>{/if}</td
+									>
+									<td class="px-5 py-3 text-right text-(--ui-text-muted) tabular-nums"
+										>{c.data.sortOrder ?? 0}</td
+									>
+									<td class="px-5 py-3 text-right">
+										<div class="flex items-center justify-end gap-1">
+											<button
+												type="button"
+												class="grid size-7 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
+												onclick={() => openEditCategory(c.id)}
+												aria-label={t('common.edit')}
+												title={t('common.edit')}
+											>
+												<Icon name="lucide:pencil-line" class="size-3.5" />
+											</button>
+											<RowActions actions={catActions(c)} />
+										</div>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
 				<Pagination controls={catCtrl} />
 			</div>
 		{/if}
@@ -1385,50 +1387,53 @@
 			</EmptyState>
 		{:else}
 			<div class="data-panel">
-				<table class="table-surface w-full text-left">
-					<thead
-						><tr>
-							<SortableTh
-								column="name"
-								active={unitCtrl.sortKey === 'name'}
-								direction={unitCtrl.sortDir}
-								applySort={unitCtrl.applySort}>{t('common.unit')}</SortableTh
-							>
-							<SortableTh
-								column="symbol"
-								active={unitCtrl.sortKey === 'symbol'}
-								direction={unitCtrl.sortDir}
-								applySort={unitCtrl.applySort}>{t('common.symbol')}</SortableTh
-							>
-							<th class="px-5 py-2.5">{t('common.type')}</th>
-							<th class="w-10 px-5 py-2.5"></th>
-						</tr></thead
-					>
-					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
-						{#each unitCtrl.pagedList as u (u.id)}
-							<tr>
-								<td class="px-5 py-3 font-semibold">{u.data.name}</td>
-								<td class="px-5 py-3 font-mono text-(--ui-text-muted)">{u.data.symbol}</td>
-								<td class="px-5 py-3 text-(--ui-text-muted) capitalize">{u.data.type ?? 'count'}</td
+				<div class="overflow-x-auto">
+					<table class="table-surface w-full text-left">
+						<thead
+							><tr>
+								<SortableTh
+									column="name"
+									active={unitCtrl.sortKey === 'name'}
+									direction={unitCtrl.sortDir}
+									applySort={unitCtrl.applySort}>{t('common.unit')}</SortableTh
 								>
-								<td class="px-5 py-3 text-right">
-									<div class="flex items-center justify-end gap-1">
-										<button
-											type="button"
-											class="grid size-7 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
-											onclick={() => openEditUnit(u.id)}
-											aria-label={t('common.edit')}
-											title={t('common.edit')}
-										>
-											<Icon name="lucide:pencil-line" class="size-3.5" />
-										</button>
-										<RowActions actions={unitActions(u)} />
-									</div>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+								<SortableTh
+									column="symbol"
+									active={unitCtrl.sortKey === 'symbol'}
+									direction={unitCtrl.sortDir}
+									applySort={unitCtrl.applySort}>{t('common.symbol')}</SortableTh
+								>
+								<th class="px-5 py-2.5">{t('common.type')}</th>
+								<th class="w-10 px-5 py-2.5"></th>
+							</tr></thead
+						>
+						<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
+							{#each unitCtrl.pagedList as u (u.id)}
+								<tr>
+									<td class="px-5 py-3 font-semibold">{u.data.name}</td>
+									<td class="px-5 py-3 font-mono text-(--ui-text-muted)">{u.data.symbol}</td>
+									<td class="px-5 py-3 text-(--ui-text-muted) capitalize"
+										>{u.data.type ?? 'count'}</td
+									>
+									<td class="px-5 py-3 text-right">
+										<div class="flex items-center justify-end gap-1">
+											<button
+												type="button"
+												class="grid size-7 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
+												onclick={() => openEditUnit(u.id)}
+												aria-label={t('common.edit')}
+												title={t('common.edit')}
+											>
+												<Icon name="lucide:pencil-line" class="size-3.5" />
+											</button>
+											<RowActions actions={unitActions(u)} />
+										</div>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
 				<Pagination controls={unitCtrl} />
 			</div>
 		{/if}
@@ -1461,35 +1466,37 @@
 			</EmptyState>
 		{:else}
 			<div class="data-panel">
-				<table class="table-surface w-full text-left">
-					<thead
-						><tr>
-							<SortableTh
-								column="name"
-								active={modCtrl.sortKey === 'name'}
-								direction={modCtrl.sortDir}
-								applySort={modCtrl.applySort}>{t('common.modifierGroup')}</SortableTh
-							>
-							<th class="px-5 py-2.5">{t('common.options')}</th>
-							<th class="w-10 px-5 py-2.5"></th>
-						</tr></thead
-					>
-					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
-						{#each modCtrl.pagedList as m (m.id)}
-							<tr>
-								<td class="px-5 py-3 font-semibold"
-									>{m.data.name}{#if m.data.singleChoice}<span
-											class="ml-2 text-[10px] text-(--ui-text-dimmed)">single</span
-										>{/if}</td
+				<div class="overflow-x-auto">
+					<table class="table-surface w-full text-left">
+						<thead
+							><tr>
+								<SortableTh
+									column="name"
+									active={modCtrl.sortKey === 'name'}
+									direction={modCtrl.sortDir}
+									applySort={modCtrl.applySort}>{t('common.modifierGroup')}</SortableTh
 								>
-								<td class="px-5 py-3 text-(--ui-text-muted)"
-									>{m.data.options?.map((o) => o.name).join(', ') || '—'}</td
-								>
-								<td class="px-5 py-3 text-right"><RowActions actions={modActions(m)} /></td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+								<th class="px-5 py-2.5">{t('common.options')}</th>
+								<th class="w-10 px-5 py-2.5"></th>
+							</tr></thead
+						>
+						<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
+							{#each modCtrl.pagedList as m (m.id)}
+								<tr>
+									<td class="px-5 py-3 font-semibold"
+										>{m.data.name}{#if m.data.singleChoice}<span
+												class="ml-2 text-[10px] text-(--ui-text-dimmed)">single</span
+											>{/if}</td
+									>
+									<td class="px-5 py-3 text-(--ui-text-muted)"
+										>{m.data.options?.map((o) => o.name).join(', ') || '—'}</td
+									>
+									<td class="px-5 py-3 text-right"><RowActions actions={modActions(m)} /></td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
 				<Pagination controls={modCtrl} />
 			</div>
 		{/if}
@@ -1641,7 +1648,7 @@
 			preview="wide"
 			placeholder="Brand / banner image URL"
 		/>
-		<div class="grid grid-cols-2 gap-3">
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<div>
 				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Price Mode</span
 				>
@@ -1829,7 +1836,7 @@
 				>
 
 				<!-- Price / Cost / Compare-at -->
-				<div class="grid grid-cols-3 gap-3">
+				<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
 					<label class="block"
 						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Price ({currency})</span

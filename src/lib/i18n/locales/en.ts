@@ -348,7 +348,8 @@ export const en = {
 		expenses: 'Expenses',
 		home: 'Home',
 		posShort: 'POS',
-		catalog: 'Catalog'
+		catalog: 'Catalog',
+		more: 'More'
 	},
 	topbar: {
 		searchPlaceholder: 'Search…',

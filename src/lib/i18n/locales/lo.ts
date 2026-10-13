@@ -327,7 +327,8 @@ export const lo = {
 		expenses: 'ຄ່າໃຊ້ຈ່າຍ',
 		home: 'ໜ້າຫຼັກ',
 		posShort: 'POS',
-		catalog: 'ແຄຕາລັອກ'
+		catalog: 'ແຄຕາລັອກ',
+		more: 'ເພີ່ມເຕີມ'
 	},
 	topbar: {
 		searchPlaceholder: 'ຄົ້ນຫາ…',
