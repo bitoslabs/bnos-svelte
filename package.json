@@ -1,10 +1,10 @@
 {
 	"name": "bnos-svelte",
 	"private": true,
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"type": "module",
 	"license": "MIT",
-	"description": "BNOS point-of-sale & commerce, rebuilt on SvelteKit with the Nostr/GLO data standard (@bitos/bnos-core).",
+	"description": "BNOS Lite point-of-sale & commerce, rebuilt on SvelteKit with the Nostr/GLO data standard (@bitos/bnos-core).",
 	"dependencies": {
 		"@bitos/bnos-core": "^0.3.0",
 		"@iconify-json/lucide": "^1.2.117",
