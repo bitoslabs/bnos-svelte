@@ -76,6 +76,9 @@
 	const currentSlug = $derived(
 		(page.url.pathname.split('/setup/')[1] ?? 'identity') as (typeof setupSteps)[number]['slug']
 	);
+	/** The `/setup` index is the welcome / restore-vs-new choice, not a wizard
+	 *  step — hide the stepper, progress bar and footer nav there. */
+	const isWelcome = $derived(page.url.pathname === '/setup' || page.url.pathname === '/setup/');
 	const idx = $derived(stepIndex(currentSlug));
 	const progress = $derived(((idx + 1) / setupSteps.length) * 100);
 	const currentStep = $derived(setupSteps[idx]);
@@ -136,11 +139,13 @@
 		</a>
 
 		<div class="flex items-center gap-1.5">
-			<span
-				class="mr-2 hidden text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase sm:inline"
-			>
-				Setup · step {idx + 1} of {setupSteps.length}
-			</span>
+			{#if !isWelcome}
+				<span
+					class="mr-2 hidden text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase sm:inline"
+				>
+					Setup · step {idx + 1} of {setupSteps.length}
+				</span>
+			{/if}
 
 			<button
 				type="button"
@@ -193,56 +198,60 @@
 	</header>
 
 	<!-- Progress bar -->
-	<div class="mb-8 space-y-2">
-		<div class="flex items-end justify-between gap-4">
-			<div>
-				<div class="text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
-					{currentStep?.label}
+	{#if !isWelcome}
+		<div class="mb-8 space-y-2">
+			<div class="flex items-end justify-between gap-4">
+				<div>
+					<div class="text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
+						{currentStep?.label}
+					</div>
+					<div class="text-[13px] text-(--ui-text-muted)">{currentStep?.description}</div>
 				</div>
-				<div class="text-[13px] text-(--ui-text-muted)">{currentStep?.description}</div>
+				<div class="text-[12px] font-semibold text-(--ui-text-muted)">
+					{Math.round(progress)}%
+				</div>
 			</div>
-			<div class="text-[12px] font-semibold text-(--ui-text-muted)">
-				{Math.round(progress)}%
+			<div class="h-1.5 w-full overflow-hidden rounded-full bg-(--ui-bg-accented)">
+				<div
+					class="h-full rounded-full bg-primary-500 transition-all duration-500"
+					style="width: {progress}%"
+				></div>
 			</div>
 		</div>
-		<div class="h-1.5 w-full overflow-hidden rounded-full bg-(--ui-bg-accented)">
-			<div
-				class="h-full rounded-full bg-primary-500 transition-all duration-500"
-				style="width: {progress}%"
-			></div>
-		</div>
-	</div>
+	{/if}
 
 	<div class="flex min-h-0 flex-1 gap-8">
 		<!-- Stepper rail -->
-		<aside class="hidden w-56 shrink-0 overflow-y-auto pb-4 md:block">
-			<ol class="sticky top-0 flex flex-col gap-1">
-				{#each setupSteps as step, i (step.slug)}
-					{@const done = i < idx}
-					{@const active = i === idx}
-					<li>
-						<div
-							class="flex items-center gap-3 rounded-lg px-3 py-2 {active
-								? 'is-active-surface'
-								: done
-									? 'text-(--ui-text-muted)'
-									: 'text-(--ui-text-dimmed)'}"
-						>
-							<span
-								class="grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-bold {active
-									? 'bg-primary-500 text-white'
+		{#if !isWelcome}
+			<aside class="hidden w-56 shrink-0 overflow-y-auto pb-4 md:block">
+				<ol class="sticky top-0 flex flex-col gap-1">
+					{#each setupSteps as step, i (step.slug)}
+						{@const done = i < idx}
+						{@const active = i === idx}
+						<li>
+							<div
+								class="flex items-center gap-3 rounded-lg px-3 py-2 {active
+									? 'is-active-surface'
 									: done
-										? 'bg-primary-500/15 text-primary-600 dark:text-primary-400'
-										: 'bg-(--ui-bg-accented)'}"
+										? 'text-(--ui-text-muted)'
+										: 'text-(--ui-text-dimmed)'}"
 							>
-								{#if done}<Icon name="lucide:check" class="size-3.5" />{:else}{i + 1}{/if}
-							</span>
-							<span class="text-[13px] font-semibold">{step.label}</span>
-						</div>
-					</li>
-				{/each}
-			</ol>
-		</aside>
+								<span
+									class="grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-bold {active
+										? 'bg-primary-500 text-white'
+										: done
+											? 'bg-primary-500/15 text-primary-600 dark:text-primary-400'
+											: 'bg-(--ui-bg-accented)'}"
+								>
+									{#if done}<Icon name="lucide:check" class="size-3.5" />{:else}{i + 1}{/if}
+								</span>
+								<span class="text-[13px] font-semibold">{step.label}</span>
+							</div>
+						</li>
+					{/each}
+				</ol>
+			</aside>
+		{/if}
 
 		<!-- Step content -->
 		<div class="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -252,7 +261,7 @@
 				</div>
 			</div>
 
-			{#if !isDone}
+			{#if !isDone && !isWelcome}
 				<!-- Nav buttons -->
 				<div
 					class="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 border-t border-(--ui-border-muted) bg-(--ui-bg) pt-4 pb-1 sm:flex-row sm:items-center sm:justify-between"
