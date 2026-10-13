@@ -122,6 +122,7 @@
 			side="bottom"
 			align="end"
 			title={t('settings.language')}
+			sheetOnMobile={false}
 			class="w-44"
 			triggerClass="grid size-9 place-items-center rounded-lg text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 		>

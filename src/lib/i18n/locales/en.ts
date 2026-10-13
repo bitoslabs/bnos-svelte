@@ -348,7 +348,8 @@ export const en = {
 		expenses: 'Expenses',
 		home: 'Home',
 		posShort: 'POS',
-		catalog: 'Catalog'
+		catalog: 'Catalog',
+		more: 'More'
 	},
 	topbar: {
 		searchPlaceholder: 'Search…',
@@ -1258,7 +1259,20 @@ export const en = {
 		company: 'Company',
 		catalog: 'Catalog',
 		branch: 'Branch',
-		identity: 'Identity'
+		identity: 'Identity',
+		welcomeTitle: 'Set up this device',
+		welcomeDesc: 'Do you already have a BNOS workspace, or are you starting fresh?',
+		haveDataTitle: 'I already have data',
+		haveDataDesc: 'Restore your company, catalog and data from your relays.',
+		startNewTitle: 'Set up something new',
+		startNewDesc: 'Create a brand-new company and workspace on this device.',
+		restoring: 'Restoring your workspace…',
+		restoreDone: 'Workspace restored',
+		restoreDoneDesc: 'Your company and data are ready.',
+		restoreEmpty: 'No workspace found',
+		restoreEmptyDesc: 'We could not find synced data for this identity. Start a new setup instead.',
+		restoreFailed: 'Restore failed',
+		restoreHint: 'Using the same Nostr key you use on your other device.'
 	},
 	profile: {
 		nostrIdentity: 'Nostr identity',

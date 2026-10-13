@@ -391,7 +391,7 @@
 				{formatInt(filteredByCriteria.length)} orders · {formatMoney(totalRevenue, currency)}
 			</p>
 		</div>
-		<div class="flex items-center gap-2">
+		<div class="flex flex-wrap items-center gap-2">
 			<Button
 				color="neutral"
 				variant="subtle"
@@ -481,12 +481,14 @@
 	<!-- Bulk action bar -->
 	{#if selectedIds.size > 0}
 		<div
-			class="flex items-center justify-between rounded-xl border border-primary-500/30 bg-primary-500/5 px-4 py-2.5"
+			class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary-500/30 bg-primary-500/5 px-4 py-2.5"
 		>
-			<span class="text-[13px] font-semibold text-primary-700 dark:text-primary-300">
+			<span
+				class="text-[13px] font-semibold whitespace-nowrap text-primary-700 dark:text-primary-300"
+			>
 				{formatInt(selectedIds.size)} selected
 			</span>
-			<div class="flex items-center gap-1.5">
+			<div class="flex flex-wrap items-center gap-1.5">
 				<Button
 					size="sm"
 					color="neutral"

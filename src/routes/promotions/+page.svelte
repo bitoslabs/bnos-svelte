@@ -489,12 +489,12 @@
 	</div>
 
 	<!-- Tabs -->
-	<div class="segmented inline-flex w-fit gap-1 p-1">
+	<div class="segmented flex w-fit max-w-full gap-1 overflow-x-auto p-1">
 		{#each [{ id: 'promotions' as Tab, label: t('nav.promotions'), icon: 'lucide:megaphone', n: promos.length }, { id: 'coupons' as Tab, label: t('promotions.coupons'), icon: 'lucide:ticket', n: coupons.length }] as seg (seg.id)}
 			<button
 				type="button"
 				onclick={() => (tab = seg.id)}
-				class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {tab ===
+				class="inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {tab ===
 				seg.id
 					? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
 					: 'text-(--ui-text-muted)'}"
@@ -548,11 +548,13 @@
 			</div>
 			<div class="flex flex-wrap items-center gap-2">
 				<!-- Type filter pills -->
-				<div class="flex items-center gap-1 rounded-lg bg-(--ui-bg-accented) p-1">
+				<div
+					class="flex max-w-full items-center gap-1 overflow-x-auto rounded-lg bg-(--ui-bg-accented) p-1"
+				>
 					<button
 						type="button"
 						onclick={() => (filterType = '')}
-						class="rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {filterType ===
+						class="shrink-0 rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {filterType ===
 						''
 							? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
 							: 'text-(--ui-text-muted)'}"
@@ -563,7 +565,7 @@
 						<button
 							type="button"
 							onclick={() => (filterType = filterType === pt.value ? '' : pt.value)}
-							class="flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {filterType ===
+							class="flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {filterType ===
 							pt.value
 								? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
 								: 'text-(--ui-text-muted)'}"
@@ -574,12 +576,14 @@
 					{/each}
 				</div>
 				<!-- Status filter -->
-				<div class="flex items-center gap-1 rounded-lg bg-(--ui-bg-accented) p-1">
+				<div
+					class="flex max-w-full items-center gap-1 overflow-x-auto rounded-lg bg-(--ui-bg-accented) p-1"
+				>
 					{#each STATUS_FILTERS as sf (sf.value)}
 						<button
 							type="button"
 							onclick={() => (filterStatus = filterStatus === sf.value ? '' : sf.value)}
-							class="rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {filterStatus ===
+							class="shrink-0 rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {filterStatus ===
 							sf.value
 								? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
 								: 'text-(--ui-text-muted)'}"

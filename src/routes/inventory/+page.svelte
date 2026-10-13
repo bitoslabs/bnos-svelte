@@ -553,12 +553,12 @@
 		</div>
 	{/if}
 
-	<div class="segmented inline-flex w-fit gap-1 p-1">
+	<div class="segmented flex w-fit max-w-full gap-1 overflow-x-auto p-1">
 		{#each tabs as t (t.id)}
 			<button
 				type="button"
 				onclick={() => (tab = t.id)}
-				class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {tab ===
+				class="inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {tab ===
 				t.id
 					? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
 					: 'text-(--ui-text-muted)'}"

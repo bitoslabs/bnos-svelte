@@ -172,7 +172,9 @@
 	}
 
 	function startNewSetup() {
-		void goto(resolve('/setup'), { replaceState: true });
+		// The user already picked "new" here — go straight to the wizard's first
+		// step instead of the /setup welcome choice.
+		void goto(resolve('/setup/identity'), { replaceState: true });
 	}
 
 	function retry() {

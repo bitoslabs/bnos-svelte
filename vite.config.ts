@@ -15,7 +15,7 @@ export default defineConfig({
 			strategies: 'generateSW',
 			registerType: 'prompt',
 			manifest: {
-				name: 'BNOS OS',
+				name: 'BNOS Lite',
 				short_name: 'BNOS Lite',
 				description:
 					'Bitcoin Nostr Operating System - Open-source point of sale & commerce on Nostr.',

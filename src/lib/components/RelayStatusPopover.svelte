@@ -50,6 +50,7 @@
 	align="end"
 	side="bottom"
 	title={statusTitle}
+	class="w-80"
 	{triggerClass}
 	triggerActiveClass="ring-2 ring-primary-500/20"
 >
@@ -67,7 +68,7 @@
 		</span>
 	{/snippet}
 	{#snippet content()}
-		<div class="w-80 space-y-2.5 p-1">
+		<div class="w-full space-y-2.5 p-1">
 			<div class="flex items-center justify-between px-1">
 				<div class="flex items-center gap-2">
 					<span class="relative flex size-2.5">

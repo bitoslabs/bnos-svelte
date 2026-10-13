@@ -42,6 +42,7 @@
 
 <div class="space-y-4">
 	<PageHeader
+		icon="lucide:bell"
 		title={t('notifications.title')}
 		description="{items.length} {t('topbar.onThisDevice')}{unread
 			? ` · ${unread} ${t('topbar.unreadTab').toLowerCase()}`
@@ -90,14 +91,14 @@
 						<Icon name={n.icon} class="size-4 {toneText[n.tone]}" />
 					</div>
 					<div class="min-w-0 flex-1">
-						<div class="flex items-center gap-1.5">
+						<div class="flex min-w-0 items-center gap-1.5">
 							{#if !n.read}
 								<span class="size-1.5 shrink-0 rounded-full bg-primary-500"></span>
 							{/if}
-							<div class="text-[13px] font-semibold">{n.title}</div>
+							<p class="min-w-0 truncate text-[13px] font-semibold">{n.title}</p>
 						</div>
 						{#if n.description}
-							<div class="text-[12px] text-(--ui-text-muted)">{n.description}</div>
+							<p class="mt-0.5 text-[12px] text-(--ui-text-muted)">{n.description}</p>
 						{/if}
 					</div>
 					<span class="shrink-0 text-[11px] text-(--ui-text-dimmed)">
@@ -106,7 +107,7 @@
 					<button
 						type="button"
 						onclick={() => (n.read ? notifications.remove(n.id) : notifications.markRead(n.id))}
-						class="grid size-7 shrink-0 place-items-center rounded-md text-(--ui-text-dimmed) opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
+						class="grid size-7 shrink-0 place-items-center rounded-md text-(--ui-text-dimmed) transition-opacity hover:bg-(--ui-bg-accented) hover:text-(--ui-text) sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100"
 						aria-label={n.read ? t('topbar.removeNotification') : t('topbar.markAsRead')}
 						title={n.read ? t('topbar.removeNotification') : t('topbar.markAsRead')}
 					>

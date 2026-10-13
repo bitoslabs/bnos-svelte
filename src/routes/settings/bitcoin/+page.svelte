@@ -1169,7 +1169,7 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>{t('settings.minAmount')}</span
+					>{t('settings.minAmount', { currency })}</span
 				>
 				<Input
 					bind:value={minAmount}
@@ -1180,7 +1180,7 @@
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>{t('settings.maxAmount')}</span
+					>{t('settings.maxAmount', { currency })}</span
 				>
 				<Input
 					bind:value={maxAmount}

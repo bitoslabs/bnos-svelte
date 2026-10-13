@@ -231,6 +231,7 @@
 		align="end"
 		side="bottom"
 		title={t('notifications.title')}
+		class="w-[min(380px,calc(100vw-2.5rem))]"
 		triggerClass="relative grid size-9 place-items-center rounded-lg text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 	>
 		{#snippet trigger()}
@@ -245,7 +246,7 @@
 			{/if}
 		{/snippet}
 		{#snippet content()}
-			<div class="flex w-[min(380px,calc(100vw-2.5rem))] flex-col p-1">
+			<div class="flex w-full flex-col p-1">
 				<!-- Header: title + mark-all-read -->
 				<div class="flex items-center justify-between px-1 pb-2">
 					<div class="flex items-center gap-2">
@@ -397,6 +398,7 @@
 		align="end"
 		side="bottom"
 		title={systemStatusTitle}
+		class="w-80"
 		triggerClass={relayTriggerClass}
 		triggerActiveClass="ring-2 ring-emerald-500/20"
 	>
@@ -427,7 +429,7 @@
 			</span>
 		{/snippet}
 		{#snippet content()}
-			<div class="w-80 space-y-2.5 p-1">
+			<div class="w-full space-y-2.5 p-1">
 				<!-- Header: status + manage -->
 				<div class="flex items-center justify-between px-1">
 					<div class="flex items-center gap-2">
@@ -582,7 +584,7 @@
 			<Icon name="lucide:sliders-horizontal" class="size-[18px]" />
 		{/snippet}
 		{#snippet content()}
-			<div class="w-80 p-0">
+			<div class="w-full p-0">
 				<!-- Appearance controls -->
 				<AppearanceControls class="px-3.5 py-3.5" />
 
@@ -619,7 +621,7 @@
 			</div>
 		{/snippet}
 		{#snippet content()}
-			<div class="w-64 p-1">
+			<div class="w-full p-1">
 				<!-- Account summary -->
 				<div class="mb-2 flex items-center gap-2.5 rounded-lg px-2.5 py-2">
 					<div

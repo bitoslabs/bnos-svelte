@@ -1688,7 +1688,7 @@
 						<Icon name="lucide:chevron-down" class="size-3 opacity-60" />
 					{/snippet}
 					{#snippet content()}
-						<div class="w-80">
+						<div class="w-full">
 							{#if openShift}
 								<div
 									class="flex items-center justify-between border-b border-(--ui-border-muted) px-3.5 py-3"
@@ -1862,7 +1862,7 @@
 						<Icon name="lucide:chevron-down" class="size-3 opacity-60" />
 					{/snippet}
 					{#snippet content()}
-						<div class="w-72">
+						<div class="w-full">
 							<div
 								class="flex items-center justify-between border-b border-(--ui-border-muted) px-3.5 py-3"
 							>

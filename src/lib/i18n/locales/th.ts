@@ -327,7 +327,8 @@ export const th = {
 		expenses: 'ค่าใช้จ่าย',
 		home: 'หน้าแรก',
 		posShort: 'POS',
-		catalog: 'แคตตาล็อก'
+		catalog: 'แคตตาล็อก',
+		more: 'เพิ่มเติม'
 	},
 	topbar: {
 		searchPlaceholder: 'ค้นหา…',
