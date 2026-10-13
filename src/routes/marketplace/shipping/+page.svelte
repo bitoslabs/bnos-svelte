@@ -128,7 +128,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h2 class="font-display text-lg font-bold tracking-tight">Shipping & Fulfillment</h2>
-			<p class="text-[12px] text-[var(--ui-text-muted)]">
+			<p class="text-[12px] text-(--ui-text-muted)">
 				{fulfillable.length} channel orders · {totalToShip} to ship
 			</p>
 		</div>
@@ -147,7 +147,7 @@
 				{#each COLUMNS as col (col.status)}
 					{@const rows = rowsFor(col.status)}
 					<div
-						class="flex w-72 shrink-0 flex-col rounded-2xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)]/50"
+						class="flex w-72 shrink-0 flex-col rounded-2xl border border-(--ui-border-muted) bg-(--ui-bg-muted)/50"
 					>
 						<!-- Column header -->
 						<div class="flex items-center justify-between px-3.5 py-3">
@@ -156,7 +156,7 @@
 								<span class="text-[12.5px] font-bold">{col.label}</span>
 							</div>
 							<span
-								class="grid size-5 min-w-5 place-items-center rounded-full bg-[var(--ui-bg-accented)] px-1 text-[10px] font-bold tabular-nums"
+								class="grid size-5 min-w-5 place-items-center rounded-full bg-(--ui-bg-accented) px-1 text-[10px] font-bold tabular-nums"
 								>{rows.length}</span
 							>
 						</div>
@@ -164,7 +164,7 @@
 						<div class="flex-1 space-y-2 px-2 pb-2">
 							{#each rows as row (row.id)}
 								<div
-									class="group rounded-xl border border-[var(--ui-border-muted)] bg-[var(--surface-bg)] p-3 shadow-sm transition-shadow hover:shadow-sm"
+									class="group rounded-xl border border-(--ui-border-muted) bg-(--surface-bg) p-3 shadow-sm transition-shadow hover:shadow-sm"
 								>
 									<div class="flex items-center justify-between">
 										<a
@@ -172,7 +172,7 @@
 											class="font-mono text-[12px] font-bold hover:text-primary-500">{row.number}</a
 										>
 										<span
-											class="inline-flex items-center gap-0.5 text-[10px] text-[var(--ui-text-dimmed)]"
+											class="inline-flex items-center gap-0.5 text-[10px] text-(--ui-text-dimmed)"
 										>
 											<Icon name={sourceIcon(row.source)} class="size-2.5" />{sourceLabel(
 												row.source
@@ -180,28 +180,27 @@
 										</span>
 									</div>
 									{#if row.customerName}
-										<p class="mt-1 truncate text-[11.5px] text-[var(--ui-text-muted)]">
+										<p class="mt-1 truncate text-[11.5px] text-(--ui-text-muted)">
 											{row.customerName}
 										</p>
 									{/if}
 									{#if row.shipping?.address}
-										<p class="mt-0.5 truncate text-[10.5px] text-[var(--ui-text-dimmed)]">
+										<p class="mt-0.5 truncate text-[10.5px] text-(--ui-text-dimmed)">
 											{row.shipping.address}
 										</p>
 									{/if}
 									{#if row.shipping?.trackingNumber}
 										<p
-											class="mt-1 inline-flex items-center gap-1 font-mono text-[10px] text-[var(--ui-text-muted)]"
+											class="mt-1 inline-flex items-center gap-1 font-mono text-[10px] text-(--ui-text-muted)"
 										>
 											<Icon name="lucide:package-search" class="size-2.5" />{row.shipping
 												.trackingNumber}
 										</p>
 									{/if}
 									<div
-										class="mt-2.5 flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-2"
+										class="mt-2.5 flex items-center justify-between border-t border-(--ui-border-muted) pt-2"
 									>
-										<span class="text-[11px] text-[var(--ui-text-dimmed)]"
-											>{relativeTime(row.atMs)}</span
+										<span class="text-[11px] text-(--ui-text-dimmed)">{relativeTime(row.atMs)}</span
 										>
 										<div class="flex items-center gap-1.5">
 											<span class="text-[11.5px] font-semibold tabular-nums"
@@ -227,9 +226,9 @@
 							{/each}
 							{#if rows.length === 0}
 								<div
-									class="rounded-xl border border-dashed border-[var(--ui-border-muted)] py-6 text-center"
+									class="rounded-xl border border-dashed border-(--ui-border-muted) py-6 text-center"
 								>
-									<span class="text-[10.5px] text-[var(--ui-text-dimmed)]">Empty</span>
+									<span class="text-[10.5px] text-(--ui-text-dimmed)">Empty</span>
 								</div>
 							{/if}
 						</div>

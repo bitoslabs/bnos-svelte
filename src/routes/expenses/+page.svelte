@@ -218,7 +218,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.expenses')}</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Outgoing costs · kind 30802</p>
+			<p class="text-[12.5px] text-(--ui-text-muted)">Outgoing costs · kind 30802</p>
 		</div>
 		<Button color="primary" icon="lucide:plus" onclick={openCreate}
 			>{t('common.add') + ' ' + t('common.expense')}</Button
@@ -227,19 +227,19 @@
 
 	<div class="grid grid-cols-3 gap-3">
 		<div class="surface-card p-4">
-			<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Total out</div>
+			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Total out</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
 				{formatMoney(totalOut, currency)}
 			</div>
 		</div>
 		<div class="surface-card p-4">
-			<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">This month</div>
+			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">This month</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
 				{formatMoney(monthOut, currency)}
 			</div>
 		</div>
 		<div class="surface-card p-4">
-			<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Entries</div>
+			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Entries</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">{expenses.length}</div>
 		</div>
 	</div>
@@ -258,7 +258,7 @@
 			{#snippet filters()}
 				<div class="flex flex-wrap items-center gap-2">
 					<div
-						class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+						class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
 					>
 						<select
 							bind:value={catFilter}
@@ -271,11 +271,11 @@
 						</select>
 						<Icon
 							name="lucide:chevron-down"
-							class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+							class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
 						/>
 					</div>
 					<div
-						class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+						class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
 					>
 						<select
 							bind:value={statusFilter}
@@ -287,27 +287,27 @@
 						</select>
 						<Icon
 							name="lucide:chevron-down"
-							class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+							class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
 						/>
 					</div>
 					<input
 						type="date"
 						bind:value={dateFrom}
-						class="h-9 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 text-[13px] font-medium text-[var(--ui-text)] focus:border-[var(--ui-color-primary-500)] focus:outline-none"
+						class="h-9 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 text-[13px] font-medium text-(--ui-text) focus:border-(--ui-color-primary-500) focus:outline-none"
 						placeholder="From"
 					/>
-					<span class="text-[12px] text-[var(--ui-text-dimmed)]">→</span>
+					<span class="text-[12px] text-(--ui-text-dimmed)">→</span>
 					<input
 						type="date"
 						bind:value={dateTo}
-						class="h-9 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 text-[13px] font-medium text-[var(--ui-text)] focus:border-[var(--ui-color-primary-500)] focus:outline-none"
+						class="h-9 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 text-[13px] font-medium text-(--ui-text) focus:border-(--ui-color-primary-500) focus:outline-none"
 						placeholder="To"
 					/>
 					{#if hasActiveFilters}
 						<button
 							type="button"
 							onclick={clearFilters}
-							class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+							class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 						>
 							<Icon name="lucide:x" class="size-3.5" />
 							{t('common.clear')}
@@ -360,23 +360,23 @@
 						<th class="w-10 px-5 py-2.5"></th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+				<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 					{#each controls.pagedList as e (e.id)}
 						<tr>
-							<td class="px-5 py-3 text-[12px] text-[var(--ui-text-dimmed)]"
+							<td class="px-5 py-3 text-[12px] text-(--ui-text-dimmed)"
 								>{relativeTime(e.data.occurredAt)}</td
 							>
 							<td class="px-5 py-3">
 								<div class="font-semibold">{e.data.description}</div>
 								{#if e.data.payee}
-									<div class="text-[11px] text-[var(--ui-text-dimmed)]">{e.data.payee}</div>
+									<div class="text-[11px] text-(--ui-text-dimmed)">{e.data.payee}</div>
 								{/if}
 							</td>
 							<td class="px-5 py-3">
 								<span class="inline-flex items-center gap-1">
 									<Icon
 										name={catMeta(e.data.category).icon}
-										class="size-3.5 text-[var(--ui-text-dimmed)]"
+										class="size-3.5 text-(--ui-text-dimmed)"
 									/>
 									{catMeta(e.data.category).label}
 								</span>
@@ -396,12 +396,10 @@
 										{t('common.view')}
 									</a>
 								{:else}
-									<span class="text-[var(--ui-text-dimmed)]">—</span>
+									<span class="text-(--ui-text-dimmed)">—</span>
 								{/if}
 							</td>
-							<td
-								class="px-5 py-3 text-right font-semibold text-[var(--tone-error-text)] tabular-nums"
-							>
+							<td class="px-5 py-3 text-right font-semibold text-(--tone-error-text) tabular-nums">
 								−{formatMoney(e.data.amount, e.data.currency || currency)}
 							</td>
 							<td class="px-5 py-3 text-right">
@@ -449,20 +447,20 @@
 <Dialog bind:open title={t('common.add') + ' ' + t('common.expense')} size="lg">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.description')}</span
 			>
 			<Input bind:value={desc} class="w-full" />
 		</label>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Amount ({currency})</span
 				>
 				<Input bind:value={amount} type="number" min="0" step="0.01" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.category')}</span
 				>
 				<Select
@@ -474,12 +472,11 @@
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Payee</span
-				>
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Payee</span>
 				<Input bind:value={payee} class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.method')}</span
 				>
 				<Select
@@ -496,17 +493,17 @@
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.date')}</span
 				>
 				<input
 					type="date"
 					bind:value={expDate}
-					class="h-9.5 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 text-[13.5px] text-[var(--ui-text)] focus:border-[var(--ui-color-primary-500)] focus:outline-none"
+					class="h-9.5 w-full rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 text-[13.5px] text-(--ui-text) focus:border-(--ui-color-primary-500) focus:outline-none"
 				/>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.status')}</span
 				>
 				<Select
@@ -523,9 +520,7 @@
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Receipt URL</span
-			>
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Receipt URL</span>
 			<Input
 				bind:value={receiptUrl}
 				icon="lucide:paperclip"
@@ -546,20 +541,20 @@
 <Dialog bind:open={editOpen} title={t('common.edit') + ' ' + t('common.expense')} size="lg">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.description')}</span
 			>
 			<Input bind:value={editDesc} class="w-full" />
 		</label>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Amount ({currency})</span
 				>
 				<Input bind:value={editAmount} type="number" min="0" step="0.01" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.category')}</span
 				>
 				<Select
@@ -571,12 +566,11 @@
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Payee</span
-				>
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Payee</span>
 				<Input bind:value={editPayee} class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.method')}</span
 				>
 				<Select
@@ -593,17 +587,17 @@
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.date')}</span
 				>
 				<input
 					type="date"
 					bind:value={editDate}
-					class="h-9.5 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 text-[13.5px] text-[var(--ui-text)] focus:border-[var(--ui-color-primary-500)] focus:outline-none"
+					class="h-9.5 w-full rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 text-[13.5px] text-(--ui-text) focus:border-(--ui-color-primary-500) focus:outline-none"
 				/>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.status')}</span
 				>
 				<Select
@@ -620,9 +614,7 @@
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Receipt URL</span
-			>
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Receipt URL</span>
 			<Input
 				bind:value={editReceiptUrl}
 				icon="lucide:paperclip"

@@ -41,29 +41,37 @@ interoperable with other BNOS clients, including bdgo-os and bnos-space.
 
 ```
 src/
-├── app.css                     # design tokens, light/dark, surfaces (from school-erp)
+├── app.css                     # design tokens: @theme colors + runtime --ui-*/--surface-*/--tone-* vars
 ├── lib/
-│   ├── components/ui/          # Button, Input, Badge, Dialog, … (from school-erp)
-│   ├── components/             # AppSidebar, AppTopbar, mobile/BottomTabBar
-│   ├── nostr/                  # bnos-core data layer (kinds, session, relay, store, tenant)
+│   ├── components/ui/          # primitives: Button, Input, Select, Switch, Dialog, Badge, …
+│   ├── components/             # app shell: AppSidebar, AppTopbar, mobile/BottomTabBar
+│   ├── nostr/                  # bnos-core data layer: store, session, relay, tenant, sync
+│   ├── domain/                 # GLO domain model: kinds, types, helpers, meta
+│   ├── pos/                    # POS engines: cart, payments, shifts, success overlay
+│   ├── crypto/                 # GLO encryption / key grants / privacy
+│   ├── media/                  # image upload + gallery
 │   ├── theme/                  # accent / density / surface preferences
-│   ├── stores/                 # toast
+│   ├── stores/                 # toast, confirm, command, notifications
+│   ├── utils/                  # cn, format, qr, record-id, …
 │   ├── icons.ts                # offline Lucide registry + bdgo-os icon remap
 │   └── nav.ts                  # bdgo-os nav sections → Svelte routes
 └── routes/
     ├── +layout.svelte          # root: icons, theme, relay/session hydration, Toaster
     ├── login/                  # Nostr identity entry
     ├── setup/                  # onboarding wizard (identity → company → branch → relays → catalog → review → done)
-    └── (app)/                  # authenticated shell: dashboard, pos, orders, catalog, …
+    └── pos · orders · catalog · inventory · customers · reports · settings …  # app pages
 ```
 
 ## Develop
 
 ```bash
 yarn install
-yarn run dev      # http://localhost:5173
-yarn run check    # svelte-check
-yarn run build
+yarn run dev        # http://localhost:5173
+yarn run check      # svelte-kit sync + svelte-check (types + a11y)
+yarn run lint       # prettier --check + eslint
+yarn run format     # prettier --write
+yarn run build      # production build (0 vite-plugin-svelte warnings expected)
+yarn run test:unit  # vitest
 ```
 
 > The `@bitos/bnos-core` dependency is linked from `../packages/bnos-core`

@@ -188,29 +188,29 @@
 <div class="space-y-4">
 	<div>
 		<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.transactions')}</h1>
-		<p class="text-[12.5px] text-[var(--ui-text-muted)]">Sales ledger · kind 30200/30201</p>
+		<p class="text-[12.5px] text-(--ui-text-muted)">Sales ledger · kind 30200/30201</p>
 	</div>
 
 	<div class="grid grid-cols-3 gap-3">
 		<div class="metric-card p-4">
-			<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Total inflow</div>
+			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Total inflow</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
 				{formatMoney(inflow, currency)}
 			</div>
 			{#if showSats}
 				<div
-					class="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-[var(--tone-warning-text)]"
+					class="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-(--tone-warning-text)"
 				>
 					<Icon name="lucide:zap" class="size-3" />≈ {formatInt(inflowSats)} sats
 				</div>
 			{/if}
 		</div>
 		<div class="metric-card p-4">
-			<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Entries</div>
+			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Entries</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">{formatInt(count)}</div>
 		</div>
 		<div class="metric-card p-4">
-			<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Avg. value</div>
+			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Avg. value</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
 				{formatMoney(count ? inflow / count : 0, currency)}
 			</div>
@@ -224,11 +224,11 @@
 				<div
 					class="flex size-10 items-center justify-center rounded-xl {activeShift
 						? 'bg-emerald-500/10'
-						: 'bg-[var(--ui-bg-accented)]'}"
+						: 'bg-(--ui-bg-accented)'}"
 				>
 					<Icon
 						name={activeShift ? 'lucide:circle-check' : 'lucide:circle'}
-						class="size-5 {activeShift ? 'text-emerald-500' : 'text-[var(--ui-text-muted)]'}"
+						class="size-5 {activeShift ? 'text-emerald-500' : 'text-(--ui-text-muted)'}"
 					/>
 				</div>
 				<div>
@@ -236,13 +236,11 @@
 						{activeShift ? 'Shift Active' : 'No Active Shift'}
 					</div>
 					{#if activeShift}
-						<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
+						<div class="text-[11.5px] text-(--ui-text-dimmed)">
 							Opened {relativeTime(activeShift.data.openedAt)}
 						</div>
 					{:else}
-						<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
-							Open a shift to track sales
-						</div>
+						<div class="text-[11.5px] text-(--ui-text-dimmed)">Open a shift to track sales</div>
 					{/if}
 				</div>
 			</div>
@@ -279,23 +277,23 @@
 		{#if activeShift?.data.totalSales != null}
 			<div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
 				<div>
-					<span class="text-[11px] text-[var(--ui-text-dimmed)]">Total Sales</span>
+					<span class="text-[11px] text-(--ui-text-dimmed)">Total Sales</span>
 					<div class="font-bold tabular-nums">
 						{formatMoney(activeShift.data.totalSales ?? 0, currency)}
 					</div>
 				</div>
 				<div>
-					<span class="text-[11px] text-[var(--ui-text-dimmed)]">Orders</span>
+					<span class="text-[11px] text-(--ui-text-dimmed)">Orders</span>
 					<div class="font-bold tabular-nums">{formatInt(activeShift.data.totalOrders ?? 0)}</div>
 				</div>
 				<div>
-					<span class="text-[11px] text-[var(--ui-text-dimmed)]">Cash Sales</span>
+					<span class="text-[11px] text-(--ui-text-dimmed)">Cash Sales</span>
 					<div class="font-bold tabular-nums">
 						{formatMoney(activeShift.data.cashSales ?? 0, currency)}
 					</div>
 				</div>
 				<div>
-					<span class="text-[11px] text-[var(--ui-text-dimmed)]">Card Sales</span>
+					<span class="text-[11px] text-(--ui-text-dimmed)">Card Sales</span>
 					<div class="font-bold tabular-nums">
 						{formatMoney(activeShift.data.cardSales ?? 0, currency)}
 					</div>
@@ -318,7 +316,7 @@
 		>
 			{#snippet filters()}
 				<div
-					class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+					class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
 				>
 					<select
 						bind:value={methodFilter}
@@ -330,7 +328,7 @@
 					</select>
 					<Icon
 						name="lucide:chevron-down"
-						class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+						class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
 					/>
 				</div>
 			{/snippet}
@@ -384,15 +382,15 @@
 							<th class="px-3 py-2.5 text-right">{t('common.actions')}</th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 						{#each controls.pagedList as row (row.id)}
 							<tr>
 								<td class="px-5 py-3">
 									<div class="font-mono text-[12.5px]">{row.ref}</div>
-									<div class="text-[11px] text-[var(--ui-text-dimmed)]">{row.description}</div>
+									<div class="text-[11px] text-(--ui-text-dimmed)">{row.description}</div>
 								</td>
 								<td class="px-5 py-3"
-									><span class="text-[var(--ui-text-muted)] capitalize">{row.method}</span></td
+									><span class="text-(--ui-text-muted) capitalize">{row.method}</span></td
 								>
 								<td class="px-5 py-3"
 									><Badge color={row.status.includes('paid') ? 'success' : 'neutral'}
@@ -400,18 +398,18 @@
 									></td
 								>
 								<td class="px-5 py-3 text-right">
-									<div class="font-semibold text-[var(--tone-success-text)] tabular-nums">
+									<div class="font-semibold text-(--tone-success-text) tabular-nums">
 										+{formatMoney(row.total, currency)}
 									</div>
 									{#if row.totalSats}
 										<div
-											class="flex items-center justify-end gap-0.5 text-[10.5px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+											class="flex items-center justify-end gap-0.5 text-[10.5px] font-semibold text-(--tone-warning-text) tabular-nums"
 										>
 											<Icon name="lucide:zap" class="size-2.5" />{formatInt(row.totalSats)}
 										</div>
 									{/if}
 								</td>
-								<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
+								<td class="px-5 py-3 text-right text-[12px] text-(--ui-text-dimmed)"
 									>{relativeTime(row.atMs)}</td
 								>
 								<td class="px-3 py-3 text-right">
@@ -437,11 +435,11 @@
 		aria-modal="true"
 	>
 		<div
-			class="w-full max-w-md rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-5 shadow-xl"
+			class="w-full max-w-md rounded-2xl border border-(--ui-border) bg-(--ui-bg-elevated) p-5 shadow-xl"
 		>
 			<h3 class="mb-4 font-display text-base font-bold">Close Shift</h3>
 			<div class="space-y-3">
-				<div class="rounded-lg bg-[var(--ui-bg-accented)] p-3 text-[12.5px]">
+				<div class="rounded-lg bg-(--ui-bg-accented) p-3 text-[12.5px]">
 					<div>
 						Opened: <span class="font-semibold"
 							>{activeShift ? relativeTime(activeShift.data.openedAt) : ''}</span
@@ -454,7 +452,7 @@
 					</div>
 				</div>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Counted Cash</span
 					>
 					<Input

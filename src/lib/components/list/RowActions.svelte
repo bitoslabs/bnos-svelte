@@ -64,7 +64,7 @@
 	<button
 		type="button"
 		bind:this={trigger}
-		class="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+		class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 		aria-label="Row actions"
 		onclick={toggle}
 	>
@@ -73,12 +73,12 @@
 	{#if open}
 		<div
 			bind:this={menuEl}
-			class="animate-rise fixed z-50 min-w-[170px] rounded-xl border border-[var(--ui-border-muted)] bg-[var(--surface-bg)] p-1.5 shadow-[var(--shadow-pop)] outline-none"
+			class="animate-rise fixed z-50 min-w-[170px] rounded-xl border border-(--ui-border-muted) bg-(--surface-bg) p-1.5 shadow-(--shadow-pop) outline-none"
 			style={`top:${pos.top}px;left:${pos.left}px`}
 			role="menu"
 		>
 			{#each actions as group, gi (gi)}
-				{#if gi > 0}<div class="my-1 h-px bg-[var(--ui-border-muted)]"></div>{/if}
+				{#if gi > 0}<div class="my-1 h-px bg-(--ui-border-muted)"></div>{/if}
 				{#each group as action (action.label)}
 					<button
 						type="button"
@@ -86,8 +86,8 @@
 						class={cn(
 							'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[12.5px] font-semibold transition-colors',
 							action.danger
-								? 'text-[var(--tone-error-text)] hover:bg-[var(--tone-error-bg)]'
-								: 'text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)] hover:text-[var(--ui-text)]'
+								? 'text-(--tone-error-text) hover:bg-(--tone-error-bg)'
+								: 'text-(--ui-text-muted) hover:bg-(--interactive-hover-bg) hover:text-(--ui-text)'
 						)}
 						onclick={() => {
 							action.onSelect();

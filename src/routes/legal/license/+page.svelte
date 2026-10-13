@@ -34,15 +34,15 @@
 <div
 	class="prose prose-sm max-w-none dark:prose-invert
 	prose-headings:font-display prose-headings:tracking-tight
-	prose-headings:text-[var(--ui-text)] prose-h3:text-[1.05rem]
-	prose-p:text-[var(--ui-text-muted)] prose-a:text-primary-600
-	prose-a:no-underline hover:prose-a:underline dark:prose-a:text-primary-400 prose-strong:text-[var(--ui-text)]
-	prose-code:rounded prose-code:bg-[var(--ui-bg-accented)] prose-code:px-1.5
-	prose-code:py-0.5 prose-code:text-[0.85em] prose-code:before:content-[''] prose-code:after:content-[''] prose-li:text-[var(--ui-text-muted)]"
+	prose-headings:text-(--ui-text) prose-h3:text-[1.05rem]
+	prose-p:text-(--ui-text-muted) prose-a:text-primary-600
+	prose-a:no-underline hover:prose-a:underline dark:prose-a:text-primary-400 prose-strong:text-(--ui-text)
+	prose-code:rounded prose-code:bg-(--ui-bg-accented) prose-code:px-1.5
+	prose-code:py-0.5 prose-code:text-[0.85em] prose-code:before:content-[''] prose-code:after:content-[''] prose-li:text-(--ui-text-muted)"
 >
 	<h2>Open-source License</h2>
 
-	<p class="text-[var(--ui-text)]">
+	<p class="text-(--ui-text)">
 		{site.fullName} is free and open-source software released under the
 		<strong
 			>{site.license}
@@ -108,7 +108,7 @@
 
 	<h3>The MIT License</h3>
 	<pre
-		class="not-prose overflow-x-auto rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-4 text-[11.5px] leading-relaxed text-[var(--ui-text-muted)]"><code
+		class="not-prose overflow-x-auto rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) p-4 text-[11.5px] leading-relaxed text-(--ui-text-muted)"><code
 			>MIT License
 
 Copyright (c) {new Date().getFullYear()} {site.name} contributors
@@ -140,19 +140,19 @@ SOFTWARE.</code
 				href={s.url}
 				target="_blank"
 				rel="noopener"
-				class="group flex items-center gap-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3.5 py-2.5 transition-colors hover:border-primary-500/40 hover:bg-[var(--ui-bg-accented)]"
+				class="group flex items-center gap-3 rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) px-3.5 py-2.5 transition-colors hover:border-primary-500/40 hover:bg-(--ui-bg-accented)"
 			>
 				<Icon
 					name="lucide:box"
-					class="size-4 shrink-0 text-[var(--ui-text-dimmed)] group-hover:text-primary-500"
+					class="size-4 shrink-0 text-(--ui-text-dimmed) group-hover:text-primary-500"
 				/>
 				<div class="min-w-0">
-					<p class="truncate text-[13px] font-bold text-[var(--ui-text)]">{s.name}</p>
-					<p class="truncate text-[11px] text-[var(--ui-text-dimmed)]">{s.note}</p>
+					<p class="truncate text-[13px] font-bold text-(--ui-text)">{s.name}</p>
+					<p class="truncate text-[11px] text-(--ui-text-dimmed)">{s.note}</p>
 				</div>
 				<Icon
 					name="lucide:arrow-up-right"
-					class="ml-auto size-3.5 shrink-0 text-[var(--ui-text-dimmed)]"
+					class="ml-auto size-3.5 shrink-0 text-(--ui-text-dimmed)"
 				/>
 			</a>
 		{/each}

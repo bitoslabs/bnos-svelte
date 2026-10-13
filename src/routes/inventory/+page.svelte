@@ -476,9 +476,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.inventory')}</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
-				Stock, counts, suppliers & purchase orders
-			</p>
+			<p class="text-[12.5px] text-(--ui-text-muted)">Stock, counts, suppliers & purchase orders</p>
 		</div>
 		{#if tab === 'overview'}
 			<Button color="primary" icon="lucide:arrow-up-down" onclick={() => openCreate('adjustments')}
@@ -503,13 +501,11 @@
 	{#if trackedProducts.length > 0}
 		<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
 			<div class="data-panel flex items-center gap-3 p-4">
-				<div class="flex size-10 items-center justify-center rounded-xl bg-[var(--ui-bg-accented)]">
-					<Icon name="lucide:package" class="size-5 text-[var(--ui-text-muted)]" />
+				<div class="flex size-10 items-center justify-center rounded-xl bg-(--ui-bg-accented)">
+					<Icon name="lucide:package" class="size-5 text-(--ui-text-muted)" />
 				</div>
 				<div>
-					<div
-						class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
-					>
+					<div class="text-[11px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase">
 						Total Products
 					</div>
 					<div class="text-lg font-bold tabular-nums">{stats.total}</div>
@@ -520,9 +516,7 @@
 					<Icon name="lucide:check-circle" class="size-5 text-emerald-500" />
 				</div>
 				<div>
-					<div
-						class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
-					>
+					<div class="text-[11px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase">
 						In Stock
 					</div>
 					<div class="text-lg font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
@@ -535,9 +529,7 @@
 					<Icon name="lucide:alert-triangle" class="size-5 text-amber-500" />
 				</div>
 				<div>
-					<div
-						class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
-					>
+					<div class="text-[11px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase">
 						Low Stock
 					</div>
 					<div class="text-lg font-bold text-amber-600 tabular-nums dark:text-amber-400">
@@ -550,9 +542,7 @@
 					<Icon name="lucide:x-circle" class="size-5 text-rose-500" />
 				</div>
 				<div>
-					<div
-						class="text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
-					>
+					<div class="text-[11px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase">
 						Out of Stock
 					</div>
 					<div class="text-lg font-bold text-rose-600 tabular-nums dark:text-rose-400">
@@ -570,12 +560,11 @@
 				onclick={() => (tab = t.id)}
 				class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {tab ===
 				t.id
-					? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-					: 'text-[var(--ui-text-muted)]'}"
+					? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+					: 'text-(--ui-text-muted)'}"
 			>
 				<Icon name={t.icon} class="size-3.5" />{t.label}<span
-					class="rounded bg-[var(--ui-bg-accented)] px-1.5 text-[10px] tabular-nums"
-					>{t.count()}</span
+					class="rounded bg-(--ui-bg-accented) px-1.5 text-[10px] tabular-nums">{t.count()}</span
 				>
 			</button>
 		{/each}
@@ -632,7 +621,7 @@
 									<th class="w-10 px-5 py-2.5"></th>
 								</tr></thead
 							>
-							<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+							<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 								{#each overviewList as p (p.id)}
 									{@const st = stockStatus(p.data)}
 									{@const stock = getStock(p.data)}
@@ -649,7 +638,7 @@
 												<span class="font-semibold">{p.data.name}</span>
 											</div>
 										</td>
-										<td class="px-5 py-3 font-mono text-[11.5px] text-[var(--ui-text-dimmed)]"
+										<td class="px-5 py-3 font-mono text-[11.5px] text-(--ui-text-dimmed)"
 											>{p.data.sku ?? '—'}</td
 										>
 										<td class="px-5 py-3 text-right tabular-nums"
@@ -711,7 +700,7 @@
 			<div class="flex items-center justify-between gap-3">
 				<div>
 					<h2 class="font-display text-base font-bold">{ac.id}</h2>
-					<p class="text-[12px] text-[var(--ui-text-muted)]">
+					<p class="text-[12px] text-(--ui-text-muted)">
 						{relativeTime(ac.date)} · {ac.items.filter((i) => i.counted !== null).length}/{ac.items
 							.length} counted
 					</p>
@@ -733,12 +722,12 @@
 							<th class="px-5 py-2.5 text-right">{t('common.diff')}</th>
 						</tr></thead
 					>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 						{#each ac.items as item (item.productId)}
 							{@const diff = item.counted !== null ? item.counted - item.expected : null}
 							<tr>
 								<td class="px-5 py-3 font-semibold">{item.productName}</td>
-								<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
+								<td class="px-5 py-3 text-right text-(--ui-text-muted) tabular-nums"
 									>{item.expected}</td
 								>
 								<td class="px-5 py-3 text-right">
@@ -750,12 +739,12 @@
 												item.productId,
 												e.currentTarget.value === '' ? null : Number(e.currentTarget.value)
 											)}
-										class="w-20 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2 py-1 text-right text-[13px] focus:border-[var(--ui-color-primary-500)] focus:outline-none"
+										class="w-20 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2 py-1 text-right text-[13px] focus:border-(--ui-color-primary-500) focus:outline-none"
 									/>
 								</td>
 								<td class="px-5 py-3 text-right tabular-nums">
-									{#if diff === null}<span class="text-[var(--ui-text-dimmed)]">—</span>
-									{:else if diff === 0}<span class="text-[var(--ui-text-muted)]">0</span>
+									{#if diff === null}<span class="text-(--ui-text-dimmed)">—</span>
+									{:else if diff === 0}<span class="text-(--ui-text-muted)">0</span>
 									{:else if diff! > 0}<span
 											class="font-semibold text-emerald-600 dark:text-emerald-400">+{diff}</span
 										>
@@ -780,14 +769,14 @@
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
 					>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 						{#each countSessions as s (s.id)}
 							<tr
-								class="cursor-pointer hover:bg-[var(--ui-bg-accented)]"
+								class="cursor-pointer hover:bg-(--ui-bg-accented)"
 								onclick={() => (activeCountId = s.id)}
 							>
 								<td class="px-5 py-3 font-mono text-[12.5px] font-semibold">{s.id}</td>
-								<td class="px-5 py-3 text-[var(--ui-text-muted)]">{relativeTime(s.date)}</td>
+								<td class="px-5 py-3 text-(--ui-text-muted)">{relativeTime(s.date)}</td>
 								<td class="px-5 py-3"
 									><Badge
 										color={s.status === 'completed'
@@ -870,12 +859,12 @@
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
 					>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 						{#each adjCtrl.pagedList as a (a.id)}
 							<tr>
 								<td class="px-5 py-3"
 									><div class="font-semibold">{a.data.productName}</div>
-									<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">{a.data.reason}</div></td
+									<div class="text-[11.5px] text-(--ui-text-dimmed)">{a.data.reason}</div></td
 								>
 								<td class="px-5 py-3"
 									><Badge color={a.data.type === 'increase' ? 'success' : 'error'}
@@ -885,7 +874,7 @@
 								<td class="px-5 py-3 text-right tabular-nums"
 									>{a.data.type === 'increase' ? '+' : '−'}{a.data.quantity}</td
 								>
-								<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
+								<td class="px-5 py-3 text-right text-[12px] text-(--ui-text-dimmed)"
 									>{relativeTime(a.data.occurredAt)}</td
 								>
 								<td class="px-5 py-3 text-right"
@@ -967,17 +956,17 @@
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
 					>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 						{#each supCtrl.pagedList as s (s.id)}
 							<tr>
 								<td class="px-5 py-3 font-semibold"
 									>{s.data.name}{#if s.data.paymentTerms}<div
-											class="text-[11px] text-[var(--ui-text-dimmed)]"
+											class="text-[11px] text-(--ui-text-dimmed)"
 										>
 											{s.data.paymentTerms}
 										</div>{/if}</td
 								>
-								<td class="px-5 py-3 text-[var(--ui-text-muted)]"
+								<td class="px-5 py-3 text-(--ui-text-muted)"
 									>{s.data.contactName ?? s.data.phone ?? '—'}</td
 								>
 								<td class="px-5 py-3"
@@ -1070,11 +1059,11 @@
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
 					>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 						{#each poCtrl.pagedList as o (o.id)}
 							<tr>
 								<td class="px-5 py-3 font-mono text-[12.5px]">{o.data.number}</td>
-								<td class="px-5 py-3 text-[var(--ui-text-muted)]">{o.data.supplierName ?? '—'}</td>
+								<td class="px-5 py-3 text-(--ui-text-muted)">{o.data.supplierName ?? '—'}</td>
 								<td class="px-5 py-3"
 									><Badge color={statusColor(o.data.status)}>{o.data.status}</Badge></td
 								>
@@ -1118,17 +1107,15 @@
 <!-- Quick Adjust Dialog -->
 <Dialog bind:open={adjDlgOpen} title={t('common.quickAdjust')}>
 	<div class="space-y-3">
-		<div class="text-[13px] font-semibold text-[var(--ui-text-muted)]">{adjProduct.name}</div>
+		<div class="text-[13px] font-semibold text-(--ui-text-muted)">{adjProduct.name}</div>
 		{#if adjProduct.id}
 			{@const prod = allProducts.find((p) => p.id === adjProduct.id)}
 			{#if prod}
-				<div
-					class="flex items-center gap-2 rounded-lg bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px]"
-				>
-					<Icon name="lucide:boxes" class="size-4 text-[var(--ui-text-dimmed)]" />
-					<span class="text-[var(--ui-text-muted)]">Current stock:</span>
+				<div class="flex items-center gap-2 rounded-lg bg-(--ui-bg-muted) px-3 py-2 text-[12px]">
+					<Icon name="lucide:boxes" class="size-4 text-(--ui-text-dimmed)" />
+					<span class="text-(--ui-text-muted)">Current stock:</span>
 					<span class="font-bold">{(prod.data as any).stockLevel ?? 0}</span>
-					<span class="ml-auto text-[var(--ui-text-dimmed)]"
+					<span class="ml-auto text-(--ui-text-dimmed)"
 						>→ New: <span class="font-bold text-primary-600 dark:text-primary-400"
 							>{adjDir === 'increase'
 								? ((allProducts.find((p) => p.id === adjProduct.id)?.data as any)?.stockLevel ??
@@ -1148,24 +1135,24 @@
 				type="button"
 				onclick={() => (adjDir = 'increase')}
 				class="flex-1 rounded-md px-3 py-1.5 text-[12px] font-semibold {adjDir === 'increase'
-					? 'bg-[var(--ui-bg-elevated)]'
-					: 'text-[var(--ui-text-muted)]'}">{t('common.increase')}</button
+					? 'bg-(--ui-bg-elevated)'
+					: 'text-(--ui-text-muted)'}">{t('common.increase')}</button
 			>
 			<button
 				type="button"
 				onclick={() => (adjDir = 'decrease')}
 				class="flex-1 rounded-md px-3 py-1.5 text-[12px] font-semibold {adjDir === 'decrease'
-					? 'bg-[var(--ui-bg-elevated)]'
-					: 'text-[var(--ui-text-muted)]'}">{t('common.decrease')}</button
+					? 'bg-(--ui-bg-elevated)'
+					: 'text-(--ui-text-muted)'}">{t('common.decrease')}</button
 			>
 		</div>
 		<label class="block"
-			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.quantity')}</span
 			><Input bind:value={adjQty} type="number" min="0" class="w-full" /></label
 		>
 		<label class="block"
-			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.reason')}</span
 			><Input bind:value={adjReason} class="w-full" /></label
 		>
@@ -1182,14 +1169,14 @@
 	{#if dlgKind === 'adjustments'}
 		<div class="space-y-3">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.product')}</span
 				>
 				{#if adjSelectedProduct}
 					<div
-						class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2"
+						class="flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-2"
 					>
-						<Icon name="lucide:package" class="size-4 text-[var(--ui-text-dimmed)]" />
+						<Icon name="lucide:package" class="size-4 text-(--ui-text-dimmed)" />
 						<span class="flex-1 truncate text-[13px] font-semibold">{adjSelectedProduct.name}</span>
 						<button
 							type="button"
@@ -1198,7 +1185,7 @@
 								adjProductSearch = '';
 								aProduct = '';
 							}}
-							class="text-[var(--ui-text-dimmed)] hover:text-[var(--tone-error-text)]"
+							class="text-(--ui-text-dimmed) hover:text-(--tone-error-text)"
 						>
 							<Icon name="lucide:x" class="size-4" />
 						</button>
@@ -1213,7 +1200,7 @@
 						/>
 						{#if adjProductResults.length > 0}
 							<div
-								class="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--surface-bg)] shadow-lg"
+								class="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-(--ui-border) bg-(--surface-bg) shadow-lg"
 							>
 								{#each adjProductResults as p (p.id)}
 									<button
@@ -1223,14 +1210,11 @@
 											aProduct = String(p.data.name ?? '');
 											adjProductSearch = '';
 										}}
-										class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] transition-colors hover:bg-[var(--ui-bg-accented)]"
+										class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] transition-colors hover:bg-(--ui-bg-accented)"
 									>
-										<Icon
-											name="lucide:package"
-											class="size-4 shrink-0 text-[var(--ui-text-dimmed)]"
-										/>
+										<Icon name="lucide:package" class="size-4 shrink-0 text-(--ui-text-dimmed)" />
 										<span class="flex-1 truncate font-medium">{p.data.name ?? 'Unnamed'}</span>
-										<span class="text-[11px] text-[var(--ui-text-dimmed)]"
+										<span class="text-[11px] text-(--ui-text-dimmed)"
 											>Stock: {(p.data as any).stockLevel ?? 0}</span
 										>
 									</button>
@@ -1242,7 +1226,7 @@
 			</label>
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.type')}</span
 					>
 					<div class="segmented flex gap-1 p-1">
@@ -1250,26 +1234,26 @@
 							type="button"
 							onclick={() => (aType = 'increase')}
 							class="flex-1 rounded-md px-3 py-1.5 text-[12px] font-semibold {aType === 'increase'
-								? 'bg-[var(--ui-bg-elevated)]'
-								: 'text-[var(--ui-text-muted)]'}">{t('common.increase')}</button
+								? 'bg-(--ui-bg-elevated)'
+								: 'text-(--ui-text-muted)'}">{t('common.increase')}</button
 						>
 						<button
 							type="button"
 							onclick={() => (aType = 'decrease')}
 							class="flex-1 rounded-md px-3 py-1.5 text-[12px] font-semibold {aType === 'decrease'
-								? 'bg-[var(--ui-bg-elevated)]'
-								: 'text-[var(--ui-text-muted)]'}">{t('common.decrease')}</button
+								? 'bg-(--ui-bg-elevated)'
+								: 'text-(--ui-text-muted)'}">{t('common.decrease')}</button
 						>
 					</div>
 				</label>
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.quantity')}</span
 					><Input bind:value={aQty} type="number" min="0" class="w-full" /></label
 				>
 			</div>
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.reason')}</span
 				><Input bind:value={aReason} class="w-full" /></label
 			>
@@ -1277,24 +1261,24 @@
 	{:else if dlgKind === 'suppliers'}
 		<div class="space-y-3">
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.name')}</span
 				><Input bind:value={sName} class="w-full" /></label
 			>
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.contact')}</span
 					><Input bind:value={sContact} class="w-full" /></label
 				>
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.phone')}</span
 					><Input bind:value={sPhone} class="w-full" /></label
 				>
 			</div>
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Payment terms</span
 				><Input bind:value={sTerms} placeholder="Net 30" class="w-full" /></label
 			>
@@ -1302,14 +1286,14 @@
 	{:else}
 		<div class="space-y-3">
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.supplier')}</span
 				><Input bind:value={poSupplier} list="sups" class="w-full" /><datalist id="sups"
 					>{#each suppliers as s (s.id)}<option value={s.data.name}></option>{/each}</datalist
 				></label
 			>
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Lines (one per line: <code>Name xQty@Price</code>)</span
 				><Input
 					bind:value={poLines}

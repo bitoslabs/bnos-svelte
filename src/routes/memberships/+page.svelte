@@ -281,7 +281,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.memberships')}</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+			<p class="text-[12.5px] text-(--ui-text-muted)">
 				Tiers, subscriptions & check-ins · kinds 30311–30315
 			</p>
 		</div>
@@ -297,13 +297,13 @@
 	<!-- Stats row -->
 	<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
 		<div class="surface-card p-4">
-			<p class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+			<p class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 				Total Plans
 			</p>
 			<p class="font-display text-2xl font-bold tabular-nums">{plans.length}</p>
 		</div>
 		<div class="surface-card p-4">
-			<p class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+			<p class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 				Active
 			</p>
 			<p class="font-display text-2xl font-bold text-emerald-500 tabular-nums">
@@ -311,7 +311,7 @@
 			</p>
 		</div>
 		<div class="surface-card p-4">
-			<p class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+			<p class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 				Subscriptions
 			</p>
 			<p class="font-display text-2xl font-bold text-blue-500 tabular-nums">
@@ -319,7 +319,7 @@
 			</p>
 		</div>
 		<div class="surface-card p-4">
-			<p class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+			<p class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 				Check-ins Today
 			</p>
 			<p class="font-display text-2xl font-bold tabular-nums">
@@ -342,10 +342,10 @@
 				onclick={() => (tab = t.id)}
 				class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {tab ===
 				t.id
-					? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-					: 'text-[var(--ui-text-muted)]'}"
+					? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+					: 'text-(--ui-text-muted)'}"
 				><Icon name={t.icon} class="size-3.5" />{t.label}<span
-					class="rounded bg-[var(--ui-bg-accented)] px-1.5 text-[10px] tabular-nums"
+					class="rounded bg-(--ui-bg-accented) px-1.5 text-[10px] tabular-nums"
 					>{t.id === 'plans'
 						? plans.length
 						: t.id === 'subscriptions'
@@ -404,28 +404,28 @@
 									applySort={planCtrl.applySort}>{t('common.price')}</SortableTh
 								>
 								<th
-									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.period')}</th
 								>
 								<th
-									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.duration')}</th
 								>
 								<th
-									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.mode')}</th
 								>
 								<th
-									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.status')}</th
 								>
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr>
 						</thead>
-						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+						<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 							{#each planCtrl.pagedList as p (p.id)}
 								{@const pActive = p.data.active ?? p.data.status === 'active'}
-								<tr class="hover:bg-[var(--ui-bg-accented)]/40">
+								<tr class="hover:bg-(--ui-bg-accented)/40">
 									<td class="px-5 py-3">
 										<div class="flex items-center gap-3">
 											<div
@@ -441,7 +441,7 @@
 											<div class="min-w-0">
 												<div class="font-semibold">{p.data.name}</div>
 												{#if p.data.description}
-													<div class="line-clamp-1 text-[11px] text-[var(--ui-text-dimmed)]">
+													<div class="line-clamp-1 text-[11px] text-(--ui-text-dimmed)">
 														{p.data.description}
 													</div>
 												{/if}
@@ -451,8 +451,8 @@
 									<td class="px-5 py-3 text-right font-semibold tabular-nums">
 										{formatMoney(p.data.price, p.data.currency || currency)}
 									</td>
-									<td class="px-5 py-3 text-[var(--ui-text-muted)] capitalize">{p.data.period}</td>
-									<td class="px-5 py-3 text-[var(--ui-text-muted)] tabular-nums">
+									<td class="px-5 py-3 text-(--ui-text-muted) capitalize">{p.data.period}</td>
+									<td class="px-5 py-3 text-(--ui-text-muted) tabular-nums">
 										{p.data.durationDays ?? '∞'}d
 									</td>
 									<td class="px-5 py-3"
@@ -531,16 +531,16 @@
 						<div class="mt-3 font-display text-lg font-bold">{p.data.name}</div>
 						<div class="font-display text-3xl font-bold tabular-nums">
 							{formatMoney(p.data.price, p.data.currency || currency)}<span
-								class="text-[12px] font-medium text-[var(--ui-text-dimmed)]">/{p.data.period}</span
+								class="text-[12px] font-medium text-(--ui-text-dimmed)">/{p.data.period}</span
 							>
 						</div>
-						<div class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">
+						<div class="mt-1 text-[11.5px] text-(--ui-text-muted)">
 							{p.data.durationDays ?? '∞'} days duration{#if (p.data as any).trialDays}
 								· {(p.data as any).trialDays}d trial{/if}
 						</div>
 
 						{#if p.data.description}
-							<p class="mt-2 line-clamp-2 text-[12px] text-[var(--ui-text-muted)]">
+							<p class="mt-2 line-clamp-2 text-[12px] text-(--ui-text-muted)">
 								{p.data.description}
 							</p>
 						{/if}
@@ -549,13 +549,13 @@
 							<div class="mt-2 flex flex-wrap gap-1">
 								{#each p.data.benefits.slice(0, 4) as benefit (benefit)}
 									<span
-										class="rounded-full bg-[var(--ui-bg-accented)] px-2 py-0.5 text-[10px] font-medium text-[var(--ui-text-muted)]"
+										class="rounded-full bg-(--ui-bg-accented) px-2 py-0.5 text-[10px] font-medium text-(--ui-text-muted)"
 										>{benefit}</span
 									>
 								{/each}
 								{#if p.data.benefits.length > 4}
 									<span
-										class="rounded-full bg-[var(--ui-bg-accented)] px-2 py-0.5 text-[10px] font-medium text-[var(--ui-text-dimmed)]"
+										class="rounded-full bg-(--ui-bg-accented) px-2 py-0.5 text-[10px] font-medium text-(--ui-text-dimmed)"
 										>+{p.data.benefits.length - 4}</span
 									>
 								{/if}
@@ -563,9 +563,9 @@
 						{/if}
 
 						<div
-							class="mt-3 flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-3"
+							class="mt-3 flex items-center justify-between border-t border-(--ui-border-muted) pt-3"
 						>
-							<label class="flex items-center gap-1.5 text-[11px] text-[var(--ui-text-muted)]">
+							<label class="flex items-center gap-1.5 text-[11px] text-(--ui-text-muted)">
 								<Switch
 									checked={p.data.active ?? p.data.status === 'active'}
 									onCheckedChange={async (v) => {
@@ -612,7 +612,7 @@
 					</div>
 				{/each}
 			</div>
-			<Pagination controls={planCtrl} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
+			<Pagination controls={planCtrl} class="mt-3 rounded-xl border border-(--ui-border)" />
 		{/if}
 	{:else if tab === 'subscriptions'}
 		{#if subs.length || subCtrl.search}
@@ -653,18 +653,18 @@
 						<div class="flex items-start justify-between gap-2">
 							<div class="min-w-0">
 								<div class="truncate font-semibold">{s.data.customerName ?? '—'}</div>
-								<div class="truncate text-[12px] text-[var(--ui-text-muted)]">
+								<div class="truncate text-[12px] text-(--ui-text-muted)">
 									{s.data.membershipName ?? '—'}
 								</div>
 							</div>
 							<Badge color={statusColor(s.data.status)}>{s.data.status}</Badge>
 						</div>
-						<div class="mt-2 flex items-center gap-1 text-[11px] text-[var(--ui-text-dimmed)]">
+						<div class="mt-2 flex items-center gap-1 text-[11px] text-(--ui-text-dimmed)">
 							<Icon name="lucide:calendar-clock" class="size-3.5" />
 							{s.data.endsAt ? relativeTime(s.data.endsAt) : 'No end date'}
 						</div>
 						<div
-							class="mt-3 flex items-center justify-end gap-1 border-t border-[var(--ui-border-muted)] pt-2.5"
+							class="mt-3 flex items-center justify-end gap-1 border-t border-(--ui-border-muted) pt-2.5"
 						>
 							<Button
 								color="neutral"
@@ -697,7 +697,7 @@
 					</div>
 				{/each}
 			</div>
-			<Pagination controls={subCtrl} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
+			<Pagination controls={subCtrl} class="mt-3 rounded-xl border border-(--ui-border)" />
 		{:else}
 			<div class="data-panel">
 				<div class="overflow-x-auto">
@@ -711,7 +711,7 @@
 									applySort={subCtrl.applySort}>{t('common.customer')}</SortableTh
 								>
 								<th
-									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.plan')}</th
 								>
 								<SortableTh
@@ -721,26 +721,24 @@
 									applySort={subCtrl.applySort}>{t('common.status')}</SortableTh
 								>
 								<th
-									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.ends')}</th
 								>
 								<th
-									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-right text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.actions')}</th
 								>
 							</tr>
 						</thead>
-						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+						<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 							{#each subCtrl.pagedList as s (s.id)}
-								<tr class="hover:bg-[var(--ui-bg-accented)]/40">
+								<tr class="hover:bg-(--ui-bg-accented)/40">
 									<td class="px-5 py-3 font-semibold">{s.data.customerName ?? '—'}</td>
-									<td class="px-5 py-3 text-[var(--ui-text-muted)]"
-										>{s.data.membershipName ?? '—'}</td
-									>
+									<td class="px-5 py-3 text-(--ui-text-muted)">{s.data.membershipName ?? '—'}</td>
 									<td class="px-5 py-3"
 										><Badge color={statusColor(s.data.status)}>{s.data.status}</Badge></td
 									>
-									<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
+									<td class="px-5 py-3 text-right text-[12px] text-(--ui-text-dimmed)"
 										>{s.data.endsAt ? relativeTime(s.data.endsAt) : '—'}</td
 									>
 									<td class="px-5 py-3">
@@ -817,7 +815,7 @@
 				{#each ciCtrl.pagedList as c (c.id)}
 					<div class="metric-card flex items-center gap-3 p-4">
 						<div
-							class="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]"
+							class="grid size-10 shrink-0 place-items-center rounded-full bg-(--ui-bg-accented) text-(--ui-text-muted)"
 						>
 							<Icon
 								name={c.data.result === 'denied'
@@ -830,7 +828,7 @@
 						</div>
 						<div class="min-w-0 flex-1">
 							<div class="truncate font-semibold">{c.data.customerName ?? '—'}</div>
-							<div class="text-[11px] text-[var(--ui-text-dimmed)]">
+							<div class="text-[11px] text-(--ui-text-dimmed)">
 								{relativeTime(c.data.occurredAt)}
 							</div>
 						</div>
@@ -838,7 +836,7 @@
 					</div>
 				{/each}
 			</div>
-			<Pagination controls={ciCtrl} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
+			<Pagination controls={ciCtrl} class="mt-3 rounded-xl border border-(--ui-border)" />
 		{:else}
 			<div class="data-panel">
 				<div class="overflow-x-auto">
@@ -846,11 +844,11 @@
 						<thead>
 							<tr>
 								<th
-									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.customer')}</th
 								>
 								<th
-									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+									class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 									>{t('common.result')}</th
 								>
 								<SortableTh
@@ -863,14 +861,14 @@
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr>
 						</thead>
-						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+						<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 							{#each ciCtrl.pagedList as c (c.id)}
 								<tr>
 									<td class="px-5 py-3 font-semibold">{c.data.customerName ?? '—'}</td>
 									<td class="px-5 py-3"
 										><Badge color={statusColor(c.data.result)}>{c.data.result}</Badge></td
 									>
-									<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
+									<td class="px-5 py-3 text-right text-[12px] text-(--ui-text-dimmed)"
 										>{relativeTime(c.data.occurredAt)}</td
 									>
 									<td class="px-5 py-3 text-right">
@@ -920,26 +918,24 @@
 					<Icon name={mMode === 'gym' ? 'lucide:dumbbell' : 'lucide:crown'} class="size-5" />
 				</div>
 				<label class="flex-1">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Plan name</span
 					>
 					<Input bind:value={mName} class="w-full" placeholder="Gold Member" />
 				</label>
 				<label>
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Color</span
-					>
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Color</span>
 					<input
 						type="color"
 						bind:value={mColor}
-						class="h-9.5 w-14 cursor-pointer rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-1"
+						class="h-9.5 w-14 cursor-pointer rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) p-1"
 					/>
 				</label>
 			</div>
 
 			{#if mDescription !== undefined}
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.description')}</span
 					>
 					<Input
@@ -954,7 +950,7 @@
 
 			<!-- Mode selector -->
 			<div>
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.mode')}</span
 				>
 				<div class="grid grid-cols-3 gap-2">
@@ -965,7 +961,7 @@
 							class="flex flex-col items-center gap-1 rounded-lg border-2 px-2 py-2.5 text-[11px] font-medium transition-colors {mMode ===
 							m.v
 								? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
-								: 'border-[var(--ui-border)] hover:border-[var(--ui-border-accented)]'}"
+								: 'border-(--ui-border) hover:border-(--ui-border-accented)'}"
 						>
 							<Icon name={m.i} class="size-4" />
 							{m.l}
@@ -976,12 +972,12 @@
 
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Price ({currency})</span
 					><Input bind:value={mPrice} type="number" min="0" class="w-full" /></label
 				>
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.period')}</span
 					><Select
 						bind:value={mPeriod}
@@ -999,12 +995,12 @@
 			</div>
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Duration (days)</span
 					><Input bind:value={mDays} type="number" min="1" class="w-full" /></label
 				>
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Trial period (days)</span
 					><Input
 						bind:value={mTrialDays}
@@ -1018,9 +1014,7 @@
 
 			<!-- Benefits -->
 			<div>
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Benefits</span
-				>
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Benefits</span>
 				<div class="space-y-2">
 					{#each mBenefits as benefit, i (i)}
 						<div class="flex gap-2">
@@ -1050,7 +1044,7 @@
 			</div>
 
 			<!-- Active toggle -->
-			<div class="flex items-center justify-between rounded-xl bg-[var(--ui-bg-accented)] p-3">
+			<div class="flex items-center justify-between rounded-xl bg-(--ui-bg-accented) p-3">
 				<span class="text-[12px] font-semibold">Active</span>
 				<Switch bind:checked={mActive} />
 			</div>
@@ -1058,12 +1052,12 @@
 	{:else if dlgTab === 'subscriptions'}
 		<div class="space-y-3">
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.customer')}</span
 				><Input bind:value={subCust} class="w-full" /></label
 			>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.plan')}</span
 				>
 				<Input bind:value={subPlan} list="planslist" class="w-full" />
@@ -1073,7 +1067,7 @@
 			</label>
 			{#if isEditing}
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.status')}</span
 					><Select
 						bind:value={subStatus}
@@ -1088,7 +1082,7 @@
 					/></label
 				>
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Extend duration (days)</span
 					><Input
 						bind:value={subExtendDays}
@@ -1103,12 +1097,12 @@
 	{:else}
 		<div class="space-y-3">
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.customer')}</span
 				><Input bind:value={ciCust} class="w-full" /></label
 			>
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.result')}</span
 				><Select
 					bind:value={ciResult}

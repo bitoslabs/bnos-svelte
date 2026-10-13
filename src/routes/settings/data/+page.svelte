@@ -175,20 +175,20 @@
 				<h2 class="font-display text-[15px] font-semibold tracking-tight">
 					{t('settings.storageUsage')}
 				</h2>
-				<p class="text-[12px] text-[var(--ui-text-muted)]">{t('settings.storageUsageDesc')}</p>
+				<p class="text-[12px] text-(--ui-text-muted)">{t('settings.storageUsageDesc')}</p>
 			</div>
 		</div>
 		<div class="flex items-baseline gap-2">
 			<span class="font-display text-2xl font-bold tabular-nums">{storageKb}</span>
-			<span class="text-[13px] text-[var(--ui-text-muted)]">{t('settings.kbUsed')}</span>
+			<span class="text-[13px] text-(--ui-text-muted)">{t('settings.kbUsed')}</span>
 		</div>
-		<div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--ui-bg-accented)]">
+		<div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-(--ui-bg-accented)">
 			<div
 				class="h-full rounded-full bg-primary-500 transition-all"
 				style="width: {Math.min(100, (storageKb / 5120) * 100)}%"
 			></div>
 		</div>
-		<p class="mt-1.5 text-[11px] text-[var(--ui-text-dimmed)]">
+		<p class="mt-1.5 text-[11px] text-(--ui-text-dimmed)">
 			{storageKb < 50 ? t('settings.storageLight') : t('settings.storageHeavy')}
 		</p>
 	</section>
@@ -201,13 +201,13 @@
 				<h2 class="font-display text-[15px] font-semibold tracking-tight">
 					{t('settings.localRecords')}
 				</h2>
-				<p class="text-[12px] text-[var(--ui-text-muted)]">{t('settings.localRecordsDesc')}</p>
+				<p class="text-[12px] text-(--ui-text-muted)">{t('settings.localRecordsDesc')}</p>
 			</div>
 		</div>
 		<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
 			{#each counts as c (c.t)}
-				<div class="rounded-lg bg-[var(--ui-bg-muted)] p-3">
-					<div class="font-mono text-[11px] text-[var(--ui-text-dimmed)]">{c.t}</div>
+				<div class="rounded-lg bg-(--ui-bg-muted) p-3">
+					<div class="font-mono text-[11px] text-(--ui-text-dimmed)">{c.t}</div>
 					<div class="font-display text-lg font-bold tabular-nums">{c.n}</div>
 				</div>
 			{/each}
@@ -222,7 +222,7 @@
 				<h2 class="font-display text-[15px] font-semibold tracking-tight">
 					{t('settings.backupRestore')}
 				</h2>
-				<p class="text-[12px] text-[var(--ui-text-muted)]">
+				<p class="text-[12px] text-(--ui-text-muted)">
 					{t('settings.backupRestoreDesc')}
 				</p>
 			</div>
@@ -247,12 +247,12 @@
 	<!-- Danger zone -->
 	<section class="surface-card danger-surface p-5">
 		<div class="mb-3 flex items-center gap-3">
-			<Icon name="lucide:triangle-alert" class="size-5 text-[var(--tone-error-text)]" />
+			<Icon name="lucide:triangle-alert" class="size-5 text-(--tone-error-text)" />
 			<div>
 				<h2 class="font-display text-[15px] font-semibold tracking-tight">
 					{t('settings.dangerZone')}
 				</h2>
-				<p class="text-[12px] text-[var(--ui-text-muted)]">{t('settings.wipeLocalDataDesc')}</p>
+				<p class="text-[12px] text-(--ui-text-muted)">{t('settings.wipeLocalDataDesc')}</p>
 			</div>
 		</div>
 		<Button color="error" variant="subtle" icon="lucide:trash-2" onclick={wipeData}

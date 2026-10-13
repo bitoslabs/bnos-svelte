@@ -61,13 +61,13 @@
 				class="rounded-xl border p-3 text-left transition-colors {media.state.defaultProvider ===
 				'none'
 					? 'border-primary-500 bg-primary-500/10'
-					: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
+					: 'border-(--ui-border) hover:bg-(--ui-bg-accented)'}"
 			>
 				<div class="flex items-center gap-2">
-					<Icon name="lucide:flower-2" class="size-4 text-[var(--ui-text-muted)]" />
+					<Icon name="lucide:flower-2" class="size-4 text-(--ui-text-muted)" />
 					<span class="text-[13px] font-bold">Free Blossom</span>
 				</div>
-				<p class="mt-1 text-[11px] text-[var(--ui-text-muted)]">
+				<p class="mt-1 text-[11px] text-(--ui-text-muted)">
 					Direct PUT upload, authorized by your Nostr identity
 				</p>
 			</button>
@@ -78,7 +78,7 @@
 					class="rounded-xl border p-3 text-left transition-colors {media.state.defaultProvider ===
 					p.id
 						? 'border-primary-500 bg-primary-500/10'
-						: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
+						: 'border-(--ui-border) hover:bg-(--ui-bg-accented)'}"
 				>
 					<div class="flex items-center gap-2">
 						<Icon name={p.icon} class="size-4" />
@@ -89,7 +89,7 @@
 							<Badge color="warning" class="ml-auto">{t('settings.setup')}</Badge>
 						{/if}
 					</div>
-					<p class="mt-1 text-[11px] text-[var(--ui-text-muted)]">{p.description}</p>
+					<p class="mt-1 text-[11px] text-(--ui-text-muted)">{p.description}</p>
 				</button>
 			{/each}
 		</div>
@@ -113,14 +113,14 @@
 		{/snippet}
 
 		<div class="space-y-4 p-5">
-			<p class="text-[12px] text-[var(--ui-text-muted)]">
+			<p class="text-[12px] text-(--ui-text-muted)">
 				Two options: (1) an <strong>unsigned upload preset</strong> (safest — no secret in the
 				browser), or (2) your <strong>API key + API secret</strong> for signed uploads with full control.
 				The secret is stored only on this device.
 			</p>
 			<div class="grid gap-4 sm:grid-cols-2">
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.cloudName')}</span
 					>
 					<Input
@@ -132,7 +132,7 @@
 					/>
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.uploadPreset')}</span
 					>
 					<Input
@@ -144,7 +144,7 @@
 					/>
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.apiKey')}</span
 					>
 					<Input
@@ -158,7 +158,7 @@
 				</label>
 				<label class="block">
 					<span
-						class="mb-1.5 flex items-center justify-between text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						class="mb-1.5 flex items-center justify-between text-[12px] font-semibold text-(--ui-text-muted)"
 					>
 						<span>{t('settings.apiSecret')}</span>
 						<button
@@ -181,7 +181,7 @@
 					/>
 				</label>
 				<label class="block sm:col-span-2">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.folder')}</span
 					>
 					<Input
@@ -193,7 +193,7 @@
 					/>
 				</label>
 			</div>
-			<div class="flex gap-2 border-t border-[var(--ui-border-muted)] pt-4">
+			<div class="flex gap-2 border-t border-(--ui-border-muted) pt-4">
 				<Button
 					color="primary"
 					variant="subtle"
@@ -224,13 +224,13 @@
 		{/snippet}
 
 		<div class="space-y-4 p-5">
-			<p class="text-[12px] text-[var(--ui-text-muted)]">
+			<p class="text-[12px] text-(--ui-text-muted)">
 				Works with AWS S3 and S3-compatible storage. Enable CORS on the bucket to allow PUT requests
 				from this site. The secret key is stored locally on this device.
 			</p>
 			<div class="grid gap-4 sm:grid-cols-2">
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.bucket')}</span
 					>
 					<Input
@@ -242,7 +242,7 @@
 					/>
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.region')}</span
 					>
 					<Input
@@ -254,7 +254,7 @@
 					/>
 				</label>
 				<label class="block sm:col-span-2">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.endpoint')}</span
 					>
 					<Input
@@ -267,7 +267,7 @@
 					/>
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.accessKey')}</span
 					>
 					<Input
@@ -281,7 +281,7 @@
 				</label>
 				<label class="block">
 					<span
-						class="mb-1.5 flex items-center justify-between text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						class="mb-1.5 flex items-center justify-between text-[12px] font-semibold text-(--ui-text-muted)"
 					>
 						<span>{t('settings.secretKey')}</span>
 						<button
@@ -304,7 +304,7 @@
 					/>
 				</label>
 				<label class="block sm:col-span-2">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.publicUrlBase')}</span
 					>
 					<Input
@@ -317,7 +317,7 @@
 					/>
 				</label>
 				<label class="block sm:col-span-2">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.folderPrefix')}</span
 					>
 					<Input
@@ -329,7 +329,7 @@
 					/>
 				</label>
 			</div>
-			<div class="flex gap-2 border-t border-[var(--ui-border-muted)] pt-4">
+			<div class="flex gap-2 border-t border-(--ui-border-muted) pt-4">
 				<Button
 					color="primary"
 					variant="subtle"
@@ -358,7 +358,7 @@
 	<!-- Danger zone -->
 	<SettingsSection danger title={t('common.eraseCredentials')} icon="lucide:shield-alert">
 		<div class="flex items-center justify-between gap-4 p-5">
-			<p class="text-[12px] text-[var(--ui-text-muted)]">
+			<p class="text-[12px] text-(--ui-text-muted)">
 				{t('settings.eraseCredentialsDesc')}
 			</p>
 			<Button

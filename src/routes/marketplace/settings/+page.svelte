@@ -100,9 +100,7 @@
 <div class="space-y-5">
 	<div>
 		<h2 class="font-display text-lg font-bold tracking-tight">{t('nav.storeSettings')}</h2>
-		<p class="text-[12px] text-[var(--ui-text-muted)]">
-			Storefront, fulfillment & sync preferences
-		</p>
+		<p class="text-[12px] text-(--ui-text-muted)">Storefront, fulfillment & sync preferences</p>
 	</div>
 
 	<!-- Storefront -->
@@ -114,13 +112,13 @@
 		<div class="space-y-4 px-5 py-4">
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Store name</span
 					>
 					<Input bind:value={s.storeName} oninput={touch} class="w-full" />
 				</label>
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Support email</span
 					>
 					<Input
@@ -133,9 +131,7 @@
 				</label>
 			</div>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Tagline</span
-				>
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Tagline</span>
 				<Input
 					bind:value={s.tagline}
 					oninput={touch}
@@ -144,7 +140,7 @@
 				/>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Support phone</span
 				>
 				<Input
@@ -179,11 +175,11 @@
 					oninput={touch}
 					class="w-20 text-center"
 				/>
-				<span class="text-[11.5px] text-[var(--ui-text-muted)]">days</span>
+				<span class="text-[11.5px] text-(--ui-text-muted)">days</span>
 			</div>
 		</SettingRow>
 		<div class="space-y-3 px-5 py-4">
-			<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Shipping origin</span>
+			<span class="text-[12px] font-semibold text-(--ui-text-muted)">Shipping origin</span>
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 				<Input
 					bind:value={s.originCity}
@@ -248,11 +244,11 @@
 					oninput={touch}
 					class="w-20 text-center"
 				/>
-				<span class="text-[11.5px] text-[var(--ui-text-muted)]">★ & below</span>
+				<span class="text-[11.5px] text-(--ui-text-muted)">★ & below</span>
 			</div>
 		</SettingRow>
 		<div class="space-y-2 px-5 py-4">
-			<span class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="block text-[12px] font-semibold text-(--ui-text-muted)"
 				>Auto-reply template (optional)</span
 			>
 			<Input

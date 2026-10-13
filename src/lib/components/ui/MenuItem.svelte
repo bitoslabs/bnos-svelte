@@ -14,9 +14,8 @@
 		base: 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] font-semibold transition-colors focus-brand disabled:pointer-events-none disabled:opacity-50',
 		variants: {
 			tone: {
-				default:
-					'text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)] hover:text-[var(--ui-text)]',
-				danger: 'text-[var(--tone-error-text)] hover:bg-[var(--tone-error-bg)]',
+				default: 'text-(--ui-text-muted) hover:bg-(--interactive-hover-bg) hover:text-(--ui-text)',
+				danger: 'text-(--tone-error-text) hover:bg-(--tone-error-bg)',
 				accent: 'text-primary-600 hover:bg-primary-500/10 dark:text-primary-400'
 			}
 		},

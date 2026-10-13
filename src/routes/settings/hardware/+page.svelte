@@ -116,11 +116,11 @@
 	/>
 
 	<!-- Printer summary (single source of truth lives in /settings/printers) -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:printer" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.receiptPrinters')}</h2>
-			<span class="ml-auto text-[11px] text-[var(--ui-text-dimmed)]"
+			<span class="ml-auto text-[11px] text-(--ui-text-dimmed)"
 				>{t('settings.printersActive', {
 					active: printers.filter((p) => p.enabled).length,
 					total: printers.length
@@ -139,7 +139,7 @@
 						<p class="truncate text-[13px] font-semibold">{activePrinter.name}</p>
 						<Badge color="primary">{t('settings.defaultPrinter')}</Badge>
 					</div>
-					<p class="mt-0.5 text-[10.5px] text-[var(--ui-text-dimmed)]">
+					<p class="mt-0.5 text-[10.5px] text-(--ui-text-dimmed)">
 						{meta.label} · {activePrinter.paperSize}
 						{#if activePrinter.connectionType === 'network' && activePrinter.ip}
 							· <span class="font-mono">{activePrinter.ip}:{activePrinter.port || '9100'}</span>
@@ -167,13 +167,13 @@
 		<div class="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
 			<div class="flex flex-wrap items-center gap-2 text-[10.5px]">
 				<span
-					class="inline-flex items-center gap-1 rounded-md bg-[var(--ui-bg-accented)] px-2 py-1 font-semibold text-[var(--ui-text-dimmed)]"
+					class="inline-flex items-center gap-1 rounded-md bg-(--ui-bg-accented) px-2 py-1 font-semibold text-(--ui-text-dimmed)"
 				>
 					<Icon name="lucide:route" class="size-3" />{t('settings.routing')}:
 					{activeType === 'none' ? 'off' : activeType}</span
 				>
 				<span
-					class="inline-flex items-center gap-1 rounded-md bg-[var(--ui-bg-accented)] px-2 py-1 font-semibold text-[var(--ui-text-dimmed)]"
+					class="inline-flex items-center gap-1 rounded-md bg-(--ui-bg-accented) px-2 py-1 font-semibold text-(--ui-text-dimmed)"
 				>
 					<Icon name="lucide:ruler" class="size-3" />{activePaper}</span
 				>
@@ -188,14 +188,14 @@
 		</div>
 	</section>
 
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:laptop-minimal" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.terminalIdentity')}</h2>
 		</div>
 		<div class="grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('settings.deviceCodeOptional')}</span
 				>
 				<Input
@@ -207,19 +207,17 @@
 						deviceCode = normalizeDeviceCode(deviceCode);
 					}}
 				/>
-				<p class="mt-1.5 text-[11px] text-[var(--ui-text-dimmed)]">
+				<p class="mt-1.5 text-[11px] text-(--ui-text-dimmed)">
 					{t('settings.deviceCodeHint')}
 				</p>
 			</label>
-			<div
-				class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-4 py-3 text-[12px]"
-			>
-				<div class="font-semibold text-[var(--ui-text-muted)]">{t('settings.activeCode')}</div>
+			<div class="rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) px-4 py-3 text-[12px]">
+				<div class="font-semibold text-(--ui-text-muted)">{t('settings.activeCode')}</div>
 				<div class="mt-1 font-mono text-[14px] font-bold">{activeDeviceCode}</div>
 			</div>
 		</div>
 		<div class="flex items-center justify-between px-5 py-4">
-			<span class="text-[12px] text-[var(--ui-text-muted)]"
+			<span class="text-[12px] text-(--ui-text-muted)"
 				>Example number: `ORD-260803-MAIN-{activeDeviceCode}-0001`</span
 			>
 			<Button
@@ -238,7 +236,7 @@
 	</section>
 
 	<!-- Peripherals -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:cpu" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.peripherals')}</h2>
@@ -253,15 +251,19 @@
 					<Icon name="lucide:archive" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">{t('settings.cashDrawer')}</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+					<div class="text-[13px] font-semibold">{t('settings.cashDrawer')}</div>
+					<p class="text-[11px] text-(--ui-text-dimmed)">
 						{activePrinter
 							? t('settings.cashDrawerTied', { name: activePrinter.name })
 							: t('settings.cashDrawerPerPrinter')}
 					</p>
 				</div>
 			</div>
-			<Switch checked={cashDrawerOn} onCheckedChange={toggleCashDrawer} />
+			<Switch
+				checked={cashDrawerOn}
+				onCheckedChange={toggleCashDrawer}
+				label={t('settings.cashDrawer')}
+			/>
 		</div>
 
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
@@ -272,11 +274,15 @@
 					<Icon name="lucide:scan-barcode" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">{t('settings.barcodeScanner')}</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.barcodeScannerDesc')}</p>
+					<div class="text-[13px] font-semibold">{t('settings.barcodeScanner')}</div>
+					<p class="text-[11px] text-(--ui-text-dimmed)">{t('settings.barcodeScannerDesc')}</p>
 				</div>
 			</div>
-			<Switch bind:checked={barcodeScanner} onCheckedChange={save} />
+			<Switch
+				bind:checked={barcodeScanner}
+				onCheckedChange={save}
+				label={t('settings.barcodeScanner')}
+			/>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div class="flex items-start gap-3">
@@ -286,13 +292,17 @@
 					<Icon name="lucide:monitor" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">{t('settings.customerDisplay')}</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+					<div class="text-[13px] font-semibold">{t('settings.customerDisplay')}</div>
+					<p class="text-[11px] text-(--ui-text-dimmed)">
 						{t('settings.customerDisplayDesc')}
 					</p>
 				</div>
 			</div>
-			<Switch bind:checked={customerDisplay} onCheckedChange={save} />
+			<Switch
+				bind:checked={customerDisplay}
+				onCheckedChange={save}
+				label={t('settings.customerDisplay')}
+			/>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div class="flex items-start gap-3">
@@ -302,11 +312,15 @@
 					<Icon name="lucide:scale" class="size-4" />
 				</div>
 				<div>
-					<label class="text-[13px] font-semibold">{t('settings.weighingScale')}</label>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.weighingScaleDesc')}</p>
+					<div class="text-[13px] font-semibold">{t('settings.weighingScale')}</div>
+					<p class="text-[11px] text-(--ui-text-dimmed)">{t('settings.weighingScaleDesc')}</p>
 				</div>
 			</div>
-			<Switch bind:checked={scaleConnected} onCheckedChange={save} />
+			<Switch
+				bind:checked={scaleConnected}
+				onCheckedChange={save}
+				label={t('settings.weighingScale')}
+			/>
 		</div>
 	</section>
 

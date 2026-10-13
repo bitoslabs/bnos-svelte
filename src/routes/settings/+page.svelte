@@ -138,24 +138,20 @@
 	<SettingsNav class="lg:hidden" />
 
 	<!-- Organization (read-only — owned by Workspace) -->
-	<section class="settings-home-card surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="settings-home-card surface-card divide-y divide-(--ui-border-muted)">
 		<div class="settings-home-card-header flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:building-2" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.organizationHeading')}</h2>
-			<span class="ml-auto text-[10px] font-medium text-[var(--ui-text-dimmed)]"
-				>GLO · kind 30078</span
-			>
+			<span class="ml-auto text-[10px] font-medium text-(--ui-text-dimmed)">GLO · kind 30078</span>
 		</div>
 		<div class="settings-home-org-grid grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-2">
 			{#each orgRows as row (row.label)}
 				<div
-					class="settings-home-org-item flex items-center gap-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3.5 py-2.5"
+					class="settings-home-org-item flex items-center gap-3 rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) px-3.5 py-2.5"
 				>
-					<Icon name={row.icon} class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
+					<Icon name={row.icon} class="size-4 shrink-0 text-(--ui-text-dimmed)" />
 					<div class="min-w-0">
-						<p
-							class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-						>
+						<p class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 							{row.label}
 						</p>
 						<p class="truncate text-[13px] font-bold capitalize">{row.value}</p>
@@ -197,13 +193,13 @@
 				<h2 class="font-display text-[15px] font-semibold tracking-tight">
 					{t('profile.nostrIdentity')}
 				</h2>
-				<p class="text-[12px] text-[var(--ui-text-muted)]">{t('profile.identitySigns')}</p>
+				<p class="text-[12px] text-(--ui-text-muted)">{t('profile.identitySigns')}</p>
 			</div>
 			<Menu
 				id="settings-identity"
 				label={t('settings.identityActions')}
-				triggerClass="grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
-				triggerActiveClass="bg-[var(--ui-bg-accented)] text-[var(--ui-text)]"
+				triggerClass="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
+				triggerActiveClass="bg-(--ui-bg-accented) text-(--ui-text)"
 			>
 				{#snippet trigger()}<Icon name="lucide:ellipsis-vertical" class="size-4" />{/snippet}
 				<MenuItem icon="lucide:copy" onclick={copyNpub}>{t('settings.copyNpub')}</MenuItem>
@@ -224,13 +220,13 @@
 			</Menu>
 		</div>
 		<div
-			class="settings-home-identity-box flex items-center justify-between gap-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-4 py-3"
+			class="settings-home-identity-box flex items-center justify-between gap-3 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-4 py-3"
 		>
 			<div class="min-w-0">
 				<div class="truncate font-mono text-[13px] font-semibold">
 					{truncateNpub(session.npub ?? '', 18, 10)}
 				</div>
-				<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
+				<div class="text-[11.5px] text-(--ui-text-dimmed)">
 					{session.loginMethod === 'extension'
 						? t('settings.nip07Extension')
 						: t('settings.privateKey')}
@@ -245,13 +241,13 @@
 		<div class="settings-home-panel-header mb-4 flex items-center gap-3">
 			<Icon
 				name="lucide:shield-check"
-				class="size-5 {encryptionOn ? 'text-emerald-500' : 'text-[var(--ui-text-dimmed)]'}"
+				class="size-5 {encryptionOn ? 'text-emerald-500' : 'text-(--ui-text-dimmed)'}"
 			/>
 			<div class="min-w-0 flex-1">
 				<h2 class="font-display text-[15px] font-semibold tracking-tight">
 					{t('settings.payloadEncryption')}
 				</h2>
-				<p class="text-[12px] text-[var(--ui-text-muted)]">
+				<p class="text-[12px] text-(--ui-text-muted)">
 					{t('settings.payloadEncryptionDesc')}
 				</p>
 			</div>
@@ -261,13 +257,11 @@
 				<Badge color="warning">{t('settings.off')}</Badge>
 			{/if}
 		</div>
-		<div
-			class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-3.5 text-[12px]"
-		>
+		<div class="rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) p-3.5 text-[12px]">
 			<div class="flex items-center justify-between gap-3">
 				<div class="min-w-0">
 					<p class="font-semibold">{t('settings.syncEncryption')}</p>
-					<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
+					<p class="mt-0.5 text-[11.5px] text-(--ui-text-dimmed)">
 						{encryptionOn ? t('settings.syncEncryptionOn') : t('settings.syncEncryptionOff')}
 					</p>
 				</div>
@@ -275,10 +269,11 @@
 					type="button"
 					role="switch"
 					aria-checked={encryptionOn}
+					aria-label={t('settings.syncEncryption')}
 					onclick={() => toggleEncryption(!encryptionOn)}
 					class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors {encryptionOn
 						? 'bg-emerald-500'
-						: 'bg-[var(--ui-border-accented)]'}"
+						: 'bg-(--ui-border-accented)'}"
 				>
 					<span
 						class="inline-block size-4.5 translate-x-0.5 rounded-full bg-white transition-transform {encryptionOn
@@ -291,7 +286,7 @@
 				<span
 					class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-semibold {cipherActive()
 						? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-						: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-dimmed)]'}"
+						: 'bg-(--ui-bg-accented) text-(--ui-text-dimmed)'}"
 				>
 					<Icon name="lucide:key-round" class="size-3" />
 					{cipherActive()
@@ -301,12 +296,12 @@
 							: t('settings.noOrgKey')}
 				</span>
 				<span
-					class="inline-flex items-center gap-1 rounded-md bg-[var(--ui-bg-accented)] px-2 py-0.5 font-semibold text-[var(--ui-text-dimmed)]"
+					class="inline-flex items-center gap-1 rounded-md bg-(--ui-bg-accented) px-2 py-0.5 font-semibold text-(--ui-text-dimmed)"
 				>
 					<Icon name="lucide:lock" class="size-3" />AES-256-GCM
 				</span>
 				<span
-					class="inline-flex items-center gap-1 rounded-md bg-[var(--ui-bg-accented)] px-2 py-0.5 font-semibold text-[var(--ui-text-dimmed)]"
+					class="inline-flex items-center gap-1 rounded-md bg-(--ui-bg-accented) px-2 py-0.5 font-semibold text-(--ui-text-dimmed)"
 				>
 					<Icon name="lucide:users" class="size-3" />NIP-44 grants
 				</span>
@@ -315,7 +310,7 @@
 			<!-- Staff key-distribution status + re-share (owner/admin only) -->
 			{#if canDistributeKey()}
 				<div
-					class="mt-3 flex flex-col gap-2 rounded-lg border border-[var(--ui-border)] p-3 sm:flex-row sm:items-center sm:justify-between"
+					class="mt-3 flex flex-col gap-2 rounded-lg border border-(--ui-border) p-3 sm:flex-row sm:items-center sm:justify-between"
 				>
 					<div class="min-w-0">
 						<p class="text-[12px] font-semibold">
@@ -325,7 +320,7 @@
 								{t('settings.staffCanBeGranted', { n: staffEligible })}
 							{/if}
 						</p>
-						<p class="mt-0.5 text-[10.5px] text-[var(--ui-text-dimmed)]">
+						<p class="mt-0.5 text-[10.5px] text-(--ui-text-dimmed)">
 							{#if !encryptionOn}
 								{t('settings.encryptionOnTurnOn')}
 							{:else if staffEligible === 0}
@@ -359,10 +354,10 @@
 	<div class="flex flex-col items-center gap-4 py-1">
 		<QrCode value={session.npub ?? ''} size={220} badge="store" />
 		<div class="text-center">
-			<p class="font-mono text-[11px] text-[var(--ui-text-muted)]">
+			<p class="font-mono text-[11px] text-(--ui-text-muted)">
 				{truncateNpub(session.npub ?? '', 24, 12)}
 			</p>
-			<p class="mt-1 text-[11px] text-[var(--ui-text-dimmed)]">
+			<p class="mt-1 text-[11px] text-(--ui-text-dimmed)">
 				{t('settings.scanToVerify')}
 			</p>
 		</div>

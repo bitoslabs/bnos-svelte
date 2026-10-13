@@ -176,7 +176,7 @@
 	/>
 
 	<!-- Identity & Avatar -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:user-circle" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('profile.nostrIdentity')}</h2>
@@ -207,7 +207,7 @@
 						{snap ? displayName || username || t('profile.unnamedUser') : t('profile.notSignedIn')}
 					</p>
 					{#if snap}
-						<p class="mt-0.5 truncate font-mono text-[11px] text-[var(--ui-text-muted)]">
+						<p class="mt-0.5 truncate font-mono text-[11px] text-(--ui-text-muted)">
 							{truncateNpub(snap.npub, 20, 12)}
 						</p>
 						<div class="mt-1.5 flex items-center gap-2">
@@ -222,7 +222,7 @@
 							{/if}
 						</div>
 					{:else}
-						<p class="mt-0.5 text-[11px] text-[var(--ui-text-dimmed)]">
+						<p class="mt-0.5 text-[11px] text-(--ui-text-dimmed)">
 							{t('profile.signInToManage')}
 						</p>
 					{/if}
@@ -233,10 +233,10 @@
 		<!-- npub display + copy -->
 		{#if snap}
 			<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
-				<label class="w-36 shrink-0 text-[13px] font-semibold">{t('profile.publicKey')}</label>
+				<div class="w-36 shrink-0 text-[13px] font-semibold">{t('profile.publicKey')}</div>
 				<div class="flex-1">
 					<div
-						class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2"
+						class="flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-2"
 					>
 						<code class="min-w-0 flex-1 truncate font-mono text-[11px]">
 							{truncateNpub(snap.npub, 20, 12)}
@@ -244,7 +244,7 @@
 						<button
 							type="button"
 							onclick={() => copy(snap.npub, 'npub')}
-							class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-primary-500/10 hover:text-primary-500"
+							class="grid size-7 shrink-0 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-primary-500/10 hover:text-primary-500"
 							title={t('settings.copyNpub')}
 						>
 							<Icon
@@ -260,22 +260,20 @@
 		<!-- nsec (only if available) -->
 		{#if snap?.nsec}
 			<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
-				<label class="w-36 shrink-0 text-[13px] font-semibold text-[var(--tone-warning-text)]"
-					>{t('profile.secretKey')}</label
-				>
+				<div class="w-36 shrink-0 text-[13px] font-semibold text-(--tone-warning-text)">
+					{t('profile.secretKey')}
+				</div>
 				<div class="flex-1">
 					<div
-						class="flex items-center gap-2 rounded-lg border border-[var(--tone-warning-bg)] bg-[var(--tone-warning-bg)]/50 px-3 py-2"
+						class="flex items-center gap-2 rounded-lg border border-(--tone-warning-bg) bg-(--tone-warning-bg)/50 px-3 py-2"
 					>
-						<code
-							class="min-w-0 flex-1 truncate font-mono text-[11px] text-[var(--tone-warning-text)]"
-						>
+						<code class="min-w-0 flex-1 truncate font-mono text-[11px] text-(--tone-warning-text)">
 							{showNsec ? snap.nsec : '•'.repeat(32) + snap.nsec.slice(-6)}
 						</code>
 						<button
 							type="button"
 							onclick={() => (showNsec = !showNsec)}
-							class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--tone-warning-text)] transition-colors hover:bg-[var(--tone-warning-bg)]"
+							class="grid size-7 shrink-0 place-items-center rounded-md text-(--tone-warning-text) transition-colors hover:bg-(--tone-warning-bg)"
 							title={showNsec ? t('profile.hide') : t('profile.reveal')}
 						>
 							<Icon name={showNsec ? 'lucide:eye-off' : 'lucide:eye'} class="size-3.5" />
@@ -292,7 +290,7 @@
 									);
 								}
 							}}
-							class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--tone-warning-text)] transition-colors hover:bg-[var(--tone-warning-bg)]"
+							class="grid size-7 shrink-0 place-items-center rounded-md text-(--tone-warning-text) transition-colors hover:bg-(--tone-warning-bg)"
 							title={t('settings.copyNsec')}
 						>
 							<Icon
@@ -307,7 +305,7 @@
 	</section>
 
 	<!-- Profile metadata -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:id-card" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('profile.metadata')}</h2>
@@ -316,30 +314,40 @@
 		<!-- Display name -->
 		<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
 			<div class="w-36 shrink-0">
-				<label class="text-[13px] font-semibold">{t('common.displayName')}</label>
+				<label for="profile-display-name" class="text-[13px] font-semibold"
+					>{t('common.displayName')}</label
+				>
 			</div>
 			<div class="flex-1">
-				<Input bind:value={displayName} placeholder="My Store" class="w-full" />
+				<Input
+					id="profile-display-name"
+					bind:value={displayName}
+					placeholder="My Store"
+					class="w-full"
+				/>
 			</div>
 		</div>
 
 		<!-- Username -->
 		<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
 			<div class="w-36 shrink-0">
-				<label class="text-[13px] font-semibold">{t('profile.username')}</label>
+				<label for="profile-username" class="text-[13px] font-semibold"
+					>{t('profile.username')}</label
+				>
 			</div>
 			<div class="flex-1">
-				<Input bind:value={username} placeholder="mystore" class="w-full" />
+				<Input id="profile-username" bind:value={username} placeholder="mystore" class="w-full" />
 			</div>
 		</div>
 
 		<!-- About -->
 		<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-start">
 			<div class="w-36 shrink-0">
-				<label class="text-[13px] font-semibold">{t('common.bio')}</label>
+				<label for="profile-bio" class="text-[13px] font-semibold">{t('common.bio')}</label>
 			</div>
 			<div class="flex-1">
 				<Input
+					id="profile-bio"
 					textarea
 					bind:value={about}
 					placeholder={t('settings.briefDesc')}
@@ -352,7 +360,7 @@
 		<!-- Avatar -->
 		<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-start">
 			<div class="w-36 shrink-0">
-				<label class="text-[13px] font-semibold">{t('profile.avatar')}</label>
+				<div class="text-[13px] font-semibold">{t('profile.avatar')}</div>
 			</div>
 			<div class="flex-1">
 				<MediaImageInput
@@ -368,29 +376,39 @@
 		<!-- Website -->
 		<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
 			<div class="w-36 shrink-0">
-				<label class="text-[13px] font-semibold">{t('common.website')}</label>
+				<label for="profile-website" class="text-[13px] font-semibold">{t('common.website')}</label>
 			</div>
 			<div class="flex-1">
-				<Input bind:value={website} placeholder="https://my-store.com" class="w-full" />
+				<Input
+					id="profile-website"
+					bind:value={website}
+					placeholder="https://my-store.com"
+					class="w-full"
+				/>
 			</div>
 		</div>
 
 		<!-- Lightning address -->
 		<div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
 			<div class="w-36 shrink-0">
-				<label class="text-[13px] font-semibold">{t('profile.lightningAddress')}</label>
+				<label for="profile-lightning-address" class="text-[13px] font-semibold"
+					>{t('profile.lightningAddress')}</label
+				>
 			</div>
 			<div class="flex-1">
-				<Input bind:value={lud16} placeholder="user@getalby.com" class="w-full" />
+				<Input
+					id="profile-lightning-address"
+					bind:value={lud16}
+					placeholder="user@getalby.com"
+					class="w-full"
+				/>
 			</div>
 		</div>
 
 		<!-- Save button -->
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			{#if profileSaved}
-				<p
-					class="flex items-center gap-1 text-[12px] font-semibold text-[var(--tone-success-text)]"
-				>
+				<p class="flex items-center gap-1 text-[12px] font-semibold text-(--tone-success-text)">
 					<Icon name="lucide:check-check" class="size-3.5" />{t('profile.saved')}
 				</p>
 			{/if}
@@ -415,30 +433,30 @@
 	</section>
 
 	<!-- Role & tenant info -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:shield-user" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('profile.rolePermissions')}</h2>
 		</div>
-		<div class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+		<div class="divide-y divide-(--ui-border-muted) text-[13px]">
 			<div class="flex items-center gap-3 px-5 py-3">
-				<Icon name="lucide:building-2" class="size-4 text-[var(--ui-text-dimmed)]" />
-				<span class="text-[var(--ui-text-muted)]">{t('settings.organizationHeading')}</span>
+				<Icon name="lucide:building-2" class="size-4 text-(--ui-text-dimmed)" />
+				<span class="text-(--ui-text-muted)">{t('settings.organizationHeading')}</span>
 				<span class="ml-auto font-semibold">{tenant.state.organizationName || '—'}</span>
 			</div>
 			<div class="flex items-center gap-3 px-5 py-3">
-				<Icon name="lucide:map-pin" class="size-4 text-[var(--ui-text-dimmed)]" />
-				<span class="text-[var(--ui-text-muted)]">{t('settings.branchLabel')}</span>
+				<Icon name="lucide:map-pin" class="size-4 text-(--ui-text-dimmed)" />
+				<span class="text-(--ui-text-muted)">{t('settings.branchLabel')}</span>
 				<span class="ml-auto font-semibold">{tenant.state.locationName || 'Main'}</span>
 			</div>
 			<div class="flex items-center gap-3 px-5 py-3">
-				<Icon name="lucide:store" class="size-4 text-[var(--ui-text-dimmed)]" />
-				<span class="text-[var(--ui-text-muted)]">{t('settings.businessType')}</span>
+				<Icon name="lucide:store" class="size-4 text-(--ui-text-dimmed)" />
+				<span class="text-(--ui-text-muted)">{t('settings.businessType')}</span>
 				<span class="ml-auto font-semibold capitalize">{titleCase(tenant.state.businessType)}</span>
 			</div>
 			<div class="flex items-center gap-3 px-5 py-3">
-				<Icon name="lucide:user-check" class="size-4 text-[var(--ui-text-dimmed)]" />
-				<span class="text-[var(--ui-text-muted)]">{t('common.role')}</span>
+				<Icon name="lucide:user-check" class="size-4 text-(--ui-text-dimmed)" />
+				<span class="text-(--ui-text-muted)">{t('common.role')}</span>
 				<span class="ml-auto">
 					<Badge color="primary">{t('staff.roleOwner')}</Badge>
 				</span>
@@ -447,7 +465,7 @@
 	</section>
 
 	<!-- Switch identity -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:repeat-2" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('profile.switchIdentity')}</h2>
@@ -456,32 +474,32 @@
 			<button
 				type="button"
 				onclick={() => (importOpen = true)}
-				class="flex flex-col items-start gap-1 rounded-xl border border-[var(--ui-border)] p-3 text-left transition-colors hover:bg-[var(--ui-bg-accented)]"
+				class="flex flex-col items-start gap-1 rounded-xl border border-(--ui-border) p-3 text-left transition-colors hover:bg-(--ui-bg-accented)"
 			>
 				<Icon name="lucide:log-in" class="size-4 text-primary-500" />
 				<span class="text-[13px] font-semibold">{t('profile.importKeyCard')}</span>
-				<span class="text-[11.5px] text-[var(--ui-text-dimmed)]">{t('profile.importKeyDesc')}</span>
+				<span class="text-[11.5px] text-(--ui-text-dimmed)">{t('profile.importKeyDesc')}</span>
 			</button>
 			<button
 				type="button"
 				onclick={startCreate}
-				class="flex flex-col items-start gap-1 rounded-xl border border-[var(--ui-border)] p-3 text-left transition-colors hover:bg-[var(--ui-bg-accented)]"
+				class="flex flex-col items-start gap-1 rounded-xl border border-(--ui-border) p-3 text-left transition-colors hover:bg-(--ui-bg-accented)"
 			>
 				<Icon name="lucide:user-plus" class="size-4 text-primary-500" />
 				<span class="text-[13px] font-semibold">{t('profile.createNew')}</span>
-				<span class="text-[11.5px] text-[var(--ui-text-dimmed)]">{t('profile.createNewDesc')}</span>
+				<span class="text-[11.5px] text-(--ui-text-dimmed)">{t('profile.createNewDesc')}</span>
 			</button>
 			<button
 				type="button"
 				disabled={!hasExt || connecting}
 				onclick={connectExtension}
-				class="flex flex-col items-start gap-1 rounded-xl border border-[var(--ui-border)] p-3 text-left transition-colors enabled:hover:bg-[var(--ui-bg-accented)] disabled:opacity-50"
+				class="flex flex-col items-start gap-1 rounded-xl border border-(--ui-border) p-3 text-left transition-colors enabled:hover:bg-(--ui-bg-accented) disabled:opacity-50"
 			>
 				<Icon name="lucide:puzzle" class="size-4 text-primary-500" />
 				<span class="text-[13px] font-semibold"
 					>{connecting ? t('profile.connecting') : t('profile.connectExtension')}</span
 				>
-				<span class="text-[11.5px] text-[var(--ui-text-dimmed)]"
+				<span class="text-[11.5px] text-(--ui-text-dimmed)"
 					>{hasExt ? t('profile.useNip07') : t('profile.noExtension')}</span
 				>
 			</button>
@@ -492,10 +510,10 @@
 	<section class="surface-card">
 		<div class="flex items-center justify-between gap-4 p-5">
 			<div class="flex items-center gap-3">
-				<Icon name="lucide:log-out" class="size-5 text-[var(--tone-error-text)]" />
+				<Icon name="lucide:log-out" class="size-5 text-(--tone-error-text)" />
 				<div>
 					<h2 class="font-display text-[14px] font-semibold">{t('common.signOut')}</h2>
-					<p class="text-[12px] text-[var(--ui-text-muted)]">{t('profile.clearFromDevice')}</p>
+					<p class="text-[12px] text-(--ui-text-muted)">{t('profile.clearFromDevice')}</p>
 				</div>
 			</div>
 			<Button color="error" variant="subtle" icon="lucide:log-out" onclick={signOut}
@@ -514,7 +532,7 @@
 			placeholder={t('settings.nsecHint')}
 			class="w-full font-mono"
 		/>
-		<p class="text-[11.5px] text-[var(--ui-text-muted)]">
+		<p class="text-[11.5px] text-(--ui-text-muted)">
 			{t('profile.importReplaceWarn')}
 		</p>
 	</div>
@@ -532,7 +550,7 @@
 		{@const p = pending}
 		<div class="space-y-4">
 			<div
-				class="flex items-start gap-2 rounded-lg border border-[var(--tone-warning-bg)] bg-[var(--tone-warning-bg)] px-3 py-2.5 text-[12px] text-[var(--tone-warning-text)]"
+				class="flex items-start gap-2 rounded-lg border border-(--tone-warning-bg) bg-(--tone-warning-bg) px-3 py-2.5 text-[12px] text-(--tone-warning-text)"
 			>
 				<Icon name="lucide:triangle-alert" class="mt-0.5 size-4 shrink-0" />
 				<span
@@ -541,24 +559,24 @@
 			</div>
 			<div>
 				<div
-					class="mb-1.5 text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+					class="mb-1.5 text-[11px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase"
 				>
 					{t('profile.npubShareable')}
 				</div>
 				<div
-					class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2 font-mono text-[12px] break-all"
+					class="rounded-lg border border-(--ui-border-muted) bg-(--ui-bg-muted) px-3 py-2 font-mono text-[12px] break-all"
 				>
 					{p.npub}
 				</div>
 			</div>
 			<div>
 				<div
-					class="mb-1.5 text-[11px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+					class="mb-1.5 text-[11px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase"
 				>
 					{t('profile.nsecSecret')}
 				</div>
 				<div
-					class="rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2 font-mono text-[12px] break-all"
+					class="rounded-lg border border-(--ui-border-muted) bg-(--ui-bg-muted) px-3 py-2 font-mono text-[12px] break-all"
 				>
 					{p.nsec}
 				</div>

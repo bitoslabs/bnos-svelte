@@ -295,7 +295,7 @@
 	function badgeClass(c: Cmd): string {
 		if (c.tone === 'data') return 'bg-primary-500/15 text-primary-600 dark:text-primary-400';
 		if (c.tone === 'action') return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
-		return 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-dimmed)]';
+		return 'bg-(--ui-bg-muted) text-(--ui-text-dimmed)';
 	}
 
 	// ── Selection + focus ─────────────────────────────────────────────────
@@ -366,28 +366,28 @@
 		></button>
 		<div
 			in:scale={{ duration: 160, start: 0.97 }}
-			class="relative w-full max-w-xl overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] shadow-2xl shadow-black/25"
+			class="relative w-full max-w-xl overflow-hidden rounded-2xl border border-(--ui-border) bg-(--ui-bg-elevated) shadow-2xl shadow-black/25"
 			role="dialog"
 			aria-modal="true"
 			aria-label={t('command.title')}
 		>
 			<!-- Search field -->
-			<div class="flex items-center gap-2.5 border-b border-[var(--ui-border-muted)] px-4">
+			<div class="flex items-center gap-2.5 border-b border-(--ui-border-muted) px-4">
 				<Icon
 					name={syncing ? 'lucide:loader-circle' : 'lucide:search'}
-					class="size-4 shrink-0 text-[var(--ui-text-dimmed)] {syncing ? 'animate-spin' : ''}"
+					class="size-4 shrink-0 text-(--ui-text-dimmed) {syncing ? 'animate-spin' : ''}"
 				/>
 				<input
 					bind:this={inputEl}
 					bind:value={query}
 					onkeydown={onKey}
 					placeholder={t('command.placeholder')}
-					class="h-12 flex-1 bg-transparent text-[14px] font-medium text-[var(--ui-text-highlighted)] outline-none placeholder:font-normal placeholder:text-[var(--ui-text-dimmed)]"
+					class="h-12 flex-1 bg-transparent text-[14px] font-medium text-(--ui-text-highlighted) outline-none placeholder:font-normal placeholder:text-(--ui-text-dimmed)"
 					autocomplete="off"
 					spellcheck="false"
 				/>
 				<kbd
-					class="hidden shrink-0 rounded border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--ui-text-dimmed)] sm:block"
+					class="hidden shrink-0 rounded border border-(--ui-border-muted) bg-(--ui-bg-muted) px-1.5 py-0.5 text-[10px] font-bold text-(--ui-text-dimmed) sm:block"
 					>ESC</kbd
 				>
 			</div>
@@ -395,9 +395,9 @@
 			<!-- Results -->
 			<div class="max-h-[55vh] overflow-y-auto p-1.5">
 				{#if results.length === 0}
-					<div class="px-3 py-10 text-center text-[13px] text-[var(--ui-text-dimmed)]">
+					<div class="px-3 py-10 text-center text-[13px] text-(--ui-text-dimmed)">
 						{t('command.noMatches')}
-						<span class="font-semibold text-[var(--ui-text-muted)]">"{query}"</span>
+						<span class="font-semibold text-(--ui-text-muted)">"{query}"</span>
 					</div>
 				{:else}
 					{#each results as c, i (c.id)}
@@ -409,7 +409,7 @@
 							class="flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left transition-colors {i ===
 							selected
 								? 'bg-primary-500/10'
-								: 'hover:bg-[var(--ui-bg-accented)]'}"
+								: 'hover:bg-(--ui-bg-accented)'}"
 						>
 							<span
 								class="grid size-7 shrink-0 place-items-center rounded-md {i === selected
@@ -420,21 +420,21 @@
 							</span>
 							<span
 								class="min-w-0 flex-1 truncate text-[13px] font-semibold {i === selected
-									? 'text-[var(--ui-text-highlighted)]'
-									: 'text-[var(--ui-text-muted)]'}"
+									? 'text-(--ui-text-highlighted)'
+									: 'text-(--ui-text-muted)'}"
 							>
 								{c.label}
 							</span>
 							{#if c.trailing}
 								<span
 									class="shrink-0 text-[12px] font-bold tabular-nums {c.tone === 'data'
-										? 'text-[var(--ui-text)]'
-										: 'text-[var(--ui-text-dimmed)]'}"
+										? 'text-(--ui-text)'
+										: 'text-(--ui-text-dimmed)'}"
 								>
 									{c.trailing}
 								</span>
 							{/if}
-							<span class="shrink-0 text-[10.5px] font-medium text-[var(--ui-text-dimmed)]">
+							<span class="shrink-0 text-[10.5px] font-medium text-(--ui-text-dimmed)">
 								{c.group}
 							</span>
 						</button>
@@ -444,30 +444,24 @@
 
 			<!-- Footer hints -->
 			<div
-				class="flex items-center justify-between gap-2 border-t border-[var(--ui-border-muted)] px-4 py-2 text-[10.5px] text-[var(--ui-text-dimmed)]"
+				class="flex items-center justify-between gap-2 border-t border-(--ui-border-muted) px-4 py-2 text-[10.5px] text-(--ui-text-dimmed)"
 			>
 				<span class="flex items-center gap-1">
-					<kbd class="rounded border border-[var(--ui-border-muted)] px-1.5 py-0.5 font-semibold"
-						>↑</kbd
-					>
-					<kbd class="rounded border border-[var(--ui-border-muted)] px-1.5 py-0.5 font-semibold"
-						>↓</kbd
-					>
+					<kbd class="rounded border border-(--ui-border-muted) px-1.5 py-0.5 font-semibold">↑</kbd>
+					<kbd class="rounded border border-(--ui-border-muted) px-1.5 py-0.5 font-semibold">↓</kbd>
 					{t('dialog.navigate')}
 				</span>
 				<span class="flex items-center gap-1">
-					<kbd class="rounded border border-[var(--ui-border-muted)] px-1.5 py-0.5 font-semibold"
-						>↵</kbd
-					>
+					<kbd class="rounded border border-(--ui-border-muted) px-1.5 py-0.5 font-semibold">↵</kbd>
 					select
 				</span>
 				<span class="hidden items-center gap-1 sm:flex">
-					<kbd class="rounded border border-[var(--ui-border-muted)] px-1.5 py-0.5 font-semibold"
+					<kbd class="rounded border border-(--ui-border-muted) px-1.5 py-0.5 font-semibold"
 						>esc</kbd
 					>
 					{t('dialog.closeHint')}
 				</span>
-				<span class="flex items-center gap-1.5 font-semibold text-[var(--ui-text-dimmed)]">
+				<span class="flex items-center gap-1.5 font-semibold text-(--ui-text-dimmed)">
 					<Icon name="lucide:command" class="size-3" />K
 				</span>
 			</div>

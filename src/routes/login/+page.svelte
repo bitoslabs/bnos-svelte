@@ -123,7 +123,7 @@
 			align="end"
 			title={t('settings.language')}
 			class="w-44"
-			triggerClass="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+			triggerClass="grid size-9 place-items-center rounded-lg text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 		>
 			{#snippet trigger()}
 				<Icon name="lucide:languages" class="size-[18px]" />
@@ -136,7 +136,7 @@
 		<button
 			type="button"
 			onclick={() => setMode(mode.current === 'dark' ? 'light' : 'dark')}
-			class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+			class="grid size-9 place-items-center rounded-lg text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 			aria-label={t('common.toggleTheme')}
 			title={t('common.toggleTheme')}
 		>
@@ -153,7 +153,7 @@
 				<BnosMark class="size-12" />
 			</div>
 			<h1 class="font-display text-2xl font-bold tracking-tight">{t('auth.welcomeBack')}</h1>
-			<p class="mt-1.5 text-sm text-[var(--ui-text-muted)]">{t('auth.signInDesc')}</p>
+			<p class="mt-1.5 text-sm text-(--ui-text-muted)">{t('auth.signInDesc')}</p>
 		</div>
 
 		<!-- Card -->
@@ -179,7 +179,7 @@
 						</Button>
 						{#if !hasExtension}
 							<p
-								class="flex items-center justify-center gap-1.5 text-center text-xs text-[var(--tone-warning-text)]"
+								class="flex items-center justify-center gap-1.5 text-center text-xs text-(--tone-warning-text)"
 							>
 								<Icon name="lucide:info" class="size-3.5 shrink-0" />
 								{t('auth.noExtension')}
@@ -196,19 +196,19 @@
 					</div>
 
 					<div class="flex items-center gap-3">
-						<div class="h-px flex-1 bg-[var(--ui-border)]"></div>
+						<div class="h-px flex-1 bg-(--ui-border)"></div>
 						<span
-							class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+							class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 						>
 							{t('auth.or')}
 						</span>
-						<div class="h-px flex-1 bg-[var(--ui-border)]"></div>
+						<div class="h-px flex-1 bg-(--ui-border)"></div>
 					</div>
 
 					<!-- nsec -->
 					<form class="space-y-3" onsubmit={(e) => (e.preventDefault(), handleNsec())}>
 						<label class="block">
-							<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 								>{t('auth.privateKey')}</span
 							>
 							<Input
@@ -222,7 +222,7 @@
 								{#snippet trailing()}
 									<button
 										type="button"
-										class="grid size-5 place-items-center rounded text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]"
+										class="grid size-5 place-items-center rounded text-(--ui-text-dimmed) hover:text-(--ui-text)"
 										onclick={() => (showKey = !showKey)}
 										aria-label="Toggle key visibility"
 									>
@@ -250,11 +250,11 @@
 
 				<!-- New to Nostr → {t('auth.createAccount')} -->
 				<div
-					class="flex items-center justify-between gap-3 border-t border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-6 py-4 sm:px-7"
+					class="flex items-center justify-between gap-3 border-t border-(--ui-border-muted) bg-(--ui-bg-muted) px-6 py-4 sm:px-7"
 				>
 					<div class="min-w-0">
-						<p class="text-[12.5px] font-semibold text-[var(--ui-text)]">{t('auth.newToNostr')}</p>
-						<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-muted)]">
+						<p class="text-[12.5px] font-semibold text-(--ui-text)">{t('auth.newToNostr')}</p>
+						<p class="mt-0.5 text-[11.5px] text-(--ui-text-muted)">
 							{t('auth.generateFresh')}
 						</p>
 					</div>
@@ -273,7 +273,7 @@
 				<div class="space-y-5 p-6 sm:p-7">
 					<div class="flex items-center gap-3">
 						<div
-							class="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--tone-warning-bg)] text-[var(--tone-warning-text)]"
+							class="grid size-10 shrink-0 place-items-center rounded-xl bg-(--tone-warning-bg) text-(--tone-warning-text)"
 						>
 							<Icon name="lucide:triangle-alert" class="size-5" />
 						</div>
@@ -281,7 +281,7 @@
 							<h2 class="font-display text-[15px] font-semibold tracking-tight">
 								{t('auth.backUpSecretKey')}
 							</h2>
-							<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
+							<p class="mt-0.5 text-[12px] text-(--ui-text-muted)">
 								This is the <strong>only</strong> time we can show your <code>nsec</code>. Store it
 								somewhere safe — it controls your account and cannot be recovered.
 							</p>
@@ -289,7 +289,7 @@
 					</div>
 
 					<label class="block">
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('auth.publicKey')}</span
 						>
 						<Input
@@ -301,7 +301,7 @@
 					</label>
 
 					<label class="block">
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('auth.secretKey')}</span
 						>
 						<Input
@@ -332,7 +332,7 @@
 					<button
 						type="button"
 						onclick={() => (view = 'login')}
-						class="w-full text-center text-[12px] font-semibold text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+						class="w-full text-center text-[12px] font-semibold text-(--ui-text-muted) hover:text-(--ui-text)"
 					>
 						← {t('auth.backToSignIn')}
 					</button>
@@ -340,7 +340,7 @@
 			{/if}
 		</div>
 
-		<p class="mt-6 text-center text-[11.5px] text-[var(--ui-text-dimmed)]">
+		<p class="mt-6 text-center text-[11.5px] text-(--ui-text-dimmed)">
 			{t('auth.keyNeverLeaves')}
 		</p>
 
@@ -352,44 +352,41 @@
 			>
 				<Icon name="lucide:info" class="size-3" />About {site.name}
 			</a>
-			<span class="text-[var(--ui-text-dimmed)]">·</span>
+			<span class="text-(--ui-text-dimmed)">·</span>
 			<a
 				href={resolve('/legal/privacy')}
-				class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-				>{t('legal.privacy')}</a
+				class="font-medium text-(--ui-text-muted) hover:text-(--ui-text)">{t('legal.privacy')}</a
 			>
-			<span class="text-[var(--ui-text-dimmed)]">·</span>
+			<span class="text-(--ui-text-dimmed)">·</span>
 			<a
 				href={resolve('/legal/terms')}
-				class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-				>{t('legal.terms')}</a
+				class="font-medium text-(--ui-text-muted) hover:text-(--ui-text)">{t('legal.terms')}</a
 			>
-			<span class="text-[var(--ui-text-dimmed)]">·</span>
+			<span class="text-(--ui-text-dimmed)">·</span>
 			<a
 				href={resolve('/legal/license')}
-				class="font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-				>{t('legal.license')}</a
+				class="font-medium text-(--ui-text-muted) hover:text-(--ui-text)">{t('legal.license')}</a
 			>
-			<span class="text-[var(--ui-text-dimmed)]">·</span>
+			<span class="text-(--ui-text-dimmed)">·</span>
 			<a
 				href={site.source.url}
 				target="_blank"
 				rel="noopener"
-				class="inline-flex items-center gap-1 font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+				class="inline-flex items-center gap-1 font-medium text-(--ui-text-muted) hover:text-(--ui-text)"
 			>
 				<Icon name="lucide:github" class="size-3" />{t('common.source')}
 			</a>
-			<span class="text-[var(--ui-text-dimmed)]">·</span>
+			<span class="text-(--ui-text-dimmed)">·</span>
 			<a
 				href={site.website.url}
 				target="_blank"
 				rel="noopener"
-				class="inline-flex items-center gap-1 font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+				class="inline-flex items-center gap-1 font-medium text-(--ui-text-muted) hover:text-(--ui-text)"
 			>
 				<Icon name="lucide:globe" class="size-3" />{site.website.label}
 			</a>
 		</div>
-		<p class="mt-2 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
+		<p class="mt-2 text-center text-[10.5px] text-(--ui-text-dimmed)">
 			© {new Date().getFullYear()}
 			{site.name} contributors · {site.license}
 		</p>

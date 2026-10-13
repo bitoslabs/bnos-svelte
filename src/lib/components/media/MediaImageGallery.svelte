@@ -143,8 +143,8 @@
 <div class="space-y-2.5">
 	{#if label}
 		<div class="flex items-center justify-between">
-			<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">{label}</span>
-			<span class="text-[10px] text-[var(--ui-text-dimmed)]">{value.length}/{maxImages}</span>
+			<span class="text-[12px] font-semibold text-(--ui-text-muted)">{label}</span>
+			<span class="text-[10px] text-(--ui-text-dimmed)">{value.length}/{maxImages}</span>
 		</div>
 	{/if}
 
@@ -158,7 +158,7 @@
 				'flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed px-4 py-5 text-center transition-colors',
 				dragging
 					? 'border-primary-500 bg-primary-500/10'
-					: 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] hover:border-[var(--ui-border-accented)] hover:bg-[var(--ui-bg-accented)]'
+					: 'border-(--ui-border) bg-(--ui-bg-muted) hover:border-(--ui-border-accented) hover:bg-(--ui-bg-accented)'
 			)}
 			onclick={() => !disabled && uploadingCount === 0 && inputEl.click()}
 			onkeydown={(e) => {
@@ -176,15 +176,15 @@
 		>
 			{#if uploadingCount > 0}
 				<Icon name="lucide:loader-circle" class="size-6 animate-spin text-primary-500" />
-				<span class="text-[11.5px] font-medium text-[var(--ui-text-muted)]"
+				<span class="text-[11.5px] font-medium text-(--ui-text-muted)"
 					>Uploading {uploadingCount}…</span
 				>
 			{:else}
-				<Icon name="lucide:image-up" class="size-6 text-[var(--ui-text-dimmed)]" />
-				<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
+				<Icon name="lucide:image-up" class="size-6 text-(--ui-text-dimmed)" />
+				<span class="text-[12px] font-semibold text-(--ui-text-muted)">
 					Drag & drop or <span class="text-primary-600 dark:text-primary-400">browse</span>
 				</span>
-				<span class="text-[10px] text-[var(--ui-text-dimmed)]">
+				<span class="text-[10px] text-(--ui-text-dimmed)">
 					{#if value.length > 0}Add more ·
 					{/if}up to {maxImages} images · max {sizeLabel}
 				</span>
@@ -227,7 +227,7 @@
 		<div class="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
 			{#each value as img, i (img + '-' + i)}
 				<div
-					class="group relative aspect-square overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+					class="group relative aspect-square overflow-hidden rounded-xl border border-(--ui-border) bg-(--ui-bg-muted)"
 				>
 					<img src={img} alt={`Image ${i + 1}`} class="h-full w-full object-cover" loading="lazy" />
 
@@ -291,7 +291,7 @@
 				type="button"
 				onclick={clearAll}
 				{disabled}
-				class="text-[11px] font-medium text-[var(--ui-text-dimmed)] transition-colors hover:text-[var(--tone-error-text)]"
+				class="text-[11px] font-medium text-(--ui-text-dimmed) transition-colors hover:text-(--tone-error-text)"
 			>
 				Clear all
 			</button>
@@ -299,7 +299,7 @@
 	{/if}
 
 	{#if hint}
-		<p class="text-[10px] text-[var(--ui-text-dimmed)]">{hint}</p>
+		<p class="text-[10px] text-(--ui-text-dimmed)">{hint}</p>
 	{/if}
 
 	<!-- Hidden native file input (multiple) -->

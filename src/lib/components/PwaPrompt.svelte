@@ -59,24 +59,20 @@
 
 {#if updateAvailable}
 	<div
-		class="fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] px-4 py-3 shadow-lg"
+		class="fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-xl border border-(--glass-border) bg-(--surface-2) px-4 py-3 shadow-lg"
 	>
 		<div class="text-sm">
 			<div class="font-medium">{t('pwa.updateAvailable')}</div>
-			<div class="text-[var(--text-muted)]">{t('pwa.updateReady')}</div>
+			<div class="text-(--text-muted)">{t('pwa.updateReady')}</div>
 		</div>
 		<button
 			type="button"
-			class="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"
+			class="rounded-lg bg-(--accent) px-3 py-1.5 text-sm font-medium text-white"
 			onclick={applyUpdate}
 		>
 			{t('common.update')}
 		</button>
-		<button
-			type="button"
-			class="text-[var(--text-muted)] hover:text-[var(--text)]"
-			onclick={dismiss}
-		>
+		<button type="button" class="text-(--text-muted) hover:text-(--text)" onclick={dismiss}>
 			✕
 		</button>
 	</div>
@@ -84,24 +80,20 @@
 
 {#if canInstall}
 	<div
-		class="fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] px-4 py-3 shadow-lg"
+		class="fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-xl border border-(--glass-border) bg-(--surface-2) px-4 py-3 shadow-lg"
 	>
 		<div class="text-sm">
 			<div class="font-medium">{t('pwa.installApp')}</div>
-			<div class="text-[var(--text-muted)]">{t('pwa.installDesc')}</div>
+			<div class="text-(--text-muted)">{t('pwa.installDesc')}</div>
 		</div>
 		<button
 			type="button"
-			class="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"
+			class="rounded-lg bg-(--accent) px-3 py-1.5 text-sm font-medium text-white"
 			onclick={applyUpdate}
 		>
 			{t('pwa.install')}
 		</button>
-		<button
-			type="button"
-			class="text-[var(--text-muted)] hover:text-[var(--text)]"
-			onclick={dismissInstall}
-		>
+		<button type="button" class="text-(--text-muted) hover:text-(--text)" onclick={dismissInstall}>
 			✕
 		</button>
 	</div>
@@ -109,7 +101,7 @@
 
 {#if offlineReady}
 	<div
-		class="fixed right-4 bottom-4 z-50 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] px-4 py-3 text-sm shadow-lg"
+		class="fixed right-4 bottom-4 z-50 rounded-xl border border-(--glass-border) bg-(--surface-2) px-4 py-3 text-sm shadow-lg"
 	>
 		✅ {t('pwa.offlineReady')}
 	</div>

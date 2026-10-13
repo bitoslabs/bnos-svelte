@@ -31,7 +31,7 @@
 <span
 	class={cn(
 		'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold',
-		variant === 'outline' ? 'border border-[var(--ui-border)] text-[var(--ui-text-muted)]' : tone,
+		variant === 'outline' ? 'border border-(--ui-border) text-(--ui-text-muted)' : tone,
 		cls
 	)}
 >

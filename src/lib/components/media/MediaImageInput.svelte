@@ -104,9 +104,7 @@
 			preview === 'round' && 'rounded-full',
 			preview === 'square' && 'rounded-2xl',
 			preview === 'wide' && 'rounded-xl',
-			dragging
-				? 'border-primary-500 bg-primary-500/10'
-				: 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)]'
+			dragging ? 'border-primary-500 bg-primary-500/10' : 'border-(--ui-border) bg-(--ui-bg-muted)'
 		)
 	);
 
@@ -155,7 +153,7 @@
 				{:else if uploading}
 					<Icon name="lucide:loader-circle" class="size-6 animate-spin text-primary-500" />
 				{:else}
-					<div class="flex flex-col items-center gap-1 text-[var(--ui-text-dimmed)]">
+					<div class="flex flex-col items-center gap-1 text-(--ui-text-dimmed)">
 						<Icon name="lucide:image-plus" class="size-6" />
 					</div>
 				{/if}
@@ -164,7 +162,7 @@
 
 		<div class="min-w-0 flex-1 space-y-2 {preview === 'wide' ? 'w-full' : ''}">
 			{#if label}
-				<span class="block text-[12px] font-semibold text-[var(--ui-text-muted)]">{label}</span>
+				<span class="block text-[12px] font-semibold text-(--ui-text-muted)">{label}</span>
 			{/if}
 			<Input bind:value icon="lucide:link" {placeholder} {disabled} class="w-full" />
 			<div class="flex flex-wrap items-center gap-2">
@@ -193,10 +191,9 @@
 					</Button>
 				{/if}
 				{#if hint}
-					<span class="text-[10px] text-[var(--ui-text-dimmed)]">{hint}</span>
+					<span class="text-[10px] text-(--ui-text-dimmed)">{hint}</span>
 				{:else}
-					<span class="text-[10px] text-[var(--ui-text-dimmed)]">Drag & drop · max {sizeLabel}</span
-					>
+					<span class="text-[10px] text-(--ui-text-dimmed)">Drag & drop · max {sizeLabel}</span>
 				{/if}
 			</div>
 		</div>

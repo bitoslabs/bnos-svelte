@@ -387,7 +387,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.orders')}</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+			<p class="text-[12.5px] text-(--ui-text-muted)">
 				{formatInt(filteredByCriteria.length)} orders · {formatMoney(totalRevenue, currency)}
 			</p>
 		</div>
@@ -420,7 +420,7 @@
 				<Icon name="lucide:receipt-text" class="size-4" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Total Orders</div>
+				<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Total Orders</div>
 				<div class="font-display text-lg font-bold tabular-nums">
 					{formatInt(filteredByCriteria.length)}
 				</div>
@@ -433,7 +433,7 @@
 				<Icon name="lucide:clock" class="size-4" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+				<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">
 					{t('status.pending')}
 				</div>
 				<div class="font-display text-lg font-bold tabular-nums">{formatInt(pendingCount)}</div>
@@ -446,7 +446,7 @@
 				<Icon name="lucide:circle-check" class="size-4" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+				<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">
 					{t('status.completed')}
 				</div>
 				<div class="font-display text-lg font-bold tabular-nums">{formatInt(completedCount)}</div>
@@ -459,7 +459,7 @@
 				<Icon name="lucide:wallet" class="size-4" />
 			</div>
 			<div>
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+				<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">
 					{t('dashboard.revenue')}
 				</div>
 				<div class="font-display text-lg font-bold tabular-nums">
@@ -467,7 +467,7 @@
 				</div>
 				{#if btcRate.canConvert(currency)}
 					<div
-						class="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+						class="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-(--tone-warning-text) tabular-nums"
 						title="Live sats equivalent at current BTC/{currency} rate"
 					>
 						<Icon name="lucide:zap" class="size-3" />≈
@@ -536,7 +536,7 @@
 			{#snippet filters()}
 				<!-- Status filter -->
 				<div
-					class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+					class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
 				>
 					<select
 						bind:value={statusFilter}
@@ -548,12 +548,12 @@
 					</select>
 					<Icon
 						name="lucide:chevron-down"
-						class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+						class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
 					/>
 				</div>
 				<!-- Type filter -->
 				<div
-					class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+					class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
 				>
 					<select
 						bind:value={typeFilter}
@@ -565,12 +565,12 @@
 					</select>
 					<Icon
 						name="lucide:chevron-down"
-						class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+						class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
 					/>
 				</div>
 				<!-- Source filter -->
 				<div
-					class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+					class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
 				>
 					<select
 						bind:value={sourceFilter}
@@ -582,17 +582,17 @@
 					</select>
 					<Icon
 						name="lucide:chevron-down"
-						class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+						class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
 					/>
 				</div>
 				<!-- Branch filter (multi-branch tenants only) -->
 				{#if branchOptions.length > 1}
 					<div
-						class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+						class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
 					>
 						<Icon
 							name="lucide:map-pin"
-							class="pointer-events-none absolute left-2.5 size-3.5 text-[var(--ui-text-dimmed)]"
+							class="pointer-events-none absolute left-2.5 size-3.5 text-(--ui-text-dimmed)"
 						/>
 						<select
 							bind:value={branchFilter}
@@ -605,13 +605,13 @@
 						</select>
 						<Icon
 							name="lucide:chevron-down"
-							class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+							class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
 						/>
 					</div>
 				{/if}
 				<!-- Date range filter -->
 				<div
-					class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+					class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
 				>
 					<select
 						bind:value={dateRangeFilter}
@@ -631,7 +631,7 @@
 					</select>
 					<Icon
 						name="lucide:chevron-down"
-						class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+						class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
 					/>
 				</div>
 				{#if hasActiveFilters}
@@ -691,12 +691,12 @@
 					</div>
 					{#if o.totalSats}
 						<div
-							class="flex items-center gap-0.5 text-[11px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+							class="flex items-center gap-0.5 text-[11px] font-semibold text-(--tone-warning-text) tabular-nums"
 						>
 							<Icon name="lucide:zap" class="size-3" />{formatInt(o.totalSats)} sats
 						</div>
 					{/if}
-					<div class="mt-1 flex items-center gap-2 text-[11.5px] text-[var(--ui-text-muted)]">
+					<div class="mt-1 flex items-center gap-2 text-[11.5px] text-(--ui-text-muted)">
 						<Icon name="lucide:boxes" class="size-3.5" />
 						{o.items} items
 						{#if o.customerName}
@@ -704,15 +704,15 @@
 						{/if}
 					</div>
 					<div
-						class="mt-3 flex items-center justify-between border-t border-[var(--ui-border-muted)] pt-2.5"
+						class="mt-3 flex items-center justify-between border-t border-(--ui-border-muted) pt-2.5"
 					>
-						<span class="text-[11.5px] text-[var(--ui-text-dimmed)]">{relativeTime(o.atMs)}</span>
+						<span class="text-[11.5px] text-(--ui-text-dimmed)">{relativeTime(o.atMs)}</span>
 						<RowActions actions={rowActions(o)} />
 					</div>
 				</div>
 			{/each}
 		</div>
-		<Pagination {controls} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
+		<Pagination {controls} class="mt-3 rounded-xl border border-(--ui-border)" />
 	{:else}
 		<!-- TABLE VIEW -->
 		<div class="data-panel">
@@ -736,15 +736,15 @@
 								applySort={controls.applySort}>{t('common.order')}</SortableTh
 							>
 							<th
-								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 								>{t('common.type')}</th
 							>
 							<th
-								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 								>{t('common.source')}</th
 							>
 							<th
-								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 								>{t('common.customer')}</th
 							>
 							<SortableTh
@@ -768,7 +768,7 @@
 								applySort={controls.applySort}>{t('common.total')}</SortableTh
 							>
 							<th
-								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 								>{t('common.method')}</th
 							>
 							<SortableTh
@@ -781,12 +781,12 @@
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 						{#each controls.pagedList as o (o.id)}
 							{@const detail = getOrderDetail(o.id)}
 							{@const data = orderDetailData(detail)}
 							<tr
-								class="cursor-pointer transition-colors hover:bg-[var(--ui-bg-accented)]/50"
+								class="cursor-pointer transition-colors hover:bg-(--ui-bg-accented)/50"
 								onclick={() => (expandedId = expandedId === o.id ? null : o.id)}
 							>
 								<td class="px-3 py-3" onclick={(e) => e.stopPropagation()}>
@@ -799,7 +799,7 @@
 								<td class="px-2 py-3 text-center" onclick={(e) => e.stopPropagation()}>
 									<button
 										type="button"
-										class="grid size-6 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-transform duration-200 hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] {expandedId ===
+										class="grid size-6 place-items-center rounded-md text-(--ui-text-dimmed) transition-transform duration-200 hover:bg-(--ui-bg-accented) hover:text-(--ui-text) {expandedId ===
 										o.id
 											? 'rotate-90'
 											: ''}"
@@ -815,7 +815,7 @@
 								<td class="px-5 py-3">
 									{#if o.type}
 										<span
-											class="inline-flex items-center gap-1 rounded-lg bg-[var(--ui-bg-muted)] px-2 py-0.5 text-[11px] font-semibold capitalize"
+											class="inline-flex items-center gap-1 rounded-lg bg-(--ui-bg-muted) px-2 py-0.5 text-[11px] font-semibold capitalize"
 										>
 											<Icon name={typeIcon(o.type)} class="size-3" />
 											{titleCase(o.type)}
@@ -825,7 +825,7 @@
 								<td class="px-5 py-3">
 									{#if o.source}
 										<span
-											class="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--ui-text-muted)]"
+											class="inline-flex items-center gap-1 text-[11px] font-medium text-(--ui-text-muted)"
 											title={sourceLabel(o.source) + (o.sourceDetail ? ' · ' + o.sourceDetail : '')}
 										>
 											<Icon name={sourceIcon(o.source)} class="size-3" />
@@ -833,20 +833,18 @@
 										</span>
 									{/if}
 								</td>
-								<td class="px-5 py-3 text-[var(--ui-text-muted)]">
+								<td class="px-5 py-3 text-(--ui-text-muted)">
 									{o.customerName || '—'}
 								</td>
 								<td class="px-5 py-3"
 									><Badge color={statusColor(o.status)}>{statusLabel(o.status)}</Badge></td
 								>
-								<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
-									>{o.items}</td
-								>
+								<td class="px-5 py-3 text-right text-(--ui-text-muted) tabular-nums">{o.items}</td>
 								<td class="px-5 py-3 text-right">
 									<div class="font-semibold tabular-nums">{formatMoney(o.total, currency)}</div>
 									{#if o.totalSats}
 										<div
-											class="flex items-center justify-end gap-0.5 text-[10.5px] font-semibold text-[var(--tone-warning-text)] tabular-nums"
+											class="flex items-center justify-end gap-0.5 text-[10.5px] font-semibold text-(--tone-warning-text) tabular-nums"
 										>
 											<Icon name="lucide:zap" class="size-2.5" />{formatInt(o.totalSats)}
 										</div>
@@ -855,7 +853,7 @@
 								<td class="px-5 py-3 text-right">
 									{#if o.method && o.method !== 'cash'}
 										<span
-											class="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--ui-text-muted)]"
+											class="inline-flex items-center gap-1 text-[11.5px] font-semibold text-(--ui-text-muted)"
 										>
 											<Icon
 												name={o.method === 'card'
@@ -871,14 +869,14 @@
 										</span>
 									{:else}
 										<span
-											class="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--ui-text-dimmed)]"
+											class="inline-flex items-center gap-1 text-[11.5px] font-semibold text-(--ui-text-dimmed)"
 										>
 											<Icon name="lucide:banknote" class="size-3" />
 											Cash
 										</span>
 									{/if}
 								</td>
-								<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
+								<td class="px-5 py-3 text-right text-[12px] text-(--ui-text-dimmed)"
 									>{relativeTime(o.atMs)}</td
 								>
 								<td class="px-5 py-3 text-right" onclick={(e) => e.stopPropagation()}>
@@ -886,23 +884,21 @@
 								</td>
 							</tr>
 							{#if expandedId === o.id}
-								<tr class="bg-[var(--ui-bg-muted)]/40">
+								<tr class="bg-(--ui-bg-muted)/40">
 									<td colspan="99" class="px-4 py-4">
 										<div class="grid gap-4 lg:grid-cols-3">
 											<!-- Line items -->
 											<div class="lg:col-span-2">
 												<h4
-													class="mb-2 text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+													class="mb-2 text-[11px] font-bold tracking-wider text-(--ui-text-dimmed) uppercase"
 												>
 													{t('common.items')}
 												</h4>
 												{#if data?.lines?.length}
-													<div
-														class="overflow-hidden rounded-lg border border-[var(--ui-border-muted)]"
-													>
+													<div class="overflow-hidden rounded-lg border border-(--ui-border-muted)">
 														<table class="w-full text-left text-[12.5px]">
 															<thead
-																class="bg-[var(--ui-bg-accented)]/50 text-[10.5px] tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+																class="bg-(--ui-bg-accented)/50 text-[10.5px] tracking-wider text-(--ui-text-dimmed) uppercase"
 															>
 																<tr>
 																	<th class="px-3 py-1.5 font-semibold">{t('common.item')}</th>
@@ -917,7 +913,7 @@
 																	>
 																</tr>
 															</thead>
-															<tbody class="divide-y divide-[var(--ui-border-muted)]">
+															<tbody class="divide-y divide-(--ui-border-muted)">
 																{#each data.lines as line, i (line.productId + '-' + i)}
 																	<tr>
 																		<td class="px-3 py-2">
@@ -925,11 +921,11 @@
 																				{line.productName || line.name || 'Item'}
 																			</div>
 																			{#if line.variantName}<span
-																					class="text-[11px] text-[var(--ui-text-dimmed)]"
+																					class="text-[11px] text-(--ui-text-dimmed)"
 																					>{line.variantName}</span
 																				>{/if}
 																			{#if line.modifiers?.length}
-																				<div class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+																				<div class="text-[10.5px] text-(--ui-text-dimmed)">
 																					{line.modifiers.map((m) => m.name).join(', ')}
 																				</div>
 																			{/if}
@@ -949,9 +945,7 @@
 														</table>
 													</div>
 												{:else}
-													<p class="text-[12px] text-[var(--ui-text-dimmed)]">
-														No line items recorded.
-													</p>
+													<p class="text-[12px] text-(--ui-text-dimmed)">No line items recorded.</p>
 												{/if}
 											</div>
 
@@ -960,21 +954,21 @@
 												<!-- Customer info -->
 												<div>
 													<h4
-														class="mb-1.5 text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+														class="mb-1.5 text-[11px] font-bold tracking-wider text-(--ui-text-dimmed) uppercase"
 													>
 														{t('common.customer')}
 													</h4>
 													<div
-														class="rounded-lg border border-[var(--ui-border-muted)] p-2.5 text-[12px]"
+														class="rounded-lg border border-(--ui-border-muted) p-2.5 text-[12px]"
 													>
 														<div class="font-semibold">{data?.customerName || 'Walk-in'}</div>
 														{#if data?.shipping?.phone || data?.pickup?.phone}
-															<div class="text-[11.5px] text-[var(--ui-text-muted)]">
+															<div class="text-[11.5px] text-(--ui-text-muted)">
 																{data?.shipping?.phone || data?.pickup?.phone}
 															</div>
 														{/if}
 														{#if data?.tableId}
-															<div class="text-[11.5px] text-[var(--ui-text-muted)]">
+															<div class="text-[11.5px] text-(--ui-text-muted)">
 																Table: {data.tableId}
 															</div>
 														{/if}
@@ -984,7 +978,7 @@
 												<!-- Payment info -->
 												<div>
 													<h4
-														class="mb-1.5 text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+														class="mb-1.5 text-[11px] font-bold tracking-wider text-(--ui-text-dimmed) uppercase"
 													>
 														Payment
 													</h4>
@@ -1012,7 +1006,7 @@
 														</div>
 													{/if}
 													<div
-														class="flex items-center justify-between rounded-lg border border-[var(--ui-border-muted)] p-2.5 text-[12px]"
+														class="flex items-center justify-between rounded-lg border border-(--ui-border-muted) p-2.5 text-[12px]"
 													>
 														<div class="flex items-center gap-2">
 															<Badge color="neutral">{data?.method || o.method || '—'}</Badge>
@@ -1027,7 +1021,7 @@
 												<!-- Quick actions -->
 												<div>
 													<h4
-														class="mb-1.5 text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+														class="mb-1.5 text-[11px] font-bold tracking-wider text-(--ui-text-dimmed) uppercase"
 													>
 														{t('common.actions')}
 													</h4>

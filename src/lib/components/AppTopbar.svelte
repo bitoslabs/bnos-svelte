@@ -166,12 +166,12 @@
 </script>
 
 <header
-	class="app-topbar app-chrome sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-[var(--glass-border)] px-4 sm:px-6"
+	class="app-topbar app-chrome sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-(--glass-border) px-4 sm:px-6"
 >
 	<!-- Mobile menu toggle -->
 	<button
 		type="button"
-		class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] lg:hidden"
+		class="grid size-9 place-items-center rounded-lg text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text) lg:hidden"
 		onclick={() => onmenutoggle?.()}
 		aria-label={t('topbar.openMenu')}
 	>
@@ -181,12 +181,12 @@
 	<!-- Breadcrumb / title -->
 	<div class="min-w-0 flex-1">
 		<h1
-			class="truncate font-display text-[16px] font-semibold tracking-tight text-[var(--ui-text-highlighted)]"
+			class="truncate font-display text-[16px] font-semibold tracking-tight text-(--ui-text-highlighted)"
 		>
 			{current ? (current.labelKey ? t(current.labelKey) : current.label) : t('common.appName')}
 		</h1>
 		{#if sectionLabel && sectionLabel !== (current?.label ?? '')}
-			<p class="hidden truncate text-[11.5px] text-[var(--ui-text-dimmed)] sm:block">
+			<p class="hidden truncate text-[11.5px] text-(--ui-text-dimmed) sm:block">
 				{sectionLabel}
 			</p>
 		{/if}
@@ -196,21 +196,21 @@
 	<button
 		type="button"
 		onclick={() => command.show()}
-		class="hidden h-9 items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2.5 text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] sm:flex"
+		class="hidden h-9 items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2.5 text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text) sm:flex"
 		aria-label="{t('common.search')} ({shortcutLabel})"
 		title="{t('topbar.searchCommands')} ({shortcutLabel})"
 	>
 		<Icon name="lucide:search" class="size-4" />
 		<span class="text-[12.5px] font-medium">{t('topbar.searchPlaceholder')}</span>
 		<kbd
-			class="ml-1 rounded border border-[var(--ui-border-muted)] bg-[var(--ui-bg)] px-1.5 py-0.5 text-[10px] font-bold"
+			class="ml-1 rounded border border-(--ui-border-muted) bg-(--ui-bg) px-1.5 py-0.5 text-[10px] font-bold"
 			>{shortcutLabel}</kbd
 		>
 	</button>
 	<button
 		type="button"
 		onclick={() => command.show()}
-		class="grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] sm:hidden"
+		class="grid size-9 place-items-center rounded-lg text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text) sm:hidden"
 		aria-label="{t('common.search')} ({shortcutLabel})"
 		title="{t('topbar.searchCommands')} ({shortcutLabel})"
 	>
@@ -218,7 +218,7 @@
 	</button>
 
 	<!-- Divider: tasks ↔ system cluster -->
-	<div class="mx-1 hidden h-5 w-px bg-[var(--ui-border-muted)] sm:block"></div>
+	<div class="mx-1 hidden h-5 w-px bg-(--ui-border-muted) sm:block"></div>
 
 	<!-- Sync state, announced politely without making a control a live region -->
 	<span class="sr-only" role="status" aria-live="polite">
@@ -231,13 +231,13 @@
 		align="end"
 		side="bottom"
 		title={t('notifications.title')}
-		triggerClass="relative grid size-9 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+		triggerClass="relative grid size-9 place-items-center rounded-lg text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 	>
 		{#snippet trigger()}
 			<Icon name={unreadCount > 0 ? 'lucide:bell-ring' : 'lucide:bell'} class="size-[18px]" />
 			{#if unreadCount > 0}
 				<span
-					class="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-primary-500 px-1 text-[9.5px] leading-4 font-bold text-white ring-2 ring-[var(--surface-bg)]"
+					class="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-primary-500 px-1 text-[9.5px] leading-4 font-bold text-white ring-2 ring-(--surface-bg)"
 					aria-label="{unreadCount} {t('topbar.unreadTab')}"
 				>
 					{unreadBadge}
@@ -271,14 +271,14 @@
 				</div>
 
 				<!-- Tabs: All / Unread -->
-				<div class="mb-2 flex gap-1 rounded-lg bg-[var(--ui-bg-muted)] p-1">
+				<div class="mb-2 flex gap-1 rounded-lg bg-(--ui-bg-muted) p-1">
 					<button
 						type="button"
 						onclick={() => (notifTab = 'all')}
 						class="flex-1 rounded-md px-2 py-1 text-[11.5px] font-semibold transition-colors {notifTab ===
 						'all'
-							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
+							? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+							: 'text-(--ui-text-dimmed) hover:text-(--ui-text)'}"
 					>
 						{t('common.all')}
 					</button>
@@ -287,8 +287,8 @@
 						onclick={() => (notifTab = 'unread')}
 						class="flex-1 rounded-md px-2 py-1 text-[11.5px] font-semibold transition-colors {notifTab ===
 						'unread'
-							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-							: 'text-[var(--ui-text-dimmed)] hover:text-[var(--ui-text)]'}"
+							? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+							: 'text-(--ui-text-dimmed) hover:text-(--ui-text)'}"
 					>
 						{t('topbar.unreadTab')}{#if unreadCount > 0}
 							· {unreadCount}{/if}
@@ -298,13 +298,13 @@
 				<!-- Feed -->
 				{#if notifItems.length === 0}
 					<div
-						class="flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--ui-border-muted)] px-3 py-7"
+						class="flex flex-col items-center justify-center rounded-lg border border-dashed border-(--ui-border-muted) px-3 py-7"
 					>
-						<Icon name="lucide:bell-off" class="mb-1.5 size-5 text-[var(--ui-text-dimmed)]" />
-						<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
+						<Icon name="lucide:bell-off" class="mb-1.5 size-5 text-(--ui-text-dimmed)" />
+						<p class="text-[12px] font-semibold text-(--ui-text-muted)">
 							{t('topbar.youAreAllCaughtUp')}
 						</p>
-						<p class="mt-0.5 text-center text-[11px] text-[var(--ui-text-dimmed)]">
+						<p class="mt-0.5 text-center text-[11px] text-(--ui-text-dimmed)">
 							{t('topbar.caughtUpDesc')}
 						</p>
 					</div>
@@ -315,7 +315,7 @@
 								<button
 									type="button"
 									onclick={() => openNotification(n)}
-									class="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-[var(--ui-bg-accented)] {n.read
+									class="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-(--ui-bg-accented) {n.read
 										? ''
 										: 'bg-primary-500/[0.06]'}"
 									title={n.href ? t('common.view') : t('topbar.markAsRead')}
@@ -330,30 +330,30 @@
 											{#if !n.read}
 												<span class="size-1.5 shrink-0 rounded-full bg-primary-500"></span>
 											{/if}
-											<span class="truncate text-[12.5px] font-semibold text-[var(--ui-text)]"
+											<span class="truncate text-[12.5px] font-semibold text-(--ui-text)"
 												>{n.title}</span
 											>
 										</span>
 										{#if n.description}
-											<span class="block truncate text-[11.5px] text-[var(--ui-text-dimmed)]"
+											<span class="block truncate text-[11.5px] text-(--ui-text-dimmed)"
 												>{n.description}</span
 											>
 										{/if}
-										<span class="mt-0.5 block text-[10px] text-[var(--ui-text-dimmed)]">
+										<span class="mt-0.5 block text-[10px] text-(--ui-text-dimmed)">
 											{relativeTime(n.at)}
 										</span>
 									</span>
 									{#if n.href}
 										<Icon
 											name="lucide:chevron-right"
-											class="mt-1.5 size-3.5 shrink-0 text-[var(--ui-text-dimmed)] opacity-0 transition-opacity group-hover:opacity-100"
+											class="mt-1.5 size-3.5 shrink-0 text-(--ui-text-dimmed) opacity-0 transition-opacity group-hover:opacity-100"
 										/>
 									{/if}
 								</button>
 								<button
 									type="button"
 									onclick={() => notifications.remove(n.id)}
-									class="absolute top-1.5 right-1.5 grid size-6 place-items-center rounded-md text-[var(--ui-text-dimmed)] opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
+									class="absolute top-1.5 right-1.5 grid size-6 place-items-center rounded-md text-(--ui-text-dimmed) opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-(--tone-error-bg) hover:text-(--tone-error-text)"
 									aria-label={t('topbar.removeNotification')}
 									title={t('topbar.removeNotification')}
 								>
@@ -365,9 +365,7 @@
 				{/if}
 
 				<!-- Footer: view all + clear -->
-				<div
-					class="mt-2 flex items-center gap-1.5 border-t border-[var(--ui-border-muted)] px-1 pt-2"
-				>
+				<div class="mt-2 flex items-center gap-1.5 border-t border-(--ui-border-muted) px-1 pt-2">
 					<a
 						href={resolve('/notifications')}
 						onclick={() => (notifOpen = false)}
@@ -377,11 +375,11 @@
 						{t('common.viewAll')}
 					</a>
 					{#if notifications.items.length > 0}
-						<span class="h-4 w-px bg-[var(--ui-border-muted)]"></span>
+						<span class="h-4 w-px bg-(--ui-border-muted)"></span>
 						<button
 							type="button"
 							onclick={() => notifications.clear()}
-							class="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11.5px] font-semibold text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
+							class="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11.5px] font-semibold text-(--ui-text-dimmed) transition-colors hover:bg-(--tone-error-bg) hover:text-(--tone-error-text)"
 							title={t('topbar.clearAllNotifications')}
 						>
 							<Icon name="lucide:trash-2" class="size-3.5" />
@@ -411,7 +409,7 @@
 							class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75"
 						></span>
 						<span
-							class="relative inline-flex size-2.5 rounded-full bg-emerald-500 ring-2 ring-[var(--surface-bg)]"
+							class="relative inline-flex size-2.5 rounded-full bg-emerald-500 ring-2 ring-(--surface-bg)"
 						></span>
 					</span>
 				{/if}
@@ -420,7 +418,7 @@
 				<Icon
 					name={syncIcon}
 					class="size-3.5 {syncIconClass} {syncState === 'failed'
-						? 'text-[var(--tone-error-text)]'
+						? 'text-(--tone-error-text)'
 						: ''}"
 				/>
 			{/if}
@@ -446,7 +444,7 @@
 						<span class="text-[13px] font-semibold"
 							>{relays.online ? t('common.connected') : t('common.offline')}</span
 						>
-						<span class="text-[11px] text-[var(--ui-text-dimmed)]">
+						<span class="text-[11px] text-(--ui-text-dimmed)">
 							{t('topbar.relaysActive', {
 								active: relays.activeRelays.length,
 								total: relays.relays.length
@@ -480,16 +478,13 @@
 				<!-- Relay list: activate / remove -->
 				{#if relays.relays.length === 0}
 					<div
-						class="rounded-lg border border-dashed border-[var(--ui-border-muted)] px-3 py-6 text-center"
+						class="rounded-lg border border-dashed border-(--ui-border-muted) px-3 py-6 text-center"
 					>
-						<Icon
-							name="lucide:radio-off"
-							class="mx-auto mb-1.5 size-5 text-[var(--ui-text-dimmed)]"
-						/>
-						<p class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
+						<Icon name="lucide:radio-off" class="mx-auto mb-1.5 size-5 text-(--ui-text-dimmed)" />
+						<p class="text-[12px] font-semibold text-(--ui-text-muted)">
 							{t('topbar.noRelays')}
 						</p>
-						<p class="mt-0.5 text-[11px] text-[var(--ui-text-dimmed)]">
+						<p class="mt-0.5 text-[11px] text-(--ui-text-dimmed)">
 							{t('topbar.noRelaysDesc')}
 						</p>
 					</div>
@@ -499,12 +494,12 @@
 							{@const active = relays.isActive(url)}
 							{@const isPrimary = relays.primaryRelay === url}
 							<li
-								class="flex items-center gap-2.5 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-2.5 py-2"
+								class="flex items-center gap-2.5 rounded-lg border border-(--ui-border-muted) bg-(--ui-bg-muted) px-2.5 py-2"
 							>
 								<span
 									class="size-2 shrink-0 rounded-full {active
 										? 'bg-emerald-500'
-										: 'bg-[var(--ui-text-dimmed)]'}"
+										: 'bg-(--ui-text-dimmed)'}"
 								></span>
 								<div class="min-w-0 flex-1">
 									<div class="flex items-center gap-1">
@@ -521,7 +516,7 @@
 									<span
 										class="text-[10px] font-semibold {active
 											? 'text-emerald-600 dark:text-emerald-400'
-											: 'text-[var(--ui-text-dimmed)]'}"
+											: 'text-(--ui-text-dimmed)'}"
 									>
 										{active ? t('common.active') : t('common.inactive')}
 									</span>
@@ -534,7 +529,7 @@
 								<button
 									type="button"
 									onclick={() => relays.remove(url)}
-									class="grid size-7 shrink-0 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--tone-error-bg)] hover:text-[var(--tone-error-text)]"
+									class="grid size-7 shrink-0 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--tone-error-bg) hover:text-(--tone-error-text)"
 									aria-label={t('common.removeRelay')}
 									title={t('common.removeRelay')}
 								>
@@ -551,13 +546,13 @@
 					onclick={syncAllData}
 					disabled={syncState === 'syncing'}
 					title={syncTitle}
-					class="mt-1 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)] disabled:cursor-not-allowed disabled:opacity-60"
+					class="mt-1 flex w-full items-center justify-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-(--ui-bg-accented) disabled:cursor-not-allowed disabled:opacity-60"
 				>
 					<Icon name={syncIcon} class="size-3.5 {syncIconClass}" />
 					<span>{syncFullLabel}</span>
 				</button>
 				{#if dataSync.lastSyncedAt > 0}
-					<p class="px-1 text-center text-[10.5px] text-[var(--ui-text-dimmed)]">
+					<p class="px-1 text-center text-[10.5px] text-(--ui-text-dimmed)">
 						{t('topbar.lastSynced', { time: relativeTime(dataSync.lastSyncedAt) })}
 					</p>
 				{/if}
@@ -592,9 +587,9 @@
 				<AppearanceControls class="px-3.5 py-3.5" />
 
 				<!-- Language -->
-				<div class="border-t border-[var(--ui-border-muted)] px-3.5 py-3">
+				<div class="border-t border-(--ui-border-muted) px-3.5 py-3">
 					<div
-						class="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+						class="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 					>
 						<Icon name="lucide:languages" class="size-3.5" />
 						{t('settings.language')}
@@ -609,7 +604,7 @@
 	<Popover bind:open={accountOpen} align="end" side="bottom" class="w-64 p-0">
 		{#snippet trigger()}
 			<div
-				class="grid size-9 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[12px] font-bold text-white shadow-sm ring-[var(--surface-bg)] transition-shadow hover:ring-2 hover:ring-primary-500/30"
+				class="grid size-9 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[12px] font-bold text-white shadow-sm ring-(--surface-bg) transition-shadow hover:ring-2 hover:ring-primary-500/30"
 				title={profile.displayLabel}
 			>
 				{#if profile.hasAvatar}
@@ -642,13 +637,13 @@
 					</div>
 					<div class="min-w-0 flex-1">
 						<div class="truncate text-[13px] font-semibold">{profile.displayLabel}</div>
-						<div class="truncate font-mono text-[11px] text-[var(--ui-text-dimmed)]">
+						<div class="truncate font-mono text-[11px] text-(--ui-text-dimmed)">
 							{profile.subtitle}
 						</div>
 						<div class="mt-1 flex items-center gap-1.5">
 							<span class="live-dot"></span>
 							<span
-								class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-muted)] uppercase"
+								class="text-[10px] font-semibold tracking-wider text-(--ui-text-muted) uppercase"
 							>
 								{session.loginMethod === 'extension'
 									? t('sidebar.nip07Extension')
@@ -661,23 +656,23 @@
 				<a
 					href={resolve('/settings')}
 					onclick={() => (accountOpen = false)}
-					class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+					class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 				>
-					<Icon name="lucide:sliders-horizontal" class="size-4 text-[var(--ui-text-dimmed)]" />
+					<Icon name="lucide:sliders-horizontal" class="size-4 text-(--ui-text-dimmed)" />
 					{t('common.settings')}
 				</a>
 				<a
 					href={resolve('/profile')}
 					onclick={() => (accountOpen = false)}
-					class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+					class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 				>
-					<Icon name="lucide:user-circle" class="size-4 text-[var(--ui-text-dimmed)]" />
+					<Icon name="lucide:user-circle" class="size-4 text-(--ui-text-dimmed)" />
 					{t('common.profile')}
 				</a>
 				<button
 					type="button"
 					onclick={signOut}
-					class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-[var(--tone-error-text)] transition-colors hover:bg-[var(--tone-error-bg)]"
+					class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-(--tone-error-text) transition-colors hover:bg-(--tone-error-bg)"
 				>
 					<Icon name="lucide:log-out" class="size-4" />
 					{t('common.signOut')}

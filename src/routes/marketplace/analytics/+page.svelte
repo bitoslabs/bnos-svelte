@@ -80,18 +80,18 @@
 <div class="space-y-5">
 	<div>
 		<h2 class="font-display text-lg font-bold tracking-tight">Analytics</h2>
-		<p class="text-[12px] text-[var(--ui-text-muted)]">Channel performance & conversion insights</p>
+		<p class="text-[12px] text-(--ui-text-muted)">Channel performance & conversion insights</p>
 	</div>
 
 	{#if isEmpty}
 		<div class="surface-card p-10 text-center">
 			<div
-				class="mx-auto grid size-14 place-items-center rounded-2xl bg-[var(--ui-bg-accented)] text-[var(--ui-text-dimmed)]"
+				class="mx-auto grid size-14 place-items-center rounded-2xl bg-(--ui-bg-accented) text-(--ui-text-dimmed)"
 			>
 				<Icon name="lucide:chart-column" class="size-7" />
 			</div>
 			<p class="mt-4 text-[14px] font-semibold">No analytics data yet</p>
-			<p class="mx-auto mt-1 max-w-sm text-[12px] text-[var(--ui-text-dimmed)]">
+			<p class="mx-auto mt-1 max-w-sm text-[12px] text-(--ui-text-dimmed)">
 				Once you connect channels and receive orders, revenue trends, conversion funnels, and
 				product performance will populate here.
 			</p>
@@ -100,27 +100,23 @@
 		<!-- KPI strip -->
 		<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
 			<div class="metric-card p-4">
-				<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">
-					7-day revenue
-				</p>
+				<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">7-day revenue</p>
 				<p class="mt-1 font-display text-xl font-black tabular-nums">
 					{formatMoney(trendTotal, currency)}
 				</p>
 			</div>
 			<div class="metric-card p-4">
-				<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">
-					Avg order value
-				</p>
+				<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">Avg order value</p>
 				<p class="mt-1 font-display text-xl font-black tabular-nums">
 					{formatMoney(aov, currency)}
 				</p>
 			</div>
 			<div class="metric-card p-4">
-				<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">Conversions</p>
+				<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">Conversions</p>
 				<p class="mt-1 font-display text-xl font-black tabular-nums">{formatInt(funnel.conv)}</p>
 			</div>
 			<div class="metric-card p-4">
-				<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">Avg rating</p>
+				<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">Avg rating</p>
 				<p class="mt-1 font-display text-xl font-black tabular-nums">
 					{avgRating > 0 ? avgRating.toFixed(2) : '—'}
 				</p>
@@ -150,7 +146,7 @@
 									title={formatMoney(b.value, currency)}
 								></div>
 							</div>
-							<span class="text-[10px] font-medium text-[var(--ui-text-dimmed)]">{b.label}</span>
+							<span class="text-[10px] font-medium text-(--ui-text-dimmed)">{b.label}</span>
 						</div>
 					{/each}
 				</div>
@@ -166,14 +162,12 @@
 					{#each [{ label: t('common.views'), value: funnel.views, icon: 'lucide:eye', color: 'bg-blue-500' }, { label: 'Clicks', value: funnel.clicks, icon: 'lucide:mouse-pointer-click', color: 'bg-violet-500' }, { label: 'Orders', value: funnel.conv, icon: 'lucide:shopping-bag', color: 'bg-emerald-500' }] as f (f.label)}
 						<div>
 							<div class="mb-1 flex items-center justify-between text-[11.5px]">
-								<span
-									class="inline-flex items-center gap-1 font-medium text-[var(--ui-text-muted)]"
-								>
+								<span class="inline-flex items-center gap-1 font-medium text-(--ui-text-muted)">
 									<Icon name={f.icon} class="size-3" />{f.label}
 								</span>
 								<span class="font-bold tabular-nums">{formatInt(f.value)}</span>
 							</div>
-							<div class="h-2.5 overflow-hidden rounded-full bg-[var(--ui-bg-accented)]">
+							<div class="h-2.5 overflow-hidden rounded-full bg-(--ui-bg-accented)">
 								<div
 									class="h-full rounded-full {f.color} transition-all"
 									style="width:{(f.value / funnelMax) * 100}%"
@@ -182,8 +176,8 @@
 						</div>
 					{/each}
 					{#if funnel.views > 0}
-						<div class="rounded-lg bg-[var(--ui-bg-accented)] p-2.5 text-center">
-							<span class="text-[10.5px] text-[var(--ui-text-dimmed)]">View→Order rate </span>
+						<div class="rounded-lg bg-(--ui-bg-accented) p-2.5 text-center">
+							<span class="text-[10.5px] text-(--ui-text-dimmed)">View→Order rate </span>
 							<span class="font-bold text-primary-600 dark:text-primary-400"
 								>{((funnel.conv / funnel.views) * 100).toFixed(1)}%</span
 							>
@@ -201,7 +195,7 @@
 					<h3 class="font-display text-[14px] font-semibold">Channel performance</h3>
 				</div>
 				{#if channelPerf.length === 0}
-					<p class="py-6 text-center text-[12px] text-[var(--ui-text-dimmed)]">
+					<p class="py-6 text-center text-[12px] text-(--ui-text-dimmed)">
 						No channel revenue yet.
 					</p>
 				{:else}
@@ -217,15 +211,14 @@
 										<span class="font-semibold">{sourceLabel(c.source)}</span>
 										<span class="font-bold tabular-nums">{formatMoney(c.total, currency)}</span>
 									</div>
-									<div class="h-2 overflow-hidden rounded-full bg-[var(--ui-bg-accented)]">
+									<div class="h-2 overflow-hidden rounded-full bg-(--ui-bg-accented)">
 										<div
 											class="h-full rounded-full bg-primary-500"
 											style="width:{c.percent}%"
 										></div>
 									</div>
 								</div>
-								<span
-									class="w-12 text-right text-[10.5px] text-[var(--ui-text-dimmed)] tabular-nums"
+								<span class="w-12 text-right text-[10.5px] text-(--ui-text-dimmed) tabular-nums"
 									>{c.percent.toFixed(0)}%</span
 								>
 							</div>
@@ -241,22 +234,22 @@
 					<h3 class="font-display text-[14px] font-semibold">Top listings</h3>
 				</div>
 				{#if topListings.length === 0}
-					<p class="py-6 text-center text-[12px] text-[var(--ui-text-dimmed)]">
+					<p class="py-6 text-center text-[12px] text-(--ui-text-dimmed)">
 						No listing performance data yet.
 					</p>
 				{:else}
 					<div class="space-y-1">
 						{#each topListings as l, i (l.id)}
 							<div
-								class="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-[var(--ui-bg-accented)]/50"
+								class="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-(--ui-bg-accented)/50"
 							>
 								<span
-									class="grid size-6 shrink-0 place-items-center rounded-md bg-[var(--ui-bg-accented)] text-[11px] font-bold text-[var(--ui-text-muted)] tabular-nums"
+									class="grid size-6 shrink-0 place-items-center rounded-md bg-(--ui-bg-accented) text-[11px] font-bold text-(--ui-text-muted) tabular-nums"
 									>{i + 1}</span
 								>
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-[12.5px] font-semibold">{l.data.productName}</p>
-									<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+									<p class="text-[10.5px] text-(--ui-text-dimmed)">
 										{l.data.channelIds.length} channels · {l.data.views ?? 0} views
 									</p>
 								</div>
@@ -264,7 +257,7 @@
 									<div class="text-[12px] font-bold tabular-nums">
 										{formatInt(l.data.conversions ?? 0)} sold
 									</div>
-									<div class="text-[10.5px] text-[var(--ui-text-dimmed)] tabular-nums">
+									<div class="text-[10.5px] text-(--ui-text-dimmed) tabular-nums">
 										{formatMoney((l.data.conversions ?? 0) * l.data.price, currency)}
 									</div>
 								</div>

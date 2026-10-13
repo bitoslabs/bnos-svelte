@@ -15,14 +15,14 @@
 		{ badge: string; ring: string; icon: string; btn: 'primary' | 'error' | 'neutral' }
 	> = {
 		danger: {
-			badge: 'bg-[var(--tone-error-bg)] text-[var(--tone-error-text)]',
-			ring: 'ring-[var(--tone-error-text)]/15',
+			badge: 'bg-(--tone-error-bg) text-(--tone-error-text)',
+			ring: 'ring-(--tone-error-text)/15',
 			icon: 'lucide:trash-2',
 			btn: 'error'
 		},
 		warning: {
-			badge: 'bg-[var(--tone-warning-bg)] text-[var(--tone-warning-text)]',
-			ring: 'ring-[var(--tone-warning-text)]/15',
+			badge: 'bg-(--tone-warning-bg) text-(--tone-warning-text)',
+			ring: 'ring-(--tone-warning-text)/15',
 			icon: 'lucide:triangle-alert',
 			btn: 'primary'
 		},
@@ -33,8 +33,8 @@
 			btn: 'primary'
 		},
 		neutral: {
-			badge: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]',
-			ring: 'ring-[var(--ui-border-muted)]',
+			badge: 'bg-(--ui-bg-accented) text-(--ui-text-muted)',
+			ring: 'ring-(--ui-border-muted)',
 			icon: 'lucide:circle-help',
 			btn: 'neutral'
 		}
@@ -74,7 +74,7 @@
 		<div
 			in:scale={{ duration: 180, start: 0.94 }}
 			out:scale={{ duration: 120, start: 0.97 }}
-			class="relative w-full max-w-sm overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] shadow-2xl shadow-black/25"
+			class="relative w-full max-w-sm overflow-hidden rounded-2xl border border-(--ui-border) bg-(--ui-bg-elevated) shadow-2xl shadow-black/25"
 			role="alertdialog"
 			aria-modal="true"
 			aria-labelledby="confirm-title"
@@ -92,13 +92,13 @@
 					{state.options.title}
 				</h2>
 				{#if state.options.message}
-					<p class="mt-1.5 text-[13px] leading-relaxed text-[var(--ui-text-muted)]">
+					<p class="mt-1.5 text-[13px] leading-relaxed text-(--ui-text-muted)">
 						{state.options.message}
 					</p>
 				{/if}
 				{#if state.options.detail}
 					<div
-						class="mt-3 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2 text-left text-[12.5px] font-medium break-words text-[var(--ui-text)]"
+						class="mt-3 rounded-lg border border-(--ui-border-muted) bg-(--ui-bg-muted) px-3 py-2 text-left text-[12.5px] font-medium break-words text-(--ui-text)"
 					>
 						{state.options.detail}
 					</div>

@@ -285,14 +285,14 @@
 	<!-- ══════════════════ Welcome header + premium status cluster ══════════════════ -->
 	<header class="dashboard-header flex flex-wrap items-end justify-between gap-3">
 		<div class="min-w-0">
-			<p class="text-[12px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+			<p class="text-[12px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 				{greet}
 			</p>
 			<h1 class="font-display text-2xl font-bold tracking-tight">
 				{tenant.state.organizationName || t('dashboard.yourStore')}
 			</h1>
 			<div
-				class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[var(--ui-text-muted)]"
+				class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-(--ui-text-muted)"
 			>
 				<span class="inline-flex items-center gap-1.5">
 					<span
@@ -307,9 +307,9 @@
 					</span>
 					<span class="font-semibold {syncStatus.tone}">{syncStatus.label}</span>
 				</span>
-				<span class="text-[var(--ui-text-dimmed)]">·</span>
+				<span class="text-(--ui-text-dimmed)">·</span>
 				<span class="font-mono">{session.shortNpub ?? t('profile.nostrIdentity')}</span>
-				<span class="text-[var(--ui-text-dimmed)]">·</span>
+				<span class="text-(--ui-text-dimmed)">·</span>
 				<span>{tenant.state.currency}</span>
 			</div>
 		</div>
@@ -330,14 +330,12 @@
 				</div>
 				<div class="flex flex-col justify-center px-3.5 py-2">
 					<div class="flex items-center gap-2">
-						<span
-							class="text-[10px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
-						>
+						<span class="text-[10px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase">
 							BTC · {currency}
 						</span>
 						<button
 							type="button"
-							class="focus-brand grid size-5 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+							class="focus-brand grid size-5 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 							onclick={refreshRate}
 							disabled={btcRate.loading}
 							aria-label={t('dashboard.refreshRate')}
@@ -353,15 +351,15 @@
 						{#if btcPrice > 0}
 							{formatMoney(btcPrice, currency)}
 						{:else if btcRate.loading}
-							<span class="inline-block h-4 w-24 animate-pulse rounded bg-[var(--ui-bg-accented)]"
+							<span class="inline-block h-4 w-24 animate-pulse rounded bg-(--ui-bg-accented)"
 							></span>
 						{:else}
-							<span class="text-[12px] font-semibold text-[var(--ui-text-dimmed)]">
+							<span class="text-[12px] font-semibold text-(--ui-text-dimmed)">
 								{t('dashboard.rateUnavailable')}
 							</span>
 						{/if}
 					</div>
-					<div class="mt-0.5 flex items-center gap-1.5 text-[10px] text-[var(--ui-text-dimmed)]">
+					<div class="mt-0.5 flex items-center gap-1.5 text-[10px] text-(--ui-text-dimmed)">
 						{#if satsPerUnit > 0}
 							<span class="tabular-nums">1 {currency} ≈ {formatNumber(satsPerUnit)} sats</span>
 							<span aria-hidden="true">·</span>
@@ -377,8 +375,8 @@
 					{#if blockHeight !== null}
 						<div
 							class="mt-1 text-[10px] tabular-nums {blockAgeMinutes >= 15
-								? 'text-[var(--tone-warning-text)]'
-								: 'text-[var(--ui-text-dimmed)]'}"
+								? 'text-(--tone-warning-text)'
+								: 'text-(--ui-text-dimmed)'}"
 							title="Latest Bitcoin blockchain block"
 						>
 							Block {formatInt(blockHeight)} · {blockAge}
@@ -394,7 +392,7 @@
 				aria-label={t('common.today')}
 			>
 				<div
-					class="grid w-11 shrink-0 place-items-center bg-[var(--ui-bg-muted)] text-[var(--ui-text-dimmed)]"
+					class="grid w-11 shrink-0 place-items-center bg-(--ui-bg-muted) text-(--ui-text-dimmed)"
 					aria-hidden="true"
 				>
 					<Icon name="lucide:calendar-clock" class="size-5" />
@@ -404,7 +402,7 @@
 						{clock || '--:--'}
 					</div>
 					<div
-						class="mt-0.5 text-[10px] font-semibold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+						class="mt-0.5 text-[10px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase"
 					>
 						{todayLong}
 					</div>
@@ -428,7 +426,7 @@
 	{#if activeShift && shiftSummary}
 		<a
 			href={resolve('/transactions/shifts')}
-			class="surface-card flex flex-wrap items-center gap-3 p-3 transition-colors hover:border-[var(--ui-border-accented)]"
+			class="surface-card flex flex-wrap items-center gap-3 p-3 transition-colors hover:border-(--ui-border-accented)"
 		>
 			<span
 				class="grid size-9 shrink-0 place-items-center rounded-xl bg-primary-500/10 text-primary-600 dark:text-primary-400"
@@ -444,7 +442,7 @@
 						<Icon name="lucide:timer" class="size-3" />{shiftDuration}
 					</span>
 				</div>
-				<p class="text-[11.5px] text-[var(--ui-text-muted)]">
+				<p class="text-[11.5px] text-(--ui-text-muted)">
 					{shiftSummary.totalOrders}
 					{t('dashboard.orders')} · {t('dashboard.shiftSales')}
 					{formatMoney(shiftSummary.totalSales - shiftSummary.totalRefundAmount, currency)}
@@ -464,7 +462,7 @@
 		{#each quickActions as action (action.label)}
 			<a
 				href={action.to}
-				class="dashboard-quick-action surface-card group flex items-center transition-colors hover:border-[var(--ui-border-accented)]"
+				class="dashboard-quick-action surface-card group flex items-center transition-colors hover:border-(--ui-border-accented)"
 			>
 				<div
 					class="dashboard-quick-action-icon grid size-10 shrink-0 place-items-center rounded-xl {action.bg} {action.color}"
@@ -473,7 +471,7 @@
 				</div>
 				<div class="min-w-0">
 					<div class="text-[13px] font-semibold">{action.label}</div>
-					<div class="truncate text-[11.5px] text-[var(--ui-text-muted)]">{action.desc}</div>
+					<div class="truncate text-[11.5px] text-(--ui-text-muted)">{action.desc}</div>
 				</div>
 			</a>
 		{/each}
@@ -490,7 +488,7 @@
 			>
 				<div class="flex items-start justify-between">
 					<div>
-						<div class="text-[12px] font-semibold text-[var(--ui-text-muted)]">
+						<div class="text-[12px] font-semibold text-(--ui-text-muted)">
 							{t('dashboard.todaysSales')}
 						</div>
 						<div class="mt-1 font-display text-3xl font-bold tracking-tight tabular-nums">
@@ -513,14 +511,14 @@
 					{/if}
 				</div>
 				<div class="mt-4 grid grid-cols-2 gap-3">
-					<div class="dashboard-stat rounded-lg bg-[var(--ui-bg-muted)]">
-						<div class="text-[11px] text-[var(--ui-text-dimmed)]">{t('dashboard.orders')}</div>
+					<div class="dashboard-stat rounded-lg bg-(--ui-bg-muted)">
+						<div class="text-[11px] text-(--ui-text-dimmed)">{t('dashboard.orders')}</div>
 						<div class="font-display text-lg font-bold tabular-nums">
 							{formatInt(m.todaysCount)}
 						</div>
 					</div>
-					<div class="dashboard-stat rounded-lg bg-[var(--ui-bg-muted)]">
-						<div class="text-[11px] text-[var(--ui-text-dimmed)]">{t('dashboard.avgOrder')}</div>
+					<div class="dashboard-stat rounded-lg bg-(--ui-bg-muted)">
+						<div class="text-[11px] text-(--ui-text-dimmed)">{t('dashboard.avgOrder')}</div>
 						<div class="font-display text-lg font-bold tabular-nums">
 							{formatMoney(m.avgOrder, currency)}
 						</div>
@@ -544,7 +542,7 @@
 							{stock.low} low · {stock.out} out
 						</span>
 					</div>
-					<p class="mb-3 text-[12px] text-[var(--ui-text-muted)]">{t('dashboard.lowStockDesc')}</p>
+					<p class="mb-3 text-[12px] text-(--ui-text-muted)">{t('dashboard.lowStockDesc')}</p>
 					<ul class="space-y-1.5">
 						{#each stock.items as item (item.id)}
 							<li class="flex items-center gap-2.5 text-[12.5px]">
@@ -560,9 +558,7 @@
 									/>
 								</span>
 								<span class="min-w-0 flex-1 truncate font-semibold">{item.name}</span>
-								<span
-									class="shrink-0 font-mono text-[11.5px] text-[var(--ui-text-muted)] tabular-nums"
-								>
+								<span class="shrink-0 font-mono text-[11.5px] text-(--ui-text-muted) tabular-nums">
 									{item.stock}/{item.threshold}
 								</span>
 							</li>
@@ -584,7 +580,7 @@
 					<h3 class="font-display text-[15px] font-semibold tracking-tight">
 						{t('dashboard.hourlySales')}
 					</h3>
-					<span class="text-[11px] text-[var(--ui-text-dimmed)]">{t('common.today')}</span>
+					<span class="text-[11px] text-(--ui-text-dimmed)">{t('common.today')}</span>
 				</div>
 				{#if hourly.length}
 					<div class="flex h-32 items-end justify-between gap-1">
@@ -598,14 +594,12 @@
 									aria-label={`${hr.label}: ${formatMoney(hr.value, currency)}`}
 									title={formatMoney(hr.value, currency)}
 								></div>
-								<span class="text-[9.5px] font-semibold text-[var(--ui-text-dimmed)]"
-									>{hr.label}</span
-								>
+								<span class="text-[9.5px] font-semibold text-(--ui-text-dimmed)">{hr.label}</span>
 							</div>
 						{/each}
 					</div>
 				{:else}
-					<p class="py-8 text-center text-[12.5px] text-[var(--ui-text-dimmed)]">
+					<p class="py-8 text-center text-[12.5px] text-(--ui-text-dimmed)">
 						{t('dashboard.noSalesToday')}
 					</p>
 				{/if}
@@ -621,18 +615,18 @@
 						{#each payments as p (p.key)}
 							<div class="flex items-center gap-3">
 								<div
-									class="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]"
+									class="grid size-8 shrink-0 place-items-center rounded-lg bg-(--ui-bg-accented) text-(--ui-text-muted)"
 								>
 									<Icon name={p.icon} class="size-4" />
 								</div>
 								<div class="min-w-0 flex-1">
 									<div class="flex items-center justify-between text-[12.5px]">
 										<span class="font-semibold">{p.label}</span>
-										<span class="text-[var(--ui-text-muted)] tabular-nums"
+										<span class="text-(--ui-text-muted) tabular-nums"
 											>{formatMoney(p.total, currency)}</span
 										>
 									</div>
-									<div class="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--ui-bg-accented)]">
+									<div class="mt-1 h-1.5 overflow-hidden rounded-full bg-(--ui-bg-accented)">
 										<div
 											class="h-full rounded-full bg-primary-500"
 											style="width: {p.percent}%"
@@ -643,7 +637,7 @@
 						{/each}
 					</div>
 				{:else}
-					<p class="py-4 text-center text-[12.5px] text-[var(--ui-text-dimmed)]">
+					<p class="py-4 text-center text-[12.5px] text-(--ui-text-dimmed)">
 						{t('dashboard.noPaymentsToday')}
 					</p>
 				{/if}
@@ -658,22 +652,22 @@
 					<div class="mb-4 flex flex-wrap gap-2">
 						{#each segments as s (s.key)}
 							<span
-								class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[11.5px] font-semibold"
+								class="inline-flex items-center gap-1.5 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2.5 py-1 text-[11.5px] font-semibold"
 							>
-								<Icon name={s.icon} class="size-3.5 text-[var(--ui-text-dimmed)]" />
+								<Icon name={s.icon} class="size-3.5 text-(--ui-text-dimmed)" />
 								{s.label}
-								<span class="text-[var(--ui-text-dimmed)] tabular-nums">{s.count}</span>
+								<span class="text-(--ui-text-dimmed) tabular-nums">{s.count}</span>
 							</span>
 						{/each}
 					</div>
 				{:else}
-					<p class="mb-4 text-[12.5px] text-[var(--ui-text-dimmed)]">
+					<p class="mb-4 text-[12.5px] text-(--ui-text-dimmed)">
 						{t('dashboard.noOrdersToday')}
 					</p>
 				{/if}
 
-				<div class="border-t border-[var(--ui-border-muted)] pt-3">
-					<h4 class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">
+				<div class="border-t border-(--ui-border-muted) pt-3">
+					<h4 class="mb-2 text-[12px] font-semibold text-(--ui-text-muted)">
 						{t('dashboard.topProducts')}
 					</h4>
 					{#if products.length}
@@ -685,14 +679,14 @@
 										>{i + 1}</span
 									>
 									<span class="min-w-0 flex-1 truncate font-semibold">{p.name}</span>
-									<span class="shrink-0 text-[var(--ui-text-muted)] tabular-nums"
+									<span class="shrink-0 text-(--ui-text-muted) tabular-nums"
 										>{formatInt(p.qty)} {t('dashboard.sold')}</span
 									>
 								</li>
 							{/each}
 						</ol>
 					{:else}
-						<p class="text-[12px] text-[var(--ui-text-dimmed)]">{t('dashboard.noProductSales')}</p>
+						<p class="text-[12px] text-(--ui-text-dimmed)">{t('dashboard.noProductSales')}</p>
 					{/if}
 				</div>
 			</div>
@@ -703,21 +697,19 @@
 			<!-- Metrics row: Net profit (today) · this week · this month -->
 			<div class="dashboard-metrics grid grid-cols-1 sm:grid-cols-3">
 				<div class="metric-card dashboard-metric-card">
-					<div
-						class="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ui-text-dimmed)]"
-					>
+					<div class="flex items-center gap-1.5 text-[11px] font-semibold text-(--ui-text-dimmed)">
 						<Icon name="lucide:wallet" class="size-3.5" />
 						{t('dashboard.netProfit')}
-						<span class="text-[var(--ui-text-dimmed)]">· {t('common.today')}</span>
+						<span class="text-(--ui-text-dimmed)">· {t('common.today')}</span>
 					</div>
 					<div
 						class="mt-1 font-display text-lg font-bold tabular-nums {netProfitToday < 0
-							? 'text-[var(--tone-error-text)]'
+							? 'text-(--tone-error-text)'
 							: ''}"
 					>
 						{formatMoney(netProfitToday, currency)}
 					</div>
-					<div class="text-[11px] text-[var(--ui-text-muted)]">
+					<div class="text-[11px] text-(--ui-text-muted)">
 						{t('dashboard.expensesToday')}
 						{formatMoney(exp.todaysTotal, currency)}
 						{#if m.todaysTotal > 0}
@@ -726,25 +718,25 @@
 					</div>
 				</div>
 				<div class="metric-card dashboard-metric-card">
-					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+					<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">
 						{t('common.thisWeek')}
 					</div>
 					<div class="mt-1 font-display text-lg font-bold tabular-nums">
 						{formatMoney(m.weekTotal, currency)}
 					</div>
-					<div class="text-[11px] text-[var(--ui-text-muted)]">
+					<div class="text-[11px] text-(--ui-text-muted)">
 						{m.weekCount}
 						{t('dashboard.orders')}
 					</div>
 				</div>
 				<div class="metric-card dashboard-metric-card">
-					<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+					<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">
 						{t('common.thisMonth')}
 					</div>
 					<div class="mt-1 font-display text-lg font-bold tabular-nums">
 						{formatMoney(m.monthTotal, currency)}
 					</div>
-					<div class="text-[11px] text-[var(--ui-text-muted)]">
+					<div class="text-[11px] text-(--ui-text-muted)">
 						{m.monthCount}
 						{t('dashboard.orders')}
 					</div>
@@ -779,7 +771,7 @@
 							<span
 								class="text-[10.5px] font-semibold {bar.isCurrent
 									? 'text-primary-500'
-									: 'text-[var(--ui-text-dimmed)]'}"
+									: 'text-(--ui-text-dimmed)'}"
 							>
 								{bar.label}
 							</span>
@@ -791,7 +783,7 @@
 			<!-- Recent orders -->
 			<div class="surface-card overflow-hidden">
 				<div
-					class="dashboard-card-header flex items-center justify-between border-b border-[var(--ui-border-muted)]"
+					class="dashboard-card-header flex items-center justify-between border-b border-(--ui-border-muted)"
 				>
 					<h3 class="font-display text-[15px] font-semibold tracking-tight">
 						{t('dashboard.recentOrders')}
@@ -817,11 +809,11 @@
 						</EmptyState>
 					</div>
 				{:else}
-					<div class="divide-y divide-[var(--ui-border-muted)]">
+					<div class="divide-y divide-(--ui-border-muted)">
 						{#each recent as o (o.id)}
 							<a
 								href={resolve(`/orders/${o.id}`)}
-								class="dashboard-order-row flex items-center gap-3 transition-colors hover:bg-[var(--ui-bg-accented)]"
+								class="dashboard-order-row flex items-center gap-3 transition-colors hover:bg-(--ui-bg-accented)"
 							>
 								<div
 									class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400"
@@ -833,7 +825,7 @@
 										<span class="text-[13px] font-semibold">{o.number}</span>
 										<Badge color={statusColor(o.status)}>{o.status}</Badge>
 									</div>
-									<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
+									<p class="mt-0.5 text-[11.5px] text-(--ui-text-dimmed)">
 										{o.items}
 										{o.items !== 1 ? t('dashboard.items') : t('dashboard.item')} · {relativeTime(
 											o.atMs
@@ -845,7 +837,7 @@
 										{formatMoney(o.total, currency)}
 									</div>
 									<div
-										class="mt-0.5 flex items-center justify-end gap-1 text-[10.5px] font-semibold text-[var(--ui-text-dimmed)]"
+										class="mt-0.5 flex items-center justify-end gap-1 text-[10.5px] font-semibold text-(--ui-text-dimmed)"
 									>
 										<Icon
 											name={o.method === 'cash'

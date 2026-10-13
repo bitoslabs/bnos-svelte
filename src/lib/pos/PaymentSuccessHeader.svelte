@@ -73,7 +73,7 @@
 			type="button"
 			onclick={onClose}
 			aria-label={t('common.close')}
-			class="absolute -top-1.5 right-0 grid size-8 place-items-center rounded-lg text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+			class="absolute -top-1.5 right-0 grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 		>
 			<Icon name="lucide:x" class="size-4" />
 		</button>
@@ -110,29 +110,27 @@
 		</div>
 	</div>
 
-	<h2 class="ps-fade-up mt-3 font-display text-xl font-black tracking-tight text-[var(--ui-text)]">
+	<h2 class="ps-fade-up mt-3 font-display text-xl font-black tracking-tight text-(--ui-text)">
 		{t('pos.paymentReceived')}
 	</h2>
-	<p class="ps-fade-up mt-0.5 font-mono text-[12px] font-semibold text-[var(--ui-text-dimmed)]">
+	<p class="ps-fade-up mt-0.5 font-mono text-[12px] font-semibold text-(--ui-text-dimmed)">
 		{sale.number}
 	</p>
 	<div class="ps-fade-up mx-auto mt-3 w-full max-w-[260px] text-left">
 		<div
-			class="mb-1.5 flex items-center justify-between text-[9px] font-bold tracking-[0.12em] text-[var(--tone-success-text)] uppercase"
+			class="mb-1.5 flex items-center justify-between text-[9px] font-bold tracking-[0.12em] text-(--tone-success-text) uppercase"
 		>
 			<span>Payment confirmed</span>
 			<span>100%</span>
 		</div>
-		<div class="h-1.5 overflow-hidden rounded-full bg-[var(--tone-success-bg)]">
-			<div class="h-full w-full rounded-full bg-[var(--tone-success-text)]"></div>
+		<div class="h-1.5 overflow-hidden rounded-full bg-(--tone-success-bg)">
+			<div class="h-full w-full rounded-full bg-(--tone-success-text)"></div>
 		</div>
 	</div>
 
 	<!-- Amount (count-up) -->
 	<div class="ps-fade-up ps-fade-up-2 mt-1.5">
-		<span
-			class="font-display text-[2.2rem] leading-none font-black text-[var(--ui-text)] tabular-nums"
-		>
+		<span class="font-display text-[2.2rem] leading-none font-black text-(--ui-text) tabular-nums">
 			{formatMoney(displayTotal, currency)}
 		</span>
 	</div>
@@ -149,13 +147,13 @@
 			{meta.label}
 		</span>
 		<span
-			class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[var(--ui-text-muted)] capitalize"
+			class="inline-flex items-center gap-1 rounded-full bg-(--ui-bg-muted) px-2.5 py-1 text-(--ui-text-muted) capitalize"
 		>
 			<Icon name="lucide:bag" class="size-3.5" />
 			{orderTypeLabel}
 		</span>
 		<span
-			class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-[var(--ui-text-muted)]"
+			class="inline-flex items-center gap-1 rounded-full bg-(--ui-bg-muted) px-2.5 py-1 text-(--ui-text-muted)"
 		>
 			<Icon name="lucide:hash" class="size-3.5" />
 			{t('pos.itemsCount', { count })}
@@ -163,9 +161,7 @@
 	</div>
 
 	{#if hasTip}
-		<div
-			class="ps-fade-up ps-fade-up-3 mt-1.5 text-[11.5px] font-medium text-[var(--ui-text-muted)]"
-		>
+		<div class="ps-fade-up ps-fade-up-3 mt-1.5 text-[11.5px] font-medium text-(--ui-text-muted)">
 			{t('pos.includesTip', { amount: formatMoney(tip, currency) })}
 		</div>
 	{/if}
@@ -173,19 +169,17 @@
 	<!-- Change due (cash) — the cashier's single most important number -->
 	{#if hasChange}
 		<div
-			class="ps-fade-up ps-fade-up-3 mt-3 flex items-center justify-between rounded-xl border border-dashed border-[var(--tone-success-text)]/40 bg-[var(--tone-success-bg)] px-3.5 py-2"
+			class="ps-fade-up ps-fade-up-3 mt-3 flex items-center justify-between rounded-xl border border-dashed border-(--tone-success-text)/40 bg-(--tone-success-bg) px-3.5 py-2"
 		>
-			<span
-				class="text-[10.5px] font-bold tracking-[0.12em] text-[var(--tone-success-text)] uppercase"
-			>
+			<span class="text-[10.5px] font-bold tracking-[0.12em] text-(--tone-success-text) uppercase">
 				{t('pos.changeDue')}
 			</span>
-			<span class="font-display text-xl font-black text-[var(--tone-success-text)] tabular-nums">
+			<span class="font-display text-xl font-black text-(--tone-success-text) tabular-nums">
 				{formatMoney(sale.change, currency)}
 			</span>
 		</div>
 		{#if hasTendered}
-			<div class="mt-1 flex items-center justify-between text-[11px] text-[var(--ui-text-muted)]">
+			<div class="mt-1 flex items-center justify-between text-[11px] text-(--ui-text-muted)">
 				<span
 					>{t('pos.tendered')}
 					<span class="tabular-nums">{formatMoney(tendered, currency)}</span></span

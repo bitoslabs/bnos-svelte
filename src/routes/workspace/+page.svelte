@@ -20,7 +20,7 @@
 <div class="mx-auto max-w-2xl space-y-5">
 	<div>
 		<h1 class="font-display text-xl font-bold tracking-tight">{t('settings.workspace')}</h1>
-		<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+		<p class="text-[12.5px] text-(--ui-text-muted)">
 			The organization this device is operating under
 		</p>
 	</div>
@@ -39,21 +39,19 @@
 					</h2>
 					<Badge color="success">current</Badge>
 				</div>
-				<div class="mt-0.5 font-mono text-[12px] text-[var(--ui-text-muted)]">
+				<div class="mt-0.5 font-mono text-[12px] text-(--ui-text-muted)">
 					{tenant.state.organizationCode || '—'} · {truncateNpub(session.npub ?? '', 12, 6)}
 				</div>
 				<div class="mt-2 flex flex-wrap gap-2 text-[11.5px]">
 					<span
-						class="inline-flex items-center gap-1 rounded-md bg-[var(--ui-bg-accented)] px-2 py-0.5 capitalize"
+						class="inline-flex items-center gap-1 rounded-md bg-(--ui-bg-accented) px-2 py-0.5 capitalize"
 						><Icon name="lucide:store" class="size-3" />{tenant.state.businessType}</span
 					>
-					<span
-						class="inline-flex items-center gap-1 rounded-md bg-[var(--ui-bg-accented)] px-2 py-0.5"
+					<span class="inline-flex items-center gap-1 rounded-md bg-(--ui-bg-accented) px-2 py-0.5"
 						><Icon name="lucide:map-pin" class="size-3" />{tenant.state.locationName ||
 							'Main'}</span
 					>
-					<span
-						class="inline-flex items-center gap-1 rounded-md bg-[var(--ui-bg-accented)] px-2 py-0.5"
+					<span class="inline-flex items-center gap-1 rounded-md bg-(--ui-bg-accented) px-2 py-0.5"
 						><Icon name="lucide:coins" class="size-3" />{tenant.state.currency}</span
 					>
 				</div>
@@ -61,22 +59,22 @@
 		</div>
 	</div>
 
-	<div class="surface-card divide-y divide-[var(--ui-border-muted)] text-[13px]">
+	<div class="surface-card divide-y divide-(--ui-border-muted) text-[13px]">
 		<div class="flex items-center gap-3 px-4 py-3">
-			<Icon name="lucide:fingerprint" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-				class="text-[var(--ui-text-muted)]">Owner identity</span
+			<Icon name="lucide:fingerprint" class="size-4 text-(--ui-text-dimmed)" /><span
+				class="text-(--ui-text-muted)">Owner identity</span
 			><span class="ml-auto font-mono text-[12px]">{truncateNpub(session.npub ?? '', 14, 8)}</span>
 		</div>
 		<div class="flex items-center gap-3 px-4 py-3">
-			<Icon name="lucide:network" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-				class="text-[var(--ui-text-muted)]">Business model</span
+			<Icon name="lucide:network" class="size-4 text-(--ui-text-dimmed)" /><span
+				class="text-(--ui-text-muted)">Business model</span
 			><span class="ml-auto font-semibold capitalize"
 				>{tenant.state.businessModel.replace(/_/g, ' ')}</span
 			>
 		</div>
 		<div class="flex items-center gap-3 px-4 py-3">
-			<Icon name="lucide:percent" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-				class="text-[var(--ui-text-muted)]">{t('common.tax')}</span
+			<Icon name="lucide:percent" class="size-4 text-(--ui-text-dimmed)" /><span
+				class="text-(--ui-text-muted)">{t('common.tax')}</span
 			><span class="ml-auto font-semibold"
 				>{tenant.state.defaultTaxRate}% {tenant.state.taxIncludedInPrice ? 'incl.' : 'excl.'}</span
 			>

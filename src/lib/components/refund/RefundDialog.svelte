@@ -217,9 +217,9 @@
 <Dialog bind:open title={t('orders.refundOrder')} size="md">
 	<div class="space-y-3">
 		<!-- Summary header -->
-		<div class="flex items-center justify-between rounded-xl bg-[var(--ui-bg-muted)] px-3.5 py-2.5">
+		<div class="flex items-center justify-between rounded-xl bg-(--ui-bg-muted) px-3.5 py-2.5">
 			<div>
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">
+				<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">
 					{t('common.order')}
 				</div>
 				<div class="font-mono text-[13px] font-bold">
@@ -227,10 +227,8 @@
 				</div>
 			</div>
 			<div class="text-right">
-				<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Refundable</div>
-				<div
-					class="font-display text-[15px] font-bold text-[var(--tone-success-text)] tabular-nums"
-				>
+				<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Refundable</div>
+				<div class="font-display text-[15px] font-bold text-(--tone-success-text) tabular-nums">
 					{formatMoney(refundableRemaining, currency)}
 				</div>
 			</div>
@@ -240,14 +238,14 @@
 		<button
 			type="button"
 			onclick={() => (fullRefund = !fullRefund)}
-			class="flex w-full items-center justify-between rounded-lg border border-[var(--ui-border)] px-3 py-2 text-left transition-colors hover:bg-[var(--ui-bg-accented)] {fullRefund
+			class="flex w-full items-center justify-between rounded-lg border border-(--ui-border) px-3 py-2 text-left transition-colors hover:bg-(--ui-bg-accented) {fullRefund
 				? 'border-primary-500/50 bg-primary-500/5'
 				: ''}"
 		>
 			<span class="flex items-center gap-2 text-[12.5px] font-semibold">
 				<Icon
 					name="lucide:check-circle-2"
-					class="size-4 {fullRefund ? 'text-primary-500' : 'text-[var(--ui-text-dimmed)]'}"
+					class="size-4 {fullRefund ? 'text-primary-500' : 'text-(--ui-text-dimmed)'}"
 				/>
 				Refund entire order
 			</span>
@@ -257,7 +255,7 @@
 		<!-- Line items -->
 		<div class="space-y-1.5">
 			<div
-				class="flex items-center justify-between px-1 text-[10px] font-bold tracking-wide text-[var(--ui-text-dimmed)] uppercase"
+				class="flex items-center justify-between px-1 text-[10px] font-bold tracking-wide text-(--ui-text-dimmed) uppercase"
 			>
 				<span>{t('common.items')}</span>
 				<span>Restock</span>
@@ -267,27 +265,27 @@
 				{@const selected = qty > 0}
 				<div
 					class="flex items-center gap-2 rounded-lg border p-2 transition-colors {selected
-						? 'border-[var(--tone-error-text)]/30 bg-[var(--tone-error-bg)]/40'
-						: 'border-[var(--ui-border-muted)]'}"
+						? 'border-(--tone-error-text)/30 bg-(--tone-error-bg)/40'
+						: 'border-(--ui-border-muted)'}"
 				>
 					<button
 						type="button"
 						onclick={() => toggleLine(l.id, l.quantity)}
 						disabled={fullRefund}
 						class="grid size-5 shrink-0 place-items-center rounded-md border transition-colors {selected
-							? 'border-[var(--tone-error-text)] bg-[var(--tone-error-text)] text-white'
-							: 'border-[var(--ui-border)] text-transparent'}"
+							? 'border-(--tone-error-text) bg-(--tone-error-text) text-white'
+							: 'border-(--ui-border) text-transparent'}"
 						aria-label={selected ? 'Deselect' : 'Select'}
 					>
 						<Icon name="lucide:check" class="size-3" />
 					</button>
 					<div class="min-w-0 flex-1">
 						<div class="truncate text-[12.5px] font-semibold">
-							{l.name}{#if l.variantName}<span class="font-normal text-[var(--ui-text-dimmed)]">
+							{l.name}{#if l.variantName}<span class="font-normal text-(--ui-text-dimmed)">
 									· {l.variantName}</span
 								>{/if}
 						</div>
-						<div class="text-[11px] text-[var(--ui-text-dimmed)]">
+						<div class="text-[11px] text-(--ui-text-dimmed)">
 							{formatMoney(l.unitPrice, currency)} each
 						</div>
 					</div>
@@ -297,7 +295,7 @@
 							type="button"
 							onclick={() => setQty(l.id, qty - 1, l.quantity)}
 							disabled={fullRefund || !selected}
-							class="grid size-6 place-items-center rounded-md border border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] disabled:opacity-40"
+							class="grid size-6 place-items-center rounded-md border border-(--ui-border) text-(--ui-text-muted) hover:bg-(--ui-bg-accented) disabled:opacity-40"
 							aria-label={t('common.decrease')}
 						>
 							<Icon name="lucide:minus" class="size-3" />
@@ -307,7 +305,7 @@
 							type="button"
 							onclick={() => setQty(l.id, qty + 1, l.quantity)}
 							disabled={fullRefund || qty >= l.quantity}
-							class="grid size-6 place-items-center rounded-md border border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] disabled:opacity-40"
+							class="grid size-6 place-items-center rounded-md border border-(--ui-border) text-(--ui-text-muted) hover:bg-(--ui-bg-accented) disabled:opacity-40"
 							aria-label={t('common.increase')}
 						>
 							<Icon name="lucide:plus" class="size-3" />
@@ -321,8 +319,8 @@
 						class="grid size-7 shrink-0 place-items-center rounded-md transition-colors disabled:opacity-30 {(restock[
 							l.id
 						] ?? true)
-							? 'bg-[var(--tone-success-bg)] text-[var(--tone-success-text)]'
-							: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-dimmed)]'}"
+							? 'bg-(--tone-success-bg) text-(--tone-success-text)'
+							: 'bg-(--ui-bg-muted) text-(--ui-text-dimmed)'}"
 						title={(restock[l.id] ?? true) ? 'Return to stock' : 'Damaged — do not restock'}
 					>
 						<Icon
@@ -337,12 +335,12 @@
 		<!-- Method + reason -->
 		<div class="grid grid-cols-2 gap-2">
 			<label class="block">
-				<span class="mb-1 block text-[11px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1 block text-[11px] font-semibold text-(--ui-text-muted)"
 					>Refund method</span
 				>
 				<select
 					bind:value={method}
-					class="h-9.5 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-2.5 text-[13px]"
+					class="h-9.5 w-full rounded-lg border border-(--ui-border) bg-(--ui-bg) px-2.5 text-[13px]"
 				>
 					{#each ['cash', 'card', 'qr', 'lightning', 'store_credit'] as m (m)}
 						<option value={m} selected={m === originalMethod}>{m.replace('_', ' ')}</option>
@@ -350,12 +348,12 @@
 				</select>
 			</label>
 			<label class="block">
-				<span class="mb-1 block text-[11px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1 block text-[11px] font-semibold text-(--ui-text-muted)"
 					>{t('common.reason')}</span
 				>
 				<select
 					bind:value={reason}
-					class="h-9.5 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-2.5 text-[13px]"
+					class="h-9.5 w-full rounded-lg border border-(--ui-border) bg-(--ui-bg) px-2.5 text-[13px]"
 				>
 					{#each REFUND_REASONS as r (r.value)}
 						<option value={r.value}>{r.label}</option>
@@ -372,7 +370,7 @@
 
 		{#if needsAttention}
 			<div
-				class="flex items-center gap-2 rounded-lg bg-[var(--tone-warning-bg)] px-3 py-2 text-[11.5px] font-medium text-[var(--tone-warning-text)]"
+				class="flex items-center gap-2 rounded-lg bg-(--tone-warning-bg) px-3 py-2 text-[11.5px] font-medium text-(--tone-warning-text)"
 			>
 				<Icon name="lucide:triangle-alert" class="size-4 shrink-0" />
 				Large refund — manager confirmation recommended.
@@ -383,10 +381,10 @@
 	{#snippet footer()}
 		<div class="flex w-full items-center gap-3">
 			<div class="min-w-0 flex-1">
-				<div class="text-[10px] font-bold tracking-wide text-[var(--ui-text-dimmed)] uppercase">
+				<div class="text-[10px] font-bold tracking-wide text-(--ui-text-dimmed) uppercase">
 					{selectedCount} item{selectedCount !== 1 ? 's' : ''} · {isFull ? 'full' : 'partial'}
 				</div>
-				<div class="font-display text-lg font-black text-[var(--tone-error-text)] tabular-nums">
+				<div class="font-display text-lg font-black text-(--tone-error-text) tabular-nums">
 					−{formatMoney(refundTotal, currency)}
 				</div>
 			</div>

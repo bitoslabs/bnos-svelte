@@ -13,11 +13,11 @@
 
 <div class="flex min-h-screen items-center justify-center px-4 py-10">
 	<div class="flex min-h-[70vh] w-full max-w-xl flex-col justify-center">
-		<div class="mb-6 grid size-14 place-items-center rounded-lg bg-[var(--tone-warning-bg)]">
-			<Icon name="lucide:cloud-off" class="size-7 text-[var(--tone-warning-text)]" />
+		<div class="mb-6 grid size-14 place-items-center rounded-lg bg-(--tone-warning-bg)">
+			<Icon name="lucide:cloud-off" class="size-7 text-(--tone-warning-text)" />
 		</div>
 		<h1 class="font-display text-3xl font-bold tracking-tight">You're offline</h1>
-		<p class="mt-3 text-[13.5px] leading-6 text-[var(--ui-text-muted)]">
+		<p class="mt-3 text-[13.5px] leading-6 text-(--ui-text-muted)">
 			The app is working in offline mode. You can keep selling — all data is saved locally and will
 			sync to relays when the connection comes back.
 		</p>

@@ -96,8 +96,8 @@
 				onclick={() => (detailTab = 'overview')}
 				class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {detailTab ===
 				'overview'
-					? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-					: 'text-[var(--ui-text-muted)]'}"
+					? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+					: 'text-(--ui-text-muted)'}"
 			>
 				<Icon name="lucide:info" class="size-3.5" />Overview
 			</button>
@@ -106,8 +106,8 @@
 				onclick={() => (detailTab = 'stock')}
 				class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {detailTab ===
 				'stock'
-					? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-					: 'text-[var(--ui-text-muted)]'}"
+					? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+					: 'text-(--ui-text-muted)'}"
 			>
 				<Icon name="lucide:history" class="size-3.5" />Stock history
 			</button>
@@ -116,8 +116,8 @@
 				onclick={() => (detailTab = 'orders')}
 				class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {detailTab ===
 				'orders'
-					? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-					: 'text-[var(--ui-text-muted)]'}"
+					? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+					: 'text-(--ui-text-muted)'}"
 			>
 				<Icon name="lucide:receipt" class="size-3.5" />Orders
 			</button>
@@ -130,9 +130,7 @@
 				{#if images.length > 0}
 					{@const ai = images[Math.min(activeImageIdx, images.length - 1)]}
 					<div class="space-y-2">
-						<div
-							class="relative aspect-video w-full overflow-hidden rounded-xl bg-[var(--ui-bg-muted)]"
-						>
+						<div class="relative aspect-video w-full overflow-hidden rounded-xl bg-(--ui-bg-muted)">
 							<img src={ai} alt={String(d.name ?? '')} class="h-full w-full object-cover" />
 							{#if images.length > 1}
 								<span
@@ -193,15 +191,15 @@
 				</div>
 
 				<!-- Price section -->
-				<div class="grid grid-cols-3 gap-3 rounded-lg bg-[var(--ui-bg-accented)] p-3">
+				<div class="grid grid-cols-3 gap-3 rounded-lg bg-(--ui-bg-accented) p-3">
 					<div>
-						<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">{t('common.price')}</p>
+						<p class="text-[10.5px] text-(--ui-text-dimmed)">{t('common.price')}</p>
 						<p class="font-bold tabular-nums">
 							{formatMoney(Number(d.price ?? 0), (d.currency as string) ?? currency)}
 						</p>
 					</div>
 					<div>
-						<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">{t('common.cost')}</p>
+						<p class="text-[10.5px] text-(--ui-text-dimmed)">{t('common.cost')}</p>
 						<p class="font-semibold tabular-nums">
 							{d.costPrice != null
 								? formatMoney(Number(d.costPrice), (d.currency as string) ?? currency)
@@ -209,7 +207,7 @@
 						</p>
 					</div>
 					<div>
-						<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">Compare-at</p>
+						<p class="text-[10.5px] text-(--ui-text-dimmed)">Compare-at</p>
 						<p class="font-semibold tabular-nums">
 							{d.compareAtPrice != null
 								? formatMoney(Number(d.compareAtPrice), (d.currency as string) ?? currency)
@@ -221,9 +219,9 @@
 				<!-- Stock level -->
 				{#if d.trackInventory}
 					<div
-						class="flex items-center justify-between rounded-lg border border-[var(--ui-border-muted)] p-3"
+						class="flex items-center justify-between rounded-lg border border-(--ui-border-muted) p-3"
 					>
-						<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Stock level</span>
+						<span class="text-[12px] font-semibold text-(--ui-text-muted)">Stock level</span>
 						<StockBadge
 							level={Number(d.stockLevel ?? 0)}
 							threshold={Number(
@@ -237,37 +235,37 @@
 				<div class="grid grid-cols-2 gap-x-4 gap-y-3 text-[12.5px]">
 					{#if d.sku}
 						<div>
-							<span class="text-[var(--ui-text-dimmed)]">{t('common.sku')}</span>
+							<span class="text-(--ui-text-dimmed)">{t('common.sku')}</span>
 							<p class="font-mono font-semibold">{d.sku}</p>
 						</div>
 					{/if}
 					{#if d.barcode}
 						<div>
-							<span class="text-[var(--ui-text-dimmed)]">Barcode</span>
+							<span class="text-(--ui-text-dimmed)">Barcode</span>
 							<p class="font-mono font-semibold">{d.barcode}</p>
 						</div>
 					{/if}
 					{#if d.categoryId}
 						<div>
-							<span class="text-[var(--ui-text-dimmed)]">{t('common.category')}</span>
+							<span class="text-(--ui-text-dimmed)">{t('common.category')}</span>
 							<p class="font-semibold">{catName(String(d.categoryId))}</p>
 						</div>
 					{/if}
 					{#if d.unitId}
 						<div>
-							<span class="text-[var(--ui-text-dimmed)]">{t('common.unit')}</span>
+							<span class="text-(--ui-text-dimmed)">{t('common.unit')}</span>
 							<p class="font-semibold">{unitName(String(d.unitId))}</p>
 						</div>
 					{/if}
 					{#if d.prepTime != null}
 						<div>
-							<span class="text-[var(--ui-text-dimmed)]">Prep time</span>
+							<span class="text-(--ui-text-dimmed)">Prep time</span>
 							<p class="font-semibold">{d.prepTime} min</p>
 						</div>
 					{/if}
 					{#if d.sortOrder != null}
 						<div>
-							<span class="text-[var(--ui-text-dimmed)]">Sort order</span>
+							<span class="text-(--ui-text-dimmed)">Sort order</span>
 							<p class="font-semibold tabular-nums">{d.sortOrder}</p>
 						</div>
 					{/if}
@@ -276,7 +274,7 @@
 				<!-- Tags -->
 				{#if Array.isArray(d.tags) && d.tags.length > 0}
 					<div>
-						<span class="text-[11px] font-semibold text-[var(--ui-text-muted)]">Tags</span>
+						<span class="text-[11px] font-semibold text-(--ui-text-muted)">Tags</span>
 						<div class="mt-1 flex flex-wrap gap-1">
 							{#each d.tags as tag}
 								<Badge color="neutral">{tag}</Badge>
@@ -288,28 +286,26 @@
 				<!-- Description -->
 				{#if d.description}
 					<div>
-						<span class="text-[11px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="text-[11px] font-semibold text-(--ui-text-muted)"
 							>{t('common.description')}</span
 						>
-						<p class="mt-1 text-[12.5px] leading-relaxed text-[var(--ui-text)]">{d.description}</p>
+						<p class="mt-1 text-[12.5px] leading-relaxed text-(--ui-text)">{d.description}</p>
 					</div>
 				{/if}
 
 				<!-- Variants -->
 				{#if Array.isArray(d.variants) && d.variants.length > 0}
 					<div>
-						<span class="text-[11px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="text-[11px] font-semibold text-(--ui-text-muted)"
 							>Variants ({d.variants.length})</span
 						>
 						<ul class="mt-1 space-y-1">
 							{#each d.variants as v}
 								<li
-									class="flex items-center justify-between rounded-lg border border-[var(--ui-border-muted)] px-2.5 py-1.5 text-[12px]"
+									class="flex items-center justify-between rounded-lg border border-(--ui-border-muted) px-2.5 py-1.5 text-[12px]"
 								>
 									<span class="font-semibold">{v.name}</span>
-									<span class="text-[var(--ui-text-muted)] tabular-nums"
-										>{v.priceModifier ?? 0}</span
-									>
+									<span class="text-(--ui-text-muted) tabular-nums">{v.priceModifier ?? 0}</span>
 								</li>
 							{/each}
 						</ul>
@@ -320,7 +316,7 @@
 			<!-- Stock history timeline -->
 			<div class="px-5 py-4">
 				{#if stockHistory.length === 0}
-					<div class="py-8 text-center text-[12px] text-[var(--ui-text-dimmed)]">
+					<div class="py-8 text-center text-[12px] text-(--ui-text-dimmed)">
 						<Icon name="lucide:package-x" class="mx-auto mb-2 size-8 opacity-50" />
 						No stock adjustments recorded
 					</div>
@@ -328,10 +324,10 @@
 					<div class="space-y-0">
 						{#each stockHistory as item}
 							<div
-								class="relative ml-2 flex items-start gap-3 border-l-2 border-[var(--ui-border-muted)] pb-4 pl-4"
+								class="relative ml-2 flex items-start gap-3 border-l-2 border-(--ui-border-muted) pb-4 pl-4"
 							>
 								<div
-									class="absolute top-0 -left-[7px] size-3.5 rounded-full border-2 border-[var(--surface-bg)] {item
+									class="absolute top-0 -left-[7px] size-3.5 rounded-full border-2 border-(--surface-bg) {item
 										.data.type === 'increase'
 										? 'bg-emerald-500'
 										: 'bg-rose-500'}"
@@ -341,14 +337,14 @@
 										<span class="text-[13px] font-bold"
 											>{item.data.type === 'increase' ? '↑ Stock in' : '↓ Stock out'}</span
 										>
-										<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]"
+										<span class="text-[12px] font-semibold text-(--ui-text-muted)"
 											>{item.data.quantity}</span
 										>
 									</div>
-									<p class="text-[11.5px] text-[var(--ui-text-dimmed)]">
+									<p class="text-[11.5px] text-(--ui-text-dimmed)">
 										{item.data.reason ?? 'No reason'}
 									</p>
-									<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+									<p class="text-[11px] text-(--ui-text-dimmed)">
 										{relativeTime(item.data.occurredAt ?? '')}
 									</p>
 								</div>
@@ -361,7 +357,7 @@
 			<!-- Order history -->
 			<div class="px-5 py-4">
 				{#if orderHistory.length === 0}
-					<div class="py-8 text-center text-[12px] text-[var(--ui-text-dimmed)]">
+					<div class="py-8 text-center text-[12px] text-(--ui-text-dimmed)">
 						<Icon name="lucide:receipt" class="mx-auto mb-2 size-8 opacity-50" />
 						No orders containing this product
 					</div>
@@ -379,21 +375,21 @@
 								0
 							)}
 							<li
-								class="flex items-center justify-between rounded-lg border border-[var(--ui-border-muted)] px-3 py-2"
+								class="flex items-center justify-between rounded-lg border border-(--ui-border-muted) px-3 py-2"
 							>
 								<div class="min-w-0">
 									<span class="text-[12.5px] font-semibold"
 										>#{(order.data as Record<string, unknown>).orderNumber ??
 											order.id.slice(0, 8)}</span
 									>
-									<span class="ml-2 text-[11px] text-[var(--ui-text-dimmed)]"
+									<span class="ml-2 text-[11px] text-(--ui-text-dimmed)"
 										>{relativeTime(
 											((order.data as Record<string, unknown>).createdAt as string) ?? ''
 										)}</span
 									>
 								</div>
 								<div class="flex items-center gap-3 text-right">
-									<span class="text-[11px] text-[var(--ui-text-muted)]"
+									<span class="text-[11px] text-(--ui-text-muted)"
 										>Qty: <span class="font-semibold tabular-nums">{qty}</span></span
 									>
 									<span class="text-[12px] font-bold tabular-nums"
@@ -410,8 +406,6 @@
 			</div>
 		{/if}
 	{:else}
-		<div class="py-12 text-center text-[12px] text-[var(--ui-text-dimmed)]">
-			No product selected
-		</div>
+		<div class="py-12 text-center text-[12px] text-(--ui-text-dimmed)">No product selected</div>
 	{/if}
 </Slideover>

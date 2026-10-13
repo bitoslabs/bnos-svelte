@@ -199,7 +199,7 @@
 	<div class="flex flex-wrap items-start justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">Shifts & cash drawer</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+			<p class="text-[12.5px] text-(--ui-text-muted)">
 				Open/close shifts per branch, record cash movements · GLO <code>shift</code> kind 30520 /
 				<code>cash-event</code> kind 30521
 			</p>
@@ -207,11 +207,11 @@
 		<!-- Branch scope selector (company-wide roles only) -->
 		{#if canManageAllBranches && branchOptions.length > 1}
 			<div
-				class="relative inline-flex items-center rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+				class="relative inline-flex items-center rounded-xl border border-(--ui-border) bg-(--ui-bg-muted)"
 			>
 				<Icon
 					name="lucide:map-pin"
-					class="pointer-events-none absolute left-2.5 size-3.5 text-[var(--ui-text-dimmed)]"
+					class="pointer-events-none absolute left-2.5 size-3.5 text-(--ui-text-dimmed)"
 				/>
 				<select
 					bind:value={selectedBranchId}
@@ -223,12 +223,12 @@
 				</select>
 				<Icon
 					name="lucide:chevron-down"
-					class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+					class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
 				/>
 			</div>
 		{:else}
 			<span
-				class="inline-flex items-center gap-1 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2 py-1 text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				class="inline-flex items-center gap-1 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2 py-1 text-[12px] font-semibold text-(--ui-text-muted)"
 			>
 				<Icon name="lucide:map-pin" class="size-3.5" />
 				{branchLabel}
@@ -243,18 +243,16 @@
 			<div class="flex flex-wrap items-center justify-between gap-3">
 				<div class="flex items-center gap-3">
 					<div
-						class="grid size-10 place-items-center rounded-xl bg-[var(--tone-success-bg)] text-[var(--tone-success-text)]"
+						class="grid size-10 place-items-center rounded-xl bg-(--tone-success-bg) text-(--tone-success-text)"
 					>
 						<Icon name="lucide:lock-open" class="size-5" />
 					</div>
 					<div>
-						<div
-							class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-						>
+						<div class="text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 							Active shift · {branchLabel}
 						</div>
 						<div class="font-mono text-[14px] font-semibold">{activeShift.data.number}</div>
-						<div class="text-[11.5px] text-[var(--ui-text-muted)]">
+						<div class="text-[11.5px] text-(--ui-text-muted)">
 							Opened {relativeTime(activeShift.data.openedAt)} · {formatMoney(
 								activeShift.data.openingCash,
 								currency
@@ -286,9 +284,9 @@
 					)}
 				</div>
 				<div
-					class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)]/50 px-4 py-2.5 text-[13px]"
+					class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-(--ui-border-muted) bg-(--ui-bg-muted)/50 px-4 py-2.5 text-[13px]"
 				>
-					<span class="inline-flex items-center gap-1.5 text-[var(--ui-text-muted)]">
+					<span class="inline-flex items-center gap-1.5 text-(--ui-text-muted)">
 						<Icon name="lucide:calculator" class="size-3.5" />
 						Expected cash in drawer
 					</span>
@@ -301,7 +299,7 @@
 	{:else}
 		<div class="surface-card flex flex-wrap items-end gap-3 p-5">
 			<div class="flex-1">
-				<div class="mb-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)]">
+				<div class="mb-1.5 text-[12px] font-semibold text-(--ui-text-muted)">
 					Opening cash float · {branchLabel}
 				</div>
 				<Input
@@ -333,7 +331,7 @@
 				/>
 			</div>
 			<div
-				class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+				class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
 			>
 				<select
 					bind:value={cashType}
@@ -346,7 +344,7 @@
 				</select>
 				<Icon
 					name="lucide:chevron-down"
-					class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+					class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
 				/>
 			</div>
 			<div class="min-w-[10rem] flex-1">
@@ -369,7 +367,7 @@
 		{/if}
 	{:else}
 		<div class="data-panel">
-			<div class="border-b border-[var(--ui-border-muted)] px-5 py-3 text-[13px] font-semibold">
+			<div class="border-b border-(--ui-border-muted) px-5 py-3 text-[13px] font-semibold">
 				Cash movements · {branchLabel}
 			</div>
 			<table class="table-surface w-full text-left">
@@ -382,7 +380,7 @@
 						<th class="px-3 py-2.5 text-right">{t('common.actions')}</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+				<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 					{#each branchEvents.slice(0, 50) as e (e.id)}
 						<tr>
 							<td class="px-5 py-3">
@@ -390,18 +388,18 @@
 									{e.data.type.replace('_', ' ')}
 								</Badge>
 							</td>
-							<td class="px-5 py-3 text-[var(--ui-text-muted)]">{e.data.reason ?? '—'}</td>
+							<td class="px-5 py-3 text-(--ui-text-muted)">{e.data.reason ?? '—'}</td>
 							<td
 								class="px-5 py-3 text-right font-semibold tabular-nums {e.data.type === 'cash_in'
-									? 'text-[var(--tone-success-text)]'
-									: 'text-[var(--tone-error-text)]'}"
+									? 'text-(--tone-success-text)'
+									: 'text-(--tone-error-text)'}"
 							>
 								{e.data.type === 'cash_in' ? '+' : '−'}{formatMoney(
 									e.data.amount,
 									e.data.currency || currency
 								)}
 							</td>
-							<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]">
+							<td class="px-5 py-3 text-right text-[12px] text-(--ui-text-dimmed)">
 								{relativeTime(e.data.occurredAt)}
 							</td>
 							<td class="px-3 py-3 text-right">
@@ -417,7 +415,7 @@
 	<!-- shift history -->
 	{#if branchShifts.length}
 		<div class="data-panel">
-			<div class="border-b border-[var(--ui-border-muted)] px-5 py-3 text-[13px] font-semibold">
+			<div class="border-b border-(--ui-border-muted) px-5 py-3 text-[13px] font-semibold">
 				Shift history · {branchLabel}
 			</div>
 			<table class="table-surface w-full text-left">
@@ -432,7 +430,7 @@
 						<th class="px-3 py-2.5 text-right">{t('common.actions')}</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+				<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 					{#each branchShifts as s (s.id)}
 						<tr>
 							<td class="px-5 py-3 font-mono text-[12.5px]">{s.data.number}</td>
@@ -449,8 +447,8 @@
 								{#if s.data.difference != null}
 									<span
 										class={(s.data.difference ?? 0) >= 0
-											? 'text-[var(--tone-success-text)]'
-											: 'text-[var(--tone-error-text)]'}
+											? 'text-(--tone-success-text)'
+											: 'text-(--tone-error-text)'}
 									>
 										{(s.data.difference ?? 0) >= 0 ? '+' : ''}{formatMoney(
 											s.data.difference ?? 0,
@@ -458,10 +456,10 @@
 										)}
 									</span>
 								{:else}
-									<span class="text-[var(--ui-text-dimmed)]">—</span>
+									<span class="text-(--ui-text-dimmed)">—</span>
 								{/if}
 							</td>
-							<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]">
+							<td class="px-5 py-3 text-right text-[12px] text-(--ui-text-dimmed)">
 								{s.data.closedAt ? relativeTime(s.data.closedAt) : '—'}
 							</td>
 							<td class="px-3 py-3 text-right">
@@ -479,26 +477,26 @@
 {#if closing}
 	<div class="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
 		<div
-			class="w-full max-w-md rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-5 shadow-2xl"
+			class="w-full max-w-md rounded-2xl border border-(--ui-border) bg-(--ui-bg-elevated) p-5 shadow-2xl"
 		>
 			<div class="flex items-center gap-2">
 				<Icon name="lucide:lock" class="size-4 text-primary-500" />
 				<h2 class="font-display text-[15px] font-semibold">Close shift · {branchLabel}</h2>
 			</div>
-			<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
+			<p class="mt-1 text-[12px] text-(--ui-text-muted)">
 				Count the cash in the drawer and enter the actual total. Variance is computed against the
 				expected amount.
 			</p>
 			{#if summary}
 				<div
-					class="mt-3 flex items-center justify-between rounded-xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)]/50 px-3 py-2 text-[12.5px]"
+					class="mt-3 flex items-center justify-between rounded-xl border border-(--ui-border-muted) bg-(--ui-bg-muted)/50 px-3 py-2 text-[12.5px]"
 				>
-					<span class="text-[var(--ui-text-muted)]">Expected cash</span>
+					<span class="text-(--ui-text-muted)">Expected cash</span>
 					<span class="font-bold tabular-nums">{formatMoney(summary.expectedCash, currency)}</span>
 				</div>
 			{/if}
 			<label class="mt-3 block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Counted cash</span
 				>
 				<Input
@@ -512,18 +510,18 @@
 			</label>
 			{#if summary}
 				<div class="mt-2 flex items-center justify-between text-[12.5px]">
-					<span class="text-[var(--ui-text-muted)]">{t('common.variance')}</span>
+					<span class="text-(--ui-text-muted)">{t('common.variance')}</span>
 					<span
 						class="font-bold tabular-nums {variance >= 0
-							? 'text-[var(--tone-success-text)]'
-							: 'text-[var(--tone-error-text)]'}"
+							? 'text-(--tone-success-text)'
+							: 'text-(--tone-error-text)'}"
 					>
 						{variance >= 0 ? '+' : ''}{formatMoney(variance, currency)}
 					</span>
 				</div>
 			{/if}
 			<label class="mt-3 block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Variance note (optional)</span
 				>
 				<Input
@@ -551,19 +549,19 @@
 {#if cancelling}
 	<div class="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
 		<div
-			class="w-full max-w-md rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-5 shadow-2xl"
+			class="w-full max-w-md rounded-2xl border border-(--ui-border) bg-(--ui-bg-elevated) p-5 shadow-2xl"
 		>
 			<div class="flex items-center gap-2">
-				<Icon name="lucide:ban" class="size-4 text-[var(--tone-error-text)]" />
+				<Icon name="lucide:ban" class="size-4 text-(--tone-error-text)" />
 				<h2 class="font-display text-[15px] font-semibold">Cancel shift?</h2>
 			</div>
-			<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
+			<p class="mt-1 text-[12px] text-(--ui-text-muted)">
 				This <span class="font-mono font-semibold">{cancelling.shift.data.number}</span> shift will be
 				voided without reconciliation. Use this only for shifts opened by mistake (wrong float, branch
 				or staff). It stays in history for audit.
 			</p>
 			<label class="mt-3 block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Reason (optional)</span
 				>
 				<Input bind:value={cancelReason} placeholder="e.g. opened on wrong branch" class="w-full" />
@@ -581,10 +579,8 @@
 <RawDataDialog bind:open={rawOpen} data={rawItem} title={t('common.shiftRawData')} />
 
 {#snippet statBox(label: string, value: string, icon: string)}
-	<div
-		class="rounded-xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)]/40 px-3 py-2"
-	>
-		<div class="flex items-center gap-1.5 text-[10.5px] font-semibold text-[var(--ui-text-dimmed)]">
+	<div class="rounded-xl border border-(--ui-border-muted) bg-(--ui-bg-muted)/40 px-3 py-2">
+		<div class="flex items-center gap-1.5 text-[10.5px] font-semibold text-(--ui-text-dimmed)">
 			<Icon name={icon} class="size-3" />
 			{label}
 		</div>

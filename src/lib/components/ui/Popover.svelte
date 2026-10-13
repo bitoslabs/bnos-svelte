@@ -7,7 +7,7 @@
 		align = 'center',
 		side = 'top',
 		title,
-		triggerClass = 'inline-grid size-9.5 place-items-center rounded-lg text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)] focus-visible:outline-none',
+		triggerClass = 'inline-grid size-9.5 place-items-center rounded-lg text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text) focus-visible:outline-none',
 		triggerActiveClass = '',
 		trigger,
 		content,
@@ -112,7 +112,7 @@
 		{title}
 		class={cn(
 			triggerClass,
-			open && (triggerActiveClass || 'bg-[var(--ui-bg-accented)] text-[var(--ui-text)]')
+			open && (triggerActiveClass || 'bg-(--ui-bg-accented) text-(--ui-text)')
 		)}
 		onclick={() => (open = !open)}
 	>
@@ -125,7 +125,7 @@
 			id={panelId}
 			tabindex="-1"
 			class={cn(
-				'animate-rise absolute z-50 rounded-xl border border-[var(--ui-border)] bg-[var(--surface-bg)] p-1.5 text-[var(--ui-text)] shadow-[var(--shadow-pop)] outline-none',
+				'animate-rise absolute z-50 rounded-xl border border-(--ui-border) bg-(--surface-bg) p-1.5 text-(--ui-text) shadow-(--shadow-pop) outline-none',
 				sideClass,
 				alignClass,
 				cls

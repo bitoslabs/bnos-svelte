@@ -158,16 +158,16 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">Waiter station</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Open tabs &amp; table service</p>
+			<p class="text-[12.5px] text-(--ui-text-muted)">Open tabs &amp; table service</p>
 		</div>
 		<!-- View toggle -->
-		<div class="flex items-center gap-0.5 rounded-lg bg-[var(--ui-bg-muted)] p-0.5">
+		<div class="flex items-center gap-0.5 rounded-lg bg-(--ui-bg-muted) p-0.5">
 			<button
 				type="button"
 				class="flex items-center gap-1 rounded-md px-3 py-1.5 text-[12px] font-bold transition-colors
 					{viewMode === 'orders'
-					? 'bg-[var(--ui-bg-elevated)] text-primary-600 shadow-sm dark:text-primary-400'
-					: 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
+					? 'bg-(--ui-bg-elevated) text-primary-600 shadow-sm dark:text-primary-400'
+					: 'text-(--ui-text-muted) hover:text-(--ui-text)'}"
 				onclick={() => (viewMode = 'orders')}
 			>
 				<Icon name="lucide:clipboard-list" class="size-3.5" />
@@ -177,8 +177,8 @@
 				type="button"
 				class="flex items-center gap-1 rounded-md px-3 py-1.5 text-[12px] font-bold transition-colors
 					{viewMode === 'waiters'
-					? 'bg-[var(--ui-bg-elevated)] text-primary-600 shadow-sm dark:text-primary-400'
-					: 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
+					? 'bg-(--ui-bg-elevated) text-primary-600 shadow-sm dark:text-primary-400'
+					: 'text-(--ui-text-muted) hover:text-(--ui-text)'}"
 				onclick={() => (viewMode = 'waiters')}
 			>
 				<Icon name="lucide:users" class="size-3.5" />
@@ -189,12 +189,12 @@
 
 	<!-- Stats bar -->
 	<div class="flex flex-wrap items-center gap-3">
-		{#each [{ label: t('common.open'), value: stats.total, color: 'bg-[var(--ui-text-dimmed)]' }, { label: t('status.pending'), value: stats.pending, color: 'bg-amber-500' }, { label: 'Cooking', value: stats.preparing, color: 'bg-blue-500' }, { label: 'Ready', value: stats.ready, color: 'bg-emerald-500' }] as stat (stat.label)}
+		{#each [{ label: t('common.open'), value: stats.total, color: 'bg-(--ui-text-dimmed)' }, { label: t('status.pending'), value: stats.pending, color: 'bg-amber-500' }, { label: 'Cooking', value: stats.preparing, color: 'bg-blue-500' }, { label: 'Ready', value: stats.ready, color: 'bg-emerald-500' }] as stat (stat.label)}
 			<div
-				class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5"
+				class="flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1.5"
 			>
 				<span class="size-2 rounded-full {stat.color}"></span>
-				<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">{stat.label}</span>
+				<span class="text-[12px] font-semibold text-(--ui-text-muted)">{stat.label}</span>
 				<span class="text-[14px] font-bold tabular-nums">{stat.value}</span>
 			</div>
 		{/each}
@@ -211,7 +211,7 @@
 						class="rounded-lg px-2.5 py-1 text-[12px] font-bold transition-colors
 							{filterStatus === tab.key
 							? 'bg-primary-500/10 text-primary-700 dark:text-primary-300'
-							: 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
+							: 'text-(--ui-text-muted) hover:bg-(--ui-bg-accented)'}"
 						onclick={() => (filterStatus = tab.key)}
 					>
 						{tab.label}
@@ -260,12 +260,12 @@
 										Table {(o.data as { tableId?: string }).tableId}
 									</span>
 								{/if}
-								<span class="text-[11px] text-[var(--ui-text-muted)]">
+								<span class="text-[11px] text-(--ui-text-muted)">
 									{o.data.lines?.length ?? 0} items · {relativeTime(o.data.occurredAt ?? '')}
 								</span>
 							</div>
 							{#if o.data.lines && o.data.lines.length > 0}
-								<div class="mt-0.5 truncate text-[11px] text-[var(--ui-text-muted)]">
+								<div class="mt-0.5 truncate text-[11px] text-(--ui-text-muted)">
 									{o.data.lines.map((l) => `×${l.quantity} ${l.name}`).join(' · ')}
 								</div>
 							{/if}
@@ -310,7 +310,7 @@
 		{:else}
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				{#each wg as [waiterName, orders] (waiterName)}
-					<div class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-4">
+					<div class="rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) p-4">
 						<!-- Waiter header -->
 						<div class="mb-3 flex items-center gap-2">
 							<div
@@ -326,7 +326,7 @@
 							</div>
 							<div>
 								<div class="text-[14px] font-bold">{waiterName}</div>
-								<div class="text-[11px] text-[var(--ui-text-muted)]">
+								<div class="text-[11px] text-(--ui-text-muted)">
 									{orders.length} table{orders.length !== 1 ? 's' : ''}
 								</div>
 							</div>
@@ -335,12 +335,12 @@
 						<ul class="space-y-1.5">
 							{#each orders as o (o.id)}
 								{@const status = (o.data.status ?? '').toLowerCase()}
-								<li class="flex items-center gap-2 rounded-lg bg-[var(--ui-bg-elevated)] px-3 py-2">
+								<li class="flex items-center gap-2 rounded-lg bg-(--ui-bg-elevated) px-3 py-2">
 									<span class="font-mono text-[12px] font-bold"
 										>{o.data.number ?? o.id.slice(0, 6)}</span
 									>
 									{#if (o.data as { tableId?: string }).tableId}
-										<span class="text-[10px] text-[var(--ui-text-muted)]"
+										<span class="text-[10px] text-(--ui-text-muted)"
 											>T:{(o.data as { tableId?: string }).tableId}</span
 										>
 									{/if}

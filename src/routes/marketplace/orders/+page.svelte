@@ -101,7 +101,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h2 class="font-display text-lg font-bold tracking-tight">Marketplace Orders</h2>
-			<p class="text-[12px] text-[var(--ui-text-muted)]">
+			<p class="text-[12px] text-(--ui-text-muted)">
 				{formatInt(filtered.length)} orders · {formatMoney(revenue, currency)}
 			</p>
 		</div>
@@ -117,17 +117,17 @@
 	<!-- Stats -->
 	<div class="grid grid-cols-3 gap-3">
 		<div class="metric-card p-3.5">
-			<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">
+			<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">
 				{t('dashboard.revenue')}
 			</p>
 			<p class="mt-0.5 text-xl font-black tabular-nums">{formatMoney(revenue, currency)}</p>
 		</div>
 		<div class="metric-card p-3.5">
-			<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">To fulfill</p>
+			<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">To fulfill</p>
 			<p class="mt-0.5 text-xl font-black text-amber-500 tabular-nums">{awaitingFulfillment}</p>
 		</div>
 		<div class="metric-card p-3.5">
-			<p class="text-[10px] font-semibold text-[var(--ui-text-dimmed)] uppercase">
+			<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">
 				{t('status.pending')}
 			</p>
 			<p class="mt-0.5 text-xl font-black text-blue-500 tabular-nums">{pending}</p>
@@ -137,7 +137,7 @@
 	<!-- Source breakdown chips -->
 	{#if sourceBreakdown.length > 0}
 		<div class="flex flex-wrap items-center gap-1.5">
-			<span class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">By channel:</span>
+			<span class="text-[11px] font-semibold text-(--ui-text-dimmed)">By channel:</span>
 			{#each sourceBreakdown as [src, v] (src)}
 				<button
 					type="button"
@@ -145,7 +145,7 @@
 					class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all {sourceFilter ===
 					src
 						? 'bg-primary-500/15 text-primary-600 ring-1 ring-primary-500/30 dark:text-primary-300'
-						: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'}"
+						: 'bg-(--ui-bg-muted) text-(--ui-text-muted) hover:text-(--ui-text)'}"
 				>
 					<Icon name={sourceIcon(src)} class="size-3" />
 					{sourceLabel(src)}
@@ -176,16 +176,16 @@
 			<div class="relative min-w-48 flex-1">
 				<Icon
 					name="lucide:search"
-					class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--ui-text-dimmed)]"
+					class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-(--ui-text-dimmed)"
 				/>
 				<input
 					bind:value={search}
 					placeholder="Search order, customer…"
-					class="w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] py-2 pr-3 pl-9 text-[13px] placeholder:text-[var(--ui-text-dimmed)] focus:border-[var(--ui-color-primary-500)] focus:outline-none"
+					class="w-full rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) py-2 pr-3 pl-9 text-[13px] placeholder:text-(--ui-text-dimmed) focus:border-(--ui-color-primary-500) focus:outline-none"
 				/>
 			</div>
 			<div
-				class="relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]"
+				class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
 			>
 				<select
 					bind:value={statusFilter}
@@ -201,7 +201,7 @@
 				</select>
 				<Icon
 					name="lucide:chevron-down"
-					class="pointer-events-none absolute right-2 size-3.5 text-[var(--ui-text-dimmed)]"
+					class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
 				/>
 			</div>
 		</div>
@@ -218,11 +218,11 @@
 								applySort={controls.applySort}>{t('common.order')}</SortableTh
 							>
 							<th
-								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 								>Channel</th
 							>
 							<th
-								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+								class="px-5 py-2.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
 								>{t('common.customer')}</th
 							>
 							<SortableTh
@@ -247,9 +247,9 @@
 							>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 						{#each controls.pagedList as o (o.id)}
-							<tr class="cursor-pointer transition-colors hover:bg-[var(--ui-bg-accented)]/50">
+							<tr class="cursor-pointer transition-colors hover:bg-(--ui-bg-accented)/50">
 								<td class="px-5 py-3"
 									><a
 										href={resolve(`/orders/${o.id}`)}
@@ -259,19 +259,19 @@
 								>
 								<td class="px-5 py-3">
 									<span
-										class="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--ui-text-muted)]"
+										class="inline-flex items-center gap-1 text-[11px] font-medium text-(--ui-text-muted)"
 									>
 										<Icon name={sourceIcon(o.source)} class="size-3" />{sourceLabel(o.source)}
 									</span>
 								</td>
-								<td class="px-5 py-3 text-[var(--ui-text-muted)]">{o.customerName || '—'}</td>
+								<td class="px-5 py-3 text-(--ui-text-muted)">{o.customerName || '—'}</td>
 								<td class="px-5 py-3"
 									><Badge color={statusColor(o.status)}>{statusLabel(o.status)}</Badge></td
 								>
 								<td class="px-5 py-3 text-right font-semibold tabular-nums"
 									>{formatMoney(o.total, currency)}</td
 								>
-								<td class="px-5 py-3 text-right text-[12px] text-[var(--ui-text-dimmed)]"
+								<td class="px-5 py-3 text-right text-[12px] text-(--ui-text-dimmed)"
 									>{relativeTime(o.atMs)}</td
 								>
 							</tr>

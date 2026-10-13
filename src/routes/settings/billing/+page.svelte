@@ -355,7 +355,7 @@
 			? 'text-red-500'
 			: t === 'warning'
 				? 'text-amber-500'
-				: 'text-[var(--ui-text-muted)]';
+				: 'text-(--ui-text-muted)';
 	}
 
 	function getThresholdBarColor(t: string): string {
@@ -567,34 +567,30 @@
 									>
 										{plan.name}
 									</span>
-									<Icon name={plan.icon} class="size-4 text-[var(--ui-text-dimmed)]" />
+									<Icon name={plan.icon} class="size-4 text-(--ui-text-dimmed)" />
 								</div>
 								<p class="text-lg font-black tracking-tight">{formatPlanPrice(code)}</p>
-								<p class="mt-1 text-[11.5px] leading-relaxed text-[var(--ui-text-muted)]">
+								<p class="mt-1 text-[11.5px] leading-relaxed text-(--ui-text-muted)">
 									{plan.description}
 								</p>
 							</div>
 							<div
-								class="mt-4 space-y-1.5 border-t border-[var(--ui-border-muted)] pt-3 text-[11.5px] text-[var(--ui-text-muted)]"
+								class="mt-4 space-y-1.5 border-t border-(--ui-border-muted) pt-3 text-[11.5px] text-(--ui-text-muted)"
 							>
 								<div class="flex items-center gap-1.5">
 									<Icon name="lucide:check-circle" class="size-3.5 shrink-0 text-emerald-500" />
 									Orders/day:
-									<strong class="text-[var(--ui-text)]"
-										>{getPlanLimitText(code, 'ordersPerDay')}</strong
-									>
+									<strong class="text-(--ui-text)">{getPlanLimitText(code, 'ordersPerDay')}</strong>
 								</div>
 								<div class="flex items-center gap-1.5">
 									<Icon name="lucide:check-circle" class="size-3.5 shrink-0 text-emerald-500" />
 									Branches:
-									<strong class="text-[var(--ui-text)]">{getPlanLimitText(code, 'branches')}</strong
-									>
+									<strong class="text-(--ui-text)">{getPlanLimitText(code, 'branches')}</strong>
 								</div>
 								<div class="flex items-center gap-1.5">
 									<Icon name="lucide:check-circle" class="size-3.5 shrink-0 text-emerald-500" />
 									Products:
-									<strong class="text-[var(--ui-text)]">{getPlanLimitText(code, 'products')}</strong
-									>
+									<strong class="text-(--ui-text)">{getPlanLimitText(code, 'products')}</strong>
 								</div>
 							</div>
 						</div>
@@ -700,16 +696,14 @@
 
 				<!-- Usage Metrics -->
 				<section class="surface-card overflow-hidden">
-					<div class="flex items-center gap-2 border-b border-[var(--ui-border-muted)] px-5 py-3">
+					<div class="flex items-center gap-2 border-b border-(--ui-border-muted) px-5 py-3">
 						<Icon name="lucide:bar-chart-3" class="size-4 text-primary-500" />
 						<h2 class="font-display text-[14px] font-semibold">{t('common.usage')}</h2>
 					</div>
 					<div class="p-4 sm:p-5">
 						<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
 							{#each usage as entry (entry.key)}
-								<div
-									class="rounded-xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] p-4"
-								>
+								<div class="rounded-xl border border-(--ui-border-muted) bg-(--ui-bg-muted) p-4">
 									<div class="mb-3 flex items-start justify-between">
 										<div class="flex items-center gap-2">
 											<div class="grid size-8 place-items-center rounded-lg bg-primary-500/10">
@@ -726,9 +720,7 @@
 									</div>
 									{#if entry.limit !== 'unlimited'}
 										<div class="space-y-1">
-											<div
-												class="h-1.5 w-full overflow-hidden rounded-full bg-[var(--ui-bg-accented)]"
-											>
+											<div class="h-1.5 w-full overflow-hidden rounded-full bg-(--ui-bg-accented)">
 												<div
 													class="h-full rounded-full transition-all duration-500 {getThresholdBarColor(
 														entry.threshold
@@ -768,7 +760,7 @@
 			<div class="space-y-5">
 				<!-- Subscription Settings -->
 				<section class="surface-card overflow-hidden">
-					<div class="flex items-center gap-2 border-b border-[var(--ui-border-muted)] px-5 py-3">
+					<div class="flex items-center gap-2 border-b border-(--ui-border-muted) px-5 py-3">
 						<Icon name="lucide:settings" class="size-4 text-primary-500" />
 						<h2 class="font-display text-[14px] font-semibold">{t('settings.subscription')}</h2>
 					</div>
@@ -854,7 +846,7 @@
 								>
 									<div class="space-y-0.5">
 										<p class="text-xs font-bold">{inv.invoiceNumber}</p>
-										<p class="text-xs text-[var(--ui-text-dimmed)]">Due: {formatDate(inv.dueAt)}</p>
+										<p class="text-xs text-(--ui-text-dimmed)">Due: {formatDate(inv.dueAt)}</p>
 									</div>
 									<div class="flex flex-col items-end gap-1.5">
 										<span class="text-xs font-bold text-orange-600 dark:text-orange-400"
@@ -877,18 +869,18 @@
 				<!-- Payment History -->
 				{#if paymentHistory.length > 0}
 					<section class="surface-card overflow-hidden">
-						<div class="flex items-center gap-2 border-b border-[var(--ui-border-muted)] px-5 py-3">
+						<div class="flex items-center gap-2 border-b border-(--ui-border-muted) px-5 py-3">
 							<Icon name="lucide:history" class="size-4 text-primary-500" />
 							<h2 class="font-display text-[14px] font-semibold">{t('settings.paymentHistory')}</h2>
 						</div>
 						<div class="p-4 sm:p-5">
 							<div
-								class="relative space-y-4 pl-6 before:absolute before:top-2 before:bottom-2 before:left-[11px] before:w-0.5 before:bg-[var(--ui-border-muted)]"
+								class="relative space-y-4 pl-6 before:absolute before:top-2 before:bottom-2 before:left-[11px] before:w-0.5 before:bg-(--ui-border-muted)"
 							>
 								{#each paymentHistory as p (p.id)}
 									<div class="relative flex items-start justify-between gap-3">
 										<div
-											class="absolute top-0.5 -left-[29px] z-10 grid size-6 place-items-center rounded-full border-2 border-[var(--ui-bg-elevated)] bg-primary-500/10"
+											class="absolute top-0.5 -left-[29px] z-10 grid size-6 place-items-center rounded-full border-2 border-(--ui-bg-elevated) bg-primary-500/10"
 										>
 											<Icon name={methodIcon(p.method)} class="size-3 text-primary-500" />
 										</div>
@@ -896,7 +888,7 @@
 											<p class="text-xs leading-tight font-bold capitalize">
 												{formatMethod(p.method)} payment
 											</p>
-											<p class="text-xs text-[var(--ui-text-dimmed)]">
+											<p class="text-xs text-(--ui-text-dimmed)">
 												{formatDate(p.paidAt ?? p.createdAt)}
 											</p>
 										</div>
@@ -916,27 +908,27 @@
 
 	<!-- ════════ Plan Comparison (always shown) ════════ -->
 	<section class="surface-card overflow-hidden">
-		<div class="flex items-center gap-2 border-b border-[var(--ui-border-muted)] px-5 py-3">
+		<div class="flex items-center gap-2 border-b border-(--ui-border-muted) px-5 py-3">
 			<Icon name="lucide:table" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.planComparison')}</h2>
 		</div>
 		<div class="-mx-3 overflow-x-auto p-3 sm:mx-0 sm:p-4">
 			<div
-				class="min-w-[540px] overflow-hidden rounded-xl border border-[var(--ui-border-muted)] sm:min-w-[620px]"
+				class="min-w-[540px] overflow-hidden rounded-xl border border-(--ui-border-muted) sm:min-w-[620px]"
 			>
 				<!-- Header row -->
 				<div
-					class="grid border-b border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)]"
+					class="grid border-b border-(--ui-border-muted) bg-(--ui-bg-muted)"
 					style="grid-template-columns: 1.5fr repeat(4, minmax(110px, 1fr))"
 				>
 					<div class="p-3">
-						<span class="text-xs font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
+						<span class="text-xs font-bold tracking-wider text-(--ui-text-dimmed) uppercase"
 							>{t('settings.feature')}</span
 						>
 					</div>
 					{#each displayPlans as code (code)}
 						<div
-							class="relative flex flex-col items-center justify-center gap-0.5 border-l border-[var(--ui-border-muted)] p-3 text-center {code ===
+							class="relative flex flex-col items-center justify-center gap-0.5 border-l border-(--ui-border-muted) p-3 text-center {code ===
 								planCode && subscription
 								? 'bg-primary-500/10 ring-1 ring-primary-500/30'
 								: ''}"
@@ -959,22 +951,22 @@
 					{/each}
 				</div>
 				<!-- Feature rows -->
-				<div class="divide-y divide-[var(--ui-border-muted)]">
+				<div class="divide-y divide-(--ui-border-muted)">
 					{#each MODULE_LIST as mod (mod.key)}
 						<div
-							class="grid items-center hover:bg-[var(--ui-bg-accented)]/50"
+							class="grid items-center hover:bg-(--ui-bg-accented)/50"
 							style="grid-template-columns: 1.5fr repeat(4, minmax(110px, 1fr))"
 						>
 							<div class="flex items-center gap-2 p-3">
 								<Icon
 									name={mod.type === 'limit' ? 'lucide:settings-2' : 'lucide:check-square'}
-									class="size-3.5 text-[var(--ui-text-dimmed)]"
+									class="size-3.5 text-(--ui-text-dimmed)"
 								/>
-								<span class="text-xs font-medium text-[var(--ui-text-muted)]">{mod.label}</span>
+								<span class="text-xs font-medium text-(--ui-text-muted)">{mod.label}</span>
 							</div>
 							{#each displayPlans as code (code)}
 								<div
-									class="flex items-center justify-center border-l border-[var(--ui-border-muted)] p-3 text-center {code ===
+									class="flex items-center justify-center border-l border-(--ui-border-muted) p-3 text-center {code ===
 										planCode && subscription
 										? 'bg-primary-500/5'
 										: ''}"
@@ -983,7 +975,7 @@
 										<span
 											class="text-xs font-bold {PLANS[code].limits[mod.key] === 'unlimited'
 												? 'text-emerald-500'
-												: 'text-[var(--ui-text-muted)]'}"
+												: 'text-(--ui-text-muted)'}"
 										>
 											{getPlanLimitValue(code, mod.key)}
 										</span>
@@ -993,7 +985,7 @@
 										{:else}
 											<Icon
 												name="lucide:minus-circle"
-												class="size-4 text-[var(--ui-text-dimmed)] opacity-40"
+												class="size-4 text-(--ui-text-dimmed) opacity-40"
 											/>
 										{/if}
 									{/if}
@@ -1024,7 +1016,7 @@
 					onclick={() => (selectedPlan = code)}
 					class="w-full rounded-xl border p-3.5 text-left transition-all {selectedPlan === code
 						? 'border-primary-500 bg-primary-500/10 ring-1 ring-primary-500/20'
-						: 'border-[var(--ui-border)] hover:border-primary-500/30'}"
+						: 'border-(--ui-border) hover:border-primary-500/30'}"
 				>
 					<div class="mb-2 flex items-start justify-between">
 						<div class="flex items-center gap-2.5">
@@ -1035,33 +1027,33 @@
 							</div>
 							<div>
 								<p class="text-sm font-bold capitalize">{plan.name}</p>
-								<p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{plan.description}</p>
+								<p class="mt-0.5 text-xs text-(--ui-text-muted)">{plan.description}</p>
 							</div>
 						</div>
 						<div class="text-right">
 							<p class="text-sm font-bold text-primary-500">{formatPlanPrice(code)}</p>
 							{#if plan.price > 0}
-								<p class="text-xs text-[var(--ui-text-dimmed)]">{t('settings.perMonth')}</p>
+								<p class="text-xs text-(--ui-text-dimmed)">{t('settings.perMonth')}</p>
 							{/if}
 						</div>
 					</div>
 					<div
-						class="mt-2.5 flex flex-wrap gap-x-3 gap-y-1 border-t border-[var(--ui-border-muted)] pt-2.5 text-xs text-[var(--ui-text-muted)]"
+						class="mt-2.5 flex flex-wrap gap-x-3 gap-y-1 border-t border-(--ui-border-muted) pt-2.5 text-xs text-(--ui-text-muted)"
 					>
 						<span class="flex items-center gap-1">
 							<Icon name="lucide:store" class="size-3" />
 							Branches:
-							<strong class="text-[var(--ui-text)]">{getPlanLimitText(code, 'branches')}</strong>
+							<strong class="text-(--ui-text)">{getPlanLimitText(code, 'branches')}</strong>
 						</span>
 						<span class="flex items-center gap-1">
 							<Icon name="lucide:users" class="size-3" />
 							Staff:
-							<strong class="text-[var(--ui-text)]">{getPlanLimitText(code, 'staff')}</strong>
+							<strong class="text-(--ui-text)">{getPlanLimitText(code, 'staff')}</strong>
 						</span>
 						<span class="flex items-center gap-1">
 							<Icon name="lucide:package" class="size-3" />
 							Products:
-							<strong class="text-[var(--ui-text)]">{getPlanLimitText(code, 'products')}</strong>
+							<strong class="text-(--ui-text)">{getPlanLimitText(code, 'products')}</strong>
 						</span>
 					</div>
 				</button>
@@ -1108,7 +1100,7 @@
 					onclick={() => (selectedPlan = code)}
 					class="w-full rounded-xl border p-3.5 text-left transition-all {selectedPlan === code
 						? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500/20'
-						: 'border-[var(--ui-border)] hover:border-amber-500/30'}"
+						: 'border-(--ui-border) hover:border-amber-500/30'}"
 				>
 					<div class="flex items-center justify-between">
 						<div class="flex items-center gap-2.5">
@@ -1119,7 +1111,7 @@
 							</div>
 							<div>
 								<p class="text-sm font-bold capitalize">{plan.name}</p>
-								<p class="text-xs text-[var(--ui-text-dimmed)]">Switch to this tier</p>
+								<p class="text-xs text-(--ui-text-dimmed)">Switch to this tier</p>
 							</div>
 						</div>
 						<p class="text-sm font-bold">{formatPlanPrice(code)}</p>
@@ -1159,12 +1151,12 @@
 				Are you sure?
 			</h3>
 		</div>
-		<p class="text-sm leading-relaxed text-[var(--ui-text-muted)]">
+		<p class="text-sm leading-relaxed text-(--ui-text-muted)">
 			Your subscription will remain active until the end of the current billing period, then switch
 			to the Free plan.
 		</p>
-		<div class="rounded-xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] p-4">
-			<ul class="space-y-2.5 text-xs text-[var(--ui-text-muted)]">
+		<div class="rounded-xl border border-(--ui-border-muted) bg-(--ui-bg-muted) p-4">
+			<ul class="space-y-2.5 text-xs text-(--ui-text-muted)">
 				<li class="flex items-start gap-2.5">
 					<Icon name="lucide:x-circle" class="mt-0.5 size-4 shrink-0 text-red-500" />
 					<span>Limits will drop to Free plan levels</span>
@@ -1199,14 +1191,12 @@
 	{#if payingInvoice}
 		<div class="space-y-4">
 			<!-- Invoice summary -->
-			<div
-				class="rounded-xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] p-4 text-center"
-			>
-				<p class="mb-1 text-xs font-bold tracking-widest text-[var(--ui-text-dimmed)] uppercase">
+			<div class="rounded-xl border border-(--ui-border-muted) bg-(--ui-bg-muted) p-4 text-center">
+				<p class="mb-1 text-xs font-bold tracking-widest text-(--ui-text-dimmed) uppercase">
 					{payingInvoice.invoiceNumber}
 				</p>
 				<p class="text-3xl font-black">{formatAmount(payingInvoice.amount)}</p>
-				<p class="mt-1.5 text-xs text-[var(--ui-text-muted)]">
+				<p class="mt-1.5 text-xs text-(--ui-text-muted)">
 					Due: {formatDate(payingInvoice.dueAt)}
 				</p>
 			</div>
@@ -1277,7 +1267,7 @@
 			{:else}
 				<!-- Payment method selection -->
 				<div class="space-y-3">
-					<p class="text-sm font-bold text-[var(--ui-text)]">Select payment method</p>
+					<p class="text-sm font-bold text-(--ui-text)">Select payment method</p>
 					<div class="grid grid-cols-2 gap-3">
 						{#each paymentMethodOptions as m (m.code)}
 							<button
@@ -1285,7 +1275,7 @@
 								onclick={() => (selectedMethod = m.code)}
 								class="rounded-xl border p-3 text-center transition-all {selectedMethod === m.code
 									? 'border-primary-500 bg-primary-500/10 ring-1 ring-primary-500/20'
-									: 'border-[var(--ui-border)] hover:border-primary-500/30'}"
+									: 'border-(--ui-border) hover:border-primary-500/30'}"
 							>
 								<div class="mx-auto mb-2 grid size-10 place-items-center rounded-xl {m.bgColor}">
 									<Icon name={m.icon} class="size-5 {m.iconColor}" />

@@ -68,11 +68,13 @@
 	let formNotes = $state('');
 
 	// ── Derived ──
-	const filtered = $derived(
-		queue
+	const filtered = $derived.by(() => {
+		// `tick` is read so the list (and its elapsed times) refresh each interval.
+		void tick;
+		return queue
 			.filter((q) => activeTab === 'all' || q.status === activeTab)
-			.sort((a, b) => new Date(b.arrivedAt).getTime() - new Date(a.arrivedAt).getTime())
-	);
+			.sort((a, b) => new Date(b.arrivedAt).getTime() - new Date(a.arrivedAt).getTime());
+	});
 
 	const stats = $derived({
 		waiting: queue.filter((q) => q.status === 'waiting').length,
@@ -92,11 +94,11 @@
 		})()
 	);
 
-	const tabs = [
+	const tabs = $derived([
 		{ key: 'waiting' as const, label: t('restaurant.waiting'), count: stats.waiting },
 		{ key: 'seated' as const, label: t('restaurant.seated'), count: stats.seated },
 		{ key: 'all' as const, label: t('common.all'), count: queue.length }
-	];
+	]);
 
 	// ── Actions ──
 	function openAdd() {
@@ -165,8 +167,6 @@
 		if (m > 10) return 'text-amber-500';
 		return 'text-emerald-500';
 	}
-
-	void tick;
 </script>
 
 <svelte:head><title>{t('common.appName')} · {t('nav.orderQueue')}</title></svelte:head>
@@ -176,7 +176,7 @@
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">Waitlist &amp; queue</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">Manage parties waiting for a table</p>
+			<p class="text-[12.5px] text-(--ui-text-muted)">Manage parties waiting for a table</p>
 		</div>
 		<Button color="primary" icon="lucide:user-plus" onclick={openAdd}
 			>{t('common.add') + ' ' + t('common.party')}</Button
@@ -186,24 +186,24 @@
 	<!-- Stats bar -->
 	<div class="flex flex-wrap items-center gap-3">
 		<div
-			class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5"
+			class="flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1.5"
 		>
-			<Icon name="lucide:users" class="size-4 text-[var(--ui-text-dimmed)]" />
-			<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Waiting</span>
+			<Icon name="lucide:users" class="size-4 text-(--ui-text-dimmed)" />
+			<span class="text-[12px] font-semibold text-(--ui-text-muted)">Waiting</span>
 			<span class="text-[14px] font-bold tabular-nums">{stats.waiting}</span>
 		</div>
 		<div
-			class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5"
+			class="flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1.5"
 		>
-			<Icon name="lucide:clock" class="size-4 text-[var(--ui-text-dimmed)]" />
-			<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Avg wait</span>
+			<Icon name="lucide:clock" class="size-4 text-(--ui-text-dimmed)" />
+			<span class="text-[12px] font-semibold text-(--ui-text-muted)">Avg wait</span>
 			<span class="text-[14px] font-bold tabular-nums">{avgWait}m</span>
 		</div>
 		<div
-			class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5"
+			class="flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1.5"
 		>
-			<Icon name="lucide:check-circle" class="size-4 text-[var(--ui-text-dimmed)]" />
-			<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Seated</span>
+			<Icon name="lucide:check-circle" class="size-4 text-(--ui-text-dimmed)" />
+			<span class="text-[12px] font-semibold text-(--ui-text-muted)">Seated</span>
 			<span class="text-[14px] font-bold tabular-nums">{stats.seated}</span>
 		</div>
 	</div>
@@ -216,11 +216,11 @@
 				class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-bold transition-colors
 					{activeTab === tab.key
 					? 'bg-primary-500/10 text-primary-700 dark:text-primary-300'
-					: 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
+					: 'text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'}"
 				onclick={() => (activeTab = tab.key)}
 			>
 				{tab.label}
-				<span class="rounded-md bg-[var(--ui-bg-accented)] px-1.5 py-0.5 text-[10px] tabular-nums"
+				<span class="rounded-md bg-(--ui-bg-accented) px-1.5 py-0.5 text-[10px] tabular-nums"
 					>{tab.count}</span
 				>
 			</button>
@@ -247,7 +247,7 @@
 						</span>
 					{:else}
 						<span
-							class="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--ui-bg-accented)] text-[13px] font-bold text-[var(--ui-text-dimmed)]"
+							class="grid size-9 shrink-0 place-items-center rounded-full bg-(--ui-bg-accented) text-[13px] font-bold text-(--ui-text-dimmed)"
 						>
 							<Icon name={entry.status === 'seated' ? 'lucide:check' : 'lucide:x'} class="size-4" />
 						</span>
@@ -257,17 +257,17 @@
 					<div class="min-w-0 flex-1">
 						<div class="flex items-center gap-2">
 							<span class="truncate font-semibold">{entry.name}</span>
-							<span class="flex items-center gap-0.5 text-[11px] text-[var(--ui-text-muted)]">
+							<span class="flex items-center gap-0.5 text-[11px] text-(--ui-text-muted)">
 								<Icon name="lucide:users" class="size-3" />
 								{entry.partySize}
 							</span>
 							{#if entry.tablePreference}
-								<span class="text-[11px] text-[var(--ui-text-muted)]"
+								<span class="text-[11px] text-(--ui-text-muted)"
 									>· prefers {entry.tablePreference}</span
 								>
 							{/if}
 						</div>
-						<div class="flex items-center gap-2 text-[11px] text-[var(--ui-text-muted)]">
+						<div class="flex items-center gap-2 text-[11px] text-(--ui-text-muted)">
 							{#if entry.phone}
 								<span class="flex items-center gap-0.5"
 									><Icon name="lucide:phone" class="size-3" />{entry.phone}</span
@@ -287,7 +287,7 @@
 								class="font-mono text-[14px] font-bold tabular-nums {waitColor(entry.arrivedAt)}"
 								>{waitMin(entry.arrivedAt)}m</span
 							>
-							<span class="text-[10px] text-[var(--ui-text-dimmed)]">waiting</span>
+							<span class="text-[10px] text-(--ui-text-dimmed)">waiting</span>
 						</div>
 					{:else}
 						<Badge color={entry.status === 'seated' ? 'success' : 'neutral'}>{entry.status}</Badge>
@@ -338,36 +338,43 @@
 <Dialog bind:open={dialogOpen} title={t('restaurant.addParty')} size="md">
 	<div class="space-y-3">
 		<div>
-			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<label for="queue-name" class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.name')}</label
 			>
-			<Input bind:value={formName} placeholder="Party name" />
+			<Input id="queue-name" bind:value={formName} placeholder="Party name" />
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<div>
-				<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<label for="queue-phone" class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.phone')}</label
 				>
-				<Input bind:value={formPhone} placeholder="+856…" icon="lucide:phone" />
+				<Input id="queue-phone" bind:value={formPhone} placeholder="+856…" icon="lucide:phone" />
 			</div>
 			<div>
-				<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Party size</label
+				<label
+					for="queue-party-size"
+					class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)">Party size</label
 				>
-				<Input type="number" min="1" max="30" bind:value={formPartySize} />
+				<Input id="queue-party-size" type="number" min="1" max="30" bind:value={formPartySize} />
 			</div>
 		</div>
 		<div>
-			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<label
+				for="queue-table-pref"
+				class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>Table preference (optional)</label
 			>
-			<Input bind:value={formTablePref} placeholder="e.g. Patio, Window, VIP…" />
+			<Input
+				id="queue-table-pref"
+				bind:value={formTablePref}
+				placeholder="e.g. Patio, Window, VIP…"
+			/>
 		</div>
 		<div>
-			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<label for="queue-notes" class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>Notes (optional)</label
 			>
-			<Input bind:value={formNotes} placeholder="Birthday, high chair, etc." />
+			<Input id="queue-notes" bind:value={formNotes} placeholder="Birthday, high chair, etc." />
 		</div>
 	</div>
 	{#snippet footer()}

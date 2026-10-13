@@ -485,7 +485,7 @@
 	/>
 
 	<!-- Active Context Card -->
-	<section id="workspace-context" class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section id="workspace-context" class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:badge-check" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.activeContext')}</h2>
@@ -493,7 +493,7 @@
 		<div class="grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-3">
 			<!-- Active Company -->
 			<div class="space-y-1">
-				<p class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+				<p class="text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 					{t('settings.company')}
 				</p>
 				{#if activeCompanyId}
@@ -505,11 +505,11 @@
 						</div>
 						<div class="min-w-0">
 							<p class="truncate text-[13px] font-bold">{activeCompanyName || activeCompanyId}</p>
-							<p class="font-mono text-[10px] text-[var(--ui-text-dimmed)]">{activeCompanyId}</p>
+							<p class="font-mono text-[10px] text-(--ui-text-dimmed)">{activeCompanyId}</p>
 						</div>
 					</div>
 				{:else}
-					<p class="text-[12px] text-[var(--ui-text-dimmed)] italic">
+					<p class="text-[12px] text-(--ui-text-dimmed) italic">
 						{t('settings.noneSelected')}
 					</p>
 				{/if}
@@ -517,7 +517,7 @@
 
 			<!-- Active Branch -->
 			<div class="space-y-1">
-				<p class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+				<p class="text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 					{t('settings.branchLabel')}
 				</p>
 				{#if activeBranchId}
@@ -529,11 +529,11 @@
 						</div>
 						<div class="min-w-0">
 							<p class="truncate text-[13px] font-bold">{activeBranchName || activeBranchId}</p>
-							<p class="font-mono text-[10px] text-[var(--ui-text-dimmed)]">{activeBranchId}</p>
+							<p class="font-mono text-[10px] text-(--ui-text-dimmed)">{activeBranchId}</p>
 						</div>
 					</div>
 				{:else}
-					<p class="text-[12px] text-[var(--ui-text-dimmed)] italic">
+					<p class="text-[12px] text-(--ui-text-dimmed) italic">
 						{t('settings.noneSelected')}
 					</p>
 				{/if}
@@ -541,7 +541,7 @@
 
 			<!-- Quick Switch -->
 			<div class="space-y-1">
-				<p class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+				<p class="text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 					{t('settings.quickSwitch')}
 				</p>
 				<Select
@@ -574,13 +574,13 @@
 	</section>
 
 	<!-- Companies List -->
-	<section id="branches" class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section id="branches" class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center justify-between gap-2 px-5 py-3">
 			<div class="flex items-center gap-2">
 				<Icon name="lucide:building-2" class="size-4 text-primary-500" />
 				<h2 class="font-display text-[14px] font-semibold">
 					{t('settings.companies')}
-					<span class="text-[10px] font-normal text-[var(--ui-text-dimmed)]">({companyCount})</span>
+					<span class="text-[10px] font-normal text-(--ui-text-dimmed)">({companyCount})</span>
 				</h2>
 			</div>
 			<Button variant="subtle" size="sm" icon="lucide:plus" onclick={() => openCompanyModal()}>
@@ -612,22 +612,18 @@
 								class="grid size-9 shrink-0 place-items-center rounded-xl text-[12px] font-bold text-white {activeCompanyId ===
 								company.id
 									? 'bg-primary-500'
-									: 'bg-[var(--ui-text-dimmed)]'}"
+									: 'bg-(--ui-text-dimmed)'}"
 							>
 								{company.name?.charAt(0)?.toUpperCase() || '?'}
 							</div>
 							<div class="min-w-0">
 								<p class="truncate text-[13px] font-bold">{company.name}</p>
 								<div class="mt-0.5 flex flex-wrap items-center gap-2">
-									<span class="font-mono text-[10px] text-[var(--ui-text-dimmed)]"
-										>{company.code}</span
-									>
-									<span class="text-[10px] text-[var(--ui-text-dimmed)]">•</span>
-									<span class="text-[10px] text-[var(--ui-text-muted)]"
-										>{company.businessModel}</span
-									>
-									<span class="text-[10px] text-[var(--ui-text-dimmed)]">•</span>
-									<span class="text-[10px] text-[var(--ui-text-muted)]">{company.currency}</span>
+									<span class="font-mono text-[10px] text-(--ui-text-dimmed)">{company.code}</span>
+									<span class="text-[10px] text-(--ui-text-dimmed)">•</span>
+									<span class="text-[10px] text-(--ui-text-muted)">{company.businessModel}</span>
+									<span class="text-[10px] text-(--ui-text-dimmed)">•</span>
+									<span class="text-[10px] text-(--ui-text-muted)">{company.currency}</span>
 									{#if activeCompanyId === company.id}
 										<Badge color="success">{t('settings.active')}</Badge>
 									{/if}
@@ -654,9 +650,7 @@
 					<!-- Branches for this company -->
 					<div class="mt-3 ml-12">
 						<div class="mb-1.5 flex items-center justify-between">
-							<p
-								class="text-[10px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-							>
+							<p class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 								{t('settings.branchesSection')}
 								<span class="font-normal">({getBranchesForCompany(company.id).length})</span>
 							</p>
@@ -671,18 +665,15 @@
 						</div>
 						{#each getBranchesForCompany(company.id) as branch (branch.id)}
 							<div
-								class="group flex items-center justify-between rounded-lg px-2.5 py-1.5 transition-colors hover:bg-[var(--ui-bg-accented)]"
+								class="group flex items-center justify-between rounded-lg px-2.5 py-1.5 transition-colors hover:bg-(--ui-bg-accented)"
 							>
 								<div class="flex min-w-0 items-center gap-2">
 									<Icon
 										name="lucide:map-pin"
-										class="size-[11px] shrink-0 text-[var(--ui-text-dimmed)]"
+										class="size-[11px] shrink-0 text-(--ui-text-dimmed)"
 									/>
-									<span class="truncate text-[12px] text-[var(--ui-text-muted)]">{branch.name}</span
-									>
-									<span class="font-mono text-[10px] text-[var(--ui-text-dimmed)]"
-										>{branch.code}</span
-									>
+									<span class="truncate text-[12px] text-(--ui-text-muted)">{branch.name}</span>
+									<span class="font-mono text-[10px] text-(--ui-text-dimmed)">{branch.code}</span>
 									<Badge color={branch.status === 'active' ? 'success' : 'neutral'}
 										>{branch.status}</Badge
 									>
@@ -695,14 +686,14 @@
 								>
 									<button
 										type="button"
-										class="grid size-5 place-items-center rounded text-[var(--ui-text-dimmed)] transition-colors hover:text-sky-500"
+										class="grid size-5 place-items-center rounded text-(--ui-text-dimmed) transition-colors hover:text-sky-500"
 										onclick={() => openBranchModal(company.id, branch)}
 									>
 										<Icon name="lucide:pencil" class="size-[10px]" />
 									</button>
 									<button
 										type="button"
-										class="grid size-5 place-items-center rounded text-[var(--ui-text-dimmed)] transition-colors hover:text-[var(--tone-error-text)]"
+										class="grid size-5 place-items-center rounded text-(--ui-text-dimmed) transition-colors hover:text-(--tone-error-text)"
 										onclick={() => handleDeleteBranch(branch.id, branch.code)}
 									>
 										<Icon name="lucide:trash-2" class="size-[10px]" />
@@ -711,7 +702,7 @@
 							</div>
 						{/each}
 						{#if getBranchesForCompany(company.id).length === 0}
-							<p class="px-2.5 py-1.5 text-[11px] text-[var(--ui-text-dimmed)] italic">
+							<p class="px-2.5 py-1.5 text-[11px] text-(--ui-text-dimmed) italic">
 								{t('settings.noBranches')}
 							</p>
 						{/if}
@@ -722,17 +713,17 @@
 	</section>
 
 	<!-- Danger Zone -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
-			<Icon name="lucide:triangle-alert" class="size-4 text-[var(--tone-error-text)]" />
-			<h2 class="font-display text-[14px] font-semibold text-[var(--tone-error-text)]">
+			<Icon name="lucide:triangle-alert" class="size-4 text-(--tone-error-text)" />
+			<h2 class="font-display text-[14px] font-semibold text-(--tone-error-text)">
 				{t('settings.dangerZone')}
 			</h2>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
-				<label class="text-[13px] font-semibold">{t('settings.resetOrganization')}</label>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+				<div class="text-[13px] font-semibold">{t('settings.resetOrganization')}</div>
+				<p class="text-[11px] text-(--ui-text-dimmed)">
 					{t('settings.resetOrganizationDesc')}
 				</p>
 			</div>
@@ -751,31 +742,43 @@
 >
 	<div class="space-y-4">
 		<div>
-			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
-				{t('settings.companyName')} <span class="text-[var(--tone-error-text)]">*</span>
+			<label
+				for="org-company-name"
+				class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
+			>
+				{t('settings.companyName')} <span class="text-(--tone-error-text)">*</span>
 			</label>
-			<Input bind:value={companyForm.name} placeholder="e.g. My Coffee Shop" class="w-full" />
+			<Input
+				id="org-company-name"
+				bind:value={companyForm.name}
+				placeholder="e.g. My Coffee Shop"
+				class="w-full"
+			/>
 		</div>
 
 		<div>
-			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
+			<label
+				for="org-company-code"
+				class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
+			>
 				{t('settings.companyCode')}
 			</label>
 			<Input
+				id="org-company-code"
 				bind:value={companyForm.code}
 				placeholder="e.g. my-coffee-shop"
 				class="w-full"
 				disabled={!!editingCompanyCode}
 			/>
-			<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+			<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">
 				{editingCompanyCode ? t('settings.readOnly') : t('settings.autoFromName')}
 			</p>
 		</div>
 
 		<div>
-			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>{t('settings.businessModel')}</label
-			>
+			<div class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">
+				{t('settings.businessModel')}
+			</div>
 			<div class="flex flex-wrap gap-2">
 				{#each businessModels as model (model.value)}
 					<button
@@ -783,7 +786,7 @@
 						class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium transition-all {companyForm.businessModel ===
 						model.value
 							? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
-							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
+							: 'border-(--ui-border) text-(--ui-text-muted) hover:border-(--ui-text-dimmed)'}"
 						onclick={() => (companyForm.businessModel = model.value)}
 					>
 						{model.label}
@@ -793,9 +796,9 @@
 		</div>
 
 		<div>
-			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>{t('settings.businessType')}</label
-			>
+			<div class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">
+				{t('settings.businessType')}
+			</div>
 			<div class="flex flex-wrap gap-2">
 				{#each businessTypes as type (type.value)}
 					<button
@@ -803,7 +806,7 @@
 						class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium transition-all {companyForm.businessType ===
 						type.value
 							? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
-							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:border-[var(--ui-text-dimmed)]'}"
+							: 'border-(--ui-border) text-(--ui-text-muted) hover:border-(--ui-text-dimmed)'}"
 						onclick={() => (companyForm.businessType = type.value)}
 					>
 						{type.label}
@@ -814,20 +817,27 @@
 
 		<div class="grid grid-cols-2 gap-4">
 			<div>
-				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<label
+					for="org-currency"
+					class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.currency')}</label
 				>
-				<Select bind:value={companyForm.currency} options={currencyOptions} class="w-full" />
+				<Select
+					id="org-currency"
+					bind:value={companyForm.currency}
+					options={currencyOptions}
+					class="w-full"
+				/>
 			</div>
 			<div>
-				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>{t('settings.taxRate')}</label
-				>
+				<div class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">
+					{t('settings.taxRate')}
+				</div>
 				<div class="flex flex-col gap-2">
-					<label class="flex items-center gap-2">
-						<Switch bind:checked={companyForm.enableTax} />
+					<div class="flex items-center gap-2">
+						<Switch bind:checked={companyForm.enableTax} label={t('common.enable')} />
 						<span class="text-[13px]">{t('common.enable')}</span>
-					</label>
+					</div>
 					<div
 						class="flex items-center gap-2"
 						class:!opacity-50={!companyForm.enableTax}
@@ -842,18 +852,21 @@
 							placeholder="8"
 							class="w-full"
 						/>
-						<span class="text-[13px] font-bold text-[var(--ui-text-dimmed)]">%</span>
+						<span class="text-[13px] font-bold text-(--ui-text-dimmed)">%</span>
 					</div>
-					<label
+					<div
 						class="flex items-center gap-2"
 						class:!opacity-50={!companyForm.enableTax}
 						class:!pointer-events-none={!companyForm.enableTax}
 					>
-						<Switch bind:checked={companyForm.taxIncluded} />
-						<span class="text-[12px] text-[var(--ui-text-muted)]"
+						<Switch
+							bind:checked={companyForm.taxIncluded}
+							label={t('settings.taxIncludedInShelf')}
+						/>
+						<span class="text-[12px] text-(--ui-text-muted)"
 							>{t('settings.taxIncludedInShelf')}</span
 						>
-					</label>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -881,60 +894,90 @@
 >
 	<div class="space-y-4">
 		<div>
-			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
-				{t('settings.branchName')} <span class="text-[var(--tone-error-text)]">*</span>
+			<label
+				for="branch-name"
+				class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
+			>
+				{t('settings.branchName')} <span class="text-(--tone-error-text)">*</span>
 			</label>
-			<Input bind:value={branchForm.name} placeholder="e.g. Downtown Branch" class="w-full" />
+			<Input
+				id="branch-name"
+				bind:value={branchForm.name}
+				placeholder="e.g. Downtown Branch"
+				class="w-full"
+			/>
 		</div>
 
 		<div>
-			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<label for="branch-code" class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('settings.branchCode')}</label
 			>
 			<Input
+				id="branch-code"
 				bind:value={branchForm.code}
 				placeholder="e.g. DOWNTOWN"
 				class="w-full"
 				disabled={!!editingBranchId}
 			/>
-			<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+			<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">
 				{editingBranchId ? t('settings.readOnly') : t('settings.autoFromNameShort')}
 			</p>
 		</div>
 
 		<div>
-			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<label
+				for="branch-address"
+				class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.address')}</label
 			>
-			<Input bind:value={branchForm.address} placeholder="123 Main St…" class="w-full" />
+			<Input
+				id="branch-address"
+				bind:value={branchForm.address}
+				placeholder="123 Main St…"
+				class="w-full"
+			/>
 		</div>
 
 		<div class="grid grid-cols-2 gap-4">
 			<div>
-				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<label
+					for="branch-phone"
+					class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.phone')}</label
 				>
-				<Input bind:value={branchForm.phone} placeholder="(555) 123-4567" class="w-full" />
+				<Input
+					id="branch-phone"
+					bind:value={branchForm.phone}
+					placeholder="(555) 123-4567"
+					class="w-full"
+				/>
 			</div>
 			<div>
-				<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<label
+					for="branch-email"
+					class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.email')}</label
 				>
-				<Input bind:value={branchForm.email} placeholder="branch@store.com" class="w-full" />
+				<Input
+					id="branch-email"
+					bind:value={branchForm.email}
+					placeholder="branch@store.com"
+					class="w-full"
+				/>
 			</div>
 		</div>
 
 		<div>
-			<label class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>{t('common.status')}</label
-			>
+			<div class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">
+				{t('common.status')}
+			</div>
 			<div class="flex gap-2">
 				<button
 					type="button"
 					class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium transition-all {branchForm.status ===
 					'active'
 						? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
-						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)]'}"
+						: 'border-(--ui-border) text-(--ui-text-muted)'}"
 					onclick={() => (branchForm.status = 'active')}
 				>
 					{t('settings.active')}
@@ -943,8 +986,8 @@
 					type="button"
 					class="rounded-lg border-2 px-3 py-1.5 text-[12px] font-medium transition-all {branchForm.status ===
 					'inactive'
-						? 'border-[var(--ui-text-dimmed)] bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]'
-						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)]'}"
+						? 'border-(--ui-text-dimmed) bg-(--ui-bg-accented) text-(--ui-text-muted)'
+						: 'border-(--ui-border) text-(--ui-text-muted)'}"
 					onclick={() => (branchForm.status = 'inactive')}
 				>
 					{t('settings.inactive')}

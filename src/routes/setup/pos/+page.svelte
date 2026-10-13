@@ -75,18 +75,18 @@
 <div class="space-y-6">
 	<div>
 		<h2 class="font-display text-xl font-bold tracking-tight">POS & receipt setup</h2>
-		<p class="mt-1 text-[13.5px] text-[var(--ui-text-muted)]">
+		<p class="mt-1 text-[13.5px] text-(--ui-text-muted)">
 			Configure payment methods, receipt text, and printer hardware.
 		</p>
 	</div>
 
 	<!-- Receipt Settings -->
 	<div class="space-y-4">
-		<h3 class="text-[12px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+		<h3 class="text-[12px] font-bold tracking-wider text-(--ui-text-dimmed) uppercase">
 			{t('settings.receipt')}
 		</h3>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>Store name on receipt</span
 			>
 			<Input
@@ -98,13 +98,13 @@
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Header text</span
 				>
 				<Input bind:value={receiptHeader} placeholder={t('common.welcomeMsg')} class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Footer text</span
 				>
 				<Input bind:value={receiptFooter} placeholder="Thank you!" class="w-full" />
@@ -113,34 +113,34 @@
 	</div>
 
 	<!-- Receipt Preview -->
-	<div class="mx-auto max-w-xs rounded-xl border border-dashed border-[var(--ui-border)] p-6">
+	<div class="mx-auto max-w-xs rounded-xl border border-dashed border-(--ui-border) p-6">
 		<div class="space-y-1 text-center font-mono text-[11px]">
-			{#if receiptHeader}<p class="text-[var(--ui-text-dimmed)]">{receiptHeader}</p>{/if}
+			{#if receiptHeader}<p class="text-(--ui-text-dimmed)">{receiptHeader}</p>{/if}
 			<p class="text-sm font-bold">{receiptStoreName || 'Store Name'}</p>
-			<hr class="my-2 border-dashed border-[var(--ui-border)]" />
+			<hr class="my-2 border-dashed border-(--ui-border)" />
 			<div class="space-y-1 text-left">
 				<div class="flex justify-between"><span>Item 1</span><span>$0.00</span></div>
 				<div class="flex justify-between"><span>Item 2</span><span>$0.00</span></div>
 			</div>
-			<hr class="my-2 border-dashed border-[var(--ui-border)]" />
+			<hr class="my-2 border-dashed border-(--ui-border)" />
 			<div class="flex justify-between font-bold">
 				<span>{t('common.total')}</span><span>$0.00</span>
 			</div>
-			<hr class="my-2 border-dashed border-[var(--ui-border)]" />
-			{#if receiptFooter}<p class="text-[var(--ui-text-dimmed)]">{receiptFooter}</p>{/if}
+			<hr class="my-2 border-dashed border-(--ui-border)" />
+			{#if receiptFooter}<p class="text-(--ui-text-dimmed)">{receiptFooter}</p>{/if}
 		</div>
 	</div>
 
 	<!-- Payment Methods -->
 	<div class="space-y-4">
-		<h3 class="text-[12px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+		<h3 class="text-[12px] font-bold tracking-wider text-(--ui-text-dimmed) uppercase">
 			Payment Methods
 		</h3>
 		<div class="grid grid-cols-2 gap-3">
 			<label
 				class="flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-all {cashEnabled
 					? 'border-primary-500 bg-primary-500/5'
-					: 'border-[var(--ui-border)]'}"
+					: 'border-(--ui-border)'}"
 			>
 				<Switch bind:checked={cashEnabled} />
 				<div>
@@ -151,7 +151,7 @@
 			<label
 				class="flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-all {cardEnabled
 					? 'border-primary-500 bg-primary-500/5'
-					: 'border-[var(--ui-border)]'}"
+					: 'border-(--ui-border)'}"
 			>
 				<Switch bind:checked={cardEnabled} />
 				<div>
@@ -162,7 +162,7 @@
 			<label
 				class="flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-all {qrEnabled
 					? 'border-primary-500 bg-primary-500/5'
-					: 'border-[var(--ui-border)]'}"
+					: 'border-(--ui-border)'}"
 			>
 				<Switch bind:checked={qrEnabled} />
 				<div>
@@ -173,7 +173,7 @@
 			<label
 				class="flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-all {lightningEnabled
 					? 'border-primary-500 bg-primary-500/5'
-					: 'border-[var(--ui-border)]'}"
+					: 'border-(--ui-border)'}"
 			>
 				<Switch bind:checked={lightningEnabled} />
 				<div>
@@ -186,13 +186,12 @@
 
 	<!-- Hardware -->
 	<div class="space-y-4">
-		<h3 class="text-[12px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+		<h3 class="text-[12px] font-bold tracking-wider text-(--ui-text-dimmed) uppercase">
 			{t('settings.grpHardware')}
 		</h3>
 		<div class="grid grid-cols-2 gap-4">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Paper size</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Paper size</span
 				>
 				<Select
 					bind:value={paperSize}
@@ -204,9 +203,7 @@
 				/>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Printer</span
-				>
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Printer</span>
 				<Select
 					bind:value={printerType}
 					options={[

@@ -252,11 +252,11 @@
 			{/snippet}
 		</EmptyState>
 	{:else}
-		<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+		<section class="surface-card divide-y divide-(--ui-border-muted)">
 			<div class="flex items-center gap-2 px-5 py-3">
 				<Icon name="lucide:printer" class="size-4 text-primary-500" />
 				<h2 class="font-display text-[14px] font-semibold">{t('settings.printerProfiles')}</h2>
-				<span class="ml-auto text-[11px] text-[var(--ui-text-dimmed)]"
+				<span class="ml-auto text-[11px] text-(--ui-text-dimmed)"
 					>{t('settings.printersActiveTotal', {
 						active: activeCount,
 						total: printers.length
@@ -282,13 +282,13 @@
 							{/if}
 							{#if printer.enabled}
 								<Badge color="success"
-									><span class="size-1.5 rounded-full bg-emerald-500" />{t(
+									><span class="size-1.5 rounded-full bg-emerald-500"></span>{t(
 										'settings.active'
 									)}</Badge
 								>
 							{:else}
 								<Badge color="neutral"
-									><span class="size-1.5 rounded-full bg-[var(--ui-text-dimmed)]" />{t(
+									><span class="size-1.5 rounded-full bg-(--ui-text-dimmed)"></span>{t(
 										'settings.off'
 									)}</Badge
 								>
@@ -298,7 +298,7 @@
 							{/if}
 						</div>
 						<div
-							class="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10.5px] text-[var(--ui-text-dimmed)]"
+							class="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10.5px] text-(--ui-text-dimmed)"
 						>
 							<Icon name={meta.icon} class="size-3" />
 							{meta.label}
@@ -391,14 +391,12 @@
 		<div class="space-y-5">
 			<!-- Identity -->
 			<div class="space-y-3">
-				<p class="text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+				<p class="text-[11px] font-bold tracking-wider text-(--ui-text-dimmed) uppercase">
 					{t('settings.identity')}
 				</p>
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 					<label class="block">
-						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>Name *</span
-						>
+						<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)">Name *</span>
 						<Input
 							bind:value={form.name}
 							placeholder={t('settings.kitchenPrinter')}
@@ -410,7 +408,7 @@
 						{/if}
 					</label>
 					<label class="block">
-						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
+						<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)">
 							ID {#if !isEditing}*{/if}
 						</span>
 						<Input
@@ -422,7 +420,7 @@
 						{#if errors.id}
 							<p class="mt-1 text-[10.5px] font-medium text-red-500">{errors.id}</p>
 						{:else}
-							<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+							<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">
 								Unique slug used internally to reference this printer
 							</p>
 						{/if}
@@ -430,11 +428,11 @@
 				</div>
 			</div>
 
-			<div class="border-t border-[var(--ui-border-muted)]"></div>
+			<div class="border-t border-(--ui-border-muted)"></div>
 
 			<!-- Connection -->
 			<div class="space-y-3">
-				<p class="text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+				<p class="text-[11px] font-bold tracking-wider text-(--ui-text-dimmed) uppercase">
 					{t('settings.connection')}
 				</p>
 				<div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -448,32 +446,32 @@
 							class="rounded-xl border-2 p-3 text-center transition-all {form.connectionType ===
 							ct.id
 								? 'border-primary-500 bg-primary-500/10'
-								: 'border-[var(--ui-border)] hover:border-[var(--ui-text-dimmed)]'}"
+								: 'border-(--ui-border) hover:border-(--ui-text-dimmed)'}"
 						>
 							<Icon
 								name={ct.icon}
 								class="mx-auto mb-1 size-4 {form.connectionType === ct.id
 									? 'text-primary-500'
-									: 'text-[var(--ui-text-dimmed)]'}"
+									: 'text-(--ui-text-dimmed)'}"
 							/>
 							<p
 								class="text-[10.5px] font-bold {form.connectionType === ct.id
 									? 'text-primary-600 dark:text-primary-400'
-									: 'text-[var(--ui-text-muted)]'}"
+									: 'text-(--ui-text-muted)'}"
 							>
 								{ct.label}
 							</p>
 						</button>
 					{/each}
 				</div>
-				<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+				<p class="text-[10.5px] text-(--ui-text-dimmed)">
 					{CONNECTION_OPTIONS.find((c) => c.id === form.connectionType)?.hint}
 				</p>
 
 				{#if form.connectionType === 'network'}
 					<div class="grid grid-cols-2 gap-3">
 						<label class="block">
-							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 								>{t('settings.ipAddress')}</span
 							>
 							<Input bind:value={form.ip} placeholder="192.168.1.100" class="w-full" />
@@ -482,7 +480,7 @@
 								</p>{/if}
 						</label>
 						<label class="block">
-							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 								>{t('settings.port')}</span
 							>
 							<Input bind:value={form.port} placeholder="9100" class="w-full" inputmode="numeric" />
@@ -496,7 +494,7 @@
 				{#if form.connectionType === 'websocket' || form.connectionType === 'webhook'}
 					<div class="space-y-3">
 						<label class="block">
-							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
+							<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)">
 								URL ({form.connectionType === 'websocket'
 									? 'ws:// or wss://'
 									: 'http:// or https://'})
@@ -514,7 +512,7 @@
 						</label>
 						{#if form.connectionType === 'webhook'}
 							<label class="block">
-								<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
+								<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)">
 									{t('settings.authToken')}
 								</span>
 								<Input
@@ -526,7 +524,7 @@
 							</label>
 						{/if}
 						<div>
-							<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+							<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 								>{t('settings.payloadFormat')}</span
 							>
 							<div class="flex gap-2">
@@ -537,7 +535,7 @@
 										class="flex-1 rounded-lg border px-3 py-2 text-[11px] font-bold transition-all {form.payloadFormat ===
 										fmt
 											? 'border-primary-500 bg-primary-500 text-white'
-											: 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+											: 'border-(--ui-border) bg-(--ui-bg-muted) text-(--ui-text-muted)'}"
 									>
 										{fmt === 'raw' ? 'Raw ESC/POS' : 'JSON Object'}
 									</button>
@@ -549,7 +547,7 @@
 
 				{#if form.connectionType === 'bluetooth'}
 					<label class="block">
-						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('settings.macAddress')}</span
 						>
 						<Input bind:value={form.macAddress} placeholder="00:1A:7D:DA:71:13" class="w-full" />
@@ -583,17 +581,17 @@
 				{/if}
 			</div>
 
-			<div class="border-t border-[var(--ui-border-muted)]"></div>
+			<div class="border-t border-(--ui-border-muted)"></div>
 
 			<!-- Print options -->
 			<div class="space-y-3">
-				<p class="text-[11px] font-bold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+				<p class="text-[11px] font-bold tracking-wider text-(--ui-text-dimmed) uppercase">
 					{t('settings.printOptions')}
 				</p>
 
 				<div class="grid grid-cols-2 gap-3">
 					<div>
-						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('settings.paperSize')}</span
 						>
 						<div class="flex gap-2">
@@ -604,7 +602,7 @@
 									class="flex-1 rounded-lg border px-3 py-2 text-[11px] font-bold transition-all {form.paperSize ===
 									ps.id
 										? 'border-primary-500 bg-primary-500 text-white'
-										: 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+										: 'border-(--ui-border) bg-(--ui-bg-muted) text-(--ui-text-muted)'}"
 								>
 									{ps.label}
 								</button>
@@ -613,7 +611,7 @@
 					</div>
 
 					<label class="block">
-						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('settings.copies')}</span
 						>
 						<Input
@@ -629,7 +627,7 @@
 
 				<div class="grid grid-cols-2 gap-3">
 					<label class="block">
-						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('settings.charsPerLine')}</span
 						>
 						<Input
@@ -642,7 +640,7 @@
 						/>
 					</label>
 					<div>
-						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('settings.printDensity')}</span
 						>
 						<div class="flex items-center gap-3">
@@ -652,7 +650,7 @@
 								min="1"
 								max="15"
 								step="1"
-								class="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-[var(--ui-bg-accented)] accent-[var(--ui-color-primary-500)]"
+								class="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-(--ui-bg-accented) accent-(--ui-color-primary-500)"
 							/>
 							<span class="min-w-[24px] text-center text-[11px] font-bold"
 								>{form.printDensity || 8}</span
@@ -663,17 +661,17 @@
 
 				<div class="flex items-center justify-between py-1">
 					<div>
-						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>{t('settings.autoCut')}</label
-						>
-						<p class="text-[10px] text-[var(--ui-text-dimmed)]">{t('settings.autoCutDesc')}</p>
+						<div class="block text-[12px] font-semibold text-(--ui-text-muted)">
+							{t('settings.autoCut')}
+						</div>
+						<p class="text-[10px] text-(--ui-text-dimmed)">{t('settings.autoCutDesc')}</p>
 					</div>
-					<Switch bind:checked={form.autoCut} />
+					<Switch bind:checked={form.autoCut} label={t('settings.autoCut')} />
 				</div>
 
 				{#if form.autoCut}
 					<div>
-						<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('settings.cutMode')}</span
 						>
 						<div class="flex gap-2">
@@ -684,7 +682,7 @@
 									class="flex-1 rounded-lg border px-3 py-2 text-[11px] font-bold transition-all {form.cutMode ===
 									cm.id
 										? 'border-primary-500 bg-primary-500 text-white'
-										: 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+										: 'border-(--ui-border) bg-(--ui-bg-muted) text-(--ui-text-muted)'}"
 								>
 									{cm.label}
 								</button>
@@ -695,30 +693,30 @@
 
 				<div class="flex items-center justify-between py-1">
 					<div>
-						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>{t('settings.autoPrint')}</label
-						>
-						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
+						<div class="block text-[12px] font-semibold text-(--ui-text-muted)">
+							{t('settings.autoPrint')}
+						</div>
+						<p class="text-[10px] text-(--ui-text-dimmed)">
 							{t('settings.autoPrintDesc')}
 						</p>
 					</div>
-					<Switch bind:checked={form.autoPrint} />
+					<Switch bind:checked={form.autoPrint} label={t('settings.autoPrint')} />
 				</div>
 
 				<div class="flex items-center justify-between py-1">
 					<div>
-						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>{t('settings.cashDrawerHeading')}</label
-						>
-						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
+						<div class="block text-[12px] font-semibold text-(--ui-text-muted)">
+							{t('settings.cashDrawerHeading')}
+						</div>
+						<p class="text-[10px] text-(--ui-text-dimmed)">
 							{t('settings.cashDrawerDesc')}
 						</p>
 					</div>
-					<Switch bind:checked={form.cashDrawerEnabled} />
+					<Switch bind:checked={form.cashDrawerEnabled} label={t('settings.cashDrawerHeading')} />
 				</div>
 
 				<label class="block py-1">
-					<span class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('settings.noteOptional')}</span
 					>
 					<Input bind:value={form.note} placeholder="e.g. next to register 2" class="w-full" />
@@ -726,14 +724,14 @@
 
 				<div class="flex items-center justify-between py-1">
 					<div>
-						<label class="block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-							>{t('settings.enabledHeading')}</label
-						>
-						<p class="text-[10px] text-[var(--ui-text-dimmed)]">
+						<div class="block text-[12px] font-semibold text-(--ui-text-muted)">
+							{t('settings.enabledHeading')}
+						</div>
+						<p class="text-[10px] text-(--ui-text-dimmed)">
 							{t('settings.enabledDesc')}
 						</p>
 					</div>
-					<Switch bind:checked={form.enabled} />
+					<Switch bind:checked={form.enabled} label={t('settings.enabledHeading')} />
 				</div>
 			</div>
 		</div>
@@ -756,8 +754,8 @@
 
 	<!-- Delete Confirmation -->
 	<Dialog bind:open={showDelete} title={t('settings.deletePrinter')} size="sm">
-		<p class="text-[13px] text-[var(--ui-text-muted)]">
-			Delete <span class="font-bold text-[var(--ui-text)]">"{deletingName}"</span>? This cannot be
+		<p class="text-[13px] text-(--ui-text-muted)">
+			Delete <span class="font-bold text-(--ui-text)">"{deletingName}"</span>? This cannot be
 			undone.
 		</p>
 		{#snippet footer()}
@@ -769,7 +767,7 @@
 	</Dialog>
 
 	<!-- Help link to hardware -->
-	<p class="px-1 text-center text-[11px] text-[var(--ui-text-dimmed)]">
+	<p class="px-1 text-center text-[11px] text-(--ui-text-dimmed)">
 		Need to wire a barcode scanner, scale, or cash drawer?
 		<a class="font-semibold text-primary-500 hover:underline" href={resolve('/settings/hardware')}
 			>{t('settings.configureHardware')}</a

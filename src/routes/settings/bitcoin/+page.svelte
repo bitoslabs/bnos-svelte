@@ -431,7 +431,7 @@
 				return {
 					icon: 'lucide:circle-help',
 					label: 'Detect: depends on provider',
-					cls: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'
+					cls: 'bg-(--ui-bg-muted) text-(--ui-text-muted)'
 				};
 			default:
 				return {
@@ -620,7 +620,7 @@
 	</PageHeader>
 
 	<!-- ═══ Exchange Rate ═══ -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center justify-between px-5 py-3">
 			<div class="flex items-center gap-2">
 				<Icon name="lucide:trending-up" class="size-4 text-primary-500" />
@@ -628,7 +628,7 @@
 			</div>
 			<div class="flex items-center gap-2">
 				{#if cacheAgeLabel}
-					<span class="text-[10px] text-[var(--ui-text-dimmed)]">{cacheAgeLabel}</span>
+					<span class="text-[10px] text-(--ui-text-dimmed)">{cacheAgeLabel}</span>
 				{/if}
 				<Button
 					variant="ghost"
@@ -642,15 +642,15 @@
 
 		<!-- Current rate display -->
 		<div class="px-5 py-4">
-			<div class="flex items-center justify-between rounded-xl bg-[var(--ui-bg-muted)] p-4">
+			<div class="flex items-center justify-between rounded-xl bg-(--ui-bg-muted) p-4">
 				<div>
-					<p class="text-[10px] font-bold text-[var(--ui-text-dimmed)] uppercase">BTC/USD</p>
+					<p class="text-[10px] font-bold text-(--ui-text-dimmed) uppercase">BTC/USD</p>
 					<p class="font-display text-lg font-black">
 						${(effectiveDisplay || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
 					</p>
 				</div>
 				<div class="text-right">
-					<p class="text-[10px] font-bold text-[var(--ui-text-dimmed)] uppercase">
+					<p class="text-[10px] font-bold text-(--ui-text-dimmed) uppercase">
 						{t('common.source')}
 					</p>
 					<p
@@ -664,9 +664,7 @@
 			</div>
 
 			{#if rateError}
-				<div
-					class="mt-3 rounded-xl bg-[var(--tone-error-bg)] p-3 text-[12px] text-[var(--tone-error-text)]"
-				>
+				<div class="mt-3 rounded-xl bg-(--tone-error-bg) p-3 text-[12px] text-(--tone-error-text)">
 					{rateError}
 				</div>
 			{/if}
@@ -674,17 +672,16 @@
 
 		<!-- Rate source selector -->
 		<div class="px-5 py-4">
-			<label
-				class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-				>{t('settings.rateSource')}</label
-			>
+			<div class="mb-2 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase">
+				{t('settings.rateSource')}
+			</div>
 			<div class="grid grid-cols-2 gap-2">
 				<button
 					type="button"
 					class="inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-[13px] font-semibold transition-all {rateSource ===
 					'auto'
 						? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
+						: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--ui-bg-accented)'}"
 					onclick={() => (rateSource = 'auto')}
 				>
 					<Icon name="lucide:cloud-download" class="size-4" />
@@ -695,7 +692,7 @@
 					class="inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-[13px] font-semibold transition-all {rateSource ===
 					'manual'
 						? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400'
-						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
+						: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--ui-bg-accented)'}"
 					onclick={() => (rateSource = 'manual')}
 				>
 					<Icon name="lucide:pencil" class="size-4" />
@@ -706,11 +703,18 @@
 			{#if rateSource === 'manual'}
 				<div class="mt-3">
 					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						for="bitcoin-manual-rate"
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 						>{t('settings.manualRate')}</label
 					>
-					<Input bind:value={manualRate} type="number" placeholder="100000" class="w-full" />
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+					<Input
+						id="bitcoin-manual-rate"
+						bind:value={manualRate}
+						type="number"
+						placeholder="100000"
+						class="w-full"
+					/>
+					<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">
 						{t('settings.manualRateDesc')}
 					</p>
 				</div>
@@ -719,7 +723,7 @@
 	</section>
 
 	<!-- ═══ Lightning Backend ═══ -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center justify-between px-5 py-3">
 			<div class="flex items-center gap-2">
 				<Icon name="lucide:zap" class="size-4 text-amber-500" />
@@ -741,16 +745,16 @@
 				</span>
 			{:else if connPill === 'error'}
 				<span
-					class="inline-flex items-center gap-1 rounded-full bg-[var(--tone-error-bg)] px-2 py-0.5 text-[10px] font-bold text-[var(--tone-error-text)]"
+					class="inline-flex items-center gap-1 rounded-full bg-(--tone-error-bg) px-2 py-0.5 text-[10px] font-bold text-(--tone-error-text)"
 				>
-					<span class="size-1.5 rounded-full bg-[var(--tone-error-text)]"></span>
+					<span class="size-1.5 rounded-full bg-(--tone-error-text)"></span>
 					Error
 				</span>
 			{:else if connPill === 'unverified'}
 				<span
-					class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5 text-[10px] font-bold text-[var(--ui-text-muted)]"
+					class="inline-flex items-center gap-1 rounded-full bg-(--ui-bg-muted) px-2 py-0.5 text-[10px] font-bold text-(--ui-text-muted)"
 				>
-					<span class="size-1.5 rounded-full bg-[var(--ui-text-dimmed)]"></span>
+					<span class="size-1.5 rounded-full bg-(--ui-text-dimmed)"></span>
 					Not verified
 				</span>
 			{/if}
@@ -758,10 +762,9 @@
 
 		<!-- Provider selector -->
 		<div class="px-5 py-4">
-			<label
-				class="mb-2 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
-				>{t('settings.selectProvider')}</label
-			>
+			<div class="mb-2 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase">
+				{t('settings.selectProvider')}
+			</div>
 			<div
 				class="grid gap-2 sm:grid-cols-2"
 				role="radiogroup"
@@ -779,7 +782,7 @@
 						aria-checked={lightningProvider === opt.id}
 						class="rounded-xl border p-3 text-left transition-all {lightningProvider === opt.id
 							? 'border-amber-500 bg-amber-500/10'
-							: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
+							: 'border-(--ui-border) hover:bg-(--ui-bg-accented)'}"
 						onclick={() => (lightningProvider = opt.id)}
 					>
 						<div class="flex items-start gap-2.5">
@@ -787,7 +790,7 @@
 								class="grid size-8 shrink-0 place-items-center rounded-lg {lightningProvider ===
 								opt.id
 									? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-									: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+									: 'bg-(--ui-bg-muted) text-(--ui-text-muted)'}"
 							>
 								<Icon name={opt.icon} class="size-4" />
 							</span>
@@ -807,7 +810,7 @@
 										/>
 									{/if}
 								</div>
-								<p class="mt-0.5 truncate text-[10.5px] text-[var(--ui-text-dimmed)]">{opt.desc}</p>
+								<p class="mt-0.5 truncate text-[10.5px] text-(--ui-text-dimmed)">{opt.desc}</p>
 								<span
 									class="mt-1.5 inline-flex items-center gap-1 rounded-full px-1.5 py-px text-[9.5px] font-semibold {chip.cls}"
 								>
@@ -823,14 +826,12 @@
 					role="radio"
 					aria-checked={!lightningProvider}
 					class="rounded-xl border px-4 py-3 text-left transition-all {!lightningProvider
-						? 'border-[var(--ui-border)] bg-[var(--ui-bg-muted)]'
-						: 'border-[var(--ui-border)] hover:bg-[var(--ui-bg-accented)]'}"
+						? 'border-(--ui-border) bg-(--ui-bg-muted)'
+						: 'border-(--ui-border) hover:bg-(--ui-bg-accented)'}"
 					onclick={() => (lightningProvider = '')}
 				>
-					<span class="text-[12.5px] font-semibold text-[var(--ui-text-muted)]"
-						>{t('common.none')}</span
-					>
-					<p class="mt-0.5 text-[10.5px] text-[var(--ui-text-dimmed)]">Cash-only checkout</p>
+					<span class="text-[12.5px] font-semibold text-(--ui-text-muted)">{t('common.none')}</span>
+					<p class="mt-0.5 text-[10.5px] text-(--ui-text-dimmed)">Cash-only checkout</p>
 				</button>
 			</div>
 		</div>
@@ -840,63 +841,96 @@
 			<div class="space-y-3 px-5 py-4">
 				<div>
 					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						for="bitcoin-lnd-url"
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 						>{t('settings.lndRestUrl')}</label
 					>
-					<Input bind:value={lndUrl} placeholder="https://127.0.0.1:8080" class="w-full" />
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
-						REST endpoint of your LND node
-					</p>
+					<Input
+						id="bitcoin-lnd-url"
+						bind:value={lndUrl}
+						placeholder="https://127.0.0.1:8080"
+						class="w-full"
+					/>
+					<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">REST endpoint of your LND node</p>
 				</div>
 				<div>
 					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						for="bitcoin-macaroon"
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 						>{t('settings.macaroonHex')}</label
 					>
-					<Input bind:value={lndMacaroon} type="password" placeholder="020105…" class="w-full" />
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
-						Invoice macaroon in hex format
-					</p>
+					<Input
+						id="bitcoin-macaroon"
+						bind:value={lndMacaroon}
+						type="password"
+						placeholder="020105…"
+						class="w-full"
+					/>
+					<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">Invoice macaroon in hex format</p>
 				</div>
 			</div>
 		{:else if lightningProvider === 'phoenixd'}
 			<div class="space-y-3 px-5 py-4">
 				<div>
 					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						for="bitcoin-phoenixd-url"
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 						>{t('settings.phoenixdUrl')}</label
 					>
-					<Input bind:value={phoenixdUrl} placeholder="http://127.0.0.1:9740" class="w-full" />
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Phoenix daemon API endpoint</p>
+					<Input
+						id="bitcoin-phoenixd-url"
+						bind:value={phoenixdUrl}
+						placeholder="http://127.0.0.1:9740"
+						class="w-full"
+					/>
+					<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">Phoenix daemon API endpoint</p>
 				</div>
 				<div>
 					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						for="bitcoin-phoenixd-pass"
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 						>{t('common.password', undefined)}</label
 					>
-					<Input bind:value={phoenixdPass} type="password" placeholder="••••••••" class="w-full" />
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Phoenix daemon HTTP password</p>
+					<Input
+						id="bitcoin-phoenixd-pass"
+						bind:value={phoenixdPass}
+						type="password"
+						placeholder="••••••••"
+						class="w-full"
+					/>
+					<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">Phoenix daemon HTTP password</p>
 				</div>
 			</div>
 		{:else if lightningProvider === 'alby'}
 			<div class="px-5 py-4">
 				<label
-					class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					for="bitcoin-alby-key"
+					class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 					>{t('settings.albyApiKey')}</label
 				>
-				<Input bind:value={albyApiKey} type="password" placeholder="alby-api-key" class="w-full" />
-				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
-					Get your API key from getalby.com
-				</p>
+				<Input
+					id="bitcoin-alby-key"
+					bind:value={albyApiKey}
+					type="password"
+					placeholder="alby-api-key"
+					class="w-full"
+				/>
+				<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">Get your API key from getalby.com</p>
 			</div>
 		{:else if lightningProvider === 'nwc'}
 			<div class="px-5 py-4">
 				<label
-					class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					for="bitcoin-nwc-url"
+					class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 					>{t('settings.nwcRelayUrl')}</label
 				>
-				<Input bind:value={nwcUrl} placeholder="nostr+walletconnect://…" class="w-full" />
-				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+				<Input
+					id="bitcoin-nwc-url"
+					bind:value={nwcUrl}
+					placeholder="nostr+walletconnect://…"
+					class="w-full"
+				/>
+				<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">
 					Nostr Wallet Connect string from your wallet — paid invoices are detected automatically
 					(NIP-47 push + polling)
 				</p>
@@ -905,11 +939,17 @@
 			<div class="space-y-3 px-5 py-4">
 				<div>
 					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						for="bitcoin-lightning-address"
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 						>{t('settings.lightningAddressHeading')}</label
 					>
-					<Input bind:value={lightningAddress} placeholder="store@bitdigo.com" class="w-full" />
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+					<Input
+						id="bitcoin-lightning-address"
+						bind:value={lightningAddress}
+						placeholder="store@bitdigo.com"
+						class="w-full"
+					/>
+					<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">
 						Get one free at
 						<a
 							href="https://getalby.com"
@@ -936,31 +976,35 @@
 			<div class="space-y-3 px-5 py-4">
 				<div>
 					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						for="bitcoin-blink-key"
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 						>{t('settings.blinkApiKey')}</label
 					>
 					<Input
+						id="bitcoin-blink-key"
 						bind:value={blinkApiKey}
 						type="password"
 						placeholder="blink-api-key"
 						class="w-full"
 					/>
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+					<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">
 						Blink (Galoy) API access token — “Test connection” checks it live and can auto-fill the
 						wallet id below
 					</p>
 				</div>
 				<div>
 					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						for="bitcoin-wallet-id"
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 						>{t('settings.walletId')}</label
 					>
 					<Input
+						id="bitcoin-wallet-id"
 						bind:value={blinkWalletId}
 						placeholder={t('settings.autoDiscover')}
 						class="w-full"
 					/>
-					<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">
+					<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">
 						BTC wallet ID for invoice generation
 					</p>
 				</div>
@@ -968,16 +1012,18 @@
 		{:else if lightningProvider === 'strike'}
 			<div class="px-5 py-4">
 				<label
-					class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					for="bitcoin-strike-key"
+					class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 					>{t('settings.strikeApiKey')}</label
 				>
 				<Input
+					id="bitcoin-strike-key"
 					bind:value={strikeApiKey}
 					type="password"
 					placeholder="strike-api-key"
 					class="w-full"
 				/>
-				<p class="mt-1 text-[10px] text-[var(--ui-text-dimmed)]">Strike API key for BTC payments</p>
+				<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">Strike API key for BTC payments</p>
 			</div>
 		{/if}
 
@@ -1000,18 +1046,11 @@
 								</span>
 							{/if}
 						{:else if connPill === 'unverified'}
-							<Icon
-								name="lucide:circle-dashed"
-								class="size-4 shrink-0 text-[var(--ui-text-dimmed)]"
-							/>
-							<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]"
-								>Not verified yet</span
-							>
+							<Icon name="lucide:circle-dashed" class="size-4 shrink-0 text-(--ui-text-dimmed)" />
+							<span class="text-[12px] font-semibold text-(--ui-text-muted)">Not verified yet</span>
 						{:else if connPill === 'error'}
-							<Icon name="lucide:circle-x" class="size-4 shrink-0 text-[var(--tone-error-text)]" />
-							<span class="text-[12px] font-semibold text-[var(--tone-error-text)]"
-								>Test failed</span
-							>
+							<Icon name="lucide:circle-x" class="size-4 shrink-0 text-(--tone-error-text)" />
+							<span class="text-[12px] font-semibold text-(--tone-error-text)">Test failed</span>
 						{/if}
 					</div>
 					<Button
@@ -1034,13 +1073,13 @@
 						class="rounded-lg p-2.5 text-[12px] font-medium {connectionVerified
 							? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
 							: testStatus === 'error'
-								? 'bg-[var(--tone-error-bg)] text-[var(--tone-error-text)]'
-								: 'bg-[var(--ui-bg-muted)] text-[var(--ui-text-muted)]'}"
+								? 'bg-(--tone-error-bg) text-(--tone-error-text)'
+								: 'bg-(--ui-bg-muted) text-(--ui-text-muted)'}"
 					>
 						{testResult}
 					</div>
 				{:else if connPill === 'unverified'}
-					<p class="text-[10.5px] text-[var(--ui-text-dimmed)]">
+					<p class="text-[10.5px] text-(--ui-text-dimmed)">
 						{#if lightningProvider === 'lnaddress'}
 							Runs a live LNURL-pay resolution and reports whether payments auto-detect.
 						{:else if lightningProvider === 'nwc'}
@@ -1058,18 +1097,17 @@
 		<!-- Node info -->
 		{#if connectionVerified && nodePubkey}
 			<div class="px-5 py-4">
-				<div class="space-y-1.5 rounded-xl bg-[var(--ui-bg-muted)] p-3">
+				<div class="space-y-1.5 rounded-xl bg-(--ui-bg-muted) p-3">
 					<div class="flex items-center justify-between gap-2">
-						<span class="text-[10px] font-bold text-[var(--ui-text-dimmed)] uppercase">Pubkey</span>
-						<span class="max-w-[16rem] truncate font-mono text-[11px] text-[var(--ui-text-muted)]"
+						<span class="text-[10px] font-bold text-(--ui-text-dimmed) uppercase">Pubkey</span>
+						<span class="max-w-[16rem] truncate font-mono text-[11px] text-(--ui-text-muted)"
 							>{nodePubkey}</span
 						>
 					</div>
 					{#if nodeAlias}
 						<div class="flex items-center justify-between gap-2">
-							<span class="text-[10px] font-bold text-[var(--ui-text-dimmed)] uppercase">Alias</span
-							>
-							<span class="text-[12px] font-semibold text-[var(--ui-text)]">{nodeAlias}</span>
+							<span class="text-[10px] font-bold text-(--ui-text-dimmed) uppercase">Alias</span>
+							<span class="text-[12px] font-semibold text-(--ui-text)">{nodeAlias}</span>
 						</div>
 					{/if}
 				</div>
@@ -1079,20 +1117,20 @@
 
 	<!-- ═══ Lightning Receive QR ═══ -->
 	{#if lightningAddress}
-		<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+		<section class="surface-card divide-y divide-(--ui-border-muted)">
 			<div class="flex items-center gap-2 px-5 py-3">
 				<Icon name="lucide:qr-code" class="size-4 text-amber-500" />
 				<h2 class="font-display text-[14px] font-semibold">{t('settings.lightningReceiveQr')}</h2>
 			</div>
 			<div class="flex flex-col items-center gap-3 px-5 py-6 sm:flex-row sm:items-start sm:gap-6">
-				<div class="rounded-2xl border border-[var(--ui-border)] bg-white p-3 shadow-sm">
+				<div class="rounded-2xl border border-(--ui-border) bg-white p-3 shadow-sm">
 					<QrCode value={`lightning:${lightningAddress}`} size={176} badge="lightning" />
 				</div>
 				<div class="flex-1">
 					<p class="text-[13px] font-bold text-amber-600 dark:text-amber-400">
 						lightning:{lightningAddress}
 					</p>
-					<p class="mt-1 text-[12px] text-[var(--ui-text-muted)]">
+					<p class="mt-1 text-[12px] text-(--ui-text-muted)">
 						A static QR customers can scan with any Lightning wallet. For amount-locked invoices at
 						checkout, this address is reused by the POS “Show QR” flow.
 					</p>
@@ -1108,29 +1146,29 @@
 	{/if}
 
 	<!-- ═══ Payment Settings ═══ -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:settings-2" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.paymentSettings')}</h2>
 		</div>
 		<div class="grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('settings.defaultMemo')}</span
 				>
 				<Input bind:value={defaultMemo} placeholder={t('pos.payment')} class="w-full" />
-				<span class="mt-1 block text-[10px] leading-snug text-[var(--ui-text-dimmed)]">
+				<span class="mt-1 block text-[10px] leading-snug text-(--ui-text-dimmed)">
 					{t('settings.defaultMemoDesc')}
 				</span>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('settings.defaultExpiry')}</span
 				>
 				<Input bind:value={defaultExpiry} type="number" placeholder="3600" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('settings.minAmount')}</span
 				>
 				<Input
@@ -1141,7 +1179,7 @@
 				/>
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('settings.maxAmount')}</span
 				>
 				<Input
@@ -1155,24 +1193,24 @@
 	</section>
 
 	<!-- ═══ Receipt ═══ -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:receipt" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.receipt')}</h2>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
-				<label class="text-[13px] font-semibold">{t('settings.showSatsOnReceipt')}</label>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+				<div class="text-[13px] font-semibold">{t('settings.showSatsOnReceipt')}</div>
+				<p class="text-[11px] text-(--ui-text-dimmed)">
 					{t('settings.showSatsOnReceiptDesc')}
 				</p>
 			</div>
-			<Switch bind:checked={receiptShowSats} />
+			<Switch bind:checked={receiptShowSats} label={t('settings.showSatsOnReceipt')} />
 		</div>
 	</section>
 
 	<!-- ═══ Conversion Preview ═══ -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:calculator" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.conversionPreview')}</h2>
@@ -1181,21 +1219,27 @@
 			<div class="flex items-end gap-3">
 				<div class="flex-1">
 					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+						for="bitcoin-preview-amount"
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 					>
 						Amount ({currency})
 					</label>
-					<Input bind:value={previewAmount} type="number" class="w-full" />
+					<Input
+						id="bitcoin-preview-amount"
+						bind:value={previewAmount}
+						type="number"
+						class="w-full"
+					/>
 				</div>
 				<div class="flex items-center pb-2.5">
-					<Icon name="lucide:arrow-right" class="size-4 text-[var(--ui-text-dimmed)]" />
+					<Icon name="lucide:arrow-right" class="size-4 text-(--ui-text-dimmed)" />
 				</div>
 				<div class="flex-1">
-					<label
-						class="mb-1.5 block text-[11px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+					<div
+						class="mb-1.5 block text-[11px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 					>
 						{t('settings.satoshis')}
-					</label>
+					</div>
 					<div
 						class="flex h-9.5 items-center rounded-lg border border-amber-500/20 bg-amber-500/10 px-3"
 					>
@@ -1209,17 +1253,17 @@
 	</section>
 
 	<!-- ═══ Danger Zone ═══ -->
-	<section class="surface-card danger-surface divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card danger-surface divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
-			<Icon name="lucide:triangle-alert" class="size-4 text-[var(--tone-error-text)]" />
-			<h2 class="font-display text-[14px] font-semibold text-[var(--tone-error-text)]">
+			<Icon name="lucide:triangle-alert" class="size-4 text-(--tone-error-text)" />
+			<h2 class="font-display text-[14px] font-semibold text-(--tone-error-text)">
 				{t('settings.dangerZone')}
 			</h2>
 		</div>
 		<div class="flex items-center justify-between gap-4 px-5 py-4">
 			<div>
-				<label class="text-[13px] font-semibold">{t('settings.resetBitcoinSettings')}</label>
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+				<div class="text-[13px] font-semibold">{t('settings.resetBitcoinSettings')}</div>
+				<p class="text-[11px] text-(--ui-text-dimmed)">
 					{t('settings.resetBitcoinSettingsDesc')}
 				</p>
 			</div>

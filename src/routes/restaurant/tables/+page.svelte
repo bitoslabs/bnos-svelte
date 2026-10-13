@@ -304,7 +304,7 @@
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">Floor &amp; tables</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+			<p class="text-[12.5px] text-(--ui-text-muted)">
 				Table layout &amp; live status · kind 30610
 			</p>
 		</div>
@@ -315,12 +315,12 @@
 
 	<!-- Stats bar -->
 	<div class="flex flex-wrap items-center gap-3">
-		{#each [{ label: t('common.total'), value: stats.total, color: 'neutral' as const, dot: 'bg-[var(--ui-text-dimmed)]' }, { label: 'Available', value: stats.available, color: 'success' as const, dot: 'bg-emerald-500' }, { label: 'Occupied', value: stats.occupied, color: 'error' as const, dot: 'bg-red-500' }, { label: 'Reserved', value: stats.reserved, color: 'warning' as const, dot: 'bg-amber-500' }, { label: 'Cleaning', value: stats.cleaning, color: 'info' as const, dot: 'bg-blue-500' }] as stat (stat.label)}
+		{#each [{ label: t('common.total'), value: stats.total, color: 'neutral' as const, dot: 'bg-(--ui-text-dimmed)' }, { label: 'Available', value: stats.available, color: 'success' as const, dot: 'bg-emerald-500' }, { label: 'Occupied', value: stats.occupied, color: 'error' as const, dot: 'bg-red-500' }, { label: 'Reserved', value: stats.reserved, color: 'warning' as const, dot: 'bg-amber-500' }, { label: 'Cleaning', value: stats.cleaning, color: 'info' as const, dot: 'bg-blue-500' }] as stat (stat.label)}
 			<div
-				class="flex items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1.5"
+				class="flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1.5"
 			>
 				<span class="size-2 rounded-full {stat.dot}"></span>
-				<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">{stat.label}</span>
+				<span class="text-[12px] font-semibold text-(--ui-text-muted)">{stat.label}</span>
 				<span class="text-[14px] font-bold tabular-nums">{formatInt(stat.value)}</span>
 			</div>
 		{/each}
@@ -336,7 +336,7 @@
 					class="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors
 						{filterStatus === ft.status
 						? 'border-primary-500/30 bg-primary-500/10 text-primary-700 dark:text-primary-300'
-						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
+						: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'}"
 					onclick={() => (filterStatus = ft.status)}
 				>
 					{#if ft.dotColor}
@@ -344,7 +344,7 @@
 					{/if}
 					{ft.label}
 					<span
-						class="ml-0.5 rounded-md bg-[var(--ui-bg-accented)] px-1.5 py-0.5 text-[10px] font-bold tabular-nums"
+						class="ml-0.5 rounded-md bg-(--ui-bg-accented) px-1.5 py-0.5 text-[10px] font-bold tabular-nums"
 						>{ft.count}</span
 					>
 				</button>
@@ -385,11 +385,11 @@
 					<!-- Area label -->
 					<div class="flex items-center gap-2 px-1">
 						<span
-							class="text-[11px] font-extrabold tracking-widest text-[var(--ui-text-dimmed)] uppercase"
+							class="text-[11px] font-extrabold tracking-widest text-(--ui-text-dimmed) uppercase"
 							>{areaName}</span
 						>
 						<span
-							class="rounded bg-[var(--ui-bg-accented)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--ui-text-muted)]"
+							class="rounded bg-(--ui-bg-accented) px-1.5 py-0.5 text-[10px] font-bold text-(--ui-text-muted)"
 							>{areaTables.length}</span
 						>
 					</div>
@@ -429,29 +429,27 @@
 
 								<!-- Card body -->
 								<div class="flex flex-1 flex-col items-center justify-center py-2">
-									<div class="flex items-center gap-1.5 text-[var(--ui-text-muted)]">
+									<div class="flex items-center gap-1.5 text-(--ui-text-muted)">
 										<Icon name="lucide:users" class="size-4" />
-										<span class="text-[20px] font-bold text-[var(--ui-text)] tabular-nums"
+										<span class="text-[20px] font-bold text-(--ui-text) tabular-nums"
 											>{tbl.seats}</span
 										>
 										<span class="text-[11px] font-medium">seats</span>
 									</div>
 									{#if tbl.status === 'occupied' && tbl.orderInfo}
-										<div
-											class="mt-2 rounded-md bg-[var(--ui-bg-elevated)]/80 px-2.5 py-1 text-center"
-										>
+										<div class="mt-2 rounded-md bg-(--ui-bg-elevated)/80 px-2.5 py-1 text-center">
 											<div class="font-mono text-[11px] font-bold">{tbl.orderInfo.number}</div>
-											<div class="text-[11px] text-[var(--ui-text-muted)]">
+											<div class="text-[11px] text-(--ui-text-muted)">
 												{formatMoney(tbl.orderInfo.total, currency)}
 											</div>
 										</div>
 									{:else if tbl.status === 'reserved'}
-										<div class="mt-2 text-center text-[11px] text-[var(--ui-text-muted)]">
+										<div class="mt-2 text-center text-[11px] text-(--ui-text-muted)">
 											<Icon name="lucide:clock" class="mr-1 inline size-3" />
 											Reserved
 										</div>
 									{:else if tbl.status === 'cleaning'}
-										<div class="mt-2 text-center text-[11px] text-[var(--ui-text-muted)]">
+										<div class="mt-2 text-center text-[11px] text-(--ui-text-muted)">
 											<Icon name="lucide:sparkles" class="mr-1 inline size-3" />
 											Cleaning…
 										</div>
@@ -461,17 +459,15 @@
 								<!-- Status change popover -->
 								{#if openPopoverId === tbl.id}
 									<div
-										class="absolute inset-x-0 bottom-full z-40 mb-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-2 shadow-xl"
+										class="absolute inset-x-0 bottom-full z-40 mb-2 rounded-xl border border-(--ui-border) bg-(--ui-bg-elevated) p-2 shadow-xl"
 										role="menu"
 									>
 										<div class="mb-1.5 flex items-center justify-between px-1">
-											<span class="text-[11px] font-bold text-[var(--ui-text-muted)]"
-												>Set status</span
-											>
+											<span class="text-[11px] font-bold text-(--ui-text-muted)">Set status</span>
 											<div class="flex items-center gap-1">
 												<button
 													type="button"
-													class="grid size-6 place-items-center rounded text-[var(--ui-text-dimmed)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+													class="grid size-6 place-items-center rounded text-(--ui-text-dimmed) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 													title={t('common.edit')}
 													onclick={(e) => {
 														e.stopPropagation();
@@ -482,7 +478,7 @@
 												</button>
 												<button
 													type="button"
-													class="grid size-6 place-items-center rounded text-[var(--tone-error-text)] hover:bg-[var(--tone-error-bg)]"
+													class="grid size-6 place-items-center rounded text-(--tone-error-text) hover:bg-(--tone-error-bg)"
 													title={t('common.delete')}
 													onclick={(e) => {
 														e.stopPropagation();
@@ -497,10 +493,8 @@
 											{#each STATUS_OPTIONS as opt (opt.value)}
 												<button
 													type="button"
-													class="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors hover:bg-[var(--ui-bg-accented)]
-														{tbl.status === opt.value
-														? 'bg-[var(--ui-bg-accented)] text-[var(--ui-text)]'
-														: 'text-[var(--ui-text-muted)]'}"
+													class="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors hover:bg-(--ui-bg-accented)
+														{tbl.status === opt.value ? 'bg-(--ui-bg-accented) text-(--ui-text)' : 'text-(--ui-text-muted)'}"
 													onclick={(e) => {
 														e.stopPropagation();
 														setStatus(tbl.id, opt.value);
@@ -527,27 +521,31 @@
 <Dialog bind:open={dialogOpen} title={editMode ? 'Edit table' : 'Add table'} size="md">
 	<div class="space-y-3">
 		<div>
-			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<label for="table-name" class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.name')}</label
 			>
-			<Input bind:value={formName} placeholder="e.g. T1, Patio A" />
+			<Input id="table-name" bind:value={formName} placeholder="e.g. T1, Patio A" />
 		</div>
 		<div class="grid grid-cols-2 gap-3">
 			<div>
-				<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Seats</label
+				<label for="table-seats" class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
+					>Seats</label
 				>
-				<Input type="number" min="1" max="50" bind:value={formSeats} />
+				<Input id="table-seats" type="number" min="1" max="50" bind:value={formSeats} />
 			</div>
 			<div>
-				<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]">Area</label>
-				<Input bind:value={formArea} placeholder="Main, Patio, VIP…" />
+				<label for="table-area" class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
+					>Area</label
+				>
+				<Input id="table-area" bind:value={formArea} placeholder="Main, Patio, VIP…" />
 			</div>
 		</div>
 		<div>
-			<label class="mb-1 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<label for="table-status" class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.status')}</label
 			>
 			<Select
+				id="table-status"
 				value={formStatus}
 				options={STATUS_OPTIONS.map((s) => ({ value: s.value, label: s.label }))}
 				onchange={(e: Event) =>

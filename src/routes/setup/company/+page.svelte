@@ -57,7 +57,7 @@
 <div class="space-y-6">
 	<div>
 		<h2 class="font-display text-xl font-bold tracking-tight">Tell us about your business</h2>
-		<p class="mt-1 text-[13.5px] text-[var(--ui-text-muted)]">
+		<p class="mt-1 text-[13.5px] text-(--ui-text-muted)">
 			These choices tailor BNOS — business type unlocks the right modules (e.g. Restaurant enables
 			tables, kitchen & waiter flows).
 		</p>
@@ -66,8 +66,7 @@
 	<!-- Name + code -->
 	<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Company name</span
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Company name</span
 			>
 			<Input
 				bind:value={name}
@@ -77,8 +76,7 @@
 			/>
 		</label>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-				>Company code</span
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Company code</span
 			>
 			<Input
 				bind:value={code}
@@ -87,7 +85,7 @@
 				placeholder={codeFollowsName ? slugify(name) || 'my-store' : 'my-store'}
 				oninput={() => (codeFollowsName = false)}
 			/>
-			<span class="mt-1 block text-[11px] text-[var(--ui-text-dimmed)]">
+			<span class="mt-1 block text-[11px] text-(--ui-text-dimmed)">
 				Lowercase, used as your Nostr identifier.
 			</span>
 		</label>
@@ -95,8 +93,7 @@
 
 	<!-- Business model -->
 	<div>
-		<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-			>Business model</span
+		<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Business model</span
 		>
 		<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 			{#each businessModels as model (model.value)}
@@ -106,11 +103,11 @@
 					onclick={() => pickModel(model.value)}
 					class="flex items-center gap-3 rounded-xl border-2 p-3 text-left text-[13px] font-medium transition-all {active
 						? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
-						: 'border-[var(--ui-border)] hover:border-[var(--ui-border-accented)]'}"
+						: 'border-(--ui-border) hover:border-(--ui-border-accented)'}"
 				>
 					<Icon
 						name={model.icon}
-						class="size-5 shrink-0 {active ? 'text-primary-500' : 'text-[var(--ui-text-dimmed)]'}"
+						class="size-5 shrink-0 {active ? 'text-primary-500' : 'text-(--ui-text-dimmed)'}"
 					/>
 					<div class="min-w-0">
 						<div>{model.label}</div>
@@ -123,9 +120,7 @@
 
 	<!-- Business type -->
 	<div>
-		<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-			>Business type</span
-		>
+		<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Business type</span>
 		<div class="flex flex-wrap gap-2">
 			{#each businessTypes as type (type.value)}
 				{@const active = tenant.state.businessType === type.value}
@@ -134,7 +129,7 @@
 					onclick={() => pickType(type.value)}
 					class="inline-flex items-center gap-1.5 rounded-xl border-2 px-3.5 py-2 text-[13px] font-medium transition-all {active
 						? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
-						: 'border-[var(--ui-border)] hover:border-[var(--ui-border-accented)]'}"
+						: 'border-(--ui-border) hover:border-(--ui-border-accented)'}"
 				>
 					<Icon name={type.icon} class="size-4" />
 					{type.label}
@@ -153,7 +148,7 @@
 
 	<!-- Currency -->
 	<label class="block">
-		<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+		<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 			>Default currency</span
 		>
 		<Select bind:value={tenant.state.currency} options={currencies} class="w-full" />
@@ -162,17 +157,15 @@
 	<!-- Tax -->
 	<div class="surface-card grid grid-cols-1 gap-4 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
 		<div>
-			<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Sales tax</span>
-			<p class="mt-0.5 text-[11.5px] text-[var(--ui-text-dimmed)]">
+			<span class="text-[12px] font-semibold text-(--ui-text-muted)">Sales tax</span>
+			<p class="mt-0.5 text-[11.5px] text-(--ui-text-dimmed)">
 				Applied at checkout. {tenant.state.taxIncludedInPrice
 					? 'Prices are tax-inclusive.'
 					: 'Prices are tax-exclusive.'}
 			</p>
 		</div>
 		<div class="flex items-center gap-4">
-			<label
-				class="flex items-center gap-2 text-[12.5px] font-semibold text-[var(--ui-text-muted)]"
-			>
+			<label class="flex items-center gap-2 text-[12.5px] font-semibold text-(--ui-text-muted)">
 				<Input
 					bind:value={tenant.state.defaultTaxRate}
 					type="number"
@@ -183,9 +176,7 @@
 					class="w-24"
 				/>
 			</label>
-			<label
-				class="flex items-center gap-2 text-[12.5px] font-semibold text-[var(--ui-text-muted)]"
-			>
+			<label class="flex items-center gap-2 text-[12.5px] font-semibold text-(--ui-text-muted)">
 				<Switch
 					checked={tenant.state.taxIncludedInPrice}
 					onCheckedChange={(v) => tenant.configure({ taxIncludedInPrice: v })}

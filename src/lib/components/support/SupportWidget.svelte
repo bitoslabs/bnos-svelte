@@ -130,7 +130,7 @@
 </script>
 
 <section
-	class="surface-card overflow-hidden rounded-2xl border border-[var(--ui-border-muted)] {compact
+	class="surface-card overflow-hidden rounded-2xl border border-(--ui-border-muted) {compact
 		? 'p-4'
 		: 'p-5 sm:p-6'}"
 >
@@ -140,7 +140,7 @@
 		</div>
 		<div>
 			<h2 class="font-display text-[18px] font-extrabold tracking-tight">Support BNOS</h2>
-			<p class="mt-1 text-[12.5px] leading-relaxed text-[var(--ui-text-muted)]">
+			<p class="mt-1 text-[12.5px] leading-relaxed text-(--ui-text-muted)">
 				Send sats directly to <a
 					href={SUPPORT_PROFILE_URL}
 					target="_blank"
@@ -158,7 +158,7 @@
 				onclick={() => selectTier(tier.sats)}
 				class="rounded-xl border p-3 text-left transition {selectedSats === tier.sats && !customSats
 					? 'border-primary-500 bg-primary-500/8'
-					: 'border-[var(--ui-border-muted)] hover:border-primary-500/40'}"
+					: 'border-(--ui-border-muted) hover:border-primary-500/40'}"
 			>
 				<span class="block text-[12px] font-bold">{tier.label}</span><span
 					class="mt-1 block font-mono text-[13px] font-bold text-primary-500"
@@ -178,7 +178,7 @@
 			value={customSats}
 			oninput={(e) => setCustom(e.currentTarget.value)}
 			placeholder="Custom amount in sats"
-			class="min-w-0 flex-1 rounded-xl border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] px-3 py-2.5 text-[13px] font-semibold outline-none"
+			class="min-w-0 flex-1 rounded-xl border border-(--ui-border-muted) bg-(--ui-bg-muted) px-3 py-2.5 text-[13px] font-semibold outline-none"
 		/>
 		<button
 			type="button"
@@ -193,17 +193,17 @@
 	</div>
 	{#if error}<p
 			role="alert"
-			class="mt-3 rounded-xl bg-[var(--tone-warning-bg)] px-3 py-2 text-[11.5px] font-semibold text-[var(--tone-warning-text)]"
+			class="mt-3 rounded-xl bg-(--tone-warning-bg) px-3 py-2 text-[11.5px] font-semibold text-(--tone-warning-text)"
 		>
 			{error}
 		</p>{/if}
 	{#if invoice}<div
-			class="mt-4 grid gap-4 rounded-2xl bg-[var(--ui-bg-muted)] p-4 sm:grid-cols-[auto_1fr] sm:items-center"
+			class="mt-4 grid gap-4 rounded-2xl bg-(--ui-bg-muted) p-4 sm:grid-cols-[auto_1fr] sm:items-center"
 		>
 			<QrCode value={invoice.toUpperCase()} size={180} badge="lightning" />
 			<div>
 				<p class="text-[13px] font-bold">Invoice ready · {amount.toLocaleString()} sats</p>
-				<p class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">
+				<p class="mt-1 text-[11.5px] text-(--ui-text-muted)">
 					Scan with any Lightning wallet, or open it directly on this device.
 				</p>
 				<div class="mt-3 flex flex-wrap gap-2">
@@ -214,7 +214,7 @@
 					><button
 						type="button"
 						onclick={copyInvoice}
-						class="rounded-lg border border-[var(--ui-border-muted)] px-3 py-2 text-[11.5px] font-bold"
+						class="rounded-lg border border-(--ui-border-muted) px-3 py-2 text-[11.5px] font-bold"
 						><Icon
 							name={copied ? 'lucide:check' : 'lucide:copy'}
 							class="mr-1 inline size-3.5"
@@ -223,7 +223,7 @@
 				</div>
 			</div>
 		</div>{/if}
-	<p class="mt-4 text-[10.5px] text-[var(--ui-text-dimmed)]">
+	<p class="mt-4 text-[10.5px] text-(--ui-text-dimmed)">
 		Powered by Nostr profile metadata · Lightning payments are final.
 	</p>
 </section>

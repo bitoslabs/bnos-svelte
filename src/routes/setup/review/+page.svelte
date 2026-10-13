@@ -97,22 +97,22 @@
 <div class="space-y-5">
 	<div>
 		<h2 class="font-display text-xl font-bold tracking-tight">Review & create</h2>
-		<p class="mt-1 text-[13.5px] text-[var(--ui-text-muted)]">
+		<p class="mt-1 text-[13.5px] text-(--ui-text-muted)">
 			Confirm the details below. We'll publish your organization to Nostr and open the dashboard.
 		</p>
 	</div>
 
 	<dl
-		class="divide-y divide-[var(--ui-border-muted)] overflow-hidden rounded-xl border border-[var(--ui-border)]"
+		class="divide-y divide-(--ui-border-muted) overflow-hidden rounded-xl border border-(--ui-border)"
 	>
 		{#each rows as row (row.label)}
 			<div class="flex items-center gap-3 px-4 py-3">
 				<div
-					class="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--ui-bg-accented)] text-[var(--ui-text-muted)]"
+					class="grid size-8 shrink-0 place-items-center rounded-lg bg-(--ui-bg-accented) text-(--ui-text-muted)"
 				>
 					<Icon name={row.icon} class="size-4" />
 				</div>
-				<dt class="text-[12.5px] text-[var(--ui-text-muted)]">{row.label}</dt>
+				<dt class="text-[12.5px] text-(--ui-text-muted)">{row.label}</dt>
 				<dd class="ml-auto truncate text-[13px] font-semibold">{row.value}</dd>
 			</div>
 		{/each}

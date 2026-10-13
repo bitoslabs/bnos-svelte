@@ -148,14 +148,14 @@
 	/>
 
 	<!-- Active context -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:navigation" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.editing')}</h2>
 		</div>
 		<div class="grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-2">
 			<div class="space-y-1">
-				<p class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+				<p class="text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 					{t('settings.company')}
 				</p>
 				{#if hasActiveCompany}
@@ -170,13 +170,13 @@
 						</p>
 					</div>
 				{:else}
-					<p class="text-[12px] text-[var(--ui-text-dimmed)] italic">
+					<p class="text-[12px] text-(--ui-text-dimmed) italic">
 						{t('settings.noActiveCompany')}
 					</p>
 				{/if}
 			</div>
 			<div class="space-y-1">
-				<p class="text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase">
+				<p class="text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 					{t('settings.branchLabel')}
 				</p>
 				{#if hasActiveBranch}
@@ -185,7 +185,7 @@
 						<p class="truncate text-[13px] font-bold">{activeBranchName}</p>
 					</div>
 				{:else}
-					<p class="text-[12px] text-[var(--ui-text-dimmed)] italic">
+					<p class="text-[12px] text-(--ui-text-dimmed) italic">
 						{t('settings.noActiveBranch')}
 					</p>
 				{/if}
@@ -193,7 +193,7 @@
 		</div>
 		{#if !hasActiveCompany}
 			<div class="flex items-center justify-between gap-4 px-5 py-3">
-				<p class="text-[11px] text-[var(--ui-text-dimmed)]">{t('settings.setUpCompanyFirst')}</p>
+				<p class="text-[11px] text-(--ui-text-dimmed)">{t('settings.setUpCompanyFirst')}</p>
 				<Button
 					href="/settings/organization"
 					variant="subtle"
@@ -205,7 +205,7 @@
 	</section>
 
 	<!-- Store Logo -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:image" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.storeLogo')}</h2>
@@ -222,16 +222,16 @@
 	</section>
 
 	<!-- Identity -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:shop" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.identitySection')}</h2>
 		</div>
 		<div class="px-5 py-4">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]">
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">
 					{t('settings.storeNameLabel')}
-					{#if hasActiveCompany}<span class="font-normal text-[var(--ui-text-dimmed)]"
+					{#if hasActiveCompany}<span class="font-normal text-(--ui-text-dimmed)"
 							>{t('settings.activeCompanySuffix')}</span
 						>{/if}
 				</span>
@@ -243,14 +243,14 @@
 				/>
 			</label>
 			{#if !hasActiveCompany}
-				<p class="mt-1.5 text-[10px] text-[var(--ui-text-dimmed)]">
+				<p class="mt-1.5 text-[10px] text-(--ui-text-dimmed)">
 					{t('settings.storeNameFromCompany')}
 				</p>
 			{/if}
 		</div>
 		<div class="px-5 py-4">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.website')}</span
 				>
 				<Input
@@ -264,7 +264,7 @@
 	</section>
 
 	<!-- Branch contact -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:map-pin" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.locationContact')}</h2>
@@ -272,7 +272,7 @@
 		</div>
 		<div class="px-5 py-4">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.address')}</span
 				>
 				<Input
@@ -287,7 +287,7 @@
 		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 			<div class="px-5 py-4">
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.phone')}</span
 					>
 					<Input
@@ -301,7 +301,7 @@
 			</div>
 			<div class="px-5 py-4">
 				<label class="block">
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.email')}</span
 					>
 					<Input
@@ -315,21 +315,21 @@
 			</div>
 		</div>
 		{#if !hasActiveBranch}
-			<p class="px-5 pb-4 text-[10px] text-[var(--ui-text-dimmed)]">
+			<p class="px-5 pb-4 text-[10px] text-(--ui-text-dimmed)">
 				{t('settings.contactFromBranch')}
 			</p>
 		{/if}
 	</section>
 
 	<!-- Preview -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:eye" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.preview')}</h2>
 		</div>
 		<div class="px-5 py-4">
 			<div
-				class="flex items-center gap-4 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-4"
+				class="flex items-center gap-4 rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) p-4"
 			>
 				{#if storeLogo}<img
 						src={storeLogo}
@@ -344,12 +344,12 @@
 					<p class="truncate font-display text-[15px] font-bold">
 						{storeName || t('settings.storeNameLabel')}
 					</p>
-					{#if storeAddress}<p class="truncate text-[11px] text-[var(--ui-text-muted)]">
+					{#if storeAddress}<p class="truncate text-[11px] text-(--ui-text-muted)">
 							{storeAddress}
 						</p>{/if}
 					<div class="mt-1 flex items-center gap-3">
 						{#if storePhone}<span
-								class="flex items-center gap-1 text-[10px] text-[var(--ui-text-dimmed)]"
+								class="flex items-center gap-1 text-[10px] text-(--ui-text-dimmed)"
 								><Icon name="lucide:phone" class="size-3" />{storePhone}</span
 							>{/if}
 						{#if storeWebsite}<span class="flex items-center gap-1 text-[10px] text-primary-500"

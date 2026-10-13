@@ -12,19 +12,19 @@
 <div
 	class="prose prose-sm max-w-none dark:prose-invert
 	prose-headings:font-display prose-headings:tracking-tight
-	prose-headings:text-[var(--ui-text)] prose-h3:text-[1.05rem]
-	prose-h4:text-[0.95rem] prose-p:text-[var(--ui-text-muted)]
+	prose-headings:text-(--ui-text) prose-h3:text-[1.05rem]
+	prose-h4:text-[0.95rem] prose-p:text-(--ui-text-muted)
 	prose-a:text-primary-600 prose-a:no-underline hover:prose-a:underline dark:prose-a:text-primary-400
-	prose-strong:text-[var(--ui-text)] prose-li:text-[var(--ui-text-muted)]"
+	prose-strong:text-(--ui-text) prose-li:text-(--ui-text-muted)"
 >
-	<div class="not-prose mb-6 flex items-center gap-2 text-[12px] text-[var(--ui-text-dimmed)]">
+	<div class="not-prose mb-6 flex items-center gap-2 text-[12px] text-(--ui-text-dimmed)">
 		<Icon name="lucide:calendar" class="size-3.5" />
-		Effective <span class="font-semibold text-[var(--ui-text-muted)]">{effective}</span>
+		Effective <span class="font-semibold text-(--ui-text-muted)">{effective}</span>
 	</div>
 
 	<h2>Privacy Policy</h2>
 
-	<p class="text-[var(--ui-text)]">
+	<p class="text-(--ui-text)">
 		{site.fullName} (“{site.name}”) is a <strong>local-first, open-source</strong> point-of-sale and
 		commerce application built on the Nostr protocol. This policy explains what data {site.name}
 		holds, where it lives, and the choices you have over it.
@@ -36,8 +36,8 @@
 				name="lucide:shield-check"
 				class="mt-0.5 size-5 shrink-0 text-primary-600 dark:text-primary-400"
 			/>
-			<div class="text-[13px] leading-relaxed text-[var(--ui-text-muted)]">
-				<p class="font-semibold text-[var(--ui-text)]">The short version</p>
+			<div class="text-[13px] leading-relaxed text-(--ui-text-muted)">
+				<p class="font-semibold text-(--ui-text)">The short version</p>
 				<p class="mt-1">
 					Your records live <strong>on your device first</strong>. Your private key never leaves
 					your browser. We don't run a server that collects your business data, we don't track you,

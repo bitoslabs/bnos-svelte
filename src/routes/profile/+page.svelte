@@ -40,7 +40,7 @@
 			<h1 class="font-display text-xl font-bold tracking-tight">
 				{tenant.state.organizationName || 'BNOS'}
 			</h1>
-			<p class="font-mono text-[12px] text-[var(--ui-text-muted)]">
+			<p class="font-mono text-[12px] text-(--ui-text-muted)">
 				{truncateNpub(session.npub ?? '', 16, 8)}
 			</p>
 		</div>
@@ -52,25 +52,25 @@
 		</div>
 	</div>
 
-	<div class="surface-card divide-y divide-[var(--ui-border-muted)] text-[13px]">
+	<div class="surface-card divide-y divide-(--ui-border-muted) text-[13px]">
 		<div class="flex items-center gap-3 px-4 py-3">
-			<Icon name="lucide:building-2" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-				class="text-[var(--ui-text-muted)]">Organization</span
+			<Icon name="lucide:building-2" class="size-4 text-(--ui-text-dimmed)" /><span
+				class="text-(--ui-text-muted)">Organization</span
 			><span class="ml-auto font-semibold">{tenant.state.organizationName || '—'}</span>
 		</div>
 		<div class="flex items-center gap-3 px-4 py-3">
-			<Icon name="lucide:map-pin" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-				class="text-[var(--ui-text-muted)]">{t('common.branch')}</span
+			<Icon name="lucide:map-pin" class="size-4 text-(--ui-text-dimmed)" /><span
+				class="text-(--ui-text-muted)">{t('common.branch')}</span
 			><span class="ml-auto font-semibold">{tenant.state.locationName || 'Main'}</span>
 		</div>
 		<div class="flex items-center gap-3 px-4 py-3">
-			<Icon name="lucide:store" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-				class="text-[var(--ui-text-muted)]">Business</span
+			<Icon name="lucide:store" class="size-4 text-(--ui-text-dimmed)" /><span
+				class="text-(--ui-text-muted)">Business</span
 			><span class="ml-auto font-semibold capitalize">{tenant.state.businessType}</span>
 		</div>
 		<div class="flex items-center gap-3 px-4 py-3">
-			<Icon name="lucide:radio" class="size-4 text-[var(--ui-text-dimmed)]" /><span
-				class="text-[var(--ui-text-muted)]">{t('settings.relays')}</span
+			<Icon name="lucide:radio" class="size-4 text-(--ui-text-dimmed)" /><span
+				class="text-(--ui-text-muted)">{t('settings.relays')}</span
 			><span class="ml-auto font-semibold"
 				>{relays.activeRelays.length} active / {relays.relays.length} configured</span
 			>

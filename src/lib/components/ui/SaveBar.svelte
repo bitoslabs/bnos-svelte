@@ -27,7 +27,7 @@
 {#if visible}
 	<div class="sticky bottom-4 z-30" transition:fly={{ y: 20, duration: 200 }}>
 		<div
-			class="flex items-center gap-3 rounded-xl border border-[var(--ui-border-accented)] bg-[var(--ui-bg-elevated)] px-4 py-2.5 shadow-lg shadow-black/5"
+			class="flex items-center gap-3 rounded-xl border border-(--ui-border-accented) bg-(--ui-bg-elevated) px-4 py-2.5 shadow-lg shadow-black/5"
 		>
 			<span class="relative flex size-2 shrink-0">
 				<span
@@ -35,7 +35,7 @@
 				></span>
 				<span class="relative inline-flex size-2 rounded-full bg-amber-500"></span>
 			</span>
-			<span class="text-[13px] font-semibold text-[var(--ui-text)]"
+			<span class="text-[13px] font-semibold text-(--ui-text)"
 				>{label || t('common.unsavedChanges')}</span
 			>
 			<div class="ml-auto flex items-center gap-1.5">

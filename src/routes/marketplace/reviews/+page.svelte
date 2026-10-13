@@ -99,7 +99,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h2 class="font-display text-lg font-bold tracking-tight">{t('nav.reviews')}</h2>
-			<p class="text-[12px] text-[var(--ui-text-muted)]">
+			<p class="text-[12px] text-(--ui-text-muted)">
 				{reviews.length} reviews · {pendingCount} need attention
 			</p>
 		</div>
@@ -115,12 +115,12 @@
 		<!-- Summary panel -->
 		<div class="surface-card flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
 			<div
-				class="flex items-center gap-4 sm:w-48 sm:border-r sm:border-[var(--ui-border-muted)] sm:pr-5"
+				class="flex items-center gap-4 sm:w-48 sm:border-r sm:border-(--ui-border-muted) sm:pr-5"
 			>
 				<div class="text-center">
 					<div class="font-display text-4xl font-black tabular-nums">{avgRating.toFixed(2)}</div>
 					<div class="mt-1 text-lg tracking-tight text-amber-500">{ratingStars(avgRating)}</div>
-					<div class="mt-0.5 text-[11px] text-[var(--ui-text-dimmed)]">{totalRatings} ratings</div>
+					<div class="mt-0.5 text-[11px] text-(--ui-text-dimmed)">{totalRatings} ratings</div>
 				</div>
 			</div>
 			<div class="flex-1 space-y-1.5">
@@ -128,19 +128,17 @@
 					{@const n = dist[star] ?? 0}
 					{@const pct = totalRatings > 0 ? (n / totalRatings) * 100 : 0}
 					<div class="flex items-center gap-2">
-						<span class="w-3 text-[11px] font-semibold text-[var(--ui-text-muted)] tabular-nums"
+						<span class="w-3 text-[11px] font-semibold text-(--ui-text-muted) tabular-nums"
 							>{star}</span
 						>
 						<Icon name="lucide:star" class="size-3 fill-amber-400 text-amber-400" />
-						<div class="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--ui-bg-accented)]">
+						<div class="h-1.5 flex-1 overflow-hidden rounded-full bg-(--ui-bg-accented)">
 							<div
 								class="h-full rounded-full bg-amber-400 transition-all"
 								style="width:{pct}%"
 							></div>
 						</div>
-						<span class="w-8 text-right text-[11px] text-[var(--ui-text-dimmed)] tabular-nums"
-							>{n}</span
-						>
+						<span class="w-8 text-right text-[11px] text-(--ui-text-dimmed) tabular-nums">{n}</span>
 					</div>
 				{/each}
 			</div>
@@ -148,14 +146,14 @@
 
 		<!-- Filters -->
 		<div class="flex flex-wrap items-center gap-2">
-			<div class="flex items-center gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
+			<div class="flex items-center gap-1 rounded-lg bg-(--ui-bg-accented) p-1">
 				<button
 					type="button"
 					onclick={() => (statusFilter = '__all__')}
 					class="rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all {statusFilter ===
 					'__all__'
-						? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-						: 'text-[var(--ui-text-muted)]'}">{t('common.all')}</button
+						? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+						: 'text-(--ui-text-muted)'}">{t('common.all')}</button
 				>
 				{#each REVIEW_STATUSES as s (s.value)}
 					<button
@@ -163,19 +161,19 @@
 						onclick={() => (statusFilter = statusFilter === s.value ? '__all__' : s.value)}
 						class="rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all {statusFilter ===
 						s.value
-							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-							: 'text-[var(--ui-text-muted)]'}">{s.label}</button
+							? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+							: 'text-(--ui-text-muted)'}">{s.label}</button
 					>
 				{/each}
 			</div>
-			<div class="flex items-center gap-1 rounded-lg bg-[var(--ui-bg-accented)] p-1">
+			<div class="flex items-center gap-1 rounded-lg bg-(--ui-bg-accented) p-1">
 				<button
 					type="button"
 					onclick={() => (ratingFilter = '__all__')}
 					class="rounded-md px-2 py-1 text-[11px] font-semibold transition-all {ratingFilter ===
 					'__all__'
-						? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-						: 'text-[var(--ui-text-muted)]'}">All ★</button
+						? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+						: 'text-(--ui-text-muted)'}">All ★</button
 				>
 				{#each [5, 4, 3, 2, 1] as star (star)}
 					<button
@@ -184,8 +182,8 @@
 							(ratingFilter = ratingFilter === String(star) ? '__all__' : String(star))}
 						class="rounded-md px-2 py-1 text-[11px] font-semibold transition-all {ratingFilter ===
 						String(star)
-							? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-							: 'text-[var(--ui-text-muted)]'}">{star}★</button
+							? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+							: 'text-(--ui-text-muted)'}">{star}★</button
 					>
 				{/each}
 			</div>
@@ -209,7 +207,7 @@
 										<Icon name="lucide:badge-check" class="size-3.5 text-primary-500" />
 									{/if}
 								</div>
-								<div class="flex items-center gap-1.5 text-[10.5px] text-[var(--ui-text-dimmed)]">
+								<div class="flex items-center gap-1.5 text-[10.5px] text-(--ui-text-dimmed)">
 									{#if r.data.channelName}
 										{@const m = channelMeta(r.data.channelName)}
 										<span class="inline-flex items-center gap-0.5"
@@ -231,24 +229,24 @@
 						<p class="mt-2.5 text-[13px] font-semibold">{r.data.title}</p>
 					{/if}
 					{#if r.data.body}
-						<p class="mt-1 text-[12px] leading-relaxed text-[var(--ui-text-muted)]">
+						<p class="mt-1 text-[12px] leading-relaxed text-(--ui-text-muted)">
 							"{r.data.body}"
 						</p>
 					{/if}
 
 					{#if r.data.reply}
-						<div class="mt-3 rounded-lg bg-[var(--ui-bg-accented)] p-2.5">
+						<div class="mt-3 rounded-lg bg-(--ui-bg-accented) p-2.5">
 							<div
-								class="flex items-center gap-1 text-[10px] font-bold tracking-wider text-[var(--ui-text-muted)] uppercase"
+								class="flex items-center gap-1 text-[10px] font-bold tracking-wider text-(--ui-text-muted) uppercase"
 							>
 								<Icon name="lucide:message-square-reply" class="size-3" /> Owner reply
 							</div>
-							<p class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">{r.data.reply}</p>
+							<p class="mt-1 text-[11.5px] text-(--ui-text-muted)">{r.data.reply}</p>
 						</div>
 					{/if}
 
 					<div class="mt-auto flex items-center justify-between pt-3">
-						<span class="text-[10.5px] text-[var(--ui-text-dimmed)]"
+						<span class="text-[10.5px] text-(--ui-text-dimmed)"
 							>{relativeTime(
 								(glo.get(TYPE.marketplaceReview, r.id)?.data as { createdAt?: string })
 									?.createdAt ?? Date.now()
@@ -301,19 +299,18 @@
 		{@const review = reviews.find((r) => r.id === replyId)?.data}
 		<div class="space-y-3">
 			{#if review}
-				<div class="rounded-lg bg-[var(--ui-bg-accented)] p-3">
+				<div class="rounded-lg bg-(--ui-bg-accented) p-3">
 					<div class="flex items-center justify-between">
 						<span class="text-[12px] font-semibold">{review.customerName}</span>
 						<span class="text-amber-500">{ratingStars(review.rating)}</span>
 					</div>
-					{#if review.body}<p class="mt-1 text-[11.5px] text-[var(--ui-text-muted)]">
+					{#if review.body}<p class="mt-1 text-[11.5px] text-(--ui-text-muted)">
 							"{review.body}"
 						</p>{/if}
 				</div>
 			{/if}
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Your reply</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Your reply</span
 				>
 				<Input
 					bind:value={replyText}

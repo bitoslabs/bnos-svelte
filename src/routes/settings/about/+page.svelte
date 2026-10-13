@@ -92,14 +92,14 @@
 					<BnosMark class="size-12" />
 				</div>
 				<h2 class="font-display text-xl font-bold tracking-tight">{site.name}</h2>
-				<p class="mx-auto mt-1 max-w-md text-[12.5px] text-[var(--ui-text-muted)]">
+				<p class="mx-auto mt-1 max-w-md text-[12.5px] text-(--ui-text-muted)">
 					{site.fullName} — {site.tagline}
 				</p>
 
 				<div class="mt-4 flex flex-wrap items-center justify-center gap-1.5">
 					{#each highlights as h (h.label)}
 						<span
-							class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-accented)] px-2.5 py-1 text-[11px] font-semibold text-[var(--ui-text-muted)]"
+							class="inline-flex items-center gap-1 rounded-full bg-(--ui-bg-accented) px-2.5 py-1 text-[11px] font-semibold text-(--ui-text-muted)"
 						>
 							<Icon name={h.icon} class="size-3 text-primary-500" />
 							{h.label}
@@ -109,7 +109,7 @@
 
 				{#if session.npub}
 					<div
-						class="mx-auto mt-4 inline-flex items-center gap-1.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-1 text-[11.5px] text-[var(--ui-text-dimmed)]"
+						class="mx-auto mt-4 inline-flex items-center gap-1.5 rounded-full border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1 text-[11.5px] text-(--ui-text-dimmed)"
 					>
 						<span class="live-dot"></span>
 						Signed in as
@@ -129,7 +129,7 @@
 	</section>
 
 	<!-- Version & build -->
-	<section class="surface-card divide-y divide-[var(--ui-border-muted)]">
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
 		<div class="flex items-center gap-2 px-5 py-3">
 			<Icon name="lucide:package" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.versionBuild')}</h2>
@@ -139,14 +139,14 @@
 				<div
 					class="flex items-center gap-3 px-5 py-3 text-[13px] {i === buildRows.length - 1
 						? ''
-						: 'border-b border-[var(--ui-border-muted)]'}"
+						: 'border-b border-(--ui-border-muted)'}"
 				>
-					<Icon name={row.icon} class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
-					<span class="w-28 shrink-0 text-[var(--ui-text-muted)]">{row.label}</span>
+					<Icon name={row.icon} class="size-4 shrink-0 text-(--ui-text-dimmed)" />
+					<span class="w-28 shrink-0 text-(--ui-text-muted)">{row.label}</span>
 					<div class="ml-auto min-w-0 text-right">
-						<p class="truncate font-semibold text-[var(--ui-text)]">{row.value}</p>
+						<p class="truncate font-semibold text-(--ui-text)">{row.value}</p>
 						{#if row.sub}
-							<p class="truncate text-[11px] text-[var(--ui-text-dimmed)]">{row.sub}</p>
+							<p class="truncate text-[11px] text-(--ui-text-dimmed)">{row.sub}</p>
 						{/if}
 					</div>
 				</div>
@@ -163,13 +163,13 @@
 				><Icon name="lucide:heart" class="mr-1 size-3" />Open source</Badge
 			>
 		</div>
-		<div class="grid grid-cols-1 gap-px bg-[var(--ui-border-muted)] sm:grid-cols-2">
+		<div class="grid grid-cols-1 gap-px bg-(--ui-border-muted) sm:grid-cols-2">
 			{#each aboutLinks as link (link.label)}
 				<a
 					href={link.href}
 					target="_blank"
 					rel="noopener"
-					class="group flex items-start gap-3 bg-[var(--surface-bg)] px-5 py-4 transition-colors hover:bg-[var(--ui-bg-accented)]"
+					class="group flex items-start gap-3 bg-(--surface-bg) px-5 py-4 transition-colors hover:bg-(--ui-bg-accented)"
 				>
 					<span
 						class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-500/10 text-primary-600 transition-colors group-hover:bg-primary-500/15 dark:text-primary-400"
@@ -177,14 +177,14 @@
 						<Icon name={link.icon} class="size-4" />
 					</span>
 					<span class="min-w-0 flex-1">
-						<span class="flex items-center gap-1 text-[13px] font-semibold text-[var(--ui-text)]">
+						<span class="flex items-center gap-1 text-[13px] font-semibold text-(--ui-text)">
 							{link.label}
 							<Icon
 								name="lucide:arrow-up-right"
-								class="size-3.5 text-[var(--ui-text-dimmed)] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+								class="size-3.5 text-(--ui-text-dimmed) transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
 							/>
 						</span>
-						<span class="mt-0.5 block text-[11.5px] text-[var(--ui-text-dimmed)]"
+						<span class="mt-0.5 block text-[11.5px] text-(--ui-text-dimmed)"
 							>{link.description}</span
 						>
 					</span>
@@ -192,7 +192,7 @@
 			{/each}
 		</div>
 		<div
-			class="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--ui-border-muted)] px-5 py-3"
+			class="flex flex-wrap items-center justify-between gap-2 border-t border-(--ui-border-muted) px-5 py-3"
 		>
 			<a
 				href={site.website.url}
@@ -207,7 +207,7 @@
 				href={site.source.url}
 				target="_blank"
 				rel="noopener"
-				class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+				class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-(--ui-text-muted) hover:text-(--ui-text)"
 			>
 				<Icon name="lucide:github" class="size-3.5" />
 				{site.source.label}
@@ -221,21 +221,21 @@
 			<Icon name="lucide:scroll-text" class="size-4 text-primary-500" />
 			<h2 class="font-display text-[14px] font-semibold">{t('legal.title')}</h2>
 		</div>
-		<div class="divide-y divide-[var(--ui-border-muted)]">
+		<div class="divide-y divide-(--ui-border-muted)">
 			{#each legalLinks as l (l.to)}
 				<a
 					href={resolve(l.to)}
-					class="group flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--ui-bg-accented)]"
+					class="group flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-(--ui-bg-accented)"
 				>
 					<Icon
 						name={l.icon}
-						class="size-4 shrink-0 text-[var(--ui-text-dimmed)] group-hover:text-primary-500"
+						class="size-4 shrink-0 text-(--ui-text-dimmed) group-hover:text-primary-500"
 					/>
 					<span class="min-w-0 flex-1">
-						<span class="block text-[13px] font-semibold text-[var(--ui-text)]">{l.label}</span>
-						<span class="block text-[11.5px] text-[var(--ui-text-dimmed)]">{l.desc}</span>
+						<span class="block text-[13px] font-semibold text-(--ui-text)">{l.label}</span>
+						<span class="block text-[11.5px] text-(--ui-text-dimmed)">{l.desc}</span>
 					</span>
-					<Icon name="lucide:chevron-right" class="size-4 shrink-0 text-[var(--ui-text-dimmed)]" />
+					<Icon name="lucide:chevron-right" class="size-4 shrink-0 text-(--ui-text-dimmed)" />
 				</a>
 			{/each}
 		</div>
@@ -245,7 +245,7 @@
 	<section class="surface-card flex flex-wrap items-center justify-between gap-3 p-5">
 		<div class="min-w-0">
 			<h2 class="font-display text-[14px] font-semibold">{t('settings.manageAccount')}</h2>
-			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
+			<p class="mt-0.5 text-[12px] text-(--ui-text-muted)">
 				{t('settings.manageAccountDesc')}
 			</p>
 		</div>
@@ -268,7 +268,7 @@
 	</section>
 
 	<!-- Footer credit -->
-	<p class="px-2 pb-1 text-center text-[11px] leading-relaxed text-[var(--ui-text-dimmed)]">
+	<p class="px-2 pb-1 text-center text-[11px] leading-relaxed text-(--ui-text-dimmed)">
 		© {new Date().getFullYear()}
 		{site.name} contributors · {site.license} licensed
 		<br />
@@ -277,8 +277,7 @@
 			href={site.sponsor.url}
 			target="_blank"
 			rel="noopener"
-			class="font-semibold text-[var(--ui-text-muted)] hover:text-primary-500"
-			>{site.sponsor.name}</a
+			class="font-semibold text-(--ui-text-muted) hover:text-primary-500">{site.sponsor.name}</a
 		>.
 	</p>
 </div>

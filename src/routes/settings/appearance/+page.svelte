@@ -42,7 +42,7 @@
 	<section class="surface-card p-5">
 		<div class="mb-4">
 			<h3 class="font-display text-[14px] font-bold">{t('settings.colorMode')}</h3>
-			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
+			<p class="mt-0.5 text-[12px] text-(--ui-text-muted)">
 				{t('settings.colorModeDesc')}
 			</p>
 		</div>
@@ -54,16 +54,16 @@
 					onclick={() => setMode(m.key)}
 					class="group rounded-xl border-2 p-3 transition-all {active
 						? 'border-primary-500 bg-primary-500/5'
-						: 'border-[var(--ui-border-muted)] hover:border-[var(--ui-border-accented)]'}"
+						: 'border-(--ui-border-muted) hover:border-(--ui-border-accented)'}"
 					aria-pressed={active}
 				>
 					<div
 						class="mb-2.5 grid h-14 place-items-center rounded-lg transition-colors {m.key ===
 						'light'
-							? 'bg-[var(--ui-bg-muted)]'
+							? 'bg-(--ui-bg-muted)'
 							: m.key === 'dark'
-								? 'bg-[var(--ui-bg-inverse)]'
-								: 'bg-[var(--ui-bg-accented)]'}"
+								? 'bg-(--ui-bg-inverse)'
+								: 'bg-(--ui-bg-accented)'}"
 					>
 						<Icon
 							name={m.icon}
@@ -71,13 +71,13 @@
 								? 'size-5 text-white'
 								: m.key === 'light'
 									? 'size-5 text-amber-500'
-									: 'size-5 text-[var(--ui-text-muted)]'}
+									: 'size-5 text-(--ui-text-muted)'}
 						/>
 					</div>
 					<p
 						class="text-center text-[12px] font-bold {active
 							? 'text-primary-700 dark:text-primary-300'
-							: 'text-[var(--ui-text)]'}"
+							: 'text-(--ui-text)'}"
 					>
 						{m.label}
 					</p>
@@ -90,7 +90,7 @@
 	<section class="surface-card p-5">
 		<div class="mb-4">
 			<h3 class="font-display text-[14px] font-bold">{t('settings.accentColor')}</h3>
-			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
+			<p class="mt-0.5 text-[12px] text-(--ui-text-muted)">
 				{t('settings.accentColorDesc')}
 			</p>
 		</div>
@@ -100,8 +100,8 @@
 				<button
 					type="button"
 					onclick={() => preferences.setAccent(opt.key)}
-					class="grid size-10 cursor-pointer place-items-center rounded-full ring-2 ring-offset-2 ring-offset-[var(--surface-bg)] transition-transform hover:scale-110 {active
-						? 'ring-[var(--ui-text)]'
+					class="grid size-10 cursor-pointer place-items-center rounded-full ring-2 ring-offset-2 ring-offset-(--surface-bg) transition-transform hover:scale-110 {active
+						? 'ring-(--ui-text)'
 						: 'ring-transparent'}"
 					style="background: {opt.hex}"
 					title={opt.label}
@@ -120,7 +120,7 @@
 	<section class="surface-card p-5">
 		<div class="mb-4">
 			<h3 class="font-display text-[14px] font-bold">{t('settings.neutralPalette')}</h3>
-			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
+			<p class="mt-0.5 text-[12px] text-(--ui-text-muted)">
 				{t('settings.neutralPaletteDesc')}
 			</p>
 		</div>
@@ -132,7 +132,7 @@
 					onclick={() => preferences.setNeutral(n.key)}
 					class="flex items-center gap-2 rounded-lg border-2 px-3 py-1.5 text-[12.5px] font-semibold transition-colors {active
 						? 'border-primary-500 bg-primary-500/10'
-						: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)]'}"
+						: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--interactive-hover-bg)'}"
 				>
 					<span class="size-4 rounded-full" style="background:{n.hex}"></span>{n.label}
 				</button>
@@ -144,7 +144,7 @@
 	<section class="surface-card p-5">
 		<div class="mb-4">
 			<h3 class="font-display text-[14px] font-bold">{t('settings.density')}</h3>
-			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">
+			<p class="mt-0.5 text-[12px] text-(--ui-text-muted)">
 				{t('settings.densityDesc')}
 			</p>
 		</div>
@@ -156,7 +156,7 @@
 					onclick={() => preferences.setDensity(d.key)}
 					class="rounded-xl border-2 p-4 text-left transition-all {active
 						? 'border-primary-500 bg-primary-500/10'
-						: 'border-[var(--ui-border)] hover:bg-[var(--interactive-hover-bg)]'}"
+						: 'border-(--ui-border) hover:bg-(--interactive-hover-bg)'}"
 					aria-pressed={active}
 				>
 					<div class="mb-3 space-y-1.5">
@@ -171,11 +171,11 @@
 					<p
 						class="text-[13px] font-bold {active
 							? 'text-primary-700 dark:text-primary-300'
-							: 'text-[var(--ui-text)]'}"
+							: 'text-(--ui-text)'}"
 					>
 						{d.label}
 					</p>
-					<p class="mt-0.5 text-[11px] text-[var(--ui-text-muted)]">
+					<p class="mt-0.5 text-[11px] text-(--ui-text-muted)">
 						{densityDescriptions[d.key]}
 					</p>
 				</button>
@@ -187,10 +187,10 @@
 	<section class="surface-card p-5">
 		<div class="mb-4">
 			<h3 class="font-display text-[14px] font-bold">{t('settings.surface')}</h3>
-			<p class="mt-0.5 text-[12px] text-[var(--ui-text-muted)]">{t('settings.surfaceCard')}</p>
+			<p class="mt-0.5 text-[12px] text-(--ui-text-muted)">{t('settings.surfaceCard')}</p>
 		</div>
 		<div class="mb-4">
-			<div class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">
+			<div class="mb-2 text-[12px] font-semibold text-(--ui-text-muted)">
 				{t('settings.style')}
 			</div>
 			<div class="flex flex-wrap gap-2">
@@ -201,14 +201,14 @@
 						onclick={() => preferences.setSurface(s.key)}
 						class="rounded-lg border-2 px-3 py-1.5 text-[12.5px] font-semibold transition-colors {active
 							? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
-							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)]'}"
+							: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--interactive-hover-bg)'}"
 						>{s.label}</button
 					>
 				{/each}
 			</div>
 		</div>
 		<div>
-			<div class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">
+			<div class="mb-2 text-[12px] font-semibold text-(--ui-text-muted)">
 				{t('settings.tint')}
 			</div>
 			<div class="flex flex-wrap gap-2">
@@ -219,7 +219,7 @@
 						onclick={() => preferences.setSurfaceTint(st.key)}
 						class="rounded-lg border-2 px-3 py-1.5 text-[12.5px] font-semibold transition-colors {active
 							? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
-							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)]'}"
+							: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--interactive-hover-bg)'}"
 						>{st.label}</button
 					>
 				{/each}
@@ -233,7 +233,7 @@
 			<h3 class="font-display text-[14px] font-bold">{t('settings.typographyShape')}</h3>
 		</div>
 		<div class="mb-4">
-			<div class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">
+			<div class="mb-2 text-[12px] font-semibold text-(--ui-text-muted)">
 				{t('settings.fontSize')}
 			</div>
 			<div class="flex flex-wrap gap-2">
@@ -244,14 +244,14 @@
 						onclick={() => preferences.setFontSize(f.key)}
 						class="rounded-lg border-2 px-3 py-1.5 text-[12.5px] font-semibold transition-colors {active
 							? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
-							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)]'}"
+							: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--interactive-hover-bg)'}"
 						>{f.label}</button
 					>
 				{/each}
 			</div>
 		</div>
 		<div>
-			<div class="mb-2 text-[12px] font-semibold text-[var(--ui-text-muted)]">
+			<div class="mb-2 text-[12px] font-semibold text-(--ui-text-muted)">
 				{t('settings.cornerRadius')}
 			</div>
 			<div class="flex flex-wrap gap-2">
@@ -262,7 +262,7 @@
 						onclick={() => preferences.setRadius(r.key)}
 						class="flex items-center gap-2 rounded-lg border-2 px-3 py-1.5 text-[12.5px] font-semibold transition-colors {active
 							? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
-							: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--interactive-hover-bg)]'}"
+							: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--interactive-hover-bg)'}"
 					>
 						<span class="size-3.5 border-2 border-current/40" style="border-radius:{r.value}"
 						></span>

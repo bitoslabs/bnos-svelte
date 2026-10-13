@@ -19,14 +19,14 @@
 
 <div
 	class={cn(
-		'relative inline-flex items-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] transition-colors focus-within:border-[var(--ui-color-primary-500)]',
+		'relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) transition-colors focus-within:border-(--ui-color-primary-500)',
 		size === 'sm' ? 'h-8 px-2.5' : 'h-9.5 px-3',
 		cls
 	)}
 >
 	<select
 		bind:value
-		class="min-w-0 appearance-none bg-transparent pr-5 text-[13.5px] text-[var(--ui-text)] focus:outline-none"
+		class="min-w-0 appearance-none bg-transparent pr-5 text-[13.5px] text-(--ui-text) focus:outline-none"
 		{...rest}
 	>
 		{#each options as opt (opt.value)}
@@ -35,6 +35,6 @@
 	</select>
 	<Icon
 		name="lucide:chevron-down"
-		class="pointer-events-none absolute right-2 size-4 text-[var(--ui-text-dimmed)]"
+		class="pointer-events-none absolute right-2 size-4 text-(--ui-text-dimmed)"
 	/>
 </div>

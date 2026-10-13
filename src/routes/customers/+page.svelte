@@ -216,7 +216,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.customers')}</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+			<p class="text-[12.5px] text-(--ui-text-muted)">
 				{formatInt(customers.length)} total · {formatInt(controls.list.length)} showing · kind 30300
 			</p>
 		</div>
@@ -227,19 +227,19 @@
 
 	<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 		<div class="metric-card p-4">
-			<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Customers</div>
+			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Customers</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
 				{formatInt(customers.length)}
 			</div>
 		</div>
 		<div class="metric-card p-4">
-			<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">Active</div>
+			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Active</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
 				{formatInt(activeCustomers)}
 			</div>
 		</div>
 		<div class="metric-card p-4">
-			<div class="text-[11px] font-semibold text-[var(--ui-text-dimmed)]">With contact</div>
+			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">With contact</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">{formatInt(withContact)}</div>
 		</div>
 	</div>
@@ -292,11 +292,11 @@
 								>
 							{/if}
 						</div>
-						<div class="truncate text-[12px] text-[var(--ui-text-muted)]">
+						<div class="truncate text-[12px] text-(--ui-text-muted)">
 							{c.data.phone ?? c.data.email ?? '—'}
 						</div>
 						{#if (c.data as { totalOrders?: number }).totalOrders || c.data.totalSpend}
-							<div class="mt-1 flex items-center gap-3 text-[11px] text-[var(--ui-text-dimmed)]">
+							<div class="mt-1 flex items-center gap-3 text-[11px] text-(--ui-text-dimmed)">
 								{#if (c.data as { totalOrders?: number }).totalOrders}
 									<span
 										>{formatInt((c.data as { totalOrders?: number }).totalOrders ?? 0)} orders</span
@@ -312,7 +312,7 @@
 				</div>
 			{/each}
 		</div>
-		<Pagination {controls} class="mt-3 rounded-xl border border-[var(--ui-border)]" />
+		<Pagination {controls} class="mt-3 rounded-xl border border-(--ui-border)" />
 	{:else}
 		<div class="data-panel">
 			<div class="overflow-x-auto">
@@ -359,7 +359,7 @@
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 						{#each controls.pagedList as c (c.id)}
 							<tr>
 								<td class="px-5 py-3">
@@ -372,25 +372,25 @@
 										<div>
 											<span class="font-semibold">{c.data.name ?? 'Unnamed'}</span>
 											{#if (c.data as { npub?: string }).npub}
-												<div class="font-mono text-[10px] text-[var(--ui-text-dimmed)]">
+												<div class="font-mono text-[10px] text-(--ui-text-dimmed)">
 													{(c.data as { npub?: string }).npub!.slice(0, 16)}…
 												</div>
 											{/if}
 										</div>
 									</div>
 								</td>
-								<td class="px-5 py-3 text-[var(--ui-text-muted)]">{c.data.phone ?? '—'}</td>
-								<td class="px-5 py-3 text-[var(--ui-text-muted)]">{c.data.email ?? '—'}</td>
+								<td class="px-5 py-3 text-(--ui-text-muted)">{c.data.phone ?? '—'}</td>
+								<td class="px-5 py-3 text-(--ui-text-muted)">{c.data.email ?? '—'}</td>
 								<td class="px-5 py-3">
 									{#if segmentBadge(c.data.segment as string | undefined).label !== '—'}
 										<Badge color={segmentBadge(c.data.segment as string | undefined).color}
 											>{segmentBadge(c.data.segment as string | undefined).label}</Badge
 										>
 									{:else}
-										<span class="text-[var(--ui-text-dimmed)]">—</span>
+										<span class="text-(--ui-text-dimmed)">—</span>
 									{/if}
 								</td>
-								<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums">
+								<td class="px-5 py-3 text-right text-(--ui-text-muted) tabular-nums">
 									{#if c.data.totalSpend}
 										{formatMoney(c.data.totalSpend as number, currency)}
 									{:else}
@@ -417,20 +417,20 @@
 <Dialog bind:open title={t('common.add') + ' ' + t('common.customer')} size="lg">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.name')}</span
 			>
 			<Input bind:value={name} icon="lucide:user" placeholder="Jane Doe" class="w-full" />
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.phone')}</span
 				>
 				<Input bind:value={phone} icon="lucide:phone" placeholder="+856 …" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.email')}</span
 				>
 				<Input
@@ -442,7 +442,7 @@
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.address')}</span
 			>
 			<Input
@@ -454,20 +454,20 @@
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>npub (Nostr pubkey)</span
 				>
 				<Input bind:value={npub} icon="lucide:key-round" placeholder="npub1…" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.segment')}</span
 				>
 				<Select bind:value={segment} options={SEGMENTS} class="w-full" />
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.notes')}</span
 			>
 			<Input
@@ -490,47 +490,47 @@
 <Dialog bind:open={editOpen} title={t('common.edit') + ' ' + t('common.customer')} size="lg">
 	<div class="space-y-3">
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.name')}</span
 			>
 			<Input bind:value={editName} icon="lucide:user" class="w-full" />
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.phone')}</span
 				>
 				<Input bind:value={editPhone} icon="lucide:phone" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.email')}</span
 				>
 				<Input bind:value={editEmail} icon="lucide:at-sign" class="w-full" />
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.address')}</span
 			>
 			<Input bind:value={editAddress} icon="lucide:map-pin" class="w-full" />
 		</label>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>npub (Nostr pubkey)</span
 				>
 				<Input bind:value={editNpub} icon="lucide:key-round" class="w-full" />
 			</label>
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.segment')}</span
 				>
 				<Select bind:value={editSegment} options={SEGMENTS} class="w-full" />
 			</label>
 		</div>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.status')}</span
 			>
 			<Select
@@ -543,7 +543,7 @@
 			/>
 		</label>
 		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.notes')}</span
 			>
 			<Input bind:value={editNotes} textarea class="w-full" />

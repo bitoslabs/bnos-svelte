@@ -19,23 +19,21 @@
 
 <div class="flex min-h-screen items-center justify-center px-4">
 	<div class="w-full max-w-md space-y-6 text-center">
-		<div class="mx-auto grid size-20 place-items-center rounded-full bg-[var(--tone-error-bg)]">
-			<Icon name="lucide:shield-x" class="size-10 text-[var(--tone-error-text)]" />
+		<div class="mx-auto grid size-20 place-items-center rounded-full bg-(--tone-error-bg)">
+			<Icon name="lucide:shield-x" class="size-10 text-(--tone-error-text)" />
 		</div>
 		<div>
 			<h1 class="font-display text-2xl font-bold tracking-tight">Account Restricted</h1>
-			<p class="mt-2 text-[13px] text-[var(--ui-text-muted)]">
+			<p class="mt-2 text-[13px] text-(--ui-text-muted)">
 				Your staff account is currently inactive or suspended. Please contact your manager or
 				company owner to restore access.
 			</p>
 		</div>
 		<div class="surface-card p-4">
-			<p
-				class="mb-1 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase"
-			>
+			<p class="mb-1 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 				Your Public Key
 			</p>
-			<p class="font-mono text-[12px] break-all text-[var(--ui-text-muted)]">
+			<p class="font-mono text-[12px] break-all text-(--ui-text-muted)">
 				{session.npub ?? 'Not available'}
 			</p>
 		</div>
@@ -50,7 +48,7 @@
 				icon="lucide:arrow-left"
 				onclick={() => goto('/', { replaceState: true })}>Back to Dashboard</Button
 			>
-			<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+			<p class="text-[11px] text-(--ui-text-dimmed)">
 				If you believe this is an error, share your public key with your administrator.
 			</p>
 		</div>

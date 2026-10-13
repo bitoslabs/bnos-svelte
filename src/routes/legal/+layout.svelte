@@ -30,7 +30,7 @@
 	<header class="space-y-2">
 		<a
 			href={resolve('/about')}
-			class="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+			class="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 		>
 			<Icon name="lucide:arrow-left" class="size-4" />
 			Back to About
@@ -43,7 +43,7 @@
 			</span>
 			<div>
 				<h1 class="font-display text-xl font-bold tracking-tight">{t('settings.grpLegal')}</h1>
-				<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+				<p class="text-[12.5px] text-(--ui-text-muted)">
 					How {site.name} handles your data and the license it ships under.
 				</p>
 			</div>
@@ -64,14 +64,14 @@
 						aria-current={isActive ? 'page' : undefined}
 						class="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors lg:shrink {isActive
 							? 'bg-primary-500/10 text-primary-700 dark:text-primary-300'
-							: 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]'}"
+							: 'text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'}"
 					>
 						<Icon name={l.icon} class="size-4 shrink-0" />
 						{l.label}
 					</a>
 				{/each}
 			</nav>
-			<p class="mt-4 hidden text-[11px] text-[var(--ui-text-dimmed)] lg:block">
+			<p class="mt-4 hidden text-[11px] text-(--ui-text-dimmed) lg:block">
 				Last updated · {updated}
 			</p>
 		</aside>
@@ -81,7 +81,7 @@
 			<article class="surface-card p-6 sm:p-8">
 				{@render children?.()}
 			</article>
-			<p class="mt-3 px-1 text-center text-[11px] text-[var(--ui-text-dimmed)] lg:hidden">
+			<p class="mt-3 px-1 text-center text-[11px] text-(--ui-text-dimmed) lg:hidden">
 				Last updated · {updated}
 			</p>
 		</div>

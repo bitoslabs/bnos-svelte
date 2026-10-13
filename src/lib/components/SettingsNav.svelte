@@ -209,12 +209,12 @@
 	{#each visibleGroups as g (g.label)}
 		<section class="settings-nav-group">
 			<div
-				class="settings-nav-label px-1 pb-1.5 text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase lg:px-3 lg:text-[10px] lg:tracking-[0.16em]"
+				class="settings-nav-label px-1 pb-1.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase lg:px-3 lg:text-[10px] lg:tracking-[0.16em]"
 			>
 				{g.labelKey ? t(g.labelKey) : g.label}
 			</div>
 			<ul
-				class="settings-nav-list divide-y divide-[var(--ui-border-muted)] overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] lg:divide-y-0 lg:rounded-none lg:border-0 lg:bg-transparent"
+				class="settings-nav-list divide-y divide-(--ui-border-muted) overflow-hidden rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) lg:divide-y-0 lg:rounded-none lg:border-0 lg:bg-transparent"
 			>
 				{#each g.items as it (it.to)}
 					{@const isActive = active(it.to)}
@@ -224,7 +224,7 @@
 							aria-current={isActive ? 'page' : undefined}
 							class="settings-nav-link group flex items-center gap-3 px-3.5 py-3 text-[14px] font-medium transition-colors lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-2 lg:text-[13px] {isActive
 								? 'is-active-surface'
-								: 'text-[var(--ui-text)] hover:bg-[var(--ui-bg-accented)] lg:text-[var(--ui-text-muted)] lg:hover:text-[var(--ui-text)]'}"
+								: 'text-(--ui-text) hover:bg-(--ui-bg-accented) lg:text-(--ui-text-muted) lg:hover:text-(--ui-text)'}"
 						>
 							<Icon
 								name={it.icon}
@@ -232,13 +232,13 @@
 									'size-5 shrink-0 transition-colors lg:size-4',
 									isActive
 										? 'text-primary-500'
-										: 'text-[var(--ui-text-dimmed)] group-hover:text-[var(--ui-text-muted)]'
+										: 'text-(--ui-text-dimmed) group-hover:text-(--ui-text-muted)'
 								)}
 							/>
 							<span class="flex-1 truncate">{it.labelKey ? t(it.labelKey) : it.label}</span>
 							<Icon
 								name="lucide:chevron-right"
-								class="size-4 shrink-0 text-[var(--ui-text-dimmed)] lg:hidden"
+								class="size-4 shrink-0 text-(--ui-text-dimmed) lg:hidden"
 							/>
 						</a>
 					</li>

@@ -1022,7 +1022,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.products')}</h1>
-			<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+			<p class="text-[12.5px] text-(--ui-text-muted)">
 				Products, categories, units, modifiers & bundles
 			</p>
 		</div>
@@ -1071,11 +1071,11 @@
 				onclick={() => (tab = t.id)}
 				class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors {tab ===
 				t.id
-					? 'bg-[var(--ui-bg-elevated)] text-[var(--ui-text)] shadow-sm'
-					: 'text-[var(--ui-text-muted)]'}"
+					? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
+					: 'text-(--ui-text-muted)'}"
 			>
 				<Icon name={t.icon} class="size-3.5" />{t.label}
-				<span class="rounded bg-[var(--ui-bg-accented)] px-1.5 text-[10px] tabular-nums"
+				<span class="rounded bg-(--ui-bg-accented) px-1.5 text-[10px] tabular-nums"
 					>{t.count()}</span
 				>
 			</button>
@@ -1150,13 +1150,13 @@
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr></thead
 						>
-						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+						<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 							{#each prodCtrl.pagedList as p (p.id)}
 								<tr>
 									<td class="px-5 py-3">
 										<div class="flex items-center gap-3">
 											<div
-												class="size-10 shrink-0 overflow-hidden rounded-lg bg-[var(--ui-bg-accented)]"
+												class="size-10 shrink-0 overflow-hidden rounded-lg bg-(--ui-bg-accented)"
 											>
 												{#if (p.data as any).image}
 													<img
@@ -1166,18 +1166,13 @@
 													/>
 												{:else}
 													<div class="flex size-full items-center justify-center">
-														<Icon
-															name="lucide:package"
-															class="size-4 text-[var(--ui-text-dimmed)]"
-														/>
+														<Icon name="lucide:package" class="size-4 text-(--ui-text-dimmed)" />
 													</div>
 												{/if}
 											</div>
 											<div>
 												<div class="font-semibold">{p.data.name}</div>
-												{#if p.data.sku}<div
-														class="font-mono text-[11px] text-[var(--ui-text-dimmed)]"
-													>
+												{#if p.data.sku}<div class="font-mono text-[11px] text-(--ui-text-dimmed)">
 														{p.data.sku}
 													</div>{/if}
 												<div class="mt-0.5 flex flex-wrap gap-1">
@@ -1213,7 +1208,7 @@
 									<td class="px-5 py-3"
 										>{#if (p.data as any).categoryId}<Badge
 												>{catName((p.data as any).categoryId)}</Badge
-											>{:else}<span class="text-[var(--ui-text-dimmed)]">—</span>{/if}</td
+											>{:else}<span class="text-(--ui-text-dimmed)">—</span>{/if}</td
 									>
 									<td class="px-5 py-3 text-right">
 										<div class="font-semibold tabular-nums">
@@ -1223,9 +1218,7 @@
 											)}
 										</div>
 										{#if (p.data as any).compareAtPrice && (p.data as any).compareAtPrice > ((p.data as any).price ?? 0)}
-											<div
-												class="text-[11px] text-[var(--ui-text-dimmed)] tabular-nums line-through"
-											>
+											<div class="text-[11px] text-(--ui-text-dimmed) tabular-nums line-through">
 												{formatMoney(
 													(p.data as any).compareAtPrice,
 													(p.data as any).currency ?? currency
@@ -1241,7 +1234,7 @@
 												On sale
 											</span>
 										{:else}
-											<span class="text-xs text-[var(--ui-text-dimmed)]">—</span>
+											<span class="text-xs text-(--ui-text-dimmed)">—</span>
 										{/if}
 									</td>
 									<td class="px-5 py-3 text-center">
@@ -1260,7 +1253,7 @@
 										<div class="flex items-center justify-end gap-1">
 											<button
 												type="button"
-												class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+												class="grid size-7 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 												onclick={() => openEditProduct(p.id)}
 												aria-label={t('common.edit')}
 												title={t('common.edit')}
@@ -1326,28 +1319,28 @@
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
 					>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 						{#each catCtrl.pagedList as c (c.id)}
 							<tr>
 								<td class="px-5 py-3"
 									><div class="flex items-center gap-2 font-semibold">
 										{#if c.data.icon}<Icon
 												name={c.data.icon}
-												class="size-4 text-[var(--ui-text-dimmed)]"
+												class="size-4 text-(--ui-text-dimmed)"
 											/>{/if}{c.data.name}
 									</div>
-									{#if c.data.description}<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
+									{#if c.data.description}<div class="text-[11.5px] text-(--ui-text-dimmed)">
 											{c.data.description}
 										</div>{/if}</td
 								>
-								<td class="px-5 py-3 text-right text-[var(--ui-text-muted)] tabular-nums"
+								<td class="px-5 py-3 text-right text-(--ui-text-muted) tabular-nums"
 									>{c.data.sortOrder ?? 0}</td
 								>
 								<td class="px-5 py-3 text-right">
 									<div class="flex items-center justify-end gap-1">
 										<button
 											type="button"
-											class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+											class="grid size-7 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 											onclick={() => openEditCategory(c.id)}
 											aria-label={t('common.edit')}
 											title={t('common.edit')}
@@ -1411,19 +1404,18 @@
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
 					>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 						{#each unitCtrl.pagedList as u (u.id)}
 							<tr>
 								<td class="px-5 py-3 font-semibold">{u.data.name}</td>
-								<td class="px-5 py-3 font-mono text-[var(--ui-text-muted)]">{u.data.symbol}</td>
-								<td class="px-5 py-3 text-[var(--ui-text-muted)] capitalize"
-									>{u.data.type ?? 'count'}</td
+								<td class="px-5 py-3 font-mono text-(--ui-text-muted)">{u.data.symbol}</td>
+								<td class="px-5 py-3 text-(--ui-text-muted) capitalize">{u.data.type ?? 'count'}</td
 								>
 								<td class="px-5 py-3 text-right">
 									<div class="flex items-center justify-end gap-1">
 										<button
 											type="button"
-											class="grid size-7 place-items-center rounded-md text-[var(--ui-text-dimmed)] transition-colors hover:bg-[var(--ui-bg-accented)] hover:text-[var(--ui-text)]"
+											class="grid size-7 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 											onclick={() => openEditUnit(u.id)}
 											aria-label={t('common.edit')}
 											title={t('common.edit')}
@@ -1482,15 +1474,15 @@
 							<th class="w-10 px-5 py-2.5"></th>
 						</tr></thead
 					>
-					<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 						{#each modCtrl.pagedList as m (m.id)}
 							<tr>
 								<td class="px-5 py-3 font-semibold"
 									>{m.data.name}{#if m.data.singleChoice}<span
-											class="ml-2 text-[10px] text-[var(--ui-text-dimmed)]">single</span
+											class="ml-2 text-[10px] text-(--ui-text-dimmed)">single</span
 										>{/if}</td
 								>
-								<td class="px-5 py-3 text-[var(--ui-text-muted)]"
+								<td class="px-5 py-3 text-(--ui-text-muted)"
 									>{m.data.options?.map((o) => o.name).join(', ') || '—'}</td
 								>
 								<td class="px-5 py-3 text-right"><RowActions actions={modActions(m)} /></td>
@@ -1540,7 +1532,7 @@
 								<th class="w-10 px-5 py-2.5"></th>
 							</tr></thead
 						>
-						<tbody class="divide-y divide-[var(--ui-border-muted)] text-[13px]">
+						<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 							{#each filteredBundles as b (b.id)}
 								<tr>
 									<td class="px-5 py-3">
@@ -1550,7 +1542,7 @@
 											{/if}
 											<div>
 												<div class="font-semibold">{b.name}</div>
-												{#if b.description}<div class="text-[11.5px] text-[var(--ui-text-dimmed)]">
+												{#if b.description}<div class="text-[11.5px] text-(--ui-text-dimmed)">
 														{b.description}
 													</div>{/if}
 											</div>
@@ -1573,10 +1565,10 @@
 									<td class="px-5 py-3 text-right font-semibold tabular-nums">
 										{#if b.priceMode === 'fixed'}{formatMoney(b.fixedPrice ?? 0, currency)}
 										{:else if b.priceMode === 'discounted'}-{b.discountPercent ?? 0}%
-										{:else}<span class="text-[11px] text-[var(--ui-text-dimmed)]">auto</span>{/if}
+										{:else}<span class="text-[11px] text-(--ui-text-dimmed)">auto</span>{/if}
 									</td>
 									<td class="px-5 py-3 text-center tabular-nums">{b.groups.length}</td>
-									<td class="px-5 py-3 text-center text-[var(--ui-text-muted)] tabular-nums"
+									<td class="px-5 py-3 text-center text-(--ui-text-muted) tabular-nums"
 										>{b.sortOrder}</td
 									>
 									<td class="px-5 py-3 text-center">
@@ -1586,7 +1578,7 @@
 											class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold transition {b.status ===
 											'active'
 												? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-												: 'bg-[var(--ui-bg-accented)] text-[var(--ui-text-dimmed)]'}"
+												: 'bg-(--ui-bg-accented) text-(--ui-text-dimmed)'}"
 										>
 											<Icon
 												name={b.status === 'active' ? 'lucide:check-circle' : 'lucide:circle'}
@@ -1634,12 +1626,12 @@
 >
 	<div class="space-y-3">
 		<label class="block"
-			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.name')}</span
 			><Input bind:value={bName} icon="lucide:package-open" class="w-full" /></label
 		>
 		<label class="block"
-			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.description')}</span
 			><Input bind:value={bDesc} class="w-full" /></label
 		>
@@ -1651,51 +1643,50 @@
 		/>
 		<div class="grid grid-cols-2 gap-3">
 			<div>
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-					>Price Mode</span
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Price Mode</span
 				>
 				<div class="segmented flex gap-1 p-1">
 					<button
 						type="button"
 						onclick={() => (bPriceMode = 'fixed')}
 						class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {bPriceMode === 'fixed'
-							? 'bg-[var(--ui-bg-elevated)]'
-							: 'text-[var(--ui-text-muted)]'}">Fixed</button
+							? 'bg-(--ui-bg-elevated)'
+							: 'text-(--ui-text-muted)'}">Fixed</button
 					>
 					<button
 						type="button"
 						onclick={() => (bPriceMode = 'sum_components')}
 						class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {bPriceMode ===
 						'sum_components'
-							? 'bg-[var(--ui-bg-elevated)]'
-							: 'text-[var(--ui-text-muted)]'}">Sum</button
+							? 'bg-(--ui-bg-elevated)'
+							: 'text-(--ui-text-muted)'}">Sum</button
 					>
 					<button
 						type="button"
 						onclick={() => (bPriceMode = 'discounted')}
 						class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {bPriceMode ===
 						'discounted'
-							? 'bg-[var(--ui-bg-elevated)]'
-							: 'text-[var(--ui-text-muted)]'}">{t('common.discount')}</button
+							? 'bg-(--ui-bg-elevated)'
+							: 'text-(--ui-text-muted)'}">{t('common.discount')}</button
 					>
 				</div>
 			</div>
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Sort order</span
 				><Input bind:value={bSortOrder} type="number" min="0" class="w-full" /></label
 			>
 		</div>
 		{#if bPriceMode === 'fixed'}
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Fixed price ({currency})</span
 				><Input bind:value={bFixedPrice} type="number" min="0" step="0.01" class="w-full" /></label
 			>
 		{/if}
 		{#if bPriceMode === 'discounted'}
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Discount %</span
 				><Input
 					bind:value={bDiscountPercent}
@@ -1708,20 +1699,20 @@
 			>
 		{/if}
 		{#if bundleRegularPrice > 0}
-			<div class="flex items-center gap-4 rounded-lg bg-[var(--ui-bg-accented)] p-3">
+			<div class="flex items-center gap-4 rounded-lg bg-(--ui-bg-accented) p-3">
 				<div>
-					<p class="text-[11px] text-[var(--ui-text-dimmed)]">Regular price</p>
+					<p class="text-[11px] text-(--ui-text-dimmed)">Regular price</p>
 					<p class="font-bold">{formatMoney(bundleRegularPrice, currency)}</p>
 				</div>
 				{#if bundleFinalPrice < bundleRegularPrice}
 					<div>
-						<p class="text-[11px] text-[var(--ui-text-dimmed)]">Bundle price</p>
+						<p class="text-[11px] text-(--ui-text-dimmed)">Bundle price</p>
 						<p class="font-bold text-emerald-600 dark:text-emerald-400">
 							{formatMoney(bundleFinalPrice, currency)}
 						</p>
 					</div>
 					<div>
-						<p class="text-[11px] text-[var(--ui-text-dimmed)]">Savings</p>
+						<p class="text-[11px] text-(--ui-text-dimmed)">Savings</p>
 						<p class="font-bold text-emerald-600 dark:text-emerald-400">
 							{formatMoney(bundleRegularPrice - bundleFinalPrice, currency)}
 						</p>
@@ -1733,7 +1724,7 @@
 		<!-- Bundle groups -->
 		<div>
 			<div class="mb-2 flex items-center justify-between">
-				<span class="text-[12px] font-semibold text-[var(--ui-text-muted)]">Product groups</span>
+				<span class="text-[12px] font-semibold text-(--ui-text-muted)">Product groups</span>
 				<Button size="sm" variant="ghost" icon="lucide:plus" onclick={addBundleGroup}
 					>Add group</Button
 				>
@@ -1741,7 +1732,7 @@
 			<div class="space-y-3">
 				{#each bGroups as group, gIdx (group.id)}
 					<div
-						class="space-y-2 rounded-lg border border-[var(--ui-border-muted)] bg-[var(--ui-bg-muted)] p-3"
+						class="space-y-2 rounded-lg border border-(--ui-border-muted) bg-(--ui-bg-muted) p-3"
 					>
 						<div class="flex items-center gap-2">
 							<Input
@@ -1751,7 +1742,7 @@
 							/>
 							<button
 								type="button"
-								class="flex size-7 items-center justify-center rounded text-[var(--tone-error-text)] hover:bg-rose-500/10"
+								class="flex size-7 items-center justify-center rounded text-(--tone-error-text) hover:bg-rose-500/10"
 								onclick={() => removeBundleGroup(gIdx)}
 								aria-label="Remove group"><Icon name="lucide:trash-2" class="size-3.5" /></button
 							>
@@ -1780,7 +1771,7 @@
 							/>
 						</div>
 						<div>
-							<span class="mb-1 block text-[11px] font-semibold text-[var(--ui-text-dimmed)]"
+							<span class="mb-1 block text-[11px] font-semibold text-(--ui-text-dimmed)"
 								>Products</span
 							>
 							<div class="flex flex-wrap gap-1">
@@ -1792,20 +1783,18 @@
 											prod.id
 										)
 											? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300'
-											: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
+											: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--ui-bg-accented)'}"
 										>{prod.data.name}</button
 									>
 								{/each}
-								{#if products.length === 0}<span class="text-[11px] text-[var(--ui-text-dimmed)]"
+								{#if products.length === 0}<span class="text-[11px] text-(--ui-text-dimmed)"
 										>No products available</span
 									>{/if}
 							</div>
 						</div>
 					</div>
 				{/each}
-				{#if bGroups.length === 0}<div
-						class="py-3 text-center text-[11px] text-[var(--ui-text-dimmed)]"
-					>
+				{#if bGroups.length === 0}<div class="py-3 text-center text-[11px] text-(--ui-text-dimmed)">
 						Add a group to select products
 					</div>{/if}
 			</div>
@@ -1834,7 +1823,7 @@
 			<!-- Details -->
 			<div class="space-y-3">
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.name')}</span
 					><Input bind:value={pName} icon="lucide:package" class="w-full" /></label
 				>
@@ -1842,7 +1831,7 @@
 				<!-- Price / Cost / Compare-at -->
 				<div class="grid grid-cols-3 gap-3">
 					<label class="block"
-						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Price ({currency})</span
 						><Input
 							bind:value={pPrice}
@@ -1854,7 +1843,7 @@
 						/></label
 					>
 					<label class="block"
-						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('common.cost')}</span
 						><Input
 							bind:value={pCostPrice}
@@ -1867,7 +1856,7 @@
 						/></label
 					>
 					<label class="block"
-						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Compare-at</span
 						><Input
 							bind:value={pCompareAtPrice}
@@ -1884,7 +1873,7 @@
 				<!-- Category + Unit -->
 				<div class="grid grid-cols-2 gap-3">
 					<label class="block"
-						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('common.category')}</span
 						><Select
 							bind:value={pCat}
@@ -1896,7 +1885,7 @@
 						/></label
 					>
 					<label class="block"
-						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('common.unit')}</span
 						><Select
 							bind:value={pUnitId}
@@ -1915,12 +1904,12 @@
 				<!-- SKU + Barcode -->
 				<div class="grid grid-cols-2 gap-3">
 					<label class="block"
-						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('common.sku')}</span
 						><Input bind:value={pSku} icon="lucide:barcode" class="w-full" /></label
 					>
 					<label class="block"
-						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Barcode</span
 						><Input
 							bind:value={pBarcode}
@@ -1933,7 +1922,7 @@
 
 				<!-- Description -->
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.description')}</span
 					><Input
 						bind:value={pDesc}
@@ -1954,7 +1943,7 @@
 				<!-- prepTime + sortOrder -->
 				<div class="grid grid-cols-2 gap-3">
 					<label class="block"
-						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Prep time (min)</span
 						><Input
 							bind:value={pPrepTime}
@@ -1966,7 +1955,7 @@
 						/></label
 					>
 					<label class="block"
-						><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Sort order</span
 						><Input
 							bind:value={pSortOrder}
@@ -1981,21 +1970,21 @@
 
 				<!-- Variants -->
 				<div>
-					<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Variants (sizes)</span
 					>
 					{#if pVariants.length}
 						<ul class="mb-2 space-y-1">
 							{#each pVariants as v, i (i)}
 								<li
-									class="flex items-center gap-2 rounded-lg border border-[var(--ui-border-muted)] px-2.5 py-1.5 text-[12.5px]"
+									class="flex items-center gap-2 rounded-lg border border-(--ui-border-muted) px-2.5 py-1.5 text-[12.5px]"
 								>
 									<span class="flex-1 font-semibold">{v.name}</span><span
-										class="text-[var(--ui-text-muted)] tabular-nums"
+										class="text-(--ui-text-muted) tabular-nums"
 										>{v.price >= 0 ? '+' : ''}{v.price}</span
 									><button
 										type="button"
-										class="text-[var(--tone-error-text)]"
+										class="text-(--tone-error-text)"
 										onclick={() => removeVariant(i)}
 										aria-label={t('common.remove')}
 										><Icon name="lucide:x" class="size-3.5" /></button
@@ -2021,7 +2010,7 @@
 				<!-- Modifier groups -->
 				{#if modifiers.length}
 					<div>
-						<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+						<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Modifier groups</span
 						>
 						<div class="flex flex-wrap gap-1.5">
@@ -2033,7 +2022,7 @@
 										m.id
 									)
 										? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-300'
-										: 'border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-bg-accented)]'}"
+										: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--ui-bg-accented)'}"
 									>{m.data.name}</button
 								>
 							{/each}
@@ -2062,7 +2051,7 @@
 								bind:checked={pDenyOos}
 								size="sm"
 								label="Block sale when out of stock"
-								class="items-center rounded-lg border border-[var(--ui-border-muted)] px-2.5 py-2"
+								class="items-center rounded-lg border border-(--ui-border-muted) px-2.5 py-2"
 							/>
 						</div>
 					{/if}
@@ -2072,18 +2061,18 @@
 	{:else if dlgKind === 'categories'}
 		<div class="space-y-3">
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.name')}</span
 				><Input bind:value={cName} icon="lucide:folder" class="w-full" /></label
 			>
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.description')}</span
 				><Input bind:value={cDesc} class="w-full" /></label
 			>
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Icon (lucide or emoji)</span
 					><Input
 						bind:value={cIcon}
@@ -2093,19 +2082,18 @@
 					/></label
 				>
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
-						>Color</span
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Color</span
 					><Input bind:value={cColor} type="color" placeholder="#6366f1" class="w-full" /></label
 				>
 			</div>
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Sort order</span
 					><Input bind:value={cOrder} type="number" class="w-full" /></label
 				>
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.status')}</span
 					><Select
 						bind:value={cStatus}
@@ -2122,18 +2110,18 @@
 		<div class="space-y-3">
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.name')}</span
 					><Input bind:value={uName} placeholder="Kilogram" class="w-full" /></label
 				>
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.symbol')}</span
 					><Input bind:value={uSymbol} placeholder="kg" class="w-full" /></label
 				>
 			</div>
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{t('common.type')}</span
 				>
 				<Select
@@ -2150,7 +2138,7 @@
 			</label>
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Base unit</span
 					><Select
 						bind:value={uBaseUnitId}
@@ -2164,7 +2152,7 @@
 					/></label
 				>
 				<label class="block"
-					><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Conversion factor</span
 					><Input
 						bind:value={uConversionFactor}
@@ -2180,12 +2168,12 @@
 	{:else}
 		<div class="space-y-3">
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Group name</span
 				><Input bind:value={mName} placeholder="Size" class="w-full" /></label
 			>
 			<label class="block"
-				><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Options (comma separated)</span
 				><Input bind:value={mOpt} placeholder="Small, Medium, Large" class="w-full" /></label
 			>
@@ -2208,7 +2196,7 @@
 <!-- Quick stock adjust from catalog -->
 <Dialog bind:open={quickAdjustOpen} title={t('inventory.adjustStock')}>
 	<div class="space-y-3">
-		<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+		<p class="text-[12.5px] text-(--ui-text-muted)">
 			Adjusting stock for <span class="font-semibold">{quickAdjustName}</span>
 		</p>
 		<div class="segmented flex gap-1 p-1">
@@ -2217,25 +2205,25 @@
 				onclick={() => (quickAdjustDir = 'increase')}
 				class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {quickAdjustDir ===
 				'increase'
-					? 'bg-[var(--ui-bg-elevated)]'
-					: 'text-[var(--ui-text-muted)]'}">↑ Stock in</button
+					? 'bg-(--ui-bg-elevated)'
+					: 'text-(--ui-text-muted)'}">↑ Stock in</button
 			>
 			<button
 				type="button"
 				onclick={() => (quickAdjustDir = 'decrease')}
 				class="flex-1 rounded-md px-3 py-1.5 text-[11.5px] font-semibold {quickAdjustDir ===
 				'decrease'
-					? 'bg-[var(--ui-bg-elevated)]'
-					: 'text-[var(--ui-text-muted)]'}">↓ Stock out</button
+					? 'bg-(--ui-bg-elevated)'
+					: 'text-(--ui-text-muted)'}">↓ Stock out</button
 			>
 		</div>
 		<label class="block"
-			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.quantity')}</span
 			><Input bind:value={quickAdjustQty} type="number" min="1" class="w-full" /></label
 		>
 		<label class="block"
-			><span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+			><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{t('common.reason')}</span
 			><Input
 				bind:value={quickAdjustReason}
@@ -2256,7 +2244,7 @@
 <!-- Import starter kits from the templates marketplace -->
 <Dialog bind:open={tmplOpen} title="From templates — BNOS catalog presets" size="lg">
 	<div class="space-y-3">
-		<p class="text-[12.5px] text-[var(--ui-text-muted)]">
+		<p class="text-[12.5px] text-(--ui-text-muted)">
 			Browse starter-kit product items published by the <span class="font-semibold">templates</span>
 			marketplace and apply them to this catalog. Load the bundled catalog by URL, search your relays
 			for kits published by creators, or paste the JSON. Each kit is namespaced, so re-applying updates
@@ -2264,7 +2252,7 @@
 		</p>
 		<div class="flex items-end gap-2">
 			<label class="min-w-0 flex-1">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Preset catalog URL</span
 				>
 				<Input
@@ -2288,27 +2276,23 @@
 			>
 		</div>
 		{#if tmplError}
-			<p
-				class="rounded-lg bg-[var(--tone-error-bg)] px-3 py-2 text-[12px] text-[var(--tone-error-text)]"
-			>
+			<p class="rounded-lg bg-(--tone-error-bg) px-3 py-2 text-[12px] text-(--tone-error-text)">
 				{tmplError}
 			</p>
 		{/if}
 		{#if tmplItems.length}
 			<div class="flex items-center justify-between">
-				<span class="text-[12px] text-[var(--ui-text-muted)]"
+				<span class="text-[12px] text-(--ui-text-muted)"
 					>{tmplItems.length} kits · {tmplSelected.size} selected</span
 				>
 				<button
 					type="button"
-					class="text-[12px] font-semibold text-[var(--ui-text)] underline"
+					class="text-[12px] font-semibold text-(--ui-text) underline"
 					onclick={toggleAllTemplates}
 					>{tmplSelected.size === tmplItems.length ? 'Clear all' : 'Select all'}</button
 				>
 			</div>
-			<ul
-				class="divide-y divide-[var(--ui-border-muted)] rounded-xl border border-[var(--ui-border)]"
-			>
+			<ul class="divide-y divide-(--ui-border-muted) rounded-xl border border-(--ui-border)">
 				{#each tmplItems as item (item.presetId)}
 					<li class="flex items-start gap-3 p-3">
 						<Checkbox
@@ -2320,13 +2304,13 @@
 							<div class="flex items-center gap-2">
 								<span class="truncate text-[13px] font-semibold">{item.name}</span>
 								{#if item.version}
-									<span class="text-[11px] text-[var(--ui-text-dimmed)]">v{item.version}</span>
+									<span class="text-[11px] text-(--ui-text-dimmed)">v{item.version}</span>
 								{/if}
 							</div>
 							{#if item.summary}
-								<p class="text-[12px] text-[var(--ui-text-muted)]">{item.summary}</p>
+								<p class="text-[12px] text-(--ui-text-muted)">{item.summary}</p>
 							{/if}
-							<p class="text-[11px] text-[var(--ui-text-dimmed)]">
+							<p class="text-[11px] text-(--ui-text-dimmed)">
 								{item.counts.products} products · {item.counts.categories} categories · {item.counts
 									.units} units · {item.counts.modifierGroups} modifiers{item.publisher
 									? ` · ${item.publisher}`
@@ -2338,7 +2322,7 @@
 			</ul>
 		{:else}
 			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-[var(--ui-text-muted)]"
+				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>…or paste the catalog JSON (bnos-presets.json)</span
 				>
 				<Input

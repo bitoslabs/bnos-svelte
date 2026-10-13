@@ -1,4 +1,3 @@
- 
 /**
  * QR Code generator library (TypeScript) — vendored from Project Nayuki (MIT).
  * https://www.nayuki.io/page/qr-code-generator-library
