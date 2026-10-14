@@ -23,6 +23,9 @@ if [[ ! -d "$release" ]]; then
   git -C "$staging" fetch -q --depth=1 https://github.com/bitoslabs/bnos-svelte.git "$sha"
   git -C "$staging" checkout -q --detach FETCH_HEAD
   [[ "$(git -C "$staging" rev-parse HEAD)" == "$sha" ]]
+  if [[ -f "$base/.env" ]]; then
+    ln -s "$base/.env" "$staging/.env"
+  fi
   (cd "$staging" && corepack yarn install --frozen-lockfile --non-interactive && corepack yarn build)
   mv "$staging" "$release"
   trap - EXIT
@@ -47,5 +50,17 @@ if [[ "$healthy" != true ]]; then
   echo 'Deployment failed; previous release restored' >&2
   exit 1
 fi
+
+active_release=$(readlink -f "$current")
+kept=1
+cd "$base"
+while IFS= read -r old_release; do
+  [[ "$old_release" == "$active_release" ]] && continue
+  if (( kept < 3 )); then
+    (( kept += 1 ))
+  else
+    rm -rf -- "$old_release"
+  fi
+done < <(find "$base/releases" -mindepth 1 -maxdepth 1 -type d -not -name '.staging-*' -printf '%T@ %p\n' | sort -nr | cut -d' ' -f2-)
 
 echo "Deployed $sha"
