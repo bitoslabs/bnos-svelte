@@ -287,6 +287,7 @@ export const th = {
 		held: 'พักไว้',
 		voided: 'ยกเลิก',
 		approved: 'อนุมัติ',
+		submitted: 'ส่งแล้ว',
 		rejected: 'ปฏิเสธ'
 	},
 	nav: {
@@ -645,7 +646,49 @@ export const th = {
 	expenses: {
 		rawData: 'ข้อมูลดิบของค่าใช้จ่าย',
 		noExpenses: 'ไม่มีค่าใช้จ่าย',
-		noExpensesDesc: 'บันทึกค่าเช่า วัสดุ ค่าจ้าง และอื่นๆ'
+		noExpensesDesc: 'บันทึกค่าเช่า วัสดุ ค่าจ้าง และอื่นๆ',
+		noMatching: 'ไม่พบค่าใช้จ่ายที่ตรงกัน',
+		subtitle: 'รายจ่าย · kind {kind}',
+		totalOut: 'รายจ่ายรวม',
+		entries: 'รายการ',
+		allCategories: 'ทุกหมวด',
+		allStatuses: 'ทุกสถานะ',
+		searchPlaceholder: 'ค้นหารายละเอียด ผู้รับเงิน หรือเลขที่…',
+		descriptionRequired: 'ต้องระบุรายละเอียด',
+		amountRequired: 'กรอกจำนวนเงินที่มากกว่าศูนย์',
+		recorded: 'บันทึกค่าใช้จ่ายแล้ว',
+		updated: 'อัปเดตค่าใช้จ่ายแล้ว',
+		removed: 'ลบค่าใช้จ่ายแล้ว',
+		payee: 'ผู้รับเงิน',
+		payeePlaceholder: 'จ่ายให้…',
+		receiptUrl: 'ลิงก์ใบเสร็จ',
+		receiptPlaceholder: 'https://…',
+		deleteTitle: 'ลบค่าใช้จ่ายนี้?',
+		deleteMsg: 'รายการนี้จะถูกลบออกจากอุปกรณ์นี้และรีเลย์ของคุณอย่างถาวร ไม่สามารถยกเลิกได้',
+		exportCsv: 'ส่งออก CSV',
+		mixedCurrency: '{count} รายการในสกุลอื่นไม่ถูกรวมในยอดรวม',
+		methodCash: 'เงินสด',
+		methodBank: 'ธนาคาร',
+		methodCard: 'บัตร',
+		methodOther: 'อื่นๆ'
+	},
+	expense: {
+		category: {
+			rent: 'ค่าเช่า',
+			utilities: 'ค่าสาธารณูปโภค',
+			supplies: 'วัสดุ',
+			salaries: 'เงินเดือน',
+			marketing: 'การตลาด',
+			maintenance: 'การบำรุงรักษา',
+			transport: 'การขนส่ง',
+			taxes: 'ภาษี',
+			insurance: 'ประกันภัย',
+			depreciation: 'ค่าเสื่อมราคา',
+			professional_services: 'บริการวิชาชีพ',
+			technology: 'เทคโนโลยี',
+			food_cost: 'ต้นทุนอาหาร',
+			other: 'อื่นๆ'
+		}
 	},
 	reports: {
 		sales: 'ยอดขาย',

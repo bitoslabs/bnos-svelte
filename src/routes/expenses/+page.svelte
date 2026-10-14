@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { SvelteDate } from 'svelte/reactivity';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -12,39 +13,80 @@
 	import SortableTh from '$lib/components/list/SortableTh.svelte';
 	import Pagination from '$lib/components/list/Pagination.svelte';
 	import RowActions from '$lib/components/list/RowActions.svelte';
+	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { formatMoney, relativeTime } from '$lib/utils/format';
+	import { confirm } from '$lib/stores/confirm.svelte';
+	import { formatMoney, relativeTime, normalizeCurrencyCode } from '$lib/utils/format';
 	import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
 	import {
 		TYPE,
+		KIND,
 		statusColor,
+		statusLabel,
 		EXPENSE_CATEGORIES,
 		type Expense,
 		type ExpenseCategory,
 		type ExpenseStatus
 	} from '$lib/domain';
-	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 
 	onMount(() => {
 		dataSync.pageSync([TYPE.expense], { scope: 'expenses' });
 	});
 
 	const currency = $derived(tenant.state.currency);
+	const displayCurrency = $derived(normalizeCurrencyCode(currency));
 	const expenses = $derived(glo.all<Expense, typeof TYPE.expense>(TYPE.expense));
 
-	// Filters
-	// Raw data viewer
-	let rawOpen = $state(false);
-	let rawItem = $state<any>(null);
+	function matchesCurrency(e: { data: Expense }): boolean {
+		return normalizeCurrencyCode(e.data.currency || currency) === displayCurrency;
+	}
 
+	type PayMethod = 'cash' | 'bank' | 'card' | 'other';
+
+	const METHOD_KEYS: { value: PayMethod; key: string }[] = [
+		{ value: 'cash', key: 'expenses.methodCash' },
+		{ value: 'bank', key: 'expenses.methodBank' },
+		{ value: 'card', key: 'expenses.methodCard' },
+		{ value: 'other', key: 'expenses.methodOther' }
+	];
+
+	const STATUS_VALUES: ExpenseStatus[] = [
+		'draft',
+		'submitted',
+		'approved',
+		'paid',
+		'pending',
+		'cancelled'
+	];
+
+	function catLabel(c: ExpenseCategory): string {
+		return t(`expense.category.${c}`);
+	}
+	function catIcon(c: ExpenseCategory): string {
+		return (
+			EXPENSE_CATEGORIES.find((x) => x.value === c) ??
+			EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1]
+		).icon;
+	}
+
+	// Filters
 	let catFilter = $state('__all__');
 	let statusFilter = $state('__all__');
 	let dateFrom = $state('');
 	let dateTo = $state('');
+
+	const categoryFilterOptions = $derived([
+		{ value: '__all__', label: t('expenses.allCategories') },
+		...EXPENSE_CATEGORIES.map((c) => ({ value: c.value, label: catLabel(c.value) }))
+	]);
+	const statusFilterOptions = $derived([
+		{ value: '__all__', label: t('expenses.allStatuses') },
+		...STATUS_VALUES.map((s) => ({ value: s, label: statusLabel(s) }))
+	]);
 
 	const filtered = $derived(
 		expenses.filter((e) => {
@@ -52,7 +94,7 @@
 			if (statusFilter !== '__all__' && e.data.status !== statusFilter) return false;
 			if (dateFrom && new Date(e.data.occurredAt) < new Date(dateFrom)) return false;
 			if (dateTo) {
-				const to = new Date(dateTo);
+				const to = new SvelteDate(dateTo);
 				to.setHours(23, 59, 59, 999);
 				if (new Date(e.data.occurredAt) > to) return false;
 			}
@@ -64,7 +106,8 @@
 		items: () => filtered,
 		search: (e, q) =>
 			(e.data.description ?? '').toLowerCase().includes(q) ||
-			(e.data.payee ?? '').toLowerCase().includes(q),
+			(e.data.payee ?? '').toLowerCase().includes(q) ||
+			(e.data.number ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
 			{ key: 'date', label: t('common.date'), value: (e) => e.data.occurredAt },
 			{ key: 'amount', label: t('common.amount'), value: (e) => e.data.amount },
@@ -76,140 +119,183 @@
 		storageKey: 'expenses'
 	});
 
+	// Totals reflect the currently visible (filtered + searched) set, restricted
+	// to the active currency so mixed-currency sums stay correct.
+	const scoped = $derived(controls.list);
 	const totalOut = $derived(
-		expenses.filter((e) => e.data.status !== 'cancelled').reduce((s, e) => s + e.data.amount, 0)
-	);
-	const monthOut = $derived(
-		expenses
-			.filter(
-				(e) =>
-					e.data.status !== 'cancelled' &&
-					new Date(e.data.occurredAt).getMonth() === new Date().getMonth()
-			)
+		scoped
+			.filter((e) => e.data.status !== 'cancelled' && matchesCurrency(e))
 			.reduce((s, e) => s + e.data.amount, 0)
 	);
+	const monthOut = $derived(
+		scoped
+			.filter((e) => {
+				if (e.data.status === 'cancelled' || !matchesCurrency(e)) return false;
+				const d = new Date(e.data.occurredAt);
+				const now = new Date();
+				return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+			})
+			.reduce((s, e) => s + e.data.amount, 0)
+	);
+	const entries = $derived(scoped.length);
+	const mixedCurrencyCount = $derived(expenses.filter((e) => !matchesCurrency(e)).length);
 
-	const STATUS_OPTIONS = [
-		{ value: '__all__', label: 'All statuses' },
-		{ value: 'draft', label: 'Draft' },
-		{ value: 'submitted', label: 'Submitted' },
-		{ value: 'approved', label: 'Approved' },
-		{ value: 'paid', label: 'Paid' },
-		{ value: 'cancelled', label: 'Cancelled' }
-	];
-
-	// Create dialog
-	let open = $state(false);
-	let desc = $state('');
-	let amount = $state<number | ''>('');
-	let cat = $state<ExpenseCategory>('other');
-	let payee = $state('');
-	let method = $state<'cash' | 'bank' | 'card' | 'other'>('cash');
-	let expStatus = $state<ExpenseStatus>('paid');
-	let receiptUrl = $state('');
-	let expDate = $state(new Date().toISOString().slice(0, 10));
-
-	function openCreate() {
-		desc = '';
-		amount = '';
-		cat = 'other';
-		payee = '';
-		method = 'cash';
-		expStatus = 'draft';
-		receiptUrl = '';
-		expDate = new Date().toISOString().slice(0, 10);
-		open = true;
-	}
-
-	async function save() {
-		if (!desc.trim()) return toast.warning('Description required');
-		await glo.upsert<Expense>(
-			TYPE.expense,
-			{
-				number: nextReadableNumber({ prefix: 'EXP', scope: tenant.state.locationId }),
-				description: desc.trim(),
-				category: cat,
-				amount: typeof amount === 'number' ? amount : Number(amount) || 0,
-				currency,
-				payee: payee.trim() || undefined,
-				status: expStatus,
-				method,
-				reference: receiptUrl.trim() || undefined,
-				occurredAt: new Date(expDate).toISOString()
-			},
-			{ id: newRecordId('expense') }
-		);
-		toast.success('Expense recorded');
-		open = false;
-	}
-
-	// Edit dialog
-	let editOpen = $state(false);
-	let editId = $state('');
-	let editDesc = $state('');
-	let editAmount = $state<number | ''>('');
-	let editCat = $state<ExpenseCategory>('other');
-	let editPayee = $state('');
-	let editMethod = $state<'cash' | 'bank' | 'card' | 'other'>('cash');
-	let editStatus = $state<ExpenseStatus>('paid');
-	let editReceiptUrl = $state('');
-	let editDate = $state('');
-
-	function openEdit(e: { id: string; data: Expense }) {
-		editId = e.id;
-		editDesc = e.data.description ?? '';
-		editAmount = e.data.amount ?? 0;
-		editCat = e.data.category;
-		editPayee = e.data.payee ?? '';
-		editMethod = (e.data.method as 'cash' | 'bank' | 'card' | 'other') ?? 'cash';
-		editStatus = e.data.status;
-		editReceiptUrl = e.data.reference ?? '';
-		editDate = e.data.occurredAt ? new Date(e.data.occurredAt).toISOString().slice(0, 10) : '';
-		editOpen = true;
-	}
-
-	async function saveEdit() {
-		if (!editDesc.trim()) return toast.warning('Description required');
-		const existing = expenses.find((expense) => expense.id === editId);
-		await glo.upsert<Expense>(
-			TYPE.expense,
-			{
-				number:
-					existing?.data.number ??
-					nextReadableNumber({ prefix: 'EXP', scope: tenant.state.locationId }),
-				description: editDesc.trim(),
-				category: editCat,
-				amount: typeof editAmount === 'number' ? editAmount : Number(editAmount) || 0,
-				currency,
-				payee: editPayee.trim() || undefined,
-				status: editStatus,
-				method: editMethod,
-				reference: editReceiptUrl.trim() || undefined,
-				occurredAt: editDate ? new Date(editDate).toISOString() : new Date().toISOString()
-			},
-			{ id: editId }
-		);
-		toast.success('Expense updated');
-		editOpen = false;
-	}
-
-	function catMeta(c: ExpenseCategory) {
-		return (
-			EXPENSE_CATEGORIES.find((x) => x.value === c) ??
-			EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1]
-		);
-	}
+	const hasActiveFilters = $derived(
+		catFilter !== '__all__' ||
+			statusFilter !== '__all__' ||
+			dateFrom !== '' ||
+			dateTo !== '' ||
+			controls.search !== ''
+	);
 
 	function clearFilters() {
 		catFilter = '__all__';
 		statusFilter = '__all__';
 		dateFrom = '';
 		dateTo = '';
+		controls.search = '';
 	}
 
-	const hasActiveFilters = $derived(
-		catFilter !== '__all__' || statusFilter !== '__all__' || dateFrom !== '' || dateTo !== ''
-	);
+	function todayInput(): string {
+		return new Date().toISOString().slice(0, 10);
+	}
+
+	// Create / edit dialog — one form, `editingId` switches the mode.
+	let open = $state(false);
+	let editingId = $state<string | null>(null);
+	let desc = $state('');
+	let amount = $state<number | ''>('');
+	let cat = $state<ExpenseCategory>('other');
+	let payee = $state('');
+	let method = $state<PayMethod>('cash');
+	let expStatus = $state<ExpenseStatus>('paid');
+	let receiptUrl = $state('');
+	let expDate = $state('');
+	const isEditing = $derived(editingId !== null);
+
+	function openCreate() {
+		editingId = null;
+		desc = '';
+		amount = '';
+		cat = 'other';
+		payee = '';
+		method = 'cash';
+		expStatus = 'paid';
+		receiptUrl = '';
+		expDate = todayInput();
+		open = true;
+	}
+
+	function openEdit(e: { id: string; data: Expense }) {
+		editingId = e.id;
+		desc = e.data.description ?? '';
+		amount = e.data.amount ?? 0;
+		cat = e.data.category;
+		payee = e.data.payee ?? '';
+		method = (e.data.method as PayMethod) ?? 'cash';
+		expStatus = e.data.status;
+		receiptUrl = e.data.reference ?? '';
+		expDate = e.data.occurredAt
+			? new Date(e.data.occurredAt).toISOString().slice(0, 10)
+			: todayInput();
+		open = true;
+	}
+
+	function numericAmount(v: number | ''): number {
+		const n = typeof v === 'number' ? v : Number(v);
+		return Number.isFinite(n) ? n : 0;
+	}
+
+	async function save() {
+		if (!desc.trim()) return toast.warning(t('expenses.descriptionRequired'));
+		const amt = numericAmount(amount);
+		if (amt <= 0) return toast.warning(t('expenses.amountRequired'));
+
+		const editing = editingId !== null;
+		const existing = editing ? expenses.find((x) => x.id === editingId) : undefined;
+		await glo.upsert<Expense>(
+			TYPE.expense,
+			{
+				number:
+					existing?.data.number ??
+					nextReadableNumber({ prefix: 'EXP', scope: tenant.state.locationId }),
+				description: desc.trim(),
+				category: cat,
+				amount: amt,
+				currency,
+				payee: payee.trim() || undefined,
+				status: expStatus,
+				method,
+				reference: receiptUrl.trim() || undefined,
+				occurredAt: expDate ? new Date(expDate).toISOString() : new Date().toISOString()
+			},
+			{ id: editingId ?? newRecordId('expense') }
+		);
+		toast.success(editing ? t('expenses.updated') : t('expenses.recorded'));
+		open = false;
+	}
+
+	async function removeExpense(e: { id: string; data: Expense }) {
+		const ok = await confirm({
+			title: t('expenses.deleteTitle'),
+			message: t('expenses.deleteMsg'),
+			detail: e.data.description,
+			tone: 'danger',
+			confirmText: t('common.delete')
+		});
+		if (!ok) return;
+		glo.remove(TYPE.expense, e.id);
+		toast.info(t('expenses.removed'));
+	}
+
+	function exportCsv() {
+		const csvRows: string[][] = [
+			[
+				t('common.date'),
+				t('common.code'),
+				t('common.description'),
+				t('common.category'),
+				t('expenses.payee'),
+				t('common.method'),
+				t('common.status'),
+				t('common.amount'),
+				t('common.currency')
+			]
+		];
+		for (const e of scoped) {
+			const d = e.data;
+			csvRows.push([
+				d.occurredAt ? new Date(d.occurredAt).toISOString().slice(0, 10) : '',
+				d.number ?? '',
+				d.description ?? '',
+				d.category ?? '',
+				d.payee ?? '',
+				d.method ?? '',
+				d.status ?? '',
+				String(d.amount ?? 0),
+				d.currency ?? currency
+			]);
+		}
+		const csv = csvRows
+			.map((r) => r.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','))
+			.join('\n');
+		const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `expenses_${new Date().toISOString().slice(0, 10)}.csv`;
+		a.click();
+		URL.revokeObjectURL(url);
+	}
+
+	function fullDate(iso: string): string {
+		const d = new Date(iso);
+		return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString();
+	}
+
+	// Raw data viewer
+	let rawOpen = $state(false);
+	let rawItem = $state<unknown>(null);
 </script>
 
 <svelte:head><title>{t('common.appName')} · {t('nav.expenses')}</title></svelte:head>
@@ -218,33 +304,51 @@
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.expenses')}</h1>
-			<p class="text-[12.5px] text-(--ui-text-muted)">Outgoing costs · kind 30802</p>
+			<p class="text-[12.5px] text-(--ui-text-muted)">
+				{t('expenses.subtitle', { kind: KIND.expense })}
+			</p>
 		</div>
-		<Button color="primary" icon="lucide:plus" onclick={openCreate}
-			>{t('common.add') + ' ' + t('common.expense')}</Button
-		>
+		<div class="flex items-center gap-2">
+			<Button
+				variant="subtle"
+				size="sm"
+				icon="lucide:download"
+				disabled={scoped.length === 0}
+				onclick={exportCsv}>{t('expenses.exportCsv')}</Button
+			>
+			<Button color="primary" icon="lucide:plus" onclick={openCreate}
+				>{t('common.add') + ' ' + t('common.expense')}</Button
+			>
+		</div>
 	</div>
 
 	<div class="grid grid-cols-3 gap-3">
 		<div class="surface-card p-4">
-			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Total out</div>
+			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">{t('expenses.totalOut')}</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
 				{formatMoney(totalOut, currency)}
 			</div>
 		</div>
 		<div class="surface-card p-4">
-			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">This month</div>
+			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">{t('common.thisMonth')}</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
 				{formatMoney(monthOut, currency)}
 			</div>
 		</div>
 		<div class="surface-card p-4">
-			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Entries</div>
-			<div class="mt-1 font-display text-lg font-bold tabular-nums">{expenses.length}</div>
+			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">{t('expenses.entries')}</div>
+			<div class="mt-1 font-display text-lg font-bold tabular-nums">{entries}</div>
 		</div>
 	</div>
 
-	{#if expenses.length || controls.search}
+	{#if mixedCurrencyCount > 0}
+		<p class="flex items-center gap-1.5 text-[12px] text-(--ui-text-dimmed)">
+			<Icon name="lucide:info" class="size-3.5" />
+			{t('expenses.mixedCurrency', { count: mixedCurrencyCount })}
+		</p>
+	{/if}
+
+	{#if expenses.length || hasActiveFilters}
 		<ListToolbar
 			bind:search={controls.search}
 			bind:sortKey={controls.sortKey}
@@ -253,55 +357,34 @@
 			sortItems={controls.sortItems}
 			allowViewModes={['table']}
 			applySort={controls.applySort}
-			searchPlaceholder="Search description or payee…"
+			searchPlaceholder={t('expenses.searchPlaceholder')}
 		>
 			{#snippet filters()}
 				<div class="flex flex-wrap items-center gap-2">
-					<div
-						class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
-					>
-						<select
-							bind:value={catFilter}
-							class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium focus:outline-none"
-						>
-							<option value="__all__">All categories</option>
-							{#each EXPENSE_CATEGORIES as c (c.value)}
-								<option value={c.value}>{c.label}</option>
-							{/each}
-						</select>
-						<Icon
-							name="lucide:chevron-down"
-							class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
-						/>
-					</div>
-					<div
-						class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
-					>
-						<select
-							bind:value={statusFilter}
-							class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium focus:outline-none"
-						>
-							{#each STATUS_OPTIONS as s (s.value)}
-								<option value={s.value}>{s.label}</option>
-							{/each}
-						</select>
-						<Icon
-							name="lucide:chevron-down"
-							class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
-						/>
-					</div>
+					<Select
+						class="w-auto"
+						aria-label={t('expenses.allCategories')}
+						bind:value={catFilter}
+						options={categoryFilterOptions}
+					/>
+					<Select
+						class="w-auto"
+						aria-label={t('expenses.allStatuses')}
+						bind:value={statusFilter}
+						options={statusFilterOptions}
+					/>
 					<input
 						type="date"
 						bind:value={dateFrom}
-						class="h-9 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 text-[13px] font-medium text-(--ui-text) focus:border-(--ui-color-primary-500) focus:outline-none"
-						placeholder="From"
+						aria-label={t('common.date')}
+						class="h-9.5 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 text-[13px] font-medium text-(--ui-text) focus:border-(--ui-color-primary-500) focus:outline-none"
 					/>
 					<span class="text-[12px] text-(--ui-text-dimmed)">→</span>
 					<input
 						type="date"
 						bind:value={dateTo}
-						class="h-9 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 text-[13px] font-medium text-(--ui-text) focus:border-(--ui-color-primary-500) focus:outline-none"
-						placeholder="To"
+						aria-label={t('common.date')}
+						class="h-9.5 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 text-[13px] font-medium text-(--ui-text) focus:border-(--ui-color-primary-500) focus:outline-none"
 					/>
 					{#if hasActiveFilters}
 						<button
@@ -318,7 +401,7 @@
 		</ListToolbar>
 	{/if}
 
-	{#if controls.list.length === 0}
+	{#if expenses.length === 0}
 		<EmptyState
 			icon="lucide:wallet"
 			title={t('expenses.noExpenses')}
@@ -327,6 +410,18 @@
 			{#snippet actions()}
 				<Button color="primary" size="sm" icon="lucide:plus" onclick={openCreate}
 					>{t('common.add') + ' ' + t('common.expense')}</Button
+				>
+			{/snippet}
+		</EmptyState>
+	{:else if controls.list.length === 0}
+		<EmptyState
+			icon="lucide:search-x"
+			title={t('expenses.noMatching')}
+			description={t('common.tryDifferentSearch')}
+		>
+			{#snippet actions()}
+				<Button variant="subtle" size="sm" icon="lucide:filter-x" onclick={clearFilters}
+					>{t('common.resetFilters')}</Button
 				>
 			{/snippet}
 		</EmptyState>
@@ -363,8 +458,9 @@
 				<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
 					{#each controls.pagedList as e (e.id)}
 						<tr>
-							<td class="px-5 py-3 text-[12px] text-(--ui-text-dimmed)"
-								>{relativeTime(e.data.occurredAt)}</td
+							<td
+								class="px-5 py-3 text-[12px] text-(--ui-text-dimmed)"
+								title={fullDate(e.data.occurredAt)}>{relativeTime(e.data.occurredAt)}</td
 							>
 							<td class="px-5 py-3">
 								<div class="font-semibold">{e.data.description}</div>
@@ -374,15 +470,12 @@
 							</td>
 							<td class="px-5 py-3">
 								<span class="inline-flex items-center gap-1">
-									<Icon
-										name={catMeta(e.data.category).icon}
-										class="size-3.5 text-(--ui-text-dimmed)"
-									/>
-									{catMeta(e.data.category).label}
+									<Icon name={catIcon(e.data.category)} class="size-3.5 text-(--ui-text-dimmed)" />
+									{catLabel(e.data.category)}
 								</span>
 							</td>
 							<td class="px-5 py-3"
-								><Badge color={statusColor(e.data.status)}>{e.data.status}</Badge></td
+								><Badge color={statusColor(e.data.status)}>{statusLabel(e.data.status)}</Badge></td
 							>
 							<td class="px-5 py-3">
 								{#if e.data.reference}
@@ -407,7 +500,7 @@
 									actions={[
 										[
 											{
-												label: 'Edit',
+												label: t('common.edit'),
 												icon: 'lucide:pencil',
 												onSelect: () => openEdit({ id: e.id, data: e.data })
 											},
@@ -422,13 +515,10 @@
 										],
 										[
 											{
-												label: 'Delete',
+												label: t('common.delete'),
 												icon: 'lucide:trash-2',
 												danger: true,
-												onSelect: () => {
-													glo.remove(TYPE.expense, e.id);
-													toast.info('Removed');
-												}
+												onSelect: () => void removeExpense({ id: e.id, data: e.data })
 											}
 										]
 									]}
@@ -443,191 +533,119 @@
 	{/if}
 </div>
 
-<!-- Create Dialog -->
-<Dialog bind:open title={t('common.add') + ' ' + t('common.expense')} size="lg">
+<!-- Create / Edit Dialog -->
+<Dialog
+	bind:open
+	title={(isEditing ? t('common.edit') : t('common.add')) + ' ' + t('common.expense')}
+	size="lg"
+>
 	<div class="space-y-3">
-		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-				>{t('common.description')}</span
+		<div>
+			<label for="exp-desc" class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
+				>{t('common.description')}</label
 			>
-			<Input bind:value={desc} class="w-full" />
-		</label>
+			<Input id="exp-desc" bind:value={desc} class="w-full" />
+		</div>
 		<div class="grid grid-cols-2 gap-3">
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>Amount ({currency})</span
+			<div>
+				<label
+					for="exp-amount"
+					class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
+					>{t('common.amount')} ({currency})</label
 				>
-				<Input bind:value={amount} type="number" min="0" step="0.01" class="w-full" />
-			</label>
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>{t('common.category')}</span
+				<Input
+					id="exp-amount"
+					bind:value={amount}
+					type="number"
+					min="0"
+					step="0.01"
+					class="w-full"
+				/>
+			</div>
+			<div>
+				<label for="exp-cat" class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
+					>{t('common.category')}</label
 				>
 				<Select
+					id="exp-cat"
 					bind:value={cat}
-					options={EXPENSE_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
+					options={EXPENSE_CATEGORIES.map((c) => ({ value: c.value, label: catLabel(c.value) }))}
 					class="w-full"
 				/>
-			</label>
+			</div>
 		</div>
 		<div class="grid grid-cols-2 gap-3">
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Payee</span>
-				<Input bind:value={payee} class="w-full" />
-			</label>
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>{t('common.method')}</span
+			<div>
+				<label for="exp-payee" class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
+					>{t('expenses.payee')}</label
+				>
+				<Input
+					id="exp-payee"
+					bind:value={payee}
+					placeholder={t('expenses.payeePlaceholder')}
+					class="w-full"
+				/>
+			</div>
+			<div>
+				<label
+					for="exp-method"
+					class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
+					>{t('common.method')}</label
 				>
 				<Select
+					id="exp-method"
 					bind:value={method}
-					options={[
-						{ value: 'cash', label: 'Cash' },
-						{ value: 'bank', label: 'Bank' },
-						{ value: 'card', label: 'Card' },
-						{ value: 'other', label: 'Other' }
-					]}
+					options={METHOD_KEYS.map((m) => ({ value: m.value, label: t(m.key) }))}
 					class="w-full"
 				/>
-			</label>
+			</div>
 		</div>
 		<div class="grid grid-cols-2 gap-3">
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>{t('common.date')}</span
+			<div>
+				<label for="exp-date" class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
+					>{t('common.date')}</label
 				>
 				<input
+					id="exp-date"
 					type="date"
 					bind:value={expDate}
 					class="h-9.5 w-full rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 text-[13.5px] text-(--ui-text) focus:border-(--ui-color-primary-500) focus:outline-none"
 				/>
-			</label>
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>{t('common.status')}</span
+			</div>
+			<div>
+				<label
+					for="exp-status"
+					class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
+					>{t('common.status')}</label
 				>
 				<Select
+					id="exp-status"
 					bind:value={expStatus}
-					options={[
-						{ value: 'draft', label: t('status.draft') },
-						{ value: 'submitted', label: 'Submitted' },
-						{ value: 'approved', label: t('status.approved') },
-						{ value: 'paid', label: t('status.paid') },
-						{ value: 'cancelled', label: t('status.cancelled') }
-					]}
+					options={STATUS_VALUES.map((s) => ({ value: s, label: statusLabel(s) }))}
 					class="w-full"
 				/>
-			</label>
+			</div>
 		</div>
-		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Receipt URL</span>
+		<div>
+			<label for="exp-receipt" class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
+				>{t('expenses.receiptUrl')}</label
+			>
 			<Input
+				id="exp-receipt"
 				bind:value={receiptUrl}
 				icon="lucide:paperclip"
-				placeholder="https://…"
+				placeholder={t('expenses.receiptPlaceholder')}
 				class="w-full"
 			/>
-		</label>
+		</div>
 	</div>
 	{#snippet footer()}
 		<Button color="neutral" variant="ghost" onclick={() => (open = false)}
 			>{t('common.cancel')}</Button
 		>
-		<Button color="primary" icon="lucide:check" onclick={save}>{t('common.save')}</Button>
-	{/snippet}
-</Dialog>
-
-<!-- Edit Dialog -->
-<Dialog bind:open={editOpen} title={t('common.edit') + ' ' + t('common.expense')} size="lg">
-	<div class="space-y-3">
-		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-				>{t('common.description')}</span
-			>
-			<Input bind:value={editDesc} class="w-full" />
-		</label>
-		<div class="grid grid-cols-2 gap-3">
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>Amount ({currency})</span
-				>
-				<Input bind:value={editAmount} type="number" min="0" step="0.01" class="w-full" />
-			</label>
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>{t('common.category')}</span
-				>
-				<Select
-					bind:value={editCat}
-					options={EXPENSE_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
-					class="w-full"
-				/>
-			</label>
-		</div>
-		<div class="grid grid-cols-2 gap-3">
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Payee</span>
-				<Input bind:value={editPayee} class="w-full" />
-			</label>
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>{t('common.method')}</span
-				>
-				<Select
-					bind:value={editMethod}
-					options={[
-						{ value: 'cash', label: 'Cash' },
-						{ value: 'bank', label: 'Bank' },
-						{ value: 'card', label: 'Card' },
-						{ value: 'other', label: 'Other' }
-					]}
-					class="w-full"
-				/>
-			</label>
-		</div>
-		<div class="grid grid-cols-2 gap-3">
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>{t('common.date')}</span
-				>
-				<input
-					type="date"
-					bind:value={editDate}
-					class="h-9.5 w-full rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 text-[13.5px] text-(--ui-text) focus:border-(--ui-color-primary-500) focus:outline-none"
-				/>
-			</label>
-			<label class="block">
-				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>{t('common.status')}</span
-				>
-				<Select
-					bind:value={editStatus}
-					options={[
-						{ value: 'draft', label: t('status.draft') },
-						{ value: 'submitted', label: 'Submitted' },
-						{ value: 'approved', label: t('status.approved') },
-						{ value: 'paid', label: t('status.paid') },
-						{ value: 'cancelled', label: t('status.cancelled') }
-					]}
-					class="w-full"
-				/>
-			</label>
-		</div>
-		<label class="block">
-			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Receipt URL</span>
-			<Input
-				bind:value={editReceiptUrl}
-				icon="lucide:paperclip"
-				placeholder="https://…"
-				class="w-full"
-			/>
-		</label>
-	</div>
-	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (editOpen = false)}
-			>{t('common.cancel')}</Button
-		>
-		<Button color="primary" icon="lucide:check" onclick={saveEdit}>Save changes</Button>
+		<Button color="primary" icon="lucide:check" onclick={save}>
+			{isEditing ? t('common.saveChanges') : t('common.save')}
+		</Button>
 	{/snippet}
 </Dialog>
 

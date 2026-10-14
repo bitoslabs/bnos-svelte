@@ -287,6 +287,7 @@ export const lo = {
 		held: 'ພັກໄວ້',
 		voided: 'ຍົກເລີກ',
 		approved: 'ອະນຸມັດ',
+		submitted: 'ຍື່ນສະເໜີ',
 		rejected: 'ປະຕິເສດ'
 	},
 	nav: {
@@ -645,7 +646,49 @@ export const lo = {
 	expenses: {
 		rawData: 'ຂໍ້ມູນດິບຂອງຄ່າໃຊ້ຈ່າຍ',
 		noExpenses: 'ບໍ່ມີຄ່າໃຊ້ຈ່າຍ',
-		noExpensesDesc: 'ບັນທຶກຄ່າເຊົ່າ ອຸປະກອນ ເງິນເດືອນ ແລະ ອື່ນໆ'
+		noExpensesDesc: 'ບັນທຶກຄ່າເຊົ່າ ອຸປະກອນ ເງິນເດືອນ ແລະ ອື່ນໆ',
+		noMatching: 'ບໍ່ພົບຄ່າໃຊ້ຈ່າຍທີ່ກົງກັນ',
+		subtitle: 'ລາຍຈ່າຍ · kind {kind}',
+		totalOut: 'ລວມລາຍຈ່າຍ',
+		entries: 'ລາຍການ',
+		allCategories: 'ທຸກໝວດ',
+		allStatuses: 'ທຸກສະຖານະ',
+		searchPlaceholder: 'ຄົ້ນຫາລາຍລະອຽດ ຜູ້ຮັບເງິນ ຫຼື ເລກທີ…',
+		descriptionRequired: 'ຕ້ອງມີລາຍລະອຽດ',
+		amountRequired: 'ໃສ່ຈຳນວນເງິນຫຼາຍກວ່າສູນ',
+		recorded: 'ບັນທຶກຄ່າໃຊ້ຈ່າຍແລ້ວ',
+		updated: 'ອັບເດດຄ່າໃຊ້ຈ່າຍແລ້ວ',
+		removed: 'ລຶບຄ່າໃຊ້ຈ່າຍແລ້ວ',
+		payee: 'ຜູ້ຮັບເງິນ',
+		payeePlaceholder: 'ຈ່າຍໃຫ້…',
+		receiptUrl: 'ລິ້ງໃບຮັບເງິນ',
+		receiptPlaceholder: 'https://…',
+		deleteTitle: 'ລຶບຄ່າໃຊ້ຈ່າຍນີ້?',
+		deleteMsg: 'ລາຍການນີ້ຈະຖືກລຶບອອກຈາກອຸປະກອນນີ້ ແລະ relay ຂອງທ່ານຢ່າງຖາວອນ. ບໍ່ສາມາດຍົກເລີກໄດ້.',
+		exportCsv: 'ສົ່ງອອກ CSV',
+		mixedCurrency: '{count} ລາຍການໃນສະກຸນອື່ນບໍ່ລວມໃນຍອດລວມ.',
+		methodCash: 'ເງິນສົດ',
+		methodBank: 'ທະນາຄານ',
+		methodCard: 'ບັດ',
+		methodOther: 'ອື່ນໆ'
+	},
+	expense: {
+		category: {
+			rent: 'ຄ່າເຊົ່າ',
+			utilities: 'ຄ່າສາທາລະນູປະໂພກ',
+			supplies: 'ອຸປະກອນ',
+			salaries: 'ເງິນເດືອນ',
+			marketing: 'ການຕະຫຼາດ',
+			maintenance: 'ການບຳລຸງຮັກສາ',
+			transport: 'ການຂົນສົ່ງ',
+			taxes: 'ອາກອນ',
+			insurance: 'ປະກັນໄພ',
+			depreciation: 'ຄ່າເສື່ອມລາຄາ',
+			professional_services: 'ບໍລິການວິຊາຊີບ',
+			technology: 'ເທັກໂນໂລຢີ',
+			food_cost: 'ຕົ້ນທຶນອາຫານ',
+			other: 'ອື່ນໆ'
+		}
 	},
 	reports: {
 		sales: 'ຍອດຂາຍ',
