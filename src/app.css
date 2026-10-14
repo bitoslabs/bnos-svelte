@@ -483,21 +483,16 @@
 		--ui-text-highlighted: #ffffff;
 		--ui-text-inverted: #0c0c0e;
 
-		/* Elevation ladder (dark): separation comes from progressively lighter
-		   fills, with hairline borders that sit just above the surface they
-		   outline. The old scheme compressed every surface into #07–#14 — cards
-		   were 3% off the canvas while borders out-shone their own fill — so
-		   cards read as outlined boxes instead of raised panels.
-		     canvas #0a0a0c → wells #121316 → cards #17181c
-		     → elevated #1e2025 → hover #26282e */
-		--ui-bg: #0a0a0c;
-		--ui-bg-muted: #121316;
-		--ui-bg-elevated: #1e2025;
-		--ui-bg-accented: #26282e;
+		/* Keep the dark elevation ladder while giving each neutral palette its
+		   own temperature. The fixed colors preserve the existing default look. */
+		--ui-bg: color-mix(in oklab, var(--color-neutral-950) 50%, #0a0a0c);
+		--ui-bg-muted: color-mix(in oklab, var(--color-neutral-900) 35%, #121316);
+		--ui-bg-elevated: color-mix(in oklab, var(--color-neutral-800) 35%, #1e2025);
+		--ui-bg-accented: color-mix(in oklab, var(--color-neutral-800) 50%, #26282e);
 		--ui-bg-inverted: #ffffff;
-		--surface-bg: #17181c;
-		--surface-bg-soft: #1e2025;
-		--table-head-bg: #121316;
+		--surface-bg: color-mix(in oklab, var(--color-neutral-900) 45%, #17181c);
+		--surface-bg-soft: var(--ui-bg-elevated);
+		--table-head-bg: var(--ui-bg-muted);
 		--table-row-hover-bg: color-mix(in oklab, var(--ui-color-primary-500) 10%, transparent);
 		--active-surface-bg: color-mix(in oklab, var(--ui-color-primary-500) 22%, var(--surface-bg));
 		--active-surface-text: var(--ui-color-primary-300);
@@ -511,9 +506,9 @@
 		--tone-warning-text: #f4c46a;
 		--tone-error-bg: #421c1f;
 		--tone-error-text: #ff9b96;
-		--tone-neutral-bg: #202227;
+		--tone-neutral-bg: color-mix(in oklab, var(--color-neutral-800) 45%, #202227);
 		--tone-neutral-text: color-mix(in oklab, var(--color-neutral-300) 78%, white);
-		--interactive-hover-bg: #1f2126;
+		--interactive-hover-bg: color-mix(in oklab, var(--color-neutral-800) 40%, #1f2126);
 		--danger-border: #6b3035;
 
 		/* Borders: translucent white strokes (Radix/Linear dark convention).
