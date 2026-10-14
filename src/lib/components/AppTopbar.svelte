@@ -612,6 +612,16 @@
 					</div>
 					<LanguageSwitcher />
 				</div>
+
+				<!-- Full appearance settings -->
+				<a
+					href={resolve('/settings/appearance')}
+					onclick={() => (quickOpen = false)}
+					class="flex items-center justify-center gap-2 border-t border-(--ui-border-muted) px-3.5 py-2.5 text-[12px] font-semibold text-primary-600 transition-colors hover:bg-primary-500/10 dark:text-primary-400"
+				>
+					<Icon name="lucide:palette" class="size-3.5" />
+					{t('topbar.appearanceSettings')}
+				</a>
 			</div>
 		{/snippet}
 	</Popover>

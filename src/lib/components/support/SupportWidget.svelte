@@ -156,7 +156,7 @@
 			<button
 				type="button"
 				onclick={() => selectTier(tier.sats)}
-				class="rounded-xl border p-3 text-left transition {selectedSats === tier.sats && !customSats
+				class="rounded-xl border-2 p-3 text-left transition {selectedSats === tier.sats && !customSats
 					? 'border-primary-500 bg-primary-500/8'
 					: 'border-(--ui-border-muted) hover:border-primary-500/40'}"
 			>
@@ -178,7 +178,7 @@
 			value={customSats}
 			oninput={(e) => setCustom(e.currentTarget.value)}
 			placeholder="Custom amount in sats"
-			class="min-w-0 flex-1 rounded-xl border border-(--ui-border-muted) bg-(--ui-bg-muted) px-3 py-2.5 text-[13px] font-semibold outline-none"
+			class="min-w-0 flex-1 rounded-xl border-2 border-(--ui-border-muted) bg-(--ui-bg-muted) px-3 py-2.5 text-[13px] font-semibold outline-none"
 		/>
 		<button
 			type="button"
