@@ -155,7 +155,7 @@
 			tabindex={disabled ? -1 : 0}
 			aria-label="Upload images"
 			class={cn(
-				'flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed px-4 py-5 text-center transition-colors',
+				'focus-ring flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed px-4 py-5 text-center transition-colors',
 				dragging
 					? 'border-primary-500 bg-primary-500/10'
 					: 'border-(--ui-border) bg-(--ui-bg-muted) hover:border-(--ui-border-accented) hover:bg-(--ui-bg-accented)'

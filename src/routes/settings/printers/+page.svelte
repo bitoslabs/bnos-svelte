@@ -650,7 +650,7 @@
 								min="1"
 								max="15"
 								step="1"
-								class="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-(--ui-bg-accented) accent-(--ui-color-primary-500)"
+								class="focus-ring-field h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-(--ui-bg-accented) accent-(--ui-color-primary-500)"
 							/>
 							<span class="min-w-[24px] text-center text-[11px] font-bold"
 								>{form.printDensity || 8}</span

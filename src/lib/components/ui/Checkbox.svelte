@@ -66,7 +66,7 @@
 				? 'border-(--ui-color-primary-500) bg-primary-500 text-white'
 				: 'border-(--ui-border-accented) bg-(--ui-bg-muted) text-transparent group-hover/check:border-(--ui-color-primary-500)',
 			// focus ring driven by the visually-hidden native input
-			'peer-focus-visible:ring-2 peer-focus-visible:ring-(--ui-color-primary-500) peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-(--ui-bg)'
+			'peer-focus-visible:ring-2 peer-focus-visible:ring-(--focus-ring-color) peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-(--ui-bg)'
 		)
 	);
 

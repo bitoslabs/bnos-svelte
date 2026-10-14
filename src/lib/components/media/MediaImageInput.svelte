@@ -100,7 +100,7 @@
 
 	const previewClass = $derived(
 		cn(
-			'relative grid shrink-0 place-items-center overflow-hidden border-2 border-dashed transition-colors',
+			'focus-ring relative grid shrink-0 place-items-center overflow-hidden border-2 border-dashed transition-colors',
 			preview === 'round' && 'rounded-full',
 			preview === 'square' && 'rounded-2xl',
 			preview === 'wide' && 'rounded-xl',

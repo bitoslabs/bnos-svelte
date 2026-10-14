@@ -19,7 +19,7 @@
 
 <div
 	class={cn(
-		'relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) transition-colors focus-within:border-(--ui-color-primary-500)',
+		'focus-ring-field relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) transition-colors',
 		size === 'sm' ? 'h-8 px-2.5' : 'h-9.5 px-3',
 		cls
 	)}

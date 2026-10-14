@@ -32,14 +32,14 @@
 	<textarea
 		bind:value
 		class={cn(
-			'w-full rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-2 text-[13.5px] text-(--ui-text) transition-colors placeholder:text-(--ui-text-dimmed) focus:border-(--ui-color-primary-500) focus:outline-none',
+			'focus-ring-field w-full rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-2 text-[13.5px] text-(--ui-text) transition-colors placeholder:text-(--ui-text-dimmed)',
 			cls
 		)}
 		{...rest as HTMLTextareaAttributes}></textarea>
 {:else}
 	<div
 		class={cn(
-			'inline-flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) transition-colors focus-within:border-(--ui-color-primary-500)',
+			'focus-ring-field inline-flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) transition-colors',
 			height,
 			cls
 		)}
