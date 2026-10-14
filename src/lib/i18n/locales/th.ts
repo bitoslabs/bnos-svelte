@@ -355,6 +355,7 @@ export const th = {
 		openMenu: 'เปิดเมนู',
 		closeMenu: 'ปิดเมนู',
 		viewAllRelays: 'ดูรีเลย์ทั้งหมด',
+		appearanceSettings: 'การตั้งค่าลักษณะทั้งหมด',
 		// Notification center
 		markAllRead: 'ทำเครื่องหมายว่าอ่านทั้งหมด',
 		markAsRead: 'ทำเครื่องหมายว่าอ่านแล้ว',

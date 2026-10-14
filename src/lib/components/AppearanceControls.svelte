@@ -1,7 +1,12 @@
 <script lang="ts">
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { cn } from '$lib/utils/cn';
-	import { preferences, accentOptions, densityOptions } from '$lib/theme/preferences.svelte';
+	import {
+		preferences,
+		accentOptions,
+		neutralOptions,
+		densityOptions
+	} from '$lib/theme/preferences.svelte';
 	import { setMode, userPrefersMode } from 'mode-watcher';
 	import { t } from '$lib/i18n/i18n.svelte';
 
@@ -94,6 +99,29 @@
 					{#if active}
 						<Icon name="lucide:check" class="size-3.5 text-white drop-shadow" />
 					{/if}
+				</button>
+			{/each}
+		</div>
+	</div>
+
+	<!-- Neutral palette -->
+	<div>
+		<p class="mb-2 px-0.5 text-[10px] font-bold tracking-wider text-(--ui-text-dimmed) uppercase">
+			{t('settings.neutralPalette')}
+		</p>
+		<div class="flex flex-wrap gap-1.5 px-0.5">
+			{#each neutralOptions as opt (opt.key)}
+				{@const active = preferences.state.neutral === opt.key}
+				<button
+					type="button"
+					onclick={() => preferences.setNeutral(opt.key)}
+					class="flex items-center gap-1.5 rounded-lg border-2 px-2.5 py-1 text-[11.5px] font-semibold transition-colors {active
+						? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
+						: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--interactive-hover-bg)'}"
+					title={opt.label}
+					aria-pressed={active}
+				>
+					<span class="size-3 rounded-full" style="background:{opt.hex}"></span>{opt.label}
 				</button>
 			{/each}
 		</div>

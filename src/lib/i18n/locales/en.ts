@@ -376,6 +376,7 @@ export const en = {
 		openMenu: 'Open menu',
 		closeMenu: 'Close menu',
 		viewAllRelays: 'View all relays',
+		appearanceSettings: 'All appearance settings',
 		// Notification center
 		markAllRead: 'Mark all as read',
 		markAsRead: 'Mark as read',

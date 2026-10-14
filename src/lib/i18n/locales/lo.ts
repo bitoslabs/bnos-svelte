@@ -355,6 +355,7 @@ export const lo = {
 		openMenu: 'ເປີດເມນູ',
 		closeMenu: 'ປິດເມນູ',
 		viewAllRelays: 'ເບິ່ງຣິເລທັງໝົດ',
+		appearanceSettings: 'ການຕັ້ງຄ່າຮູບແບບທັງໝົດ',
 		// Notification center
 		markAllRead: 'ໝາຍວ່າອ່ານແລ້ວທັງໝົດ',
 		markAsRead: 'ໝາຍວ່າອ່ານແລ້ວ',
