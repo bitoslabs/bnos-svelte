@@ -138,6 +138,13 @@ requestedAt expectedArrivalAt shippedAt actualArrivalAt notes`.
 bdgo-os ➕: `number description category amount currency payee status method
 occurredAt`.
 
+### income (extension) → kind 30078
+
+Non-sales income only — sales revenue stays in `commerce.order` to avoid
+double-counting the P&L.
+bdgo-os ➕: `number description category amount currency payer status method
+occurredAt`.
+
 ### coupon (extension) → kind 30078
 
 bdgo-os ➕: `code type value currency minSpend uses maxUses status expiresAt`.

@@ -4,7 +4,12 @@
 	import BnosMark from '$lib/components/BnosMark.svelte';
 	import SupportWidget from '$lib/components/support/SupportWidget.svelte';
 	import ContributorsWidget from '$lib/components/support/ContributorsWidget.svelte';
+	import FeedbackDialog from '$lib/components/support/FeedbackDialog.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import { t } from '$lib/i18n/i18n.svelte';
 	import { site, aboutLinks } from '$lib/site';
+
+	let feedbackOpen = $state(false);
 
 	const legalLinks = [
 		{
@@ -88,10 +93,21 @@
 				>
 			{/each}
 		</div>
+		<div class="mt-3 flex justify-center">
+			<Button
+				color="primary"
+				variant="soft"
+				size="sm"
+				icon="lucide:send"
+				onclick={() => (feedbackOpen = true)}>{t('feedback.button')}</Button
+			>
+		</div>
 	</section>
 
 	<section class="mt-10"><SupportWidget /></section>
 	<section class="mt-5"><ContributorsWidget /></section>
+
+	<FeedbackDialog bind:open={feedbackOpen} />
 
 	<section class="mt-10">
 		<div class="mb-3">

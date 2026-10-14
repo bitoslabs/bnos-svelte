@@ -8,18 +8,20 @@
 	import { formatMoney, formatInt } from '$lib/utils/format';
 	import { startOfDay, type DashboardOrder } from '$lib/dashboard/metrics';
 	import type { GloOrder, GloProduct } from '@bitos/bnos-core/glo';
-	import { TYPE, type Expense, type ExpenseCategory } from '$lib/domain';
+	import { TYPE, type Expense, type Income } from '$lib/domain';
 
 	// ── Data hydration ──────────────────────────────────────────────
 	onMount(() => {
 		glo.hydrate('commerce.order');
 		glo.hydrate('catalog.product');
 		glo.hydrate(TYPE.expense);
+		glo.hydrate(TYPE.income);
 	});
 
 	const orders = $derived(glo.all<GloOrder, 'commerce.order'>('commerce.order'));
 	const products = $derived(glo.all<GloProduct, 'catalog.product'>('catalog.product'));
 	const expenses = $derived(glo.all<Expense, typeof TYPE.expense>(TYPE.expense));
+	const incomes = $derived(glo.all<Income, typeof TYPE.income>(TYPE.income));
 	const currency = $derived(tenant.state.currency);
 
 	// ── Date range state ────────────────────────────────────────────
@@ -236,14 +238,28 @@
 	});
 
 	// ── Expenses & P&L ─────────────────────────────────────────────
+	// Cancelled and draft entries are excluded from totals (matching the
+	// dashboard's expenseSummary) so the P&L only counts settled money.
 	const filteredExpenses = $derived(
 		expenses.filter((e) => {
-			const t = new Date(e.data.occurredAt || 0).getTime();
-			return t >= rangeStart && t <= rangeEnd;
+			if (e.data.status === 'cancelled' || e.data.status === 'draft') return false;
+			const ms = new Date(e.data.occurredAt || 0).getTime();
+			return ms >= rangeStart && ms <= rangeEnd;
 		})
 	);
 	const totalExpenses = $derived(filteredExpenses.reduce((s, e) => s + (e.data.amount ?? 0), 0));
-	const netProfit = $derived(totalRevenue - totalExpenses);
+
+	const filteredIncome = $derived(
+		incomes.filter((e) => {
+			if (e.data.status === 'cancelled' || e.data.status === 'draft') return false;
+			const ms = new Date(e.data.occurredAt || 0).getTime();
+			return ms >= rangeStart && ms <= rangeEnd;
+		})
+	);
+	const totalIncome = $derived(filteredIncome.reduce((s, e) => s + (e.data.amount ?? 0), 0));
+
+	const netProfit = $derived(totalRevenue + totalIncome - totalExpenses);
+	const netBasis = $derived(totalRevenue + totalIncome);
 
 	const EXPENSE_CATS: Record<string, { label: string; icon: string; color: string }> = {
 		rent: { label: 'Rent', icon: 'lucide:building-2', color: '#ef4444' },
@@ -291,6 +307,9 @@
 		lines.push('# Summary');
 		lines.push('Metric,Value');
 		lines.push(`Total Revenue,${totalRevenue.toFixed(2)}`);
+		lines.push(`Other Income,${totalIncome.toFixed(2)}`);
+		lines.push(`Expenses,${totalExpenses.toFixed(2)}`);
+		lines.push(`Net Profit,${netProfit.toFixed(2)}`);
 		lines.push(`Order Count,${orderCount}`);
 		lines.push(`Average Order Value,${avgOrderValue.toFixed(2)}`);
 		lines.push(`Items Sold,${itemsSold}`);
@@ -333,6 +352,26 @@
 		lines.push('Method,Count,Total,Percent');
 		for (const p of paymentBreakdown) {
 			lines.push(`${p.label},${p.count},${p.total.toFixed(2)},${p.percent.toFixed(1)}%`);
+		}
+		lines.push('');
+
+		// Expenses
+		lines.push('# Expenses');
+		lines.push('Date,Description,Category,Amount,Currency');
+		for (const e of filteredExpenses) {
+			lines.push(
+				`"${e.data.occurredAt}",${JSON.stringify(e.data.description ?? '')},${e.data.category ?? ''},${(e.data.amount ?? 0).toFixed(2)},${e.data.currency ?? currency}`
+			);
+		}
+		lines.push('');
+
+		// Other income
+		lines.push('# Other Income');
+		lines.push('Date,Description,Category,Amount,Currency');
+		for (const e of filteredIncome) {
+			lines.push(
+				`"${e.data.occurredAt}",${JSON.stringify(e.data.description ?? '')},${e.data.category ?? ''},${(e.data.amount ?? 0).toFixed(2)},${e.data.currency ?? currency}`
+			);
 		}
 
 		// Download
@@ -466,7 +505,7 @@
 		</div>
 
 		<!-- P&L Summary -->
-		<div class="grid grid-cols-2 gap-3 lg:grid-cols-3">
+		<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
 			<div class="surface-card p-4">
 				<div class="mb-2 flex items-center justify-between">
 					<span class="text-[11.5px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase"
@@ -499,6 +538,24 @@
 			<div class="surface-card p-4">
 				<div class="mb-2 flex items-center justify-between">
 					<span class="text-[11.5px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase"
+						>{t('nav.income')}</span
+					>
+					<Icon name="lucide:hand-coins" class="size-4 text-emerald-500" />
+				</div>
+				<div
+					class="font-display text-xl font-bold text-emerald-600 tabular-nums dark:text-emerald-400"
+				>
+					{formatMoney(totalIncome, currency)}
+				</div>
+				{#if filteredIncome.length > 0}
+					<div class="mt-1 text-[11px] text-(--ui-text-dimmed)">
+						{filteredIncome.length} entries
+					</div>
+				{/if}
+			</div>
+			<div class="surface-card p-4">
+				<div class="mb-2 flex items-center justify-between">
+					<span class="text-[11.5px] font-semibold tracking-wide text-(--ui-text-dimmed) uppercase"
 						>Net Profit</span
 					>
 					<Icon
@@ -516,7 +573,7 @@
 					{formatMoney(netProfit, currency)}
 				</div>
 				<div class="mt-0.5 text-[12px] font-semibold text-(--ui-text-dimmed) tabular-nums">
-					{totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0'}% margin
+					{netBasis > 0 ? ((netProfit / netBasis) * 100).toFixed(1) : '0.0'}% margin
 				</div>
 			</div>
 		</div>

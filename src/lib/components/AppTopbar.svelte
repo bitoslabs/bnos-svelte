@@ -21,7 +21,9 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
+	import { summarizeNote } from '$lib/utils/note-markdown';
 	import { relativeTime } from '$lib/utils/format';
+	import FeedbackDialog from '$lib/components/support/FeedbackDialog.svelte';
 
 	let { onmenutoggle }: { onmenutoggle?: () => void } = $props();
 
@@ -73,9 +75,11 @@
 
 	function openNotification(n: AppNotification) {
 		notifications.markRead(n.id);
+		notifOpen = false;
 		if (n.href) {
-			notifOpen = false;
 			void goto(resolve(n.href as '/'));
+		} else {
+			void goto(resolve('/notifications/[id]', { id: String(n.id) }));
 		}
 	}
 
@@ -143,6 +147,7 @@
 	// ── Popovers ───────────────────────────────────────────────────────────
 	let quickOpen = $state(false);
 	let accountOpen = $state(false);
+	let feedbackOpen = $state(false);
 
 	async function signOut() {
 		const usesLocalKey = session.loginMethod === 'nsec';
@@ -312,11 +317,12 @@
 				{:else}
 					<ul class="max-h-72 space-y-1 overflow-y-auto pr-0.5">
 						{#each notifItems as n (n.id)}
+							{@const summary = n.description ? summarizeNote(n.description, 80) : null}
 							<li class="group relative">
 								<button
 									type="button"
 									onclick={() => openNotification(n)}
-									class="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-(--ui-bg-accented) {n.read
+									class="flex w-full items-start gap-2.5 rounded-lg py-2 pr-9 pl-2.5 text-left transition-colors hover:bg-(--ui-bg-accented) {n.read
 										? ''
 										: 'bg-primary-500/[0.06]'}"
 									title={n.href ? t('common.view') : t('topbar.markAsRead')}
@@ -335,9 +341,17 @@
 												>{n.title}</span
 											>
 										</span>
-										{#if n.description}
+										{#if summary?.media.length}
+											<span
+												class="mt-0.5 flex items-center gap-1 text-[11.5px] text-(--ui-text-dimmed)"
+											>
+												<Icon name="lucide:image" class="size-3 shrink-0" />
+												{t('notifications.mediaCount', { n: summary.media.length })}
+											</span>
+										{/if}
+										{#if summary?.text}
 											<span class="block truncate text-[11.5px] text-(--ui-text-dimmed)"
-												>{n.description}</span
+												>{summary.text}</span
 											>
 										{/if}
 										<span class="mt-0.5 block text-[10px] text-(--ui-text-dimmed)">
@@ -354,11 +368,11 @@
 								<button
 									type="button"
 									onclick={() => notifications.remove(n.id)}
-									class="absolute top-1.5 right-1.5 grid size-6 place-items-center rounded-md text-(--ui-text-dimmed) opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-(--tone-error-bg) hover:text-(--tone-error-text)"
+									class="absolute top-1.5 right-1.5 grid size-7 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--tone-error-bg) hover:text-(--tone-error-text) sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100"
 									aria-label={t('topbar.removeNotification')}
 									title={t('topbar.removeNotification')}
 								>
-									<Icon name="lucide:x" class="size-3" />
+									<Icon name="lucide:x" class="size-3.5" />
 								</button>
 							</li>
 						{/each}
@@ -673,6 +687,17 @@
 				</a>
 				<button
 					type="button"
+					onclick={() => {
+						accountOpen = false;
+						feedbackOpen = true;
+					}}
+					class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
+				>
+					<Icon name="lucide:message-square" class="size-4 text-(--ui-text-dimmed)" />
+					{t('feedback.button')}
+				</button>
+				<button
+					type="button"
 					onclick={signOut}
 					class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-(--tone-error-text) transition-colors hover:bg-(--tone-error-bg)"
 				>
@@ -682,4 +707,6 @@
 			</div>
 		{/snippet}
 	</Popover>
+
+	<FeedbackDialog bind:open={feedbackOpen} />
 </header>

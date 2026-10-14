@@ -85,6 +85,7 @@ export const routePermissions: Record<string, RoutePermission> = {
 	'/reports': { resource: 'reports', action: 'read' },
 	'/activity': { resource: 'reports', action: 'read' },
 	'/expenses': { resource: 'accounting', action: 'read' },
+	'/income': { resource: 'accounting', action: 'read' },
 	'/staff': { resource: 'staff', action: 'read' },
 	'/marketplace': { resource: 'marketplace', action: 'read' },
 	'/marketplace/listings': { resource: 'marketplace', action: 'read' },
@@ -310,7 +311,8 @@ export const navSections: NavSection[] = [
 		labelKey: 'nav.sectionInsights',
 		items: [
 			{ to: '/reports', icon: 'lucide:chart-line', label: 'Reports', labelKey: 'nav.reports' },
-			{ to: '/expenses', icon: 'lucide:wallet', label: 'Expenses', labelKey: 'nav.expenses' }
+			{ to: '/expenses', icon: 'lucide:wallet', label: 'Expenses', labelKey: 'nav.expenses' },
+			{ to: '/income', icon: 'lucide:hand-coins', label: 'Income', labelKey: 'nav.income' }
 		]
 	},
 	{

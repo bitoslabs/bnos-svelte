@@ -4,8 +4,18 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
 	import { browser } from '$app/environment';
+	import { env } from '$env/dynamic/public';
 	import { toast } from '$lib/stores/toast.svelte';
+	import {
+		getLocalOwnerNpubs,
+		parseOwnerNpubs,
+		setLocalOwnerNpubs,
+		syncOwnerNotices,
+		toHexPubkey
+	} from '$nostr/owner-feed.svelte';
 
 	const KEY = 'bnos-os:settings-notifications';
 
@@ -22,7 +32,8 @@
 		| 'membership_expiring'
 		| 'system_sync'
 		| 'system_error'
-		| 'system_update';
+		| 'system_update'
+		| 'owner_updates';
 
 	let notifySound = $state(true);
 	let notifyOrderComplete = $state(true);
@@ -41,8 +52,40 @@
 		membership_expiring: true,
 		system_sync: false,
 		system_error: true,
-		system_update: false
+		system_update: false,
+		owner_updates: true
 	});
+
+	// Keys baked in at build time via PUBLIC_OWNER_NPUBS (cannot be removed here).
+	const envNpubs = parseOwnerNpubs(env.PUBLIC_OWNER_NPUBS);
+	let npubInput = $state('');
+	let localNpubs = $state<string[]>([]);
+
+	function shortenHex(hex: string): string {
+		return hex.length > 18 ? `${hex.slice(0, 10)}…${hex.slice(-6)}` : hex;
+	}
+
+	function addOwnerNpub() {
+		const hex = toHexPubkey(npubInput);
+		if (!hex) {
+			toast.error(t('settings.ownerNpubsInvalid'));
+			return;
+		}
+		if (envNpubs.includes(hex) || localNpubs.includes(hex)) {
+			npubInput = '';
+			return;
+		}
+		localNpubs = [...localNpubs, hex];
+		setLocalOwnerNpubs(localNpubs);
+		npubInput = '';
+		toast.success(t('settings.ownerNpubsSaved'));
+		void syncOwnerNotices();
+	}
+
+	function removeOwnerNpub(hex: string) {
+		localNpubs = localNpubs.filter((h) => h !== hex);
+		setLocalOwnerNpubs(localNpubs);
+	}
 
 	onMount(() => {
 		if (!browser) return;
@@ -56,6 +99,7 @@
 		} catch {
 			/* */
 		}
+		localNpubs = getLocalOwnerNpubs();
 	});
 
 	function save() {
@@ -188,6 +232,12 @@
 					icon: 'lucide:download',
 					label: 'Updates',
 					desc: 'New app version available'
+				},
+				{
+					key: 'owner_updates',
+					icon: 'lucide:megaphone',
+					label: t('settings.ownerUpdates'),
+					desc: t('settings.ownerUpdatesDesc')
 				}
 			]
 		}
@@ -286,6 +336,67 @@
 				onCheckedChange={save}
 				label={t('settings.dailySummary')}
 			/>
+		</div>
+	</section>
+
+	<!-- Owner / system notices allow-list -->
+	<section class="surface-card divide-y divide-(--ui-border-muted)">
+		<div class="flex items-center gap-2 px-5 py-3">
+			<Icon name="lucide:megaphone" class="size-4 text-primary-500" />
+			<h2 class="font-display text-[14px] font-semibold">{t('settings.ownerNpubs')}</h2>
+		</div>
+		<div class="px-5 py-4">
+			<p class="text-[11px] text-(--ui-text-dimmed)">{t('settings.ownerNpubsDesc')}</p>
+			<div class="mt-3 flex items-end gap-2">
+				<label class="sr-only" for="owner-npub-input">{t('settings.ownerNpubs')}</label>
+				<Input
+					id="owner-npub-input"
+					bind:value={npubInput}
+					icon="lucide:key-round"
+					placeholder="npub1…"
+					class="flex-1"
+					onkeydown={(e) => {
+						if (e.key === 'Enter') addOwnerNpub();
+					}}
+				/>
+				<Button color="primary" icon="lucide:plus" onclick={addOwnerNpub}>
+					{t('common.add')}
+				</Button>
+			</div>
+			{#if envNpubs.length || localNpubs.length}
+				<ul class="mt-3 space-y-1.5">
+					{#each envNpubs as hex (hex)}
+						<li
+							class="flex items-center gap-2 rounded-lg bg-(--ui-bg-muted) px-3 py-2 text-[12px] text-(--ui-text-muted)"
+						>
+							<Icon name="lucide:shield-check" class="size-3.5 shrink-0 text-emerald-500" />
+							<span class="truncate font-mono">{shortenHex(hex)}</span>
+							<span
+								class="ml-auto rounded-full bg-(--ui-bg-accented) px-2 py-0.5 text-[10px] font-medium"
+								>{t('settings.ownerNpubsEnv')}</span
+							>
+						</li>
+					{/each}
+					{#each localNpubs as hex (hex)}
+						<li
+							class="flex items-center gap-2 rounded-lg bg-(--ui-bg-muted) px-3 py-2 text-[12px] text-(--ui-text-muted)"
+						>
+							<Icon name="lucide:key-round" class="size-3.5 shrink-0 text-primary-500" />
+							<span class="truncate font-mono">{shortenHex(hex)}</span>
+							<button
+								type="button"
+								class="focus-ring ml-auto rounded-md p-1 text-(--ui-text-dimmed) hover:text-(--tone-error-text)"
+								aria-label={t('common.remove')}
+								onclick={() => removeOwnerNpub(hex)}
+							>
+								<Icon name="lucide:x" class="size-3.5" />
+							</button>
+						</li>
+					{/each}
+				</ul>
+			{:else}
+				<p class="mt-3 text-[11px] text-(--ui-text-dimmed)">{t('settings.ownerNpubsEmpty')}</p>
+			{/if}
 		</div>
 	</section>
 

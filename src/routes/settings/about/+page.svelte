@@ -11,6 +11,9 @@
 	import { site, aboutLinks } from '$lib/site';
 	import SupportWidget from '$lib/components/support/SupportWidget.svelte';
 	import ContributorsWidget from '$lib/components/support/ContributorsWidget.svelte';
+	import FeedbackDialog from '$lib/components/support/FeedbackDialog.svelte';
+
+	let feedbackOpen = $state(false);
 
 	const buildRows = [
 		{ label: 'Version', value: `v${site.version}`, icon: 'lucide:tag' },
@@ -127,6 +130,28 @@
 	<section>
 		<ContributorsWidget />
 	</section>
+
+	<!-- Feedback -->
+	<section class="surface-card flex flex-wrap items-center justify-between gap-3 p-5">
+		<div class="min-w-0">
+			<h2 class="flex items-center gap-2 font-display text-[14px] font-semibold">
+				<Icon name="lucide:message-square" class="size-4 text-primary-500" />
+				{t('feedback.title')}
+			</h2>
+			<p class="mt-0.5 max-w-md text-[12px] text-(--ui-text-muted)">
+				{t('feedback.description')}
+			</p>
+		</div>
+		<Button
+			color="primary"
+			variant="soft"
+			size="sm"
+			icon="lucide:send"
+			onclick={() => (feedbackOpen = true)}>{t('feedback.button')}</Button
+		>
+	</section>
+
+	<FeedbackDialog bind:open={feedbackOpen} />
 
 	<!-- Version & build -->
 	<section class="surface-card divide-y divide-(--ui-border-muted)">

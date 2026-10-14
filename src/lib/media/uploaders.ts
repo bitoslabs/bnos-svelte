@@ -29,7 +29,7 @@ export type UploadedMediaProviderId = MediaProviderId | 'blossom' | 'server';
 
 /** Semantic bucket the file belongs to — drives the storage folder + validation. */
 export type UploadPurpose =
-	'product' | 'category' | 'brand' | 'logo' | 'avatar' | 'receipt' | 'test';
+	'product' | 'category' | 'brand' | 'logo' | 'avatar' | 'receipt' | 'feedback' | 'test';
 
 export interface UploadOptions {
 	/** Owner scope (the active org id). Becomes a folder segment on the server path. */
