@@ -7,6 +7,11 @@
 	 * so only one menu is open app-wide and outside-click / Escape closing is
 	 * handled globally in `+layout.svelte`. Pair with `MenuItem` + `MenuDivider`.
 	 *
+	 * The panel is positioned in JS (`position: fixed`) and clamped to the
+	 * viewport: it flips above the trigger when there is no room below, and
+	 * slides back inside the left/right edges on narrow screens, so it never
+	 * runs off-screen. `placement` is the *preferred* side/alignment only.
+	 *
 	 *   <Menu id="row-1" label={t('common.actions')} triggerClass="...">
 	 *     {#snippet trigger()}<Icon name="lucide:ellipsis-vertical" />{/snippet}
 	 *     <MenuItem icon="lucide:pencil" onclick={edit}>Edit</MenuItem>
@@ -16,13 +21,15 @@
 	 *   </Menu>
 	 */
 	export const menuPanel = tv({
-		base: 'absolute z-50 min-w-52 rounded-xl border border-(--ui-border) bg-(--surface-bg) p-1.5 shadow-(--shadow-pop) outline-none',
+		base: 'fixed z-50 max-h-[calc(100dvh-1rem)] min-w-52 max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border border-(--ui-border) bg-(--surface-bg) p-1.5 shadow-(--shadow-pop) outline-none',
 		variants: {
+			// Position is computed in JS (`place()`); the variant is kept so the
+			// `placement` prop stays typed and documented.
 			placement: {
-				'bottom-start': 'top-full left-0 mt-1.5',
-				'bottom-end': 'top-full right-0 mt-1.5',
-				'top-start': 'bottom-full left-0 mb-1.5',
-				'top-end': 'bottom-full right-0 mb-1.5'
+				'bottom-start': '',
+				'bottom-end': '',
+				'top-start': '',
+				'top-end': ''
 			},
 			width: {
 				auto: '',
@@ -71,7 +78,60 @@
 
 	const menuId = untrack(() => id) ?? `menu:${fallbackId++}`;
 	const open = $derived(popovers.isOpen(menuId));
-	const panelClass = $derived(menuPanel({ placement, width, class: cls }));
+	const panelClass = $derived(menuPanel({ width, class: cls }));
+
+	/** Gap between trigger and panel, and minimum margin to the viewport edge. */
+	const GAP = 6;
+	const MARGIN = 8;
+
+	let triggerEl = $state<HTMLButtonElement | null>(null);
+	let panelEl = $state<HTMLDivElement | null>(null);
+	let pos = $state({ top: 0, left: 0, ready: false });
+
+	/** Resolve the preferred placement, then flip/clamp so the panel fits. */
+	function place() {
+		if (!triggerEl || !panelEl) return;
+		const tr = triggerEl.getBoundingClientRect();
+		const mr = panelEl.getBoundingClientRect();
+		const vw = document.documentElement.clientWidth;
+		const vh = document.documentElement.clientHeight;
+
+		const preferTop = placement.startsWith('top');
+		const alignEnd = placement.endsWith('end');
+		const needed = mr.height + GAP + MARGIN;
+
+		const spaceBelow = vh - tr.bottom;
+		const spaceAbove = tr.top;
+		let openUp = preferTop;
+		if (preferTop && spaceAbove < needed && spaceBelow > spaceAbove) openUp = false;
+		else if (!preferTop && spaceBelow < needed && spaceAbove > spaceBelow) openUp = true;
+
+		const top = openUp ? tr.top - mr.height - GAP : tr.bottom + GAP;
+		const left = alignEnd ? tr.right - mr.width : tr.left;
+
+		pos = {
+			top: Math.min(Math.max(MARGIN, top), Math.max(MARGIN, vh - mr.height - MARGIN)),
+			left: Math.min(Math.max(MARGIN, left), Math.max(MARGIN, vw - mr.width - MARGIN)),
+			ready: true
+		};
+	}
+
+	// Position whenever the menu opens (and once the panel is measured), and
+	// keep it pinned to the trigger while the page scrolls or resizes.
+	$effect(() => {
+		if (!open) {
+			pos.ready = false;
+			return;
+		}
+		place();
+		const onReflow = () => place();
+		window.addEventListener('resize', onReflow);
+		window.addEventListener('scroll', onReflow, true);
+		return () => {
+			window.removeEventListener('resize', onReflow);
+			window.removeEventListener('scroll', onReflow, true);
+		};
+	});
 
 	function toggle(event: MouseEvent) {
 		// Stop the global window pointerdown handler from immediately re-closing.
@@ -87,6 +147,7 @@
 <div class={cn('relative inline-flex', rootClass)}>
 	<button
 		type="button"
+		bind:this={triggerEl}
 		onclick={toggle}
 		class={cn('inline-flex items-center justify-center', triggerClass, open && triggerActiveClass)}
 		aria-label={label}
@@ -97,9 +158,13 @@
 	</button>
 	{#if open}
 		<div
+			bind:this={panelEl}
 			role="menu"
 			tabindex="-1"
 			class={panelClass}
+			style:top="{pos.top}px"
+			style:left="{pos.left}px"
+			style:visibility={pos.ready ? 'visible' : 'hidden'}
 			onclick={onContentClick}
 			onkeydown={(e) => {
 				if (e.key === 'Enter' || e.key === ' ') popovers.close();
