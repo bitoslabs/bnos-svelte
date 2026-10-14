@@ -43,7 +43,7 @@
 <div class={cn('flex flex-wrap items-center gap-2', className)}>
 	<!-- search -->
 	<div
-		class="relative inline-flex min-w-[180px] flex-1 items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) transition-colors focus-within:border-(--ui-color-primary-500)"
+		class="focus-ring-field relative inline-flex min-w-[180px] flex-1 items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) transition-colors"
 	>
 		<Icon
 			name="lucide:search"
@@ -65,7 +65,7 @@
 		<!-- sort key -->
 		{#if sortItems.length > 1}
 			<div
-				class="relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
+				class="focus-ring-field relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
 			>
 				<select
 					bind:value={sortKey}

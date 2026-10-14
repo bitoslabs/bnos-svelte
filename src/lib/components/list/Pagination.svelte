@@ -47,7 +47,7 @@
 			<label class="flex items-center gap-2">
 				<span>Rows</span>
 				<div
-					class="relative inline-flex items-center rounded-md border border-(--ui-border) bg-(--ui-bg-muted)"
+					class="focus-ring-field relative inline-flex items-center rounded-md border border-(--ui-border) bg-(--ui-bg-muted)"
 				>
 					<select
 						value={controls.pageSize}

@@ -398,7 +398,7 @@
 					<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 						{#each areaTables as tbl (tbl.id)}
 							<div
-								class="relative flex min-h-[160px] cursor-pointer flex-col rounded-2xl border p-4 transition-all duration-200 select-none
+								class="focus-ring relative flex min-h-[160px] cursor-pointer flex-col rounded-2xl border p-4 transition-all duration-200 select-none
 								{openPopoverId === tbl.id
 									? 'z-30 scale-[1.02] border-transparent shadow-lg ring-2 ring-primary-500'
 									: 'hover:-translate-y-0.5 hover:shadow-md'}

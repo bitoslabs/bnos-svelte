@@ -177,7 +177,7 @@
 									<a
 										href={resolvedHref(item.to)}
 										title={navLabel(item)}
-										class="sidebar-nav-parent-link flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors {groupActive
+										class="focus-ring sidebar-nav-parent-link flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors {groupActive
 											? 'text-(--ui-text)'
 											: 'text-(--ui-text-muted) hover:text-(--ui-text)'}"
 										onclick={() => onnavigate?.()}
@@ -194,7 +194,7 @@
 										type="button"
 										onclick={() => toggleGroup(item.to)}
 										aria-label={groupExpanded ? t('sidebar.collapse') : t('sidebar.expand')}
-										class="grid size-7 shrink-0 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
+										class="focus-ring grid size-7 shrink-0 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 									>
 										<Icon
 											name="lucide:chevron-down"
@@ -213,7 +213,7 @@
 											<a
 												href={resolvedHref(child.to)}
 												title={navLabel(child)}
-												class="sidebar-nav-child nav-active group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors {childActive
+												class="focus-ring sidebar-nav-child nav-active group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors {childActive
 													? 'is-active-surface text-(--ui-text)'
 													: 'text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'}"
 												onclick={() => onnavigate?.()}
@@ -234,7 +234,7 @@
 							<a
 								href={resolvedHref(item.to)}
 								title={sidebarState.collapsed ? navLabel(item) : undefined}
-								class="app-nav-item nav-active group mb-0.5 flex items-center {sidebarState.collapsed
+								class="focus-ring app-nav-item nav-active group mb-0.5 flex items-center {sidebarState.collapsed
 									? 'justify-center px-0'
 									: 'gap-3 px-3'} rounded-lg py-2 text-[13.5px] font-medium transition-colors {active
 									? 'nav-active-on is-active-surface'

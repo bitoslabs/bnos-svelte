@@ -184,6 +184,14 @@
 		--ui-radius: 0.75rem;
 		--ui-container: 88rem;
 
+		/* macOS-style focus ring — a single tokenised ring drawn *outside* the
+		   control with a small gap so it hugs rounded corners instead of sitting
+		   on the border. Consumed by the `.focus-ring` / `.focus-ring-field`
+		   utilities and by the shared UI primitives. */
+		--focus-ring-color: color-mix(in oklab, var(--ui-color-primary-500) 45%, transparent);
+		--focus-ring-width: 3px;
+		--focus-ring-offset: 2px;
+
 		--ui-color-primary-200: var(--color-primary-200);
 		--ui-color-primary-300: var(--color-primary-300);
 		--ui-color-primary-400: var(--color-primary-400);
@@ -448,6 +456,11 @@
 	.dark {
 		--ui-radius: 0.75rem;
 		--ui-container: 88rem;
+
+		/* Focus ring reads brighter on dark fills (see the light token above). */
+		--focus-ring-color: color-mix(in oklab, var(--ui-color-primary-400) 55%, transparent);
+		--focus-ring-width: 3px;
+		--focus-ring-offset: 2px;
 
 		--ui-color-primary-200: var(--color-primary-200);
 		--ui-color-primary-300: var(--color-primary-300);
@@ -1011,6 +1024,30 @@
 		box-shadow: 0 0 0 3px color-mix(in oklab, var(--ui-color-primary-500) 35%, transparent);
 		border-color: var(--ui-color-primary-500);
 		outline: none;
+	}
+
+	/* ── Focus ring (macOS-style) ───────────────────────────────────────────
+	   One tokenised ring, drawn outside the control with a gap (outline-offset)
+	   so it follows rounded corners instead of hugging the 1px border.
+	     .focus-ring        keyboard-only  → buttons, links, menu rows
+	     .focus-ring-field  also on click  → text fields and the wrappers that
+	                                         compose them (native text inputs
+	                                         stay focused on mouse, like macOS) */
+	/* Pre-seed outline-color on the resting state. Class-based `transition-colors`
+	   (Tailwind v4) animates outline-color, so without this the ring would flash
+	   from `currentColor` (near-black text) → accent on focus. */
+	.focus-ring,
+	.focus-ring-field {
+		outline-color: var(--focus-ring-color);
+	}
+	.focus-ring:focus-visible {
+		outline: var(--focus-ring-width) solid var(--focus-ring-color);
+		outline-offset: var(--focus-ring-offset);
+	}
+	.focus-ring-field:focus,
+	.focus-ring-field:focus-within {
+		outline: var(--focus-ring-width) solid var(--focus-ring-color);
+		outline-offset: var(--focus-ring-offset);
 	}
 
 	/* ── Global density (the actual engine) ─────────────────────────────────
