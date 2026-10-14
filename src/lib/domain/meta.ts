@@ -2,7 +2,7 @@
  * UI presentation metadata: status → color, expense category options. These are
  * view-layer constants that depend on the standardized domain unions.
  */
-import type { ExpenseCategory } from './types';
+import type { ExpenseCategory, IncomeCategory } from './types';
 import { t } from '$lib/i18n/i18n.svelte';
 import { titleCase } from '$lib/utils/format';
 
@@ -87,5 +87,23 @@ export const EXPENSE_CATEGORIES: {
 	{ value: 'professional_services', label: 'Professional services', icon: 'lucide:briefcase' },
 	{ value: 'technology', label: 'Technology', icon: 'lucide:cpu' },
 	{ value: 'food_cost', label: 'Food cost', icon: 'lucide:utensils' },
+	{ value: 'other', label: 'Other', icon: 'lucide:circle-dot' }
+];
+
+/**
+ * Income category options (view layer). Non-sales income only — sales revenue
+ * lives in `commerce.order` and is never recorded here.
+ */
+export const INCOME_CATEGORIES: {
+	value: IncomeCategory;
+	label: string;
+	icon: string;
+}[] = [
+	{ value: 'interest', label: 'Interest', icon: 'lucide:percent' },
+	{ value: 'rent_received', label: 'Rent received', icon: 'lucide:building-2' },
+	{ value: 'grants', label: 'Grants', icon: 'lucide:hand-coins' },
+	{ value: 'asset_sale', label: 'Asset sale', icon: 'lucide:tag' },
+	{ value: 'supplier_refund', label: 'Supplier refund', icon: 'lucide:undo-2' },
+	{ value: 'service', label: 'Service fees', icon: 'lucide:briefcase' },
 	{ value: 'other', label: 'Other', icon: 'lucide:circle-dot' }
 ];

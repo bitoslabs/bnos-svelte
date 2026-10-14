@@ -8,6 +8,7 @@
 		value = $bindable(),
 		options,
 		size = 'md',
+		disabled = false,
 		...rest
 	}: {
 		class?: string;
@@ -15,18 +16,28 @@
 		options: { value: string | number; label: string }[];
 		size?: 'sm' | 'md';
 	} & Omit<HTMLSelectAttributes, 'size'> = $props();
+
+	/** Dim the control when nothing is selected, mirroring an empty input. */
+	const isEmpty = $derived(value === '' || value === undefined || value === null);
 </script>
 
 <div
 	class={cn(
 		'focus-ring-field relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) transition-colors',
 		size === 'sm' ? 'h-8 px-2.5' : 'h-9.5 px-3',
+		disabled
+			? 'cursor-not-allowed opacity-60'
+			: 'cursor-pointer hover:border-(--ui-border-accented)',
 		cls
 	)}
 >
 	<select
 		bind:value
-		class="min-w-0 appearance-none bg-transparent pr-5 text-[13.5px] text-(--ui-text) focus:outline-none"
+		{disabled}
+		class={cn(
+			'min-w-0 flex-1 cursor-[inherit] appearance-none truncate bg-transparent pr-6 text-[13.5px] focus:outline-none',
+			isEmpty ? 'text-(--ui-text-dimmed)' : 'text-(--ui-text)'
+		)}
 		{...rest}
 	>
 		{#each options as opt (opt.value)}

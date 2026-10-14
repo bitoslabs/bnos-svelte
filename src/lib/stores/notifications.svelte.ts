@@ -30,6 +30,15 @@ export interface AppNotification {
 	read: boolean;
 	/** Optional deep link — clicking the row navigates there. */
 	href?: string;
+	/**
+	 * Stable external identity (e.g. the source Nostr event id). When present,
+	 * a notification with the same source is never pushed twice.
+	 */
+	sourceId?: string;
+	/** Canonical category for owner/system notices (drives the chip + icon). */
+	category?: string;
+	/** Raw `#t` tags from the source event, shown as chips in the detail view. */
+	tags?: string[];
 }
 
 const STORAGE_KEY = 'bnos-os:notifications';
@@ -67,7 +76,12 @@ function fromStored(raw: unknown): AppNotification[] {
 					: 'info',
 			at: parseAt(e.at),
 			read: e.read === true,
-			href: typeof e.href === 'string' ? e.href : undefined
+			href: typeof e.href === 'string' ? e.href : undefined,
+			sourceId: typeof e.sourceId === 'string' ? e.sourceId : undefined,
+			category: typeof e.category === 'string' ? e.category : undefined,
+			tags: Array.isArray(e.tags)
+				? e.tags.filter((v): v is string => typeof v === 'string')
+				: undefined
 		});
 	}
 	return out
@@ -125,6 +139,11 @@ class NotificationStore {
 		n: Omit<AppNotification, 'id' | 'at' | 'read'> & Partial<Pick<AppNotification, 'at'>>
 	) => {
 		const at = n.at ?? Date.now();
+		// External-identity dedupe: same source event never stacks or revives.
+		if (n.sourceId) {
+			const same = this.items.find((item) => item.sourceId === n.sourceId);
+			if (same) return same.id;
+		}
 		const existing = this.items.find(
 			(item) => item.title === n.title && item.description === n.description && !item.read
 		);
@@ -142,6 +161,13 @@ class NotificationStore {
 		const item = this.items.find((n) => n.id === id);
 		if (!item || item.read) return;
 		item.read = true;
+		this.save();
+	};
+
+	markUnread = (id: number) => {
+		const item = this.items.find((n) => n.id === id);
+		if (!item || !item.read) return;
+		item.read = false;
 		this.save();
 	};
 

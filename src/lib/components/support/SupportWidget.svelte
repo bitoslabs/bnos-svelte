@@ -5,13 +5,13 @@
 	import QrCode from '$lib/components/ui/QrCode.svelte';
 	import { fetchEvents } from '$nostr/client';
 	import { NOSTR_KINDS, type NostrEvent } from '@bitos/bnos-core';
+	import { SUPPORT_NPUB, site } from '$lib/site';
 
 	type Props = { compact?: boolean };
 	let { compact = false }: Props = $props();
 
 	/** BNOS project account. Donations go directly to its published Lightning address. */
-	const SUPPORT_NPUB = 'npub1e65vutc5cfgutyvjetu5wp3ael48asklchtrut8m2svtt4lxdp4sruf0pk';
-	const SUPPORT_PROFILE_URL = `https://social.bitos.space/profile/${SUPPORT_NPUB}`;
+	const SUPPORT_PROFILE_URL = site.support.profileUrl;
 	const tiers = [
 		{ label: 'Coffee', sats: 1000 },
 		{ label: 'Builder', sats: 5000, recommended: true },

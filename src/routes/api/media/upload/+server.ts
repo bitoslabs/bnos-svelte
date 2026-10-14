@@ -13,7 +13,16 @@ import { signCloudinaryRequest } from '$lib/media/uploaders';
  * Folder layout: `<BNOS_CLOUDINARY_FOLDER>/bnos/<owner|anonymous>/<purpose>`
  */
 const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
-const PURPOSES = new Set(['product', 'category', 'brand', 'logo', 'avatar', 'receipt', 'test']);
+const PURPOSES = new Set([
+	'product',
+	'category',
+	'brand',
+	'logo',
+	'avatar',
+	'receipt',
+	'feedback',
+	'test'
+]);
 
 function cloudinaryConfig() {
 	const cloudName = env.BNOS_CLOUDINARY_CLOUD_NAME?.trim() ?? '';

@@ -32,6 +32,7 @@
 	import BootSplash from '$lib/components/ui/BootSplash.svelte';
 	import { popovers } from '$lib/stores/popovers.svelte';
 	import { startSystemNotifications } from '$lib/stores/notifications.svelte';
+	import { startOwnerFeed } from '$nostr/owner-feed.svelte';
 	import { permissionForPath } from '$lib/nav';
 	import { permissions } from '$lib/permissions.svelte';
 	import favicon from '$lib/assets/favicon.svg';
@@ -71,6 +72,9 @@
 		// Wire relay/sync system events into the notification center (idempotent;
 		// the topbar + /notifications page hydrate the persisted feed themselves).
 		startSystemNotifications();
+		// Owner/system notices from allow-listed npubs (PUBLIC_OWNER_NPUBS + local
+		// trusted keys). Idempotent and a no-op when no allow-list is configured.
+		startOwnerFeed();
 		session.load();
 		tenant.load();
 		profile.load();

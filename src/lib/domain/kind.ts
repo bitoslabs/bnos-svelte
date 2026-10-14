@@ -51,6 +51,7 @@ export const TYPE = {
 	purchaseOrder: 'purchase-order',
 	stockTransfer: 'stock-transfer',
 	expense: 'expense',
+	income: 'income',
 	coupon: 'coupon',
 	promotion: 'promotion',
 	loyaltyPoints: 'loyalty-points',

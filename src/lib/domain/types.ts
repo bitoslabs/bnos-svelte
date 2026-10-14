@@ -826,6 +826,30 @@ export interface Expense {
 	occurredAt: string;
 }
 
+/**
+ * Income categories — deliberately **non-sales only**. Sales revenue is already
+ * the source of truth in `commerce.order`; re-keying it here would double-count
+ * it in the P&L, so no "product sales" category exists.
+ */
+export type IncomeCategory =
+	'interest' | 'rent_received' | 'grants' | 'asset_sale' | 'supplier_refund' | 'service' | 'other';
+
+/** Other (non-sales) income — mirrors {@link Expense} with a `payer`. */
+export interface Income {
+	number: string;
+	description: string;
+	category: IncomeCategory;
+	amount: number;
+	currency: string;
+	payer?: string;
+	status: ExpenseStatus;
+	method?: 'cash' | 'bank' | 'card' | 'other';
+	reference?: string;
+	branchId?: string;
+	approvedBy?: string;
+	occurredAt: string;
+}
+
 // ════════════════════════════════════════════════════════════════════
 // STAFF OPS: SHIFT / CASH EVENT (extension types → 30078)
 // ════════════════════════════════════════════════════════════════════

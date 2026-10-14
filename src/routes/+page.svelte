@@ -15,6 +15,7 @@
 		toOrderRows,
 		metricsSummary,
 		expenseSummary,
+		incomeSummary,
 		lowStockSummary,
 		buildHourly,
 		buildChartBars,
@@ -25,7 +26,7 @@
 		type DashboardOrder
 	} from '$lib/dashboard/metrics';
 	import { TYPE } from '$lib/domain';
-	import type { Expense } from '$lib/domain/types';
+	import type { Expense, Income } from '$lib/domain/types';
 	import type { GloProduct, GloCustomer } from '@bitos/bnos-core/glo';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
@@ -70,7 +71,7 @@
 	onMount(() => {
 		// Dashboard leads with CORE data; also hydrate expenses (secondary) so the
 		// net-profit card has local-cache data the moment background sync runs.
-		dataSync.hydrate([...CORE_DATA_TYPES, TYPE.expense]);
+		dataSync.hydrate([...CORE_DATA_TYPES, TYPE.expense, TYPE.income]);
 
 		void (async () => {
 			await waitForHydration();
@@ -151,9 +152,15 @@
 
 	const m = $derived(metricsSummary(rows));
 	const expenses = $derived(glo.all<Expense, typeof TYPE.expense>(TYPE.expense));
+	const incomes = $derived(glo.all<Income, typeof TYPE.income>(TYPE.income));
 	const exp = $derived(expenseSummary(expenses));
-	const netProfitToday = $derived(m.todaysTotal - exp.todaysTotal);
-	const marginToday = $derived(m.todaysTotal > 0 ? (netProfitToday / m.todaysTotal) * 100 : 0);
+	const inc = $derived(incomeSummary(incomes));
+	const netProfitToday = $derived(m.todaysTotal + inc.todaysTotal - exp.todaysTotal);
+	const marginToday = $derived(
+		m.todaysTotal + inc.todaysTotal > 0
+			? (netProfitToday / (m.todaysTotal + inc.todaysTotal)) * 100
+			: 0
+	);
 	const hourly = $derived(buildHourly(rows));
 	const chartBars = $derived(buildChartBars(rows));
 	const payments = $derived(paymentBreakdown(todayRows));
@@ -712,7 +719,10 @@
 					<div class="text-[11px] text-(--ui-text-muted)">
 						{t('dashboard.expensesToday')}
 						{formatMoney(exp.todaysTotal, currency)}
-						{#if m.todaysTotal > 0}
+						{#if inc.todaysTotal > 0}
+							· {t('nav.income')} {formatMoney(inc.todaysTotal, currency)}
+						{/if}
+						{#if m.todaysTotal + inc.todaysTotal > 0}
 							· {t('dashboard.margin')} {marginToday.toFixed(0)}%
 						{/if}
 					</div>

@@ -8,6 +8,9 @@
 
 import { version } from '../../package.json';
 
+/** BNOS project account — donations and feedback are addressed here. */
+export const SUPPORT_NPUB = 'npub1e65vutc5cfgutyvjetu5wp3ael48asklchtrut8m2svtt4lxdp4sruf0pk';
+
 export const site = {
 	name: 'BNOS',
 	fullName: 'Bitcoin Network Operations System',
@@ -45,6 +48,12 @@ export const site = {
 	/** Nostr / NIPs reference. */
 	nostr: {
 		nips: 'https://github.com/nostr-protocol/nips'
+	},
+
+	/** Project support account (donations + encrypted feedback). */
+	support: {
+		npub: SUPPORT_NPUB,
+		profileUrl: `https://social.bitos.space/profile/${SUPPORT_NPUB}`
 	}
 } as const;
 

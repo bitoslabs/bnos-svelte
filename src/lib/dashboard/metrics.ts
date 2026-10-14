@@ -332,24 +332,27 @@ export function greeting(): string {
 	return 'Good evening';
 }
 
-// ── Net profit (revenue minus expenses) ────────────────────────────────────
+// ── Net profit (revenue + other income minus expenses) ─────────────────────
 
-export interface ExpenseSummary {
+export interface LedgerSummary {
 	todaysTotal: number;
 	weekTotal: number;
 	monthTotal: number;
 }
 
-/** Sum non-cancelled, non-draft expenses by period. `occurredAt` is ISO. */
-export function expenseSummary(
-	expenses: { data: Pick<Expense, 'amount' | 'occurredAt' | 'status'> }[]
-): ExpenseSummary {
+/** @deprecated alias kept for existing callers. */
+export type ExpenseSummary = LedgerSummary;
+
+type LedgerRow = { data: Pick<Expense, 'amount' | 'occurredAt' | 'status'> };
+
+/** Sum non-cancelled, non-draft ledger rows by period. `occurredAt` is ISO. */
+function ledgerSummary(items: LedgerRow[]): LedgerSummary {
 	const now = new Date();
 	const todayStart = startOfDay(now);
 	const weekStart = startOfWeek(now);
 	const monthStart = startOfMonth(now);
-	const out: ExpenseSummary = { todaysTotal: 0, weekTotal: 0, monthTotal: 0 };
-	for (const e of expenses) {
+	const out: LedgerSummary = { todaysTotal: 0, weekTotal: 0, monthTotal: 0 };
+	for (const e of items) {
 		const status = e.data.status;
 		if (status === 'cancelled' || status === 'draft') continue;
 		const ms = new Date(e.data.occurredAt).getTime();
@@ -360,6 +363,16 @@ export function expenseSummary(
 		if (ms >= todayStart) out.todaysTotal += amount;
 	}
 	return out;
+}
+
+/** Sum non-cancelled, non-draft expenses by period. */
+export function expenseSummary(expenses: LedgerRow[]): LedgerSummary {
+	return ledgerSummary(expenses);
+}
+
+/** Sum non-cancelled, non-draft other income by period. */
+export function incomeSummary(incomes: LedgerRow[]): LedgerSummary {
+	return ledgerSummary(incomes);
 }
 
 // ── Inventory low-stock alerts ─────────────────────────────────────────────
