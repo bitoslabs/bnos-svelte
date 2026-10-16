@@ -5,6 +5,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import BnosMark from '$lib/components/BnosMark.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -34,10 +35,14 @@
 		relays.load();
 	});
 
-	// Guard: setup requires a session.
+	// Guard: setup requires a session, and unknown steps fall back to the start.
 	$effect(() => {
 		if (session.hydrated && !session.isAuthenticated) {
 			void goto(resolve('/login'), { replaceState: true });
+			return;
+		}
+		if (!isWelcome && !isDone && idx === -1) {
+			void goto(resolve('/setup/identity'), { replaceState: true });
 		}
 	});
 
@@ -80,7 +85,7 @@
 	 *  step — hide the stepper, progress bar and footer nav there. */
 	const isWelcome = $derived(page.url.pathname === '/setup' || page.url.pathname === '/setup/');
 	const idx = $derived(stepIndex(currentSlug));
-	const progress = $derived(((idx + 1) / setupSteps.length) * 100);
+	const progress = $derived(idx < 0 ? 0 : ((idx + 1) / setupSteps.length) * 100);
 	const currentStep = $derived(setupSteps[idx]);
 	const isDone = $derived(currentSlug === 'done');
 	const isOptionalStep = $derived(currentSlug === 'catalog');
@@ -102,6 +107,11 @@
 				? 'Create workspace'
 				: 'Next'
 	);
+
+	function jumpTo(slug: (typeof setupSteps)[number]['slug']) {
+		if (creatingWorkspace) return;
+		void goto(resolve(`/setup/${slug}`));
+	}
 
 	async function go(delta: number) {
 		if (delta > 0 && blockedReason) {
@@ -128,7 +138,7 @@
 
 <div class="mx-auto flex h-dvh w-full max-w-5xl flex-col overflow-hidden px-4 py-5 sm:px-6 lg:py-8">
 	<!-- Header -->
-	<header class="mb-6 flex items-center justify-between">
+	<header class="mb-5 flex items-center justify-between">
 		<a href={resolve('/')} class="flex items-center gap-2.5">
 			<div
 				class="grid size-9 place-items-center rounded-xl bg-[linear-gradient(135deg,#16141f,#0a0a0f)] ring-1 ring-white/10"
@@ -139,11 +149,11 @@
 		</a>
 
 		<div class="flex items-center gap-1.5">
-			{#if !isWelcome}
+			{#if !isWelcome && idx >= 0}
 				<span
-					class="mr-2 hidden text-[11px] font-semibold tracking-wider text-[var(--ui-text-dimmed)] uppercase sm:inline"
+					class="mr-2 hidden text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase sm:inline"
 				>
-					Setup · step {idx + 1} of {setupSteps.length}
+					Setup
 				</span>
 			{/if}
 
@@ -197,18 +207,13 @@
 		</div>
 	</header>
 
-	<!-- Progress bar -->
-	{#if !isWelcome}
-		<div class="mb-8 space-y-2">
-			<div class="flex items-end justify-between gap-4">
-				<div>
-					<div class="text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
-						{currentStep?.label}
-					</div>
-					<div class="text-[13px] text-(--ui-text-muted)">{currentStep?.description}</div>
-				</div>
-				<div class="text-[12px] font-semibold text-(--ui-text-muted)">
-					{Math.round(progress)}%
+	<!-- Progress -->
+	{#if !isWelcome && idx >= 0}
+		<div class="mb-6 space-y-2">
+			<div class="flex items-baseline justify-between gap-4">
+				<div class="text-[13px] font-semibold text-(--ui-text)">{currentStep?.label}</div>
+				<div class="text-[12px] font-medium text-(--ui-text-muted) tabular-nums">
+					Step {idx + 1} of {setupSteps.length} · {Math.round(progress)}%
 				</div>
 			</div>
 			<div class="h-1.5 w-full overflow-hidden rounded-full bg-(--ui-bg-accented)">
@@ -222,31 +227,42 @@
 
 	<div class="flex min-h-0 flex-1 gap-8">
 		<!-- Stepper rail -->
-		{#if !isWelcome}
+		{#if !isWelcome && idx >= 0}
 			<aside class="hidden w-56 shrink-0 overflow-y-auto pb-4 md:block">
 				<ol class="sticky top-0 flex flex-col gap-1">
 					{#each setupSteps as step, i (step.slug)}
 						{@const done = i < idx}
 						{@const active = i === idx}
 						<li>
-							<div
-								class="flex items-center gap-3 rounded-lg px-3 py-2 {active
-									? 'is-active-surface'
-									: done
-										? 'text-(--ui-text-muted)'
-										: 'text-(--ui-text-dimmed)'}"
-							>
-								<span
-									class="grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-bold {active
-										? 'bg-primary-500 text-white'
-										: done
-											? 'bg-primary-500/15 text-primary-600 dark:text-primary-400'
-											: 'bg-(--ui-bg-accented)'}"
+							{#if done}
+								<button
+									type="button"
+									onclick={() => jumpTo(step.slug)}
+									class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 								>
-									{#if done}<Icon name="lucide:check" class="size-3.5" />{:else}{i + 1}{/if}
-								</span>
-								<span class="text-[13px] font-semibold">{step.label}</span>
-							</div>
+									<span
+										class="grid size-6 shrink-0 place-items-center rounded-full bg-primary-500/15 text-primary-600 dark:text-primary-400"
+									>
+										<Icon name="lucide:check" class="size-3.5" />
+									</span>
+									<span class="text-[13px] font-semibold">{step.label}</span>
+								</button>
+							{:else}
+								<div
+									class="flex items-center gap-3 rounded-lg px-3 py-2 {active
+										? 'is-active-surface'
+										: 'text-(--ui-text-dimmed)'}"
+								>
+									<span
+										class="grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-bold {active
+											? 'bg-primary-500 text-white'
+											: 'bg-(--ui-bg-accented)'}"
+									>
+										{i + 1}
+									</span>
+									<span class="text-[13px] font-semibold">{step.label}</span>
+								</div>
+							{/if}
 						</li>
 					{/each}
 				</ol>
@@ -256,9 +272,15 @@
 		<!-- Step content -->
 		<div class="flex min-w-0 flex-1 flex-col overflow-hidden">
 			<div class="min-h-0 flex-1 overflow-y-auto pb-4 md:pr-1">
-				<div class="surface-card animate-rise p-6 sm:p-8">
-					{@render children()}
-				</div>
+				{#if isWelcome}
+					<div class="flex min-h-full items-center justify-center">
+						{@render children()}
+					</div>
+				{:else}
+					<div class="surface-card animate-rise p-6 sm:p-8">
+						{@render children()}
+					</div>
+				{/if}
 			</div>
 
 			{#if !isDone && !isWelcome}
@@ -266,14 +288,15 @@
 				<div
 					class="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 border-t border-(--ui-border-muted) bg-(--ui-bg) pt-4 pb-1 sm:flex-row sm:items-center sm:justify-between"
 				>
-					<button
-						type="button"
-						class="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented) disabled:opacity-40"
+					<Button
+						color="neutral"
+						variant="ghost"
+						icon="lucide:arrow-left"
 						onclick={() => go(-1)}
 						disabled={idx <= 0}
 					>
-						<Icon name="lucide:arrow-left" class="size-4" /> Back
-					</button>
+						Back
+					</Button>
 					<div class="flex flex-col items-stretch gap-2 sm:items-end">
 						{#if blockedReason}
 							<div class="flex items-center gap-1.5 text-[12px] text-(--tone-error-text)">
@@ -283,15 +306,16 @@
 						{:else if isOptionalStep}
 							<div class="text-[12px] text-(--ui-text-dimmed)">Samples are optional.</div>
 						{/if}
-						<button
-							type="button"
-							class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-[13px] font-semibold text-white hover:bg-primary-400 disabled:opacity-40"
+						<Button
+							color="primary"
+							trailingIcon={creatingWorkspace ? undefined : 'lucide:arrow-right'}
+							icon={creatingWorkspace ? 'lucide:loader-circle' : undefined}
+							class={creatingWorkspace ? '[&_svg]:animate-spin' : ''}
 							onclick={() => go(1)}
 							disabled={!canProceed || creatingWorkspace}
 						>
-							{nextLabel}
-							<Icon name="lucide:arrow-right" class="size-4" />
-						</button>
+							{creatingWorkspace ? 'Creating…' : nextLabel}
+						</Button>
 					</div>
 				</div>
 			{/if}
