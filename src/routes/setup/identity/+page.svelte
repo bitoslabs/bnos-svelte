@@ -17,7 +17,7 @@
 		</p>
 	</div>
 
-	<div class="surface-card flex items-center gap-4 p-4">
+	<div class="metric-card flex items-center gap-4 p-4">
 		<div
 			class="grid size-12 shrink-0 place-items-center rounded-xl bg-primary-500/10 text-primary-600 dark:text-primary-400"
 		>
@@ -32,17 +32,17 @@
 	</div>
 
 	<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-		<div class="surface-card p-4">
+		<div class="metric-card p-4">
 			<Icon name="lucide:shield-check" class="mb-2 size-5 text-primary-500" />
 			<div class="text-[13px] font-semibold">Self-custodial</div>
 			<p class="mt-0.5 text-[12px] text-(--ui-text-muted)">Your keys never leave this device.</p>
 		</div>
-		<div class="surface-card p-4">
+		<div class="metric-card p-4">
 			<Icon name="lucide:radio" class="mb-2 size-5 text-primary-500" />
 			<div class="text-[13px] font-semibold">Relay-native</div>
 			<p class="mt-0.5 text-[12px] text-(--ui-text-muted)">Records sync over Nostr relays.</p>
 		</div>
-		<div class="surface-card p-4">
+		<div class="metric-card p-4">
 			<Icon name="lucide:wifi-off" class="mb-2 size-5 text-primary-500" />
 			<div class="text-[13px] font-semibold">Offline-first</div>
 			<p class="mt-0.5 text-[12px] text-(--ui-text-muted)">Keep selling with no connection.</p>

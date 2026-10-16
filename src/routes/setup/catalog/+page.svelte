@@ -9,13 +9,9 @@
 	import { formatInt, formatMoney } from '$lib/utils/format';
 	import type { GloProduct } from '@bitos/bnos-core/glo';
 
-	let count = $state(0);
-
-	// `glo.all()` hydrates IndexedDB asynchronously; keep the count reactive so
-	// existing products appear after hydration instead of showing a false zero.
-	$effect(() => {
-		count = glo.all<GloProduct, 'catalog.product'>('catalog.product').length;
-	});
+	// `glo.all()` is reactive and hydrates IndexedDB asynchronously, so a derived
+	// count updates after hydration instead of showing a false zero.
+	const count = $derived(glo.all<GloProduct, 'catalog.product'>('catalog.product').length);
 
 	const SAMPLE = $derived(
 		seedForType(tenant.state.businessType).map((p) => ({
@@ -45,7 +41,7 @@
 		</p>
 	</div>
 
-	<div class="surface-card flex items-center justify-between p-4">
+	<div class="metric-card flex items-center justify-between p-4">
 		<div class="flex items-center gap-3">
 			<div
 				class="grid size-10 place-items-center rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400"

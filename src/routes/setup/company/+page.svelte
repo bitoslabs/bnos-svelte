@@ -155,7 +155,7 @@
 	</label>
 
 	<!-- Tax -->
-	<div class="surface-card grid grid-cols-1 gap-4 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
+	<div class="metric-card grid grid-cols-1 gap-4 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
 		<div>
 			<span class="text-[12px] font-semibold text-(--ui-text-muted)">Sales tax</span>
 			<p class="mt-0.5 text-[11.5px] text-(--ui-text-dimmed)">
@@ -165,24 +165,24 @@
 			</p>
 		</div>
 		<div class="flex items-center gap-4">
-			<label class="flex items-center gap-2 text-[12.5px] font-semibold text-(--ui-text-muted)">
-				<Input
-					bind:value={tenant.state.defaultTaxRate}
-					type="number"
-					icon="lucide:percent"
-					min="0"
-					max="100"
-					step="0.5"
-					class="w-24"
-				/>
-			</label>
-			<label class="flex items-center gap-2 text-[12.5px] font-semibold text-(--ui-text-muted)">
+			<Input
+				bind:value={tenant.state.defaultTaxRate}
+				type="number"
+				icon="lucide:percent"
+				aria-label="Default tax rate"
+				min="0"
+				max="100"
+				step="0.5"
+				class="w-24"
+			/>
+			<div class="flex items-center gap-2 text-[12.5px] font-semibold text-(--ui-text-muted)">
 				<Switch
+					label="Tax included in price"
 					checked={tenant.state.taxIncludedInPrice}
 					onCheckedChange={(v) => tenant.configure({ taxIncludedInPrice: v })}
 				/>
-				Included
-			</label>
+				<span>Included</span>
+			</div>
 		</div>
 	</div>
 
