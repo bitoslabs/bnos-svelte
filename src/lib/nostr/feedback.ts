@@ -79,7 +79,10 @@ export function feedbackRecipients(): string[] {
 async function recipientInboxRelays(pubkey: string): Promise<string[]> {
 	const events = await fetchEvents({ kinds: [KIND_DM_RELAYS], authors: [pubkey] });
 	if (!events.length) return [];
-	const latest = events.sort((a, b) => b.created_at - a.created_at)[0];
+	let latest = events[0]!;
+	for (const event of events) {
+		if (event.created_at > latest.created_at) latest = event;
+	}
 	const urls = new Set<string>();
 	for (const tag of latest.tags) {
 		if (tag[0] === 'relay' && typeof tag[1] === 'string' && tag[1].startsWith('wss://')) {

@@ -12,9 +12,11 @@
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import { session, hasNip07Extension } from '$nostr/session.svelte';
+	import { createAuthSnapshotFromPrivateKey } from '@bitos/bnos-core';
 	import { profile } from '$nostr/profile.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { glo } from '$nostr/store.svelte';
+	import { clearBootstrap } from '$nostr/auth-bootstrap';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { truncateNpub, initialsFrom, titleCase } from '$lib/utils/format';
 
@@ -111,17 +113,29 @@
 	let importOpen = $state(false);
 	let importKey = $state('');
 
-	function doImport() {
+	/** Switching keys must not leak the previous identity's workspace. */
+	async function clearIdentityState() {
+		await session.logout();
+		tenant.reset();
+		glo.clearAll();
+		profile.reset();
+		clearBootstrap();
+	}
+
+	async function doImport() {
 		const k = importKey.trim();
 		if (!k) return toast.warning(t('settings.toastPasteKey'));
 		try {
-			const s = session.loginWithNsec(k);
-			toast.success(t('settings.toastPublished'), truncateNpub(s.npub, 10, 6));
-			importOpen = false;
-			importKey = '';
+			createAuthSnapshotFromPrivateKey(k);
 		} catch (e) {
-			toast.error(t('settings.toastInvalidKey'), e instanceof Error ? e.message : undefined);
+			return toast.error(t('settings.toastInvalidKey'), e instanceof Error ? e.message : undefined);
 		}
+		await clearIdentityState();
+		const s = session.loginWithNsec(k);
+		toast.success(t('settings.toastPublished'), truncateNpub(s.npub, 10, 6));
+		importOpen = false;
+		importKey = '';
+		await goto(resolve('/resolve'), { replaceState: true });
 	}
 
 	let createOpen = $state(false);
@@ -134,21 +148,36 @@
 		createOpen = true;
 	}
 
-	function confirmCreate() {
+	async function confirmCreate() {
 		if (!pending) return;
 		if (!backedUp) return toast.warning(t('settings.toastConfirmBackup'));
-		session.loginWithNsec(pending.nsec);
-		toast.success(t('settings.toastIdentityCreated'), truncateNpub(pending.npub, 10, 6));
+		const account = pending;
 		createOpen = false;
 		pending = null;
+		await clearIdentityState();
+		session.loginWithNsec(account.nsec);
+		toast.success(t('settings.toastIdentityCreated'), truncateNpub(account.npub, 10, 6));
+		// A brand-new identity always starts onboarding — never the resolve screen.
+		await goto(resolve('/setup/identity'), { replaceState: true });
 	}
 
 	let connecting = $state(false);
 	async function connectExtension() {
 		connecting = true;
 		try {
+			const previous = session.pubkey;
 			const s = await session.loginWithExtension();
+			// Only reset identity-scoped state once the extension has actually
+			// returned a (possibly different) key, so a rejected prompt cannot
+			// sign the current user out.
+			if (previous && previous !== s.pubkey) {
+				tenant.reset();
+				glo.clearAll();
+				profile.reset();
+				clearBootstrap();
+			}
 			toast.success(t('settings.connected'), truncateNpub(s.npub, 10, 6));
+			if (previous !== s.pubkey) await goto(resolve('/resolve'), { replaceState: true });
 		} catch (e) {
 			toast.error('Extension sign-in failed', e instanceof Error ? e.message : undefined);
 		} finally {

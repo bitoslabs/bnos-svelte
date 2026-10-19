@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
@@ -23,7 +24,7 @@
 		tenant.reset();
 		glo.clearAll();
 		toast.info('Signed out');
-		await goto('/login', { replaceState: true });
+		await goto(resolve('/login'), { replaceState: true });
 	}
 </script>
 

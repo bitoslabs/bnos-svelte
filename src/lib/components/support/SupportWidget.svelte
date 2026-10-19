@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- external support URLs */
 	import { onMount } from 'svelte';
 	import { decode } from 'nostr-tools/nip19';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -156,7 +157,8 @@
 			<button
 				type="button"
 				onclick={() => selectTier(tier.sats)}
-				class="rounded-xl border-2 p-3 text-left transition {selectedSats === tier.sats && !customSats
+				class="rounded-xl border-2 p-3 text-left transition {selectedSats === tier.sats &&
+				!customSats
 					? 'border-primary-500 bg-primary-500/8'
 					: 'border-(--ui-border-muted) hover:border-primary-500/40'}"
 			>

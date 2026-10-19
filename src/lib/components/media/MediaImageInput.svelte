@@ -27,6 +27,7 @@
 
 	let {
 		value = $bindable(),
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars -- retained component API
 		purpose,
 		accept = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml',
 		maxBytes = 5 * 1024 * 1024,
@@ -74,7 +75,7 @@
 		}
 		uploading = true;
 		try {
-			const result = await media.upload(file, undefined, { purpose });
+			const result = await media.upload(file, undefined);
 			value = result.url;
 			toast.success('Image uploaded', humanBytes(result.bytes));
 		} catch (e) {

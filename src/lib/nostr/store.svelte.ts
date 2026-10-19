@@ -51,6 +51,16 @@ import { tenant } from './tenant.svelte';
 import { fetchEvents, fetchEventsPrimaryFirst, sendEvent } from './client';
 import { verifyEvent } from 'nostr-tools/pure';
 import { encryptGloObject, decryptGloEvent, shouldEncryptType } from '$lib/crypto/glo-cipher';
+import { mergeHydratedCollection } from './collection-merge';
+import { mapLimit } from '$lib/utils/async';
+import {
+	clearAllDeletions,
+	clearDeletion,
+	invalidateTombstones,
+	isTombstoned,
+	recordDeletion,
+	tombstonesFor
+} from './deletions';
 
 const STORAGE_PREFIX = 'bnos-os:glo:';
 const PUBLISH_QUEUE_KEY = 'bnos-os:glo:publish-queue';
@@ -85,7 +95,10 @@ type QueuedPublish = {
 
 /** Remove the in-memory Nostr event before serializing a GLO object. */
 function withoutEphemeralEvent(object: AnyGloObject): AnyGloObject {
-	const { __event: _event, __eventId: _eventId, __eventCreatedAt: _createdAt, ...plain } = object;
+	const plain = { ...object };
+	delete plain.__event;
+	delete plain.__eventId;
+	delete plain.__eventCreatedAt;
 	return plain;
 }
 
@@ -126,7 +139,7 @@ function appKindForType(type: string) {
 /** Cryptographically validate a Nostr event (id + Schnorr sig). Never throws. */
 function safeVerify(ev: NostrEvent): boolean {
 	try {
-		return verifyEvent(ev as any);
+		return verifyEvent(ev);
 	} catch {
 		return false;
 	}
@@ -245,9 +258,30 @@ async function writeLocal(type: string, items: AnyGloObject[]) {
 		// Strip Svelte $state proxies — IndexedDB structured clone can't handle them.
 		const plain = JSON.parse(JSON.stringify(items, (k, v) => (k === '__event' ? undefined : v)));
 		await idbSet(STORAGE_PREFIX + type, plain);
-	} catch (e) {
+	} catch {
 		/* best effort */
 	}
+}
+
+// Coalesce persistence for mutations that happen in the same tick (batch
+// imports, parallel checkout updates). Serializing a large collection on every
+// single upsert is the most expensive part of a local write.
+const pendingWrites: Record<string, AnyGloObject[]> = {};
+let writeScheduled = false;
+
+async function flushLocalWrites() {
+	writeScheduled = false;
+	const batch = Object.entries(pendingWrites);
+	for (const type of Object.keys(pendingWrites)) delete pendingWrites[type];
+	await Promise.all(batch.map(([type, items]) => writeLocal(type, items)));
+}
+
+function scheduleLocalWrite(type: string, items: AnyGloObject[]) {
+	if (!browser) return;
+	pendingWrites[type] = items;
+	if (writeScheduled) return;
+	writeScheduled = true;
+	void Promise.resolve().then(flushLocalWrites);
 }
 
 async function readPublishQueue(): Promise<QueuedPublish[]> {
@@ -272,7 +306,7 @@ async function writePublishQueue(items: QueuedPublish[]) {
 			PUBLISH_QUEUE_KEY,
 			JSON.parse(JSON.stringify(items, (key, value) => (key === '__event' ? undefined : value)))
 		);
-	} catch (e) {
+	} catch {
 		/* best effort */
 	}
 }
@@ -299,6 +333,34 @@ class ReactiveCollections {
 	private _map = $state<Record<string, AnyGloObject[]>>({});
 	private _hydrated = new Set<string>();
 	private _hydrating = new Set<string>();
+	/** IDs removed locally while the IndexedDB read was still in flight. */
+	private _removedWhileHydrating: Record<string, Record<string, true>> = {};
+	/** Bumped on clearAll so in-flight reads cannot repopulate a cleared store. */
+	private _generation = 0;
+
+	private finishHydration(type: string, loaded: AnyGloObject[], generation: number) {
+		this._hydrating.delete(type);
+		if (generation !== this._generation) return;
+		// A local mutation may have marked the type hydrated already (e.g. a
+		// cross-tab reload). Never overwrite newer in-memory state.
+		if (this._hydrated.has(type)) return;
+
+		const local = this._map[type];
+		let items = loaded;
+		if (local) {
+			// A write happened before the read completed: merge it over the
+			// stored snapshot instead of dropping either side.
+			items = mergeHydratedCollection(local, loaded, this._removedWhileHydrating[type]);
+			scheduleLocalWrite(type, items);
+		}
+
+		delete this._removedWhileHydrating[type];
+		this._hydrated.add(type);
+		this._map[type] = items;
+		// Bump version to signal hydration completed (for components that need
+		// to know when initial data has arrived).
+		if (gloInstance) gloInstance.bump();
+	}
 
 	/** Ensure a type is loaded from IndexedDB into the reactive proxy.
 	 *  Safe to call inside $derived — if not yet hydrated, schedules async
@@ -307,25 +369,13 @@ class ReactiveCollections {
 	hydrate(type: string) {
 		if (this._hydrated.has(type) || this._hydrating.has(type)) return;
 		this._hydrating.add(type);
+		const generation = this._generation;
 
 		// Fire async hydration — when it completes, update $state which
 		// triggers any $derived/$effect that read this collection.
 		void readLocal(type)
-			.then((items) => {
-				this._hydrating.delete(type);
-				// Don't overwrite if data was written while we were reading.
-				if (this._hydrated.has(type)) return;
-				this._hydrated.add(type);
-				this._map[type] = items;
-				// Bump version to signal hydration completed (for components
-				// that need to know when initial data has arrived).
-				if (gloInstance) gloInstance.bump();
-			})
-			.catch((e) => {
-				this._hydrating.delete(type);
-				this._hydrated.add(type);
-				if (gloInstance) gloInstance.bump();
-			});
+			.then((items) => this.finishHydration(type, items, generation))
+			.catch(() => this.finishHydration(type, [], generation));
 	}
 
 	isHydrated(type: string) {
@@ -345,43 +395,57 @@ class ReactiveCollections {
 	/** Replace the entire array for a type (triggers $state reactivity).
 	 *  Persists to IndexedDB asynchronously (fire-and-forget). */
 	set(type: string, items: AnyGloObject[]) {
-		this._hydrated.add(type);
-		this._hydrating.delete(type);
-		// Create a fresh array so the $state proxy sees a new reference.
-		this._map[type] = [...items];
-		void writeLocal(type, this._map[type]);
+		const next = [...items];
+		// If the stored snapshot has not loaded yet, keep the new items in
+		// memory and let finishHydration merge them with the stored data.
+		this._map[type] = next;
+		if (this._hydrated.has(type)) scheduleLocalWrite(type, next);
+		else this.hydrate(type);
 	}
 
 	/** Insert or update a single object within a type collection.
 	 *  Works on in-memory state synchronously, persists to IDB asynchronously. */
 	upsert(type: string, obj: AnyGloObject) {
-		// Mark as hydrated so async hydration won't overwrite our write.
-		this._hydrated.add(type);
-		this._hydrating.delete(type);
 		const current = this._map[type] ?? [];
 		const filtered = current.filter((o) => o.id !== obj.id);
-		// Prepend the new/updated object.
-		this._map[type] = [obj, ...filtered];
-		void writeLocal(type, this._map[type]);
+		const next = [obj, ...filtered];
+		this._map[type] = next;
+		if (this._hydrated.has(type)) scheduleLocalWrite(type, next);
+		else this.hydrate(type);
 	}
 
 	/** Remove a single object by id.
 	 *  Works on in-memory state synchronously, persists to IDB asynchronously. */
 	remove(type: string, id: string) {
-		// Mark as hydrated so async hydration won't overwrite our removal.
-		this._hydrated.add(type);
-		this._hydrating.delete(type);
-		const current = this._map[type] ?? [];
-		this._map[type] = current.filter((o) => o.id !== id);
-		void writeLocal(type, this._map[type]);
+		const next = (this._map[type] ?? []).filter((o) => o.id !== id);
+		this._map[type] = next;
+		if (this._hydrated.has(type)) {
+			scheduleLocalWrite(type, next);
+			return;
+		}
+		const removed = this._removedWhileHydrating[type] ?? {};
+		removed[id] = true;
+		this._removedWhileHydrating[type] = removed;
+		this.hydrate(type);
 	}
 
 	/** Find a single object by id (pure read — safe inside $derived). */
+	/** Per-array id index. Array identity changes on every mutation, so this
+	 *  cache is invalidated automatically without extra bookkeeping. */
+	private _indexes = new WeakMap<AnyGloObject[], Map<string, AnyGloObject>>();
+
 	find(type: string, id: string): AnyGloObject | undefined {
 		if (!this._hydrated.has(type) && !this._hydrating.has(type)) {
 			this.hydrate(type);
 		}
-		return (this._map[type] ?? []).find((o) => o.id === id);
+		const items = this._map[type];
+		if (!items) return undefined;
+		let index = this._indexes.get(items);
+		if (!index) {
+			index = new Map(items.map((obj) => [obj.id, obj] as const));
+			this._indexes.set(items, index);
+		}
+		return index.get(id);
 	}
 
 	/** Get all keys that have been hydrated. */
@@ -393,7 +457,6 @@ class ReactiveCollections {
 	async migrate() {
 		if (!browser) return;
 		try {
-			let migrated = 0;
 			for (let i = localStorage.length - 1; i >= 0; i--) {
 				const key = localStorage.key(i);
 				if (!key?.startsWith(STORAGE_PREFIX)) continue;
@@ -404,18 +467,18 @@ class ReactiveCollections {
 				try {
 					const parsed = JSON.parse(raw);
 					if (Array.isArray(parsed)) {
-						await idbSet(key, parsed);
-						migrated++;
-						// Remove from localStorage to free space.
+						// Never clobber an existing IndexedDB snapshot with stale
+						// localStorage data (e.g. after a downgrade or previous run).
+						const existing = await idbGet(key);
+						if (existing === undefined) await idbSet(key, parsed);
+						// Either way, the legacy copy is no longer needed.
 						localStorage.removeItem(key);
 					}
 				} catch {
 					// Skip malformed entries.
 				}
 			}
-			if (migrated > 0) {
-			}
-		} catch (e) {
+		} catch {
 			/* best effort */
 		}
 	}
@@ -423,16 +486,22 @@ class ReactiveCollections {
 	/** Reload a type from IndexedDB (used by cross-tab sync). */
 	async reload(type: string) {
 		if (this._hydrating.has(type)) return;
+		const generation = this._generation;
 		const items = await readLocal(type);
+		if (generation !== this._generation) return;
 		this._hydrated.add(type);
 		this._map[type] = items;
 	}
 
 	/** Clear all collections and reset hydration state (for logout). */
 	clearAll() {
+		this._generation++;
 		this._map = {};
 		this._hydrated.clear();
 		this._hydrating.clear();
+		this._removedWhileHydrating = {};
+		for (const type of Object.keys(pendingWrites)) delete pendingWrites[type];
+		clearAllDeletions();
 	}
 }
 
@@ -453,16 +522,52 @@ class GloStore {
 		this.version++;
 	}
 
-	private queuePublish = async (type: string, object: GloObject<unknown>) => {
-		const queued = await readPublishQueue();
-		const key = `${type}:${object.id}`;
-		const next = [
-			{ type, object: withoutEphemeralEvent(object as AnyGloObject), queuedAt: Date.now() },
-			...queued.filter((item) => `${item.type}:${item.object.id}` !== key)
-		];
-		await writePublishQueue(next);
-		this.publishQueueSize = next.length;
+	private pendingBroadcasts: Record<string, string> = {};
+	private broadcastScheduled = false;
+
+	/** Notify other tabs only after the coalesced IndexedDB write has flushed,
+	 *  so they read the new state instead of a stale snapshot. One message per
+	 *  collection per tick keeps bulk writes from causing reload storms. */
+	private broadcast = (message: { type: string; collectionType: string }) => {
+		if (!getBroadcastChannel()) return;
+		this.pendingBroadcasts[message.collectionType] = message.type;
+		if (this.broadcastScheduled) return;
+		this.broadcastScheduled = true;
+		void flushLocalWrites().then(() => {
+			this.broadcastScheduled = false;
+			const channel = getBroadcastChannel();
+			if (!channel) return;
+			const batch = Object.entries(this.pendingBroadcasts);
+			this.pendingBroadcasts = {};
+			for (const [collectionType, type] of batch) {
+				channel.postMessage({ type, collectionType });
+			}
+		});
 	};
+
+	/** Serializes read-modify-write access to the persisted publish queue. */
+	private publishQueueLock: Promise<unknown> = Promise.resolve();
+
+	private withPublishQueueLock<T>(task: () => Promise<T>): Promise<T> {
+		const next = this.publishQueueLock.then(task, task);
+		this.publishQueueLock = next.then(
+			() => undefined,
+			() => undefined
+		);
+		return next;
+	}
+
+	private queuePublish = (type: string, object: GloObject<unknown>) =>
+		this.withPublishQueueLock(async () => {
+			const queued = await readPublishQueue();
+			const key = `${type}:${object.id}`;
+			const next = [
+				{ type, object: withoutEphemeralEvent(object as AnyGloObject), queuedAt: Date.now() },
+				...queued.filter((item) => `${item.type}:${item.object.id}` !== key)
+			];
+			await writePublishQueue(next);
+			this.publishQueueSize = next.length;
+		});
 
 	/** Run one-time migration from localStorage to IndexedDB. */
 	migrate = async () => {
@@ -498,6 +603,33 @@ class GloStore {
 		return this.collections.find(type, id);
 	};
 
+	private buildObject = <TData>(
+		type: string,
+		data: TData,
+		opts: {
+			id?: string;
+			visibility?: GloVisibility;
+			extensions?: Record<string, unknown>;
+			scope?: Partial<GloScope>;
+		}
+	) => {
+		const id = opts.id ?? uid();
+		const existing = this.collections.find(type, id);
+		const object = createGloObject<TData, string>({
+			type,
+			id,
+			scope: {
+				...tenant.scope,
+				...(opts.scope ?? {}),
+				ownerPubkey: opts.scope?.ownerPubkey ?? session.pubkey ?? undefined
+			},
+			visibility: opts.visibility ?? existing?.visibility ?? 'organization',
+			data: stampData(data, existing),
+			extensions: opts.extensions as never
+		});
+		return object;
+	};
+
 	/** Create or update a GLO object. Returns the saved object. */
 	upsert = async <TData>(
 		type: string,
@@ -509,28 +641,15 @@ class GloStore {
 			scope?: Partial<GloScope>;
 		} = {}
 	): Promise<GloObject<TData, string>> => {
-		const id = opts.id ?? uid();
-		const existing = this.collections.find(type, id);
-		const dataWithTimestamps = stampData(data, existing);
-		const object = createGloObject<TData, string>({
-			type,
-			id,
-			scope: {
-				...tenant.scope,
-				...(opts.scope ?? {}),
-				ownerPubkey: opts.scope?.ownerPubkey ?? session.pubkey ?? undefined
-			},
-			visibility: opts.visibility ?? existing?.visibility ?? 'organization',
-			data: dataWithTimestamps,
-			extensions: opts.extensions as never
-		});
+		const object = this.buildObject(type, data, opts);
+		// An explicit local save overrides an earlier deletion of this id.
+		clearDeletion(type, object.id);
 
 		// Insert/update through the reactive collections proxy.
 		this.collections.upsert(type, object as AnyGloObject);
 		this.bump();
 
-		// Broadcast to other tabs.
-		getBroadcastChannel()?.postMessage({ type: 'upsert', collectionType: type });
+		this.broadcast({ type: 'upsert', collectionType: type });
 
 		// Best-effort Nostr publish.
 		await this.publish(type, object);
@@ -548,24 +667,12 @@ class GloStore {
 			scope?: Partial<GloScope>;
 		} = {}
 	): Promise<{ object: GloObject<TData, string>; published: boolean }> => {
-		const id = opts.id ?? uid();
-		const existing = this.collections.find(type, id);
-		const object = createGloObject<TData, string>({
-			type,
-			id,
-			scope: {
-				...tenant.scope,
-				...(opts.scope ?? {}),
-				ownerPubkey: opts.scope?.ownerPubkey ?? session.pubkey ?? undefined
-			},
-			visibility: opts.visibility ?? existing?.visibility ?? 'organization',
-			data: stampData(data, existing),
-			extensions: opts.extensions as never
-		});
+		const object = this.buildObject(type, data, opts);
+		clearDeletion(type, object.id);
 
 		this.collections.upsert(type, object as AnyGloObject);
 		this.bump();
-		getBroadcastChannel()?.postMessage({ type: 'upsert', collectionType: type });
+		this.broadcast({ type: 'upsert', collectionType: type });
 
 		const published = await this.publish(type, object);
 		return { object, published };
@@ -573,19 +680,31 @@ class GloStore {
 
 	/** Remove a GLO object locally. */
 	remove = (type: string, id: string) => {
+		recordDeletion(type, id);
 		this.collections.remove(type, id);
 		this.bump();
-		// Broadcast to other tabs.
-		getBroadcastChannel()?.postMessage({ type: 'remove', collectionType: type });
+		this.broadcast({ type: 'remove', collectionType: type });
 	};
 
 	/** Batch upsert (for relay sync merges). */
 	batchUpsert = (type: string, objects: AnyGloObject[]) => {
 		if (!objects.length) return;
-		// Ensure data is loaded — if not hydrated, the set() below replaces [].
-		const current = this.collections.get(type);
-		const byId: Record<string, AnyGloObject> = Object.fromEntries(current.map((o) => [o.id, o]));
-		for (const obj of objects) {
+		// Skip relay copies of objects deleted locally unless the relay copy is
+		// newer (an edit from another device wins and clears the tombstone).
+		const tombstones = tombstonesFor(type);
+		const accepted = objects.filter((obj) => {
+			if (isTombstoned(tombstones, obj.id, objectTimestamp(obj))) return false;
+			if (tombstones[obj.id] !== undefined) clearDeletion(type, obj.id);
+			return true;
+		});
+		if (!accepted.length) return;
+
+		// `set()` preserves a not-yet-loaded IndexedDB snapshot and merges it in
+		// when hydration completes, so this is safe during startup as well.
+		const byId: Record<string, AnyGloObject> = Object.fromEntries(
+			this.collections.get(type).map((obj) => [obj.id, obj])
+		);
+		for (const obj of accepted) {
 			const existing = byId[obj.id];
 			if (!existing || objectTimestamp(obj) >= objectTimestamp(existing)) {
 				byId[obj.id] = obj;
@@ -593,8 +712,7 @@ class GloStore {
 		}
 		this.collections.set(type, Object.values(byId));
 		this.bump();
-		// Broadcast to other tabs.
-		getBroadcastChannel()?.postMessage({ type: 'batch', collectionType: type });
+		this.broadcast({ type: 'batch', collectionType: type });
 	};
 
 	/** Sign + publish a GLO object as a Nostr event. */
@@ -629,7 +747,7 @@ class GloStore {
 						template.content = enc.content;
 						template.tags = [...template.tags, ...enc.encryptionTags];
 					}
-				} catch (e) {
+				} catch {
 					// No company key yet (e.g. staff awaiting a grant) → publish plaintext.
 				}
 			}
@@ -649,14 +767,29 @@ class GloStore {
 			const published = await sendEvent(event as NostrEvent);
 			if (!published && queueOnFailure) await this.queuePublish(type, object);
 			return published;
-		} catch (e) {
+		} catch {
 			if (queueOnFailure) await this.queuePublish(type, object);
 			return false;
 		}
 	};
 
-	/** Retry locally saved writes that failed to publish earlier. */
-	flushPublishQueue = async () => {
+	private publishQueueFlush: Promise<number> | null = null;
+
+	/** Retry locally saved writes that failed to publish earlier. Concurrent
+	 *  callers (parallel type syncs) share one flush so the queue is never
+	 *  read-modify-written twice. */
+	flushPublishQueue = (): Promise<number> => {
+		if (!this.publishQueueFlush) {
+			this.publishQueueFlush = this.withPublishQueueLock(() =>
+				this.flushPublishQueueOnce()
+			).finally(() => {
+				this.publishQueueFlush = null;
+			});
+		}
+		return this.publishQueueFlush;
+	};
+
+	private flushPublishQueueOnce = async () => {
 		if (!session.snapshot || !relays.online || !relays.writableNormalized.length) return 0;
 		const queued = await readPublishQueue();
 		if (!queued.length) {
@@ -664,16 +797,14 @@ class GloStore {
 			return 0;
 		}
 
-		const remaining: QueuedPublish[] = [];
-		let publishedCount = 0;
-		for (const item of queued) {
-			const published = await this.publish(item.type, item.object, { queueOnFailure: false });
-			if (published) publishedCount++;
-			else remaining.push(item);
-		}
+		// Retry with bounded concurrency; preserve queue order for leftovers.
+		const results = await mapLimit(queued, 4, (item) =>
+			this.publish(item.type, item.object, { queueOnFailure: false })
+		);
+		const remaining = queued.filter((_, index) => !results[index]);
 		await writePublishQueue(remaining);
 		this.publishQueueSize = remaining.length;
-		return publishedCount;
+		return results.filter(Boolean).length;
 	};
 
 	private publishLocalKindUpgrade = async (type: string) => {
@@ -688,12 +819,10 @@ class GloStore {
 			return;
 		}
 
-		let allPublished = true;
-		for (const object of localObjects) {
-			const published = await this.publish(type, object, { queueOnFailure: true });
-			allPublished &&= published;
-		}
-		if (allPublished) localStorage.setItem(stampKey, String(Date.now()));
+		const results = await mapLimit(localObjects, 4, (object) =>
+			this.publish(type, object, { queueOnFailure: true })
+		);
+		if (results.every(Boolean)) localStorage.setItem(stampKey, String(Date.now()));
 	};
 
 	/** Sync options.
@@ -740,20 +869,47 @@ class GloStore {
 				relayStrategy === 'primary-first'
 					? await fetchEventsPrimaryFirst(filter as Parameters<typeof fetchEvents>[0])
 					: await fetchEvents(filter as Parameters<typeof fetchEvents>[0]);
-			const incoming: AnyGloObject[] = [];
-			for (const ev of events) {
-				try {
-					const parsed = await parseAppGloEvent(ev as NostrEvent);
-					incoming.push({
-						...parsed,
-						__eventCreatedAt: ev.created_at,
-						__eventId: ev.id,
-						__event: ev as NostrEvent
-					});
-				} catch {
-					/* skip non-GLO / malformed / undecryptable */
-				}
+
+			// Relays return recent events on every sync. Skip event ids already
+			// parsed and stored — this avoids repeated decryption of the same
+			// payloads on each cooldown tick.
+			const knownEventIds: Record<string, true> = {};
+			for (const obj of this.collections.get(type)) {
+				const eventId = (obj as AnyGloObject).__eventId;
+				if (typeof eventId === 'string') knownEventIds[eventId] = true;
 			}
+			// Multiple relays commonly return the same event; de-dupe before
+			// decrypting as well as dropping already-stored ids.
+			const seenEventIds: Record<string, true> = { ...knownEventIds };
+			const freshEvents: NostrEvent[] = [];
+			for (const ev of events) {
+				if (seenEventIds[ev.id]) continue;
+				seenEventIds[ev.id] = true;
+				freshEvents.push(ev);
+			}
+			if (!freshEvents.length) return;
+
+			// Parsing/decrypting is async per event; run the batch together
+			// instead of paying one await per record.
+			const parsedEvents = await mapLimit(
+				freshEvents,
+				8,
+				async (ev): Promise<AnyGloObject | null> => {
+					try {
+						const parsed = await parseAppGloEvent(ev as NostrEvent);
+						return {
+							...parsed,
+							__eventCreatedAt: ev.created_at,
+							__eventId: ev.id,
+							__event: ev as NostrEvent
+						};
+					} catch {
+						// Skip non-GLO / malformed / undecryptable events.
+						return null;
+					}
+				}
+			);
+			const incoming = parsedEvents.filter((obj): obj is AnyGloObject => obj !== null);
 			if (incoming.length) this.batchUpsert(type, incoming);
 		} finally {
 			this.syncing.delete(type);
@@ -776,11 +932,11 @@ class GloStore {
 		// Prefer a cryptographically-verified event so a single corrupt/truncated
 		// relay copy doesn't poison the viewer.
 		const pickVerified = (list: NostrEvent[]): NostrEvent | null => {
-			const seen = new Set<string>();
+			const seen: Record<string, true> = {};
 			const dedup: NostrEvent[] = [];
 			for (const e of list) {
-				if (e && !seen.has(e.id)) {
-					seen.add(e.id);
+				if (e && !seen[e.id]) {
+					seen[e.id] = true;
 					dedup.push(e);
 				}
 			}
@@ -837,10 +993,14 @@ class GloStore {
 	 * Call this on logout so the next login starts with zero stale data.
 	 * The IndexedDB wipe is handled by session.logout().
 	 */
-	clearAll = () => {
+	private resetLocal = () => {
 		this.collections.clearAll();
 		this.publishQueueSize = 0;
 		this.bump();
+	};
+
+	clearAll = () => {
+		this.resetLocal();
 		// Broadcast to other tabs so they also clear.
 		getBroadcastChannel()?.postMessage({ type: 'clear-all' });
 	};
@@ -853,10 +1013,12 @@ class GloStore {
 		channel.addEventListener('message', (e) => {
 			const msg = e.data;
 			if (msg?.type === 'clear-all') {
-				this.clearAll();
+				// Never rebroadcast: that would ping-pong forever between tabs.
+				this.resetLocal();
 				return;
 			}
 			if (!msg?.collectionType) return;
+			if (msg.type === 'remove') invalidateTombstones(msg.collectionType);
 			// Reload this type from IndexedDB into the reactive proxy.
 			void this.collections.reload(msg.collectionType).then(() => this.bump());
 		});
@@ -870,6 +1032,8 @@ gloInstance = glo;
 if (browser) {
 	glo.initCrossTab();
 	void glo.migrate();
+	// A coalesced write may still be queued when the tab closes.
+	window.addEventListener('pagehide', () => void flushLocalWrites());
 }
 
 export type { GloObject, GloObjectType, KnownGloObjectType, GloVisibility };

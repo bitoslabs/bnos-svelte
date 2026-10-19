@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -54,7 +55,7 @@
 		if (dataSync.status === 'done') toast.success('Settings loaded from relay');
 	}
 
-	$effect(() => {
+	onMount(() => {
 		if (!browser) return;
 		window.addEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
 		return () => window.removeEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
@@ -393,7 +394,7 @@
 							with any Lightning wallet.
 						</p>
 						<a
-							href="/settings/bitcoin"
+							href={resolve('/settings/bitcoin')}
 							class="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
 						>
 							<Icon name="lucide:pencil" class="size-3" />{t('settings.editInBitcoin')}
@@ -414,7 +415,7 @@
 							accept Lightning.
 						</p>
 						<a
-							href="/settings/bitcoin"
+							href={resolve('/settings/bitcoin')}
 							class="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 hover:underline dark:text-amber-400"
 						>
 							<Icon name="lucide:arrow-right" class="size-3" />{t('settings.configureInBitcoin')}

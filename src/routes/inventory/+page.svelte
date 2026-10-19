@@ -32,7 +32,7 @@
 	type Tab = 'overview' | 'counts' | 'adjustments' | 'suppliers' | 'orders';
 	let tab = $state<Tab>('overview');
 	let rawOpen = $state(false);
-	let rawItem = $state<any>(null);
+	let rawItem = $state<unknown>(null);
 
 	onMount(() => {
 		dataSync.pageSync([TYPE.product, TYPE.adjustment, TYPE.supplier, TYPE.purchaseOrder], {
@@ -43,13 +43,28 @@
 	const currency = $derived(tenant.state.currency);
 
 	// ── Tracked products (for Overview & Counts) ──
-	const allProducts = $derived(glo.all<Product, typeof TYPE.product>(TYPE.product));
+	const allProducts = $derived(glo.all<ProductRow, typeof TYPE.product>(TYPE.product));
 	const trackedProducts = $derived(allProducts.filter((p) => p.data.trackInventory === true));
+	const nameCollator = new Intl.Collator();
+
+	/** Live stock for the product in the quick-adjust dialog. */
+	const adjProductStock = $derived.by(() => {
+		if (!adjProduct.id) return 0;
+		const product = allProducts.find((p) => p.id === adjProduct.id);
+		return product ? getStock(product.data) : 0;
+	});
 
 	// ── Mock stock levels (in a real app, from inventory records) ──
 	// For now, use product.inventory or default 0
-	function getStock(p: Product): number {
-		return ((p as any).stockLevel ?? 0) as number;
+	type ProductRow = Product & {
+		stockLevel?: number;
+		image?: string;
+		price?: number;
+		currency?: string;
+	};
+
+	function getStock(p: ProductRow): number {
+		return p.stockLevel ?? 0;
 	}
 	function getLowThreshold(p: Product): number {
 		return (p.inventory?.lowStockThreshold ?? 5) as number;
@@ -130,46 +145,46 @@
 		const s = activeCount();
 		if (!s) return;
 
-		// Write adjustments for each variance found
-		for (const item of s.items) {
-			if (item.counted === null) continue;
-			const diff = item.counted - item.expected;
-			if (diff === 0) continue;
+		// Each variance touches a distinct product; write them together.
+		await Promise.all(
+			s.items.map(async (item) => {
+				if (item.counted === null) return;
+				const diff = item.counted - item.expected;
+				if (diff === 0) return;
 
-			const adjType = diff > 0 ? 'increase' : 'decrease';
-			const adjQty = Math.abs(diff);
-
-			try {
-				await glo.upsert<StockAdjustment>(
-					TYPE.adjustment,
-					{
-						productId: item.productId,
-						productName: item.productName,
-						type: adjType,
-						quantity: adjQty,
-						reason: 'Stock count adjustment',
-						referenceType: 'count',
-						occurredAt: new Date().toISOString()
-					},
-					{ id: newRecordId('stock-adjustment') }
-				);
-
-				// Update product stock to counted value
-				const product = glo.get(TYPE.product, item.productId);
-				if (product) {
-					await glo.upsert(
-						TYPE.product,
+				const adjType = diff > 0 ? 'increase' : 'decrease';
+				try {
+					await glo.upsert<StockAdjustment>(
+						TYPE.adjustment,
 						{
-							...(product.data as Record<string, unknown>),
-							stockLevel: item.counted
+							productId: item.productId,
+							productName: item.productName,
+							type: adjType,
+							quantity: Math.abs(diff),
+							reason: 'Stock count adjustment',
+							referenceType: 'count',
+							occurredAt: new Date().toISOString()
 						},
-						{ id: product.id }
+						{ id: newRecordId('stock-adjustment') }
 					);
+
+					// Update product stock to counted value
+					const product = glo.get(TYPE.product, item.productId);
+					if (product) {
+						await glo.upsert(
+							TYPE.product,
+							{
+								...(product.data as Record<string, unknown>),
+								stockLevel: item.counted
+							},
+							{ id: product.id }
+						);
+					}
+				} catch (e) {
+					console.warn('[inventory] count adjustment failed for', item.productId, e);
 				}
-			} catch (e) {
-				console.warn('[inventory] count adjustment failed for', item.productId, e);
-			}
-		}
+			})
+		);
 
 		s.status = 'completed';
 		saveCounts();
@@ -196,7 +211,7 @@
 				if (overviewFilter !== 'all' && stockStatus(p.data) !== overviewFilter) return false;
 				return true;
 			})
-			.sort((a, b) => String(a.data.name ?? '').localeCompare(String(b.data.name ?? '')));
+			.sort((a, b) => nameCollator.compare(String(a.data.name ?? ''), String(b.data.name ?? '')));
 	});
 
 	// ── Quick adjust dialog ──
@@ -231,7 +246,7 @@
 			// After saving adjustment, update product stock
 			const product = glo.get(TYPE.product, adjProduct.id);
 			if (product) {
-				const currentStock = (product.data as any).stockLevel ?? 0;
+				const currentStock = (product.data as ProductRow).stockLevel ?? 0;
 				const adjQtyNum = Math.abs(Number(adjQty) || 0);
 				const newStock =
 					adjDir === 'increase' ? currentStock + adjQtyNum : Math.max(0, currentStock - adjQtyNum);
@@ -376,7 +391,7 @@
 				if (!prodName) return toast.warning('Select a product');
 				// Try to find the product by id or name for stock update
 				const matchedProduct = prodId
-					? allProducts.find((p) => p.id === prodId)
+					? (glo.get(TYPE.product, prodId) as (typeof allProducts)[number] | undefined)
 					: allProducts.find(
 							(p) => String(p.data.name ?? '').toLowerCase() === prodName.toLowerCase()
 						);
@@ -394,14 +409,14 @@
 				);
 				// Update product stock if matched
 				if (matchedProduct) {
-					const currentStock = (matchedProduct.data as any).stockLevel ?? 0;
+					const currentStock = matchedProduct.data.stockLevel ?? 0;
 					const adjQtyNum = Math.abs(Number(aQty) || 0);
 					const newStock =
 						aType === 'increase' ? currentStock + adjQtyNum : Math.max(0, currentStock - adjQtyNum);
 					await glo.upsert(
 						TYPE.product,
 						{
-							...(matchedProduct.data as Record<string, unknown>),
+							...matchedProduct.data,
 							stockLevel: newStock
 						},
 						{ id: matchedProduct.id }
@@ -464,10 +479,8 @@
 		}[dlgKind as 'adjustments' | 'suppliers' | 'orders'] ?? ''
 	);
 
-	// load counts on mount
-	$effect(() => {
-		loadCounts();
-	});
+	// Load saved count sessions once on mount.
+	onMount(loadCounts);
 </script>
 
 <svelte:head><title>{t('common.appName')} · {t('nav.inventory')}</title></svelte:head>
@@ -628,10 +641,12 @@
 									<tr>
 										<td class="px-5 py-3">
 											<div class="flex items-center gap-2">
-												{#if (p.data as any).image}
+												{#if p.data.image}
 													<img
-														src={(p.data as any).image}
+														src={p.data.image}
 														alt=""
+														loading="lazy"
+														decoding="async"
 														class="size-8 rounded-lg object-cover"
 													/>
 												{/if}
@@ -642,10 +657,7 @@
 											>{p.data.sku ?? '—'}</td
 										>
 										<td class="px-5 py-3 text-right tabular-nums"
-											>{formatMoney(
-												(p.data as any).price ?? 0,
-												(p.data as any).currency ?? currency
-											)}</td
+											>{formatMoney(p.data.price ?? 0, p.data.currency ?? currency)}</td
 										>
 										<td class="px-5 py-3 text-right"
 											><Badge
@@ -662,7 +674,7 @@
 											{:else}<Badge color="error">Out of Stock</Badge>{/if}
 										</td>
 										<td class="px-5 py-3 text-right font-semibold tabular-nums"
-											>{formatMoney(stock * ((p.data as any).price ?? 0), currency)}</td
+											>{formatMoney(stock * (p.data.price ?? 0), currency)}</td
 										>
 										<td class="px-5 py-3 text-right">
 											<Button
@@ -1109,26 +1121,18 @@
 	<div class="space-y-3">
 		<div class="text-[13px] font-semibold text-(--ui-text-muted)">{adjProduct.name}</div>
 		{#if adjProduct.id}
-			{@const prod = allProducts.find((p) => p.id === adjProduct.id)}
-			{#if prod}
-				<div class="flex items-center gap-2 rounded-lg bg-(--ui-bg-muted) px-3 py-2 text-[12px]">
-					<Icon name="lucide:boxes" class="size-4 text-(--ui-text-dimmed)" />
-					<span class="text-(--ui-text-muted)">Current stock:</span>
-					<span class="font-bold">{(prod.data as any).stockLevel ?? 0}</span>
-					<span class="ml-auto text-(--ui-text-dimmed)"
-						>→ New: <span class="font-bold text-primary-600 dark:text-primary-400"
-							>{adjDir === 'increase'
-								? ((allProducts.find((p) => p.id === adjProduct.id)?.data as any)?.stockLevel ??
-										0) + Math.abs(Number(adjQty) || 0)
-								: Math.max(
-										0,
-										((allProducts.find((p) => p.id === adjProduct.id)?.data as any)?.stockLevel ??
-											0) - Math.abs(Number(adjQty) || 0)
-									)}</span
-						></span
-					>
-				</div>
-			{/if}
+			<div class="flex items-center gap-2 rounded-lg bg-(--ui-bg-muted) px-3 py-2 text-[12px]">
+				<Icon name="lucide:boxes" class="size-4 text-(--ui-text-dimmed)" />
+				<span class="text-(--ui-text-muted)">Current stock:</span>
+				<span class="font-bold">{adjProductStock}</span>
+				<span class="ml-auto text-(--ui-text-dimmed)"
+					>→ New: <span class="font-bold text-primary-600 dark:text-primary-400"
+						>{adjDir === 'increase'
+							? adjProductStock + Math.abs(Number(adjQty) || 0)
+							: Math.max(0, adjProductStock - Math.abs(Number(adjQty) || 0))}</span
+					></span
+				>
+			</div>
 		{/if}
 		<div class="segmented flex gap-1 p-1">
 			<button
@@ -1215,7 +1219,7 @@
 										<Icon name="lucide:package" class="size-4 shrink-0 text-(--ui-text-dimmed)" />
 										<span class="flex-1 truncate font-medium">{p.data.name ?? 'Unnamed'}</span>
 										<span class="text-[11px] text-(--ui-text-dimmed)"
-											>Stock: {(p.data as any).stockLevel ?? 0}</span
+											>Stock: {p.data.stockLevel ?? 0}</span
 										>
 									</button>
 								{/each}

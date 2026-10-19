@@ -76,27 +76,33 @@ class TenantStore {
 
 	load = () => {
 		if (!browser) return;
+		// Tenant state is identity-scoped. Start from a clean context every time
+		// and only accept a persisted snapshot that belongs to the active pubkey,
+		// so a newly created / switched account can never inherit another
+		// account's organization or `setupComplete` flag.
+		let next: TenantContext = { ...DEFAULT_TENANT };
 		try {
 			const raw = localStorage.getItem(STORAGE_KEY);
 			const authPubkey = localStorage.getItem(AUTH_PUBKEY_KEY)?.trim().toLowerCase() ?? '';
-			if (raw) {
+			if (raw && authPubkey) {
 				const parsed = JSON.parse(raw) as unknown;
 				if (
 					parsed &&
 					typeof parsed === 'object' &&
 					'ownerPubkey' in parsed &&
 					typeof parsed.ownerPubkey === 'string' &&
-					parsed.ownerPubkey.toLowerCase() === authPubkey &&
+					parsed.ownerPubkey.trim().toLowerCase() === authPubkey &&
 					'state' in parsed &&
 					parsed.state &&
 					typeof parsed.state === 'object'
 				) {
-					this.state = { ...DEFAULT_TENANT, ...parsed.state };
+					next = { ...DEFAULT_TENANT, ...(parsed.state as Partial<TenantContext>) };
 				}
 			}
 		} catch {
-			/* ignore */
+			/* ignore malformed / unavailable storage */
 		}
+		this.state = next;
 		this.hydrated = true;
 	};
 

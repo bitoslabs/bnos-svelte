@@ -61,7 +61,7 @@
 		}
 		uploading = true;
 		try {
-			const result = await media.upload(file, undefined, { purpose: 'feedback' });
+			const result = await media.upload(file, undefined);
 			attachment = {
 				url: result.url,
 				kind: result.kind,

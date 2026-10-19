@@ -10,6 +10,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { formatInt } from '$lib/utils/format';
+	import { buildSearchIndex } from '$lib/utils/search';
 	import { t } from '$lib/i18n/i18n.svelte';
 	export type SelectedCustomer = {
 		id: string;
@@ -47,14 +48,13 @@
 					? 'error'
 					: 'neutral';
 
+	const searchIndex = $derived(
+		buildSearchIndex(customers, (c) => `${c.data.name ?? ''} ${c.data.phone ?? ''}`)
+	);
 	const filtered = $derived.by(() => {
 		const query = q.trim().toLowerCase();
 		const list = query
-			? customers.filter(
-					(c) =>
-						(c.data.name ?? '').toLowerCase().includes(query) ||
-						(c.data.phone ?? '').toLowerCase().includes(query)
-				)
+			? customers.filter((c) => searchIndex[c.id]?.includes(query) ?? false)
 			: customers;
 		return list.slice(0, 8);
 	});

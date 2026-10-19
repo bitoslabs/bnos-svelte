@@ -9,8 +9,6 @@
  * Stock is keyed per product, or per product+variant when a variant is set,
  * and can be scoped to the active branch.
  */
-import type { StockAdjustment } from '$lib/domain';
-
 /** Minimal structural view of a stock adjustment used to compute stock. */
 interface StockAdjustmentLike {
 	productId?: string;

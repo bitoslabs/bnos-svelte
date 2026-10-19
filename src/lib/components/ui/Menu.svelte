@@ -1,6 +1,5 @@
 <script lang="ts" module>
 	import { tv, type VariantProps } from 'tailwind-variants';
-	import { t } from '$lib/i18n/i18n.svelte';
 
 	/**
 	 * Dropdown-menu container. Open state lives in the shared `popovers` store,
@@ -76,7 +75,10 @@
 		children?: Snippet;
 	} = $props();
 
-	const menuId = untrack(() => id) ?? `menu:${fallbackId++}`;
+	function nextFallbackId(): string {
+		return `menu:${fallbackId++}`;
+	}
+	const menuId = untrack(() => id) ?? nextFallbackId();
 	const open = $derived(popovers.isOpen(menuId));
 	const panelClass = $derived(menuPanel({ width, class: cls }));
 

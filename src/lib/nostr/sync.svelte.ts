@@ -1,4 +1,5 @@
 import { glo } from './store.svelte';
+import { mapLimit } from '$lib/utils/async';
 import { relays } from './relay.svelte';
 import { session } from './session.svelte';
 import { tenant } from './tenant.svelte';
@@ -118,6 +119,10 @@ class SyncStore {
 		}
 	}
 
+	/** Types with an active background sync — avoids duplicate relay queries
+	 *  when the layout's idle sync and a page sync overlap. */
+	private inFlightTypes: Record<string, true> = {};
+
 	async syncTypes(
 		types: readonly string[],
 		options: {
@@ -130,6 +135,9 @@ class SyncStore {
 			locationId?: string | null;
 			/** Read the primary relay first, falling back only when it has no result. */
 			relayStrategy?: 'all' | 'primary-first';
+			/** Skip the staff-membership lookup when the caller already owns the
+			 *  workspace context locally (e.g. the setup confirmation step). */
+			resolveMembership?: boolean;
 		} = {}
 	) {
 		const scope = options.scope ?? types.join(',');
@@ -140,6 +148,13 @@ class SyncStore {
 		if (!session.pubkey || !relays.online) return false;
 		if (!options.force && !shouldSync(scope, cooldownMs)) return false;
 
+		// Silent syncs (layout idle + page sync) can overlap; never fetch the
+		// same type twice at once. Explicit/manual syncs still run in full.
+		const dedupe = options.silent === true && options.force !== true;
+		const syncedTypes = dedupe ? types.filter((type) => !this.inFlightTypes[type]) : [...types];
+		if (!syncedTypes.length) return false;
+		if (dedupe) for (const type of syncedTypes) this.inFlightTypes[type] = true;
+
 		if (!options.silent) {
 			this.status = 'syncing';
 			this.current = scope;
@@ -149,7 +164,8 @@ class SyncStore {
 		try {
 			await warmRelays(options.relayStrategy);
 			await glo.flushPublishQueue();
-			for (const type of types) {
+
+			const syncOne = async (type: string) => {
 				await glo.sync(type, {
 					locationId: options.locationId ?? null,
 					relayStrategy: options.relayStrategy
@@ -159,11 +175,22 @@ class SyncStore {
 					await syncLocalPaymentSettingsToNostr([type as (typeof PAYMENT_SETTINGS_TYPES)[number]]);
 				}
 				setLastSyncAt(typeScope(type));
+			};
+
+			// Payment settings share a hydrate-all helper, so keep them serial;
+			// the rest are independent relay reads and benefit from concurrency.
+			const serial: string[] = [];
+			const parallel: string[] = [];
+			for (const type of syncedTypes) {
+				if ((PAYMENT_SETTINGS_TYPES as readonly string[]).includes(type)) serial.push(type);
+				else parallel.push(type);
 			}
-			if (includesWorkspaceTypes(types)) {
+			await mapLimit(parallel, 4, syncOne);
+			for (const type of serial) await syncOne(type);
+			if (includesWorkspaceTypes(syncedTypes)) {
 				// Staff devices do not author the workspace records themselves, so
 				// also resolve via membership to fetch owner-authored org/location data.
-				await memberships.resolveStaffWorkspace();
+				if (options.resolveMembership !== false) await memberships.resolveStaffWorkspace();
 				restoreTenantFromWorkspace();
 				hydrateOrganizationSettingsFromWorkspace({
 					activeCompanyId: tenant.state.organizationId,
@@ -189,6 +216,8 @@ class SyncStore {
 				}, 2500);
 			}
 			return false;
+		} finally {
+			if (dedupe) for (const type of syncedTypes) delete this.inFlightTypes[type];
 		}
 	}
 
@@ -276,7 +305,8 @@ class SyncStore {
 			force: true,
 			scope: 'setup-primary',
 			silent: true,
-			relayStrategy: 'primary-first'
+			relayStrategy: 'primary-first',
+			resolveMembership: false
 		});
 	}
 

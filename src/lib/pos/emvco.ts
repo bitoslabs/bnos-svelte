@@ -126,9 +126,6 @@ export interface VietQrInput {
 	message?: string;
 }
 
-const NAPAS_AID = tlv('00', 'A000000727'); // NAPAS consumer AID
-const VIETQR_AID = tlv('00', 'A000000727'); // VietQR (NAPAS National QR)
-
 /** Build a VietQR (Tag 38) payload (NAPAS national QR), with optional amount. */
 export function buildVietQr({
 	bin,

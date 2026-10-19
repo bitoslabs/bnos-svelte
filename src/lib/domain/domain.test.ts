@@ -10,15 +10,22 @@ import {
 	BNOS_EXT_KEY
 } from './index';
 import type { Product, Order, Customer } from './index';
+import { NOSTR_KINDS } from '@bitos/bnos-core';
 
 describe('domain kind registry', () => {
 	it('derives every kind from the authoritative GLO map plus app BNOS overrides', () => {
+		const appKinds: Partial<Record<keyof typeof TYPE, number>> = {
+			shift: NOSTR_KINDS.SHIFT,
+			cashEvent: NOSTR_KINDS.CASH_EVENT,
+			marketplaceConnection: NOSTR_KINDS.STORE_CONNECTION,
+			marketplaceProduct: NOSTR_KINDS.MARKETPLACE_PRODUCT,
+			marketplaceReview: NOSTR_KINDS.MARKETPLACE_REVIEW
+		};
+
 		for (const key of Object.keys(TYPE) as (keyof typeof TYPE)[]) {
 			const type = TYPE[key];
-			const expected = (GLO_KIND_BY_TYPE as Record<string, number>)[type] ?? 30078;
-			if (key === 'shift') expect(KIND[key]).toBe(30520);
-			else if (key === 'cashEvent') expect(KIND[key]).toBe(30521);
-			else expect(KIND[key]).toBe(expected);
+			const expected = appKinds[key] ?? (GLO_KIND_BY_TYPE as Record<string, number>)[type] ?? 30078;
+			expect(KIND[key]).toBe(expected);
 		}
 	});
 

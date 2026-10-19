@@ -1,4 +1,6 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- external WhatsApp URL */
+	import { resolve } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { page } from '$app/state';
@@ -23,6 +25,7 @@
 		type Order,
 		type Payment,
 		type Refund,
+		type ShippingStatus,
 		type GloObject
 	} from '$lib/domain';
 	import { sourceLabel, SHIPPING_STATUSES, shippingStatusLabel } from '$lib/domain/order-sources';
@@ -43,6 +46,15 @@
 	import { permissions } from '$lib/permissions.svelte';
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
 
+	type OrderView = Order & {
+		priority?: string;
+		confirmedAt?: string;
+		preparingAt?: string;
+		readyAt?: string;
+		cancelledAt?: string;
+		taxAmount?: number;
+	};
+
 	const id = $derived(page.params.id);
 
 	onMount(() => {
@@ -50,7 +62,7 @@
 	});
 
 	const order = $derived(
-		glo.get(TYPE.order, id ?? '') as GloObject<Order, typeof TYPE.order> | undefined
+		glo.get(TYPE.order, id ?? '') as GloObject<OrderView, typeof TYPE.order> | undefined
 	);
 	const payments = $derived(
 		glo.all<Payment, typeof TYPE.payment>(TYPE.payment).filter((p) => p.data.orderId === id)
@@ -102,7 +114,7 @@
 
 	$effect(() => {
 		if (order) {
-			const s = (order.data as any).shipping ?? {};
+			const s = order.data.shipping ?? {};
 			trackNumber = s.trackingNumber ?? '';
 			trackStatus = s.shippingStatus ?? 'pending';
 			trackProvider = s.deliveryProvider ?? '';
@@ -114,14 +126,14 @@
 
 	async function updateTracking() {
 		if (!order) return;
-		const current = (order.data as any).shipping ?? {};
+		const current = order.data.shipping ?? {};
 		await glo.upsert<Order>(
 			TYPE.order,
 			{
-				...(order.data as any),
+				...order.data,
 				shipping: {
 					...current,
-					shippingStatus: trackStatus,
+					shippingStatus: trackStatus as ShippingStatus,
 					trackingNumber: trackNumber.trim() || undefined,
 					deliveryProvider: trackProvider.trim() || undefined,
 					estimatedDeliveryAt: trackEta || undefined,
@@ -136,23 +148,23 @@
 	}
 
 	// Quick status actions (context-aware next steps)
-	const quickStatusActions = $derived(() => {
+	const quickStatusActions = $derived.by(() => {
 		if (!order || currentIndex < 0) return [];
 		const next = statusFlow[currentIndex + 1];
 		return next ? [next] : [];
 	});
 
 	// ── Order metadata ───────────────────────────────────────
-	const orderType = $derived((order?.data as any)?.type ?? '');
-	const orderSource = $derived((order?.data as any)?.source ?? '');
-	const orderPriority = $derived((order?.data as any)?.priority ?? 'normal');
-	const tableId = $derived((order?.data as any)?.tableId ?? '');
-	const covers = $derived((order?.data as any)?.covers);
-	const tags = $derived((order?.data as any)?.tags ?? []);
-	const shipping = $derived((order?.data as any)?.shipping);
-	const pickup = $derived((order?.data as any)?.pickup);
+	const orderType = $derived(order?.data?.type ?? '');
+	const orderSource = $derived(order?.data?.source ?? '');
+	const orderPriority = $derived(order?.data?.priority ?? 'normal');
+	const tableId = $derived(order?.data?.tableId ?? '');
+	const covers = $derived(order?.data?.covers);
+	const tags = $derived(order?.data?.tags ?? []);
+	const shipping = $derived(order?.data?.shipping);
+	const pickup = $derived(order?.data?.pickup);
 	const customerDisplayName = $derived(order?.data?.customerName ?? '');
-	const orderNotes = $derived((order?.data as any)?.notes ?? '');
+	const orderNotes = $derived(order?.data?.notes ?? '');
 
 	function typeIcon(type: string): string {
 		switch (type) {
@@ -191,13 +203,13 @@
 	}
 
 	// ── Payment summary ──────────────────────────────────────
-	const paidAmount = $derived(payments.reduce((s, p) => s + ((p.data as any).amount ?? 0), 0));
-	const totalAmount = $derived((order?.data as any)?.total ?? 0);
+	const paidAmount = $derived(payments.reduce((s, p) => s + p.data.amount, 0));
+	const totalAmount = $derived(order?.data?.total ?? 0);
 	const remainingBalance = $derived(totalAmount - paidAmount);
 
 	// Resolve structured discount / coupon / promotion for display.
 	const discountInfo = $derived.by(() => {
-		const d = order?.data as any;
+		const d = order?.data;
 		const od = d?.orderDiscount;
 		const amount = Number(od?.amount ?? d?.discount ?? 0) || 0;
 		const type = od?.type as 'percent' | 'fixed' | 'coupon' | undefined;
@@ -209,11 +221,13 @@
 		let couponDesc = '';
 		if (promotionId) {
 			const p = glo.get(TYPE.promotion, promotionId);
-			promoName = (p?.data as any)?.name ?? '';
+			promoName = (p?.data as { name?: string } | undefined)?.name ?? '';
 		}
 		if (couponCode) {
-			const found = glo.all(TYPE.coupon).find((c) => (c.data as any).code === couponCode);
-			couponDesc = (found?.data as any)?.description ?? '';
+			const found = glo
+				.all(TYPE.coupon)
+				.find((c) => (c.data as { code?: string }).code === couponCode);
+			couponDesc = (found?.data as { description?: string } | undefined)?.description ?? '';
 		}
 		const hasDiscount = amount > 0 || !!type || !!couponCode || !!promotionId;
 		return {
@@ -230,10 +244,10 @@
 	});
 
 	// ── Activity log (simplified from order fields) ─────────
-	const activityLog = $derived(() => {
+	const activityLog = $derived.by(() => {
 		if (!order) return [];
 		const log: { label: string; time: string; icon: string }[] = [];
-		const d = order.data as any;
+		const d = order.data;
 		if (d.occurredAt)
 			log.push({ label: 'Order created', time: d.occurredAt, icon: 'lucide:plus-circle' });
 		if (d.confirmedAt)
@@ -255,7 +269,7 @@
 	// ── Actions ──────────────────────────────────────────────
 	async function updateStatus(newStatus: string) {
 		if (!order) return;
-		const updates: any = { ...order.data, status: newStatus };
+		const updates: OrderView = { ...order.data, status: newStatus as OrderView['status'] };
 		// Set timestamp for the status change
 		const now = new Date().toISOString();
 		if (newStatus === 'confirmed') updates.confirmedAt = now;
@@ -304,12 +318,12 @@
 			return;
 		glo.remove(TYPE.order, id ?? '');
 		toast.info('Order deleted');
-		goto('/orders');
+		goto(resolve('/orders'));
 	}
 
 	function printReceipt() {
 		if (order)
-			printReceiptForOrder(order as any, {
+			printReceiptForOrder(order, {
 				currency,
 				payments,
 				satsTotal:
@@ -351,11 +365,13 @@
 		try {
 			const stored = JSON.parse(localStorage.getItem('bnos-os:payment-methods') || '[]');
 			if (Array.isArray(stored) && stored.length) {
-				return stored.map((m: any) => ({
-					value: m.id || m.value || 'cash',
-					label: m.label || m.name || 'Cash',
-					icon: m.icon || 'lucide:banknote'
-				}));
+				return stored.map(
+					(m: { id?: string; value?: string; label?: string; name?: string; icon?: string }) => ({
+						value: m.id || m.value || 'cash',
+						label: m.label || m.name || 'Cash',
+						icon: m.icon || 'lucide:banknote'
+					})
+				);
 			}
 		} catch {
 			/* ignore */
@@ -395,7 +411,7 @@
 					variant="ghost"
 					size="icon-sm"
 					icon="lucide:arrow-left"
-					onclick={() => goto('/orders')}
+					onclick={() => goto(resolve('/orders'))}
 				/>
 				<div>
 					<div class="flex flex-wrap items-center gap-2">
@@ -426,7 +442,7 @@
 						{/if}
 					</div>
 					<p class="mt-0.5 text-[12px] text-(--ui-text-muted)">
-						{relativeTime((order.data as any).occurredAt ?? '')}
+						{relativeTime(order.data.occurredAt ?? '')}
 						{#if orderSource}
 							· {sourceLabel(orderSource)}{/if}
 					</p>
@@ -452,11 +468,11 @@
 					variant="subtle"
 					size="sm"
 					icon="lucide:package"
-					onclick={() => printPackingSlip(order as any)}>Slip</Button
+					onclick={() => printPackingSlip(order)}>Slip</Button
 				>
-				{#if buildWhatsAppLink(order as any)}
+				{#if buildWhatsAppLink(order)}
 					<a
-						href={buildWhatsAppLink(order as any)}
+						href={buildWhatsAppLink(order)}
 						target="_blank"
 						rel="noopener"
 						class="inline-flex items-center gap-1.5 rounded-xl border border-(--ui-border) px-3 py-1.5 text-[12px] font-semibold text-(--ui-text-muted) transition-colors hover:border-(--ui-text-dimmed)"
@@ -544,7 +560,7 @@
 							</div>
 							<button
 								type="button"
-								onclick={() => printRefundReceipt(order as any, r.data, { currency })}
+								onclick={() => printRefundReceipt(order, r.data, { currency })}
 								class="grid size-8 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 								title={t('common.printRefundReceipt')}
 								aria-label={t('common.printRefundReceipt')}
@@ -586,9 +602,9 @@
 					{/each}
 				</div>
 				<!-- Quick status action -->
-				{#if quickStatusActions().length > 0}
+				{#if quickStatusActions.length > 0}
 					<div class="mt-4 flex justify-center gap-2">
-						{#each quickStatusActions() as action (action.status)}
+						{#each quickStatusActions as action (action.status)}
 							<Button
 								color="primary"
 								size="sm"
@@ -682,7 +698,7 @@
 												{line.variantName}
 											</div>{/if}
 										{#if line.modifiers?.length}<div class="text-[11px] text-(--ui-text-dimmed)">
-												{line.modifiers.map((m: any) => m.name).join(', ')}
+												{line.modifiers.map((m) => m.name).join(', ')}
 											</div>{/if}
 										{#if line.notes}<div class="text-[11px] text-(--ui-text-dimmed) italic">
 												"{line.notes}"
@@ -690,13 +706,10 @@
 									</td>
 									<td class="px-5 py-3 text-center tabular-nums">{line.quantity}</td>
 									<td class="px-5 py-3 text-right tabular-nums"
-										>{formatMoney(line.unitPrice ?? line.price ?? 0, currency)}</td
+										>{formatMoney(line.unitPrice ?? 0, currency)}</td
 									>
 									<td class="px-5 py-3 text-right font-semibold tabular-nums"
-										>{formatMoney(
-											(line.unitPrice ?? line.price ?? 0) * line.quantity,
-											currency
-										)}</td
+										>{formatMoney((line.unitPrice ?? 0) * line.quantity, currency)}</td
 									>
 								</tr>
 							{/each}
@@ -954,7 +967,7 @@
 					</div>
 					<div class="px-5 py-4">
 						<ol class="relative space-y-3 border-l border-(--ui-border-muted) pl-4">
-							{#each activityLog() as event (event.label)}
+							{#each activityLog as event (event.label)}
 								<li class="relative">
 									<span
 										class="absolute -left-[21px] grid size-5 place-items-center rounded-full bg-primary-500/10"
@@ -985,8 +998,7 @@
 					<div class="space-y-2 px-5 py-4 text-[13px]">
 						<div class="flex justify-between">
 							<span class="text-(--ui-text-muted)">{t('common.subtotal')}</span><span
-								class="tabular-nums"
-								>{formatMoney((order.data as any).subtotal ?? 0, currency)}</span
+								class="tabular-nums">{formatMoney(order.data.subtotal ?? 0, currency)}</span
 							>
 						</div>
 						{#if discountInfo.hasDiscount}
@@ -1050,10 +1062,10 @@
 								>
 							</div>
 						{/if}
-						{#if (order.data as any).tip}
+						{#if order.data.tip}
 							<div class="flex justify-between">
 								<span class="text-(--ui-text-muted)">Tip</span><span class="tabular-nums"
-									>{formatMoney((order.data as any).tip ?? 0, currency)}</span
+									>{formatMoney(order.data.tip ?? 0, currency)}</span
 								>
 							</div>
 						{/if}
@@ -1091,11 +1103,13 @@
 													>{p.data.method}</span
 												>
 												<span class="text-[10px] text-(--ui-text-dimmed)"
-													>{relativeTime((p.data as any).occurredAt ?? '')}</span
+													>{relativeTime(
+														(p.data as Payment & { occurredAt?: string }).occurredAt ?? ''
+													)}</span
 												>
 											</div>
 											<span class="font-semibold tabular-nums"
-												>{formatMoney((p.data as any).amount ?? 0, currency)}</span
+												>{formatMoney(p.data.amount ?? 0, currency)}</span
 											>
 										</div>
 									{/each}
@@ -1230,11 +1244,11 @@
 									{t('toast.created')}
 								</p>
 								<p class="text-[12px] text-(--ui-text-muted)">
-									{relativeTime((order.data as any).occurredAt ?? '')}
+									{relativeTime(order.data.occurredAt ?? '')}
 								</p>
 							</div>
 						</div>
-						{#if (order.data as any).completedAt}
+						{#if order.data.completedAt}
 							<div class="flex items-center gap-2">
 								<Icon name="lucide:circle-check" class="size-4 shrink-0 text-(--ui-text-dimmed)" />
 								<div>
@@ -1242,7 +1256,7 @@
 										{t('status.completed')}
 									</p>
 									<p class="text-[12px] text-(--ui-text-muted)">
-										{relativeTime((order.data as any).completedAt ?? '')}
+										{relativeTime(order.data.completedAt ?? '')}
 									</p>
 								</div>
 							</div>

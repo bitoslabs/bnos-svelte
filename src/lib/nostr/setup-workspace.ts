@@ -1,5 +1,7 @@
 import { tenant, makeOrganizationObject } from './tenant.svelte';
 import { glo } from './store.svelte';
+import { memberships } from './memberships.svelte';
+import { clearBootstrap } from './auth-bootstrap';
 import { upsertOrganizationSettingsFromTenant } from './organization-settings';
 import { newOrganizationId, newLocationId } from '$lib/utils/record-id';
 
@@ -39,7 +41,10 @@ export async function createSetupWorkspace(): Promise<{ published: boolean }> {
 				id: locationId,
 				scope: { organizationId: org.id, locationId }
 			}
-		)
+		),
+		// Seed the creator's Owner staff record locally so the first dashboard
+		// load already has a role and does not need a relay membership lookup.
+		memberships.bootstrapOwnerIfMissing()
 	]);
 
 	tenant.configure({ organizationId, locationId });
@@ -50,6 +55,8 @@ export async function createSetupWorkspace(): Promise<{ published: boolean }> {
 		locationName: tenant.state.locationName || 'Main Branch'
 	});
 	tenant.completeSetup();
+	// Any bootstrap started before this workspace existed is now stale.
+	clearBootstrap();
 
 	return { published: orgResult.published && locationResult.published };
 }

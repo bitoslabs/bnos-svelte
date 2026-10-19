@@ -407,17 +407,20 @@ export function startOwnerFeed(): () => void {
 	started = true;
 	notifications.load();
 
-	$effect.root(() => {
+	const stopEffect = $effect.root(() => {
 		$effect(() => {
 			if (!relays.online) return;
 			void syncOwnerNotices();
 		});
 	});
 
-	const timer = setInterval(() => void syncOwnerNotices(), POLL_INTERVAL_MS);
+	const timer = setInterval(() => {
+		if (document.visibilityState === 'visible') void syncOwnerNotices();
+	}, POLL_INTERVAL_MS);
 	void syncOwnerNotices();
 
 	return () => {
+		stopEffect();
 		started = false;
 		clearInterval(timer);
 	};

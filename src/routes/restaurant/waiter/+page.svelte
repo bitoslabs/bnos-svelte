@@ -49,9 +49,14 @@
 			.all<WaiterAssignment, typeof WAITER_TYPE>(WAITER_TYPE)
 			.map((g) => ({ orderId: g.data.orderId, waiterName: g.data.waiterName }))
 	);
+	const waiterByOrder = $derived.by(() => {
+		const map: Record<string, string> = {};
+		for (const a of assignments) map[a.orderId] = a.waiterName;
+		return map;
+	});
 
 	function waiterFor(orderId: string): string {
-		return assignments.find((a) => a.orderId === orderId)?.waiterName ?? '';
+		return waiterByOrder[orderId] ?? '';
 	}
 
 	// ── Filters ──
@@ -106,11 +111,17 @@
 
 	// Grouped by waiter for assignment view
 	// Stats
-	const stats = $derived({
-		total: openOrders.length,
-		pending: openOrders.filter((o) => (o.data.status ?? '').toLowerCase() === 'pending').length,
-		preparing: openOrders.filter((o) => (o.data.status ?? '').toLowerCase() === 'preparing').length,
-		ready: openOrders.filter((o) => (o.data.status ?? '').toLowerCase() === 'ready').length
+	const stats = $derived.by(() => {
+		let pending = 0;
+		let preparing = 0;
+		let ready = 0;
+		for (const o of openOrders) {
+			const status = (o.data.status ?? '').toLowerCase();
+			if (status === 'pending') pending++;
+			else if (status === 'preparing') preparing++;
+			else if (status === 'ready') ready++;
+		}
+		return { total: openOrders.length, pending, preparing, ready };
 	});
 
 	// ── Actions ──

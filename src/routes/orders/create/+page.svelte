@@ -24,12 +24,18 @@
 		type OrderType,
 		type OrderSource,
 		type ShippingInfo,
-		type ShippingStatus,
 		type PickupInfo
 	} from '$lib/domain';
 	import { ORDER_SOURCES, SHIPPING_STATUSES } from '$lib/domain/order-sources';
 	import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
+	import { buildSearchIndex } from '$lib/utils/search';
 	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
+
+	type OrderDraft = Order & {
+		taxAmount?: number;
+		paymentMethod?: string;
+		priority?: string;
+	};
 
 	onMount(() => {
 		dataSync.pageSync([TYPE.product, TYPE.customer, TYPE.order], { scope: 'order-create' });
@@ -38,7 +44,8 @@
 	});
 
 	const currency = $derived(tenant.state.currency);
-	const products = $derived(glo.all<Product, typeof TYPE.product>(TYPE.product));
+	type ProductRow = Product & { image?: string };
+	const products = $derived(glo.all<ProductRow, typeof TYPE.product>(TYPE.product));
 	const customers = $derived(glo.all<Customer, typeof TYPE.customer>(TYPE.customer));
 
 	// ── Form state ───────────────────────────────────────────
@@ -92,43 +99,53 @@
 	let productFocused = $state(false);
 	let highlighted = $state(0);
 
+	const productSearchIndex = $derived(
+		buildSearchIndex(products, (p) => {
+			const d = p.data;
+			return [d.name, d.sku, d.barcode].filter(Boolean).join(' ');
+		})
+	);
+	const productByCode = $derived.by(() => {
+		const map = Object.create(null) as Record<string, (typeof products)[number]>;
+		for (const p of products) {
+			for (const code of [p.data.barcode, p.data.sku]) {
+				const key = code?.toLowerCase();
+				if (key && !map[key]) map[key] = p;
+			}
+		}
+		return map;
+	});
+
 	const filteredProducts = $derived.by(() => {
 		const q = productQuery.trim().toLowerCase();
-		const list = products
+		return products
 			.filter((p) => {
-				const d = p.data as any;
-				if (d.status === 'inactive') return false;
+				if (p.data.status === 'inactive') return false;
 				if (!q) return true;
-				return (
-					(d.name ?? '').toLowerCase().includes(q) ||
-					(d.sku ?? '').toLowerCase().includes(q) ||
-					(d.barcode ?? '').toLowerCase().includes(q)
-				);
+				return productSearchIndex[p.id]?.includes(q) ?? false;
 			})
 			.slice(0, q ? 8 : 6);
-		return list;
 	});
 	const showProductResults = $derived(productFocused && filteredProducts.length > 0);
 
-	function productImage(p: any): string {
+	function productImage(p: ProductRow): string {
 		return Array.isArray(p.images) ? (p.images[0] ?? '') : (p.image ?? '');
 	}
 
-	function addLine(product: Product) {
-		const d = product as any;
-		const existing = lines.find((l) => l.productId === d.id);
+	function addLine(product: { id: string; data: Product }) {
+		const existing = lines.find((l) => l.productId === product.id);
 		if (existing) {
 			existing.quantity++;
 			lines = [...lines];
 		} else {
-			const price = d.price ?? 0;
+			const price = product.data.price ?? 0;
 			lines = [
 				...lines,
 				{
 					id: crypto.randomUUID(),
-					productId: d.id ?? '',
-					name: d.name ?? '',
-					productName: d.name ?? '',
+					productId: product.id,
+					name: product.data.name,
+					productName: product.data.name,
 					quantity: 1,
 					unitPrice: price,
 					total: price
@@ -141,18 +158,12 @@
 	function commitProductSearch() {
 		const q = productQuery.trim();
 		if (!q) return;
-		const exact = products.find((p) => {
-			const d = p.data as any;
-			return (
-				(d.barcode ?? '').toLowerCase() === q.toLowerCase() ||
-				(d.sku ?? '').toLowerCase() === q.toLowerCase()
-			);
-		});
+		const exact = productByCode[q.toLowerCase()];
 		if (exact) {
-			addLine(exact.data as Product);
+			addLine(exact);
 		} else if (filteredProducts.length) {
 			const pick = filteredProducts[Math.min(highlighted, filteredProducts.length - 1)];
-			addLine(pick.data as Product);
+			addLine(pick);
 		} else {
 			toast.warning(`No product matches "${q}"`);
 			return;
@@ -195,19 +206,16 @@
 	let customerInput: HTMLInputElement | undefined = $state();
 	let customerQuery = $state('');
 	let customerFocused = $state(false);
+	const customerSearchIndex = $derived(
+		buildSearchIndex(customers, (c) => {
+			const d = c.data;
+			return [d.name, d.phone, d.email].filter(Boolean).join(' ');
+		})
+	);
 	const filteredCustomers = $derived.by(() => {
 		const q = customerQuery.trim().toLowerCase();
 		if (!q) return customers.slice(0, 6);
-		return customers
-			.filter((c) => {
-				const d = c.data as any;
-				return (
-					(d.name ?? '').toLowerCase().includes(q) ||
-					(d.phone ?? '').toLowerCase().includes(q) ||
-					(d.email ?? '').toLowerCase().includes(q)
-				);
-			})
-			.slice(0, 8);
+		return customers.filter((c) => customerSearchIndex[c.id]?.includes(q) ?? false).slice(0, 8);
 	});
 	const showCustomerResults = $derived(
 		customerFocused && !customerId && filteredCustomers.length > 0
@@ -270,9 +278,7 @@
 	}
 
 	// ── Totals ───────────────────────────────────────────────
-	const subtotal = $derived(
-		lines.reduce((s, l) => s + (l.unitPrice ?? (l as any).price ?? 0) * l.quantity, 0)
-	);
+	const subtotal = $derived(lines.reduce((s, l) => s + (l.unitPrice ?? 0) * l.quantity, 0));
 	const itemCount = $derived(lines.reduce((s, l) => s + l.quantity, 0));
 	let discountAmount = $state(0);
 	let tipAmount = $state(0);
@@ -308,12 +314,12 @@
 			? btcRate.satsFromAmount(total, currency)
 			: undefined;
 
-		const orderData: any = {
+		const orderData: OrderDraft = {
 			orderNumber,
 			type: orderType,
 			source,
 			sourceDetail: source === 'other' ? sourceDetail.trim() || undefined : undefined,
-			status: finalStatus,
+			status: finalStatus as OrderDraft['status'],
 			customerId: customerId || undefined,
 			customerName: customerName || undefined,
 			lines,
@@ -481,14 +487,14 @@
 							role="listbox"
 						>
 							{#each filteredProducts as p, i (p.id)}
-								{@const img = productImage(p.data as any)}
+								{@const img = productImage(p.data)}
 								<button
 									type="button"
 									role="option"
 									aria-selected={highlighted === i}
 									onmousedown={(e) => e.preventDefault()}
 									onclick={() => {
-										addLine(p.data as Product);
+										addLine(p);
 										productQuery = '';
 										highlighted = 0;
 										productInput?.focus();
@@ -500,20 +506,25 @@
 										: 'hover:bg-(--ui-bg-accented)'}"
 								>
 									{#if img}
-										<img src={img} alt="" class="size-9 shrink-0 rounded-lg object-cover" />
+										<img
+											src={img}
+											alt=""
+											loading="lazy"
+											decoding="async"
+											class="size-9 shrink-0 rounded-lg object-cover"
+										/>
 									{:else}
 										<div
 											class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-500/10 text-[12px] font-bold text-primary-600 dark:text-primary-400"
 										>
-											{((p.data as any).name ?? '?').charAt(0).toUpperCase()}
+											{(p.data.name ?? '?').charAt(0).toUpperCase()}
 										</div>
 									{/if}
 									<div class="min-w-0 flex-1">
-										<div class="truncate text-[13px] font-semibold">{(p.data as any).name}</div>
+										<div class="truncate text-[13px] font-semibold">{p.data.name}</div>
 										<div class="flex items-center gap-1.5 text-[11px] text-(--ui-text-dimmed)">
-											{#if (p.data as any).sku}<span class="font-mono">{(p.data as any).sku}</span
-												>{/if}
-											{#if (p.data as any).barcode}
+											{#if p.data.sku}<span class="font-mono">{p.data.sku}</span>{/if}
+											{#if p.data.barcode}
 												<span>·</span>
 												<span class="inline-flex items-center gap-0.5"
 													><Icon name="lucide:barcode" class="size-3" />scan</span
@@ -522,7 +533,7 @@
 										</div>
 									</div>
 									<div class="shrink-0 text-[13px] font-bold tabular-nums">
-										{formatMoney((p.data as any).price ?? 0, currency ?? 'USD')}
+										{formatMoney(p.data.price ?? 0, currency ?? 'USD')}
 									</div>
 								</button>
 							{/each}
@@ -563,7 +574,7 @@
 											{line.name ?? line.productName}
 										</div>
 										<div class="text-[11px] text-(--ui-text-dimmed) tabular-nums">
-											{formatMoney(line.unitPrice ?? (line as any).price ?? 0, currency ?? 'USD')}
+											{formatMoney(line.unitPrice ?? 0, currency ?? 'USD')}
 											each
 										</div>
 									</div>
@@ -595,10 +606,7 @@
 										</button>
 									</div>
 									<div class="w-24 shrink-0 text-right text-[13px] font-bold tabular-nums">
-										{formatMoney(
-											(line.unitPrice ?? (line as any).price ?? 0) * line.quantity,
-											currency ?? 'USD'
-										)}
+										{formatMoney((line.unitPrice ?? 0) * line.quantity, currency ?? 'USD')}
 									</div>
 									<button
 										type="button"
@@ -719,8 +727,8 @@
 													{[c.data.phone, c.data.email].filter(Boolean).join(' · ') || 'No contact'}
 												</div>
 											</div>
-											{#if (c.data as any).segment && (c.data as any).segment !== 'new'}
-												<Badge color="neutral">{(c.data as any).segment}</Badge>
+											{#if c.data.segment && c.data.segment !== 'new'}
+												<Badge color="neutral">{c.data.segment}</Badge>
 											{/if}
 										</button>
 									{/each}

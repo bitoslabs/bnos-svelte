@@ -18,7 +18,7 @@
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { formatMoney, relativeTime } from '$lib/utils/format';
+	import { formatMoney, localDayKey, relativeTime } from '$lib/utils/format';
 	import { newRecordId } from '$lib/utils/record-id';
 	import {
 		TYPE,
@@ -38,7 +38,8 @@
 	});
 
 	const currency = $derived(tenant.state.currency);
-	const plans = $derived(glo.all<Membership, typeof TYPE.membership>(TYPE.membership));
+	type MembershipView = Membership & { trialDays?: number };
+	const plans = $derived(glo.all<MembershipView, typeof TYPE.membership>(TYPE.membership));
 	const subs = $derived(
 		glo.all<MembershipSubscription, typeof TYPE.membershipSubscription>(TYPE.membershipSubscription)
 	);
@@ -46,7 +47,20 @@
 		glo.all<MembershipCheckIn, typeof TYPE.membershipCheckIn>(TYPE.membershipCheckIn)
 	);
 
-	const planCtrl = createListControls<{ id: string; data: Membership }>({
+	const membershipStats = $derived.by(() => {
+		let activePlans = 0;
+		for (const plan of plans) if (plan.data.active ?? plan.data.status === 'active') activePlans++;
+		let activeSubs = 0;
+		for (const sub of subs) if (sub.data.status === 'active') activeSubs++;
+		const today = localDayKey(Date.now());
+		let checkinsToday = 0;
+		for (const checkin of checkins) {
+			if (localDayKey(checkin.data.occurredAt) === today) checkinsToday++;
+		}
+		return { totalPlans: plans.length, activePlans, activeSubs, checkinsToday };
+	});
+
+	const planCtrl = createListControls<{ id: string; data: MembershipView }>({
 		items: () => plans,
 		search: (m, q) => (m.data.name ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
@@ -81,7 +95,7 @@
 	// ── Dialog state ──
 	let open = $state(false);
 	let rawOpen = $state(false);
-	let rawItem = $state<any>(null);
+	let rawItem = $state<unknown>(null);
 	let dlgTab = $state<Tab>('plans');
 	let editingId = $state<string | null>(null);
 
@@ -135,7 +149,7 @@
 		open = true;
 	}
 
-	function openEditPlan(p: { id: string; data: Membership }) {
+	function openEditPlan(p: { id: string; data: MembershipView }) {
 		dlgTab = 'plans';
 		editingId = p.id;
 		mName = p.data.name ?? '';
@@ -144,7 +158,7 @@
 		mPeriod = p.data.period ?? 'monthly';
 		mDays = p.data.durationDays ?? 30;
 		mBenefits = p.data.benefits ?? [];
-		mTrialDays = (p.data as any).trialDays ?? 0;
+		mTrialDays = p.data.trialDays ?? 0;
 		mDescription = p.data.description ?? '';
 		mColor = p.data.color ?? '#6366F1';
 		mActive = p.data.active ?? p.data.status === 'active';
@@ -300,14 +314,14 @@
 			<p class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 				Total Plans
 			</p>
-			<p class="font-display text-2xl font-bold tabular-nums">{plans.length}</p>
+			<p class="font-display text-2xl font-bold tabular-nums">{membershipStats.totalPlans}</p>
 		</div>
 		<div class="surface-card p-4">
 			<p class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 				Active
 			</p>
 			<p class="font-display text-2xl font-bold text-emerald-500 tabular-nums">
-				{plans.filter((p) => p.data.active ?? p.data.status === 'active').length}
+				{membershipStats.activePlans}
 			</p>
 		</div>
 		<div class="surface-card p-4">
@@ -315,7 +329,7 @@
 				Subscriptions
 			</p>
 			<p class="font-display text-2xl font-bold text-blue-500 tabular-nums">
-				{subs.filter((s) => s.data.status === 'active').length}
+				{membershipStats.activeSubs}
 			</p>
 		</div>
 		<div class="surface-card p-4">
@@ -323,15 +337,7 @@
 				Check-ins Today
 			</p>
 			<p class="font-display text-2xl font-bold tabular-nums">
-				{checkins.filter((c) => {
-					const d = new Date(c.data.occurredAt);
-					const t = new Date();
-					return (
-						d.getDate() === t.getDate() &&
-						d.getMonth() === t.getMonth() &&
-						d.getFullYear() === t.getFullYear()
-					);
-				}).length}
+				{membershipStats.checkinsToday}
 			</p>
 		</div>
 	</div>
@@ -535,8 +541,8 @@
 							>
 						</div>
 						<div class="mt-1 text-[11.5px] text-(--ui-text-muted)">
-							{p.data.durationDays ?? '∞'} days duration{#if (p.data as any).trialDays}
-								· {(p.data as any).trialDays}d trial{/if}
+							{p.data.durationDays ?? '∞'} days duration{#if p.data.trialDays}
+								· {p.data.trialDays}d trial{/if}
 						</div>
 
 						{#if p.data.description}

@@ -5,7 +5,6 @@
 	import { bottomBarItems, permissionForNavItem } from '$lib/nav';
 	import { permissions } from '$lib/permissions.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
-	import { t } from '$lib/i18n/i18n.svelte';
 	import { navLabel } from '$lib/nav';
 
 	function normalizePath(path: string) {

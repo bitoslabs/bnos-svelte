@@ -77,6 +77,7 @@ class I18nStore {
 	/** Change the active language everywhere (reactive). */
 	set = (locale: Locale) => {
 		if (!(locales as readonly string[]).includes(locale)) return;
+		this.cache = {};
 		this.locale = locale;
 		if (browser) {
 			localStorage.setItem(STORAGE_KEY, locale);
@@ -104,15 +105,34 @@ class I18nStore {
 		return locales;
 	}
 
+	/** Flat lookup cache for parameterless keys (messages are static). */
+	private cache: Record<string, Record<string, string>> = {};
+
 	/** Reactive translate. Reads `this.locale` so callers re-render on change. */
 	t: TranslateFn = (key, params) => {
 		const locale = this.locale;
-		return resolve(
+		// Interpolated strings depend on params; everything else is memoized.
+		if (params) {
+			return resolve(
+				messages[locale] as unknown as DeepDict,
+				key,
+				params,
+				messages[DEFAULT_LOCALE] as unknown as DeepDict
+			);
+		}
+
+		const byLocale = (this.cache[locale] ??= {});
+		const cached = byLocale[key];
+		if (cached !== undefined) return cached;
+
+		const value = resolve(
 			messages[locale] as unknown as DeepDict,
 			key,
-			params,
+			undefined,
 			messages[DEFAULT_LOCALE] as unknown as DeepDict
 		);
+		byLocale[key] = value;
+		return value;
 	};
 }
 

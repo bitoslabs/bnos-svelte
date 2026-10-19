@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -11,7 +12,7 @@
 		await session.logout();
 		tenant.reset();
 		glo.clearAll();
-		goto('/login', { replaceState: true });
+		goto(resolve('/login'), { replaceState: true });
 	}
 </script>
 
@@ -46,7 +47,7 @@
 				variant="ghost"
 				block
 				icon="lucide:arrow-left"
-				onclick={() => goto('/', { replaceState: true })}>Back to Dashboard</Button
+				onclick={() => goto(resolve('/'), { replaceState: true })}>Back to Dashboard</Button
 			>
 			<p class="text-[11px] text-(--ui-text-dimmed)">
 				If you believe this is an error, share your public key with your administrator.

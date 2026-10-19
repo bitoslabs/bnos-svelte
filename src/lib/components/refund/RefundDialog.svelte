@@ -24,7 +24,7 @@
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { formatMoney } from '$lib/utils/format';
 	import { newRecordId } from '$lib/utils/record-id';
-	import { TYPE, type Order, type Payment, type Refund, type GloObject } from '$lib/domain';
+	import { TYPE, type Order, type Refund, type GloObject } from '$lib/domain';
 	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
 	import { loadGeneralSettings, loadHardwareSettings } from '$lib/settings/local';
 	import {
@@ -146,8 +146,8 @@
 			// 1. Persist the refund record.
 			await glo.upsert<Refund>(TYPE.refund, refundRecord, { id: newRecordId('refund') });
 
-			// 1b. Audit log.
-			await logActivity({
+			// 1b. Audit log (fire-and-forget: must never block the refund).
+			void logActivity({
 				action: 'refund',
 				resource: 'order',
 				resourceId: order.id,
@@ -174,24 +174,30 @@
 			);
 
 			// 3. Restock selected items (mirror checkout's stockLevel handling).
+			// Aggregate per product first so repeated lines get one write.
+			const restockByProduct: Record<string, number> = {};
 			for (const rl of refundLines) {
 				if (!rl.productId) continue;
 				if (!(restock[rl.orderLineItemId ?? ''] ?? true)) continue; // skip damaged
-				const product = glo.get(TYPE.product, rl.productId);
-				if (product) {
+				restockByProduct[rl.productId] = (restockByProduct[rl.productId] ?? 0) + rl.quantity;
+			}
+			await Promise.all(
+				Object.entries(restockByProduct).map(async ([productId, quantity]) => {
+					const product = glo.get(TYPE.product, productId);
+					if (!product) return;
 					const pd = product.data as Record<string, unknown>;
 					const cur = typeof pd.stockLevel === 'number' ? pd.stockLevel : 0;
 					try {
 						await glo.upsert(
 							TYPE.product,
-							{ ...pd, stockLevel: cur + rl.quantity },
+							{ ...pd, stockLevel: cur + quantity },
 							{ id: product.id }
 						);
 					} catch {
 						/* non-fatal */
 					}
-				}
-			}
+				})
+			);
 
 			// 4. Auto-print refund receipt if enabled (mirrors checkout auto-print).
 			const g = loadGeneralSettings();

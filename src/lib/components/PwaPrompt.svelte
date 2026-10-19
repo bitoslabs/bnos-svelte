@@ -11,23 +11,22 @@
 	let canInstall = $state(false);
 
 	onMount(() => {
-		if ('serviceWorker' in navigator) {
-			navigator.serviceWorker.addEventListener('controllerchange', () => {
-				// Page will reload via the SW registration
-			});
-		}
-
-		// Listen for beforeinstallprompt
-		window.addEventListener('beforeinstallprompt', (e) => {
-			e.preventDefault();
-			deferredPrompt = e as never;
+		const onBeforeInstall = (event: Event) => {
+			event.preventDefault();
+			deferredPrompt = event as never;
 			canInstall = true;
-		});
-
-		window.addEventListener('appinstalled', () => {
+		};
+		const onInstalled = () => {
 			canInstall = false;
 			deferredPrompt = null;
-		});
+		};
+
+		window.addEventListener('beforeinstallprompt', onBeforeInstall);
+		window.addEventListener('appinstalled', onInstalled);
+		return () => {
+			window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+			window.removeEventListener('appinstalled', onInstalled);
+		};
 	});
 
 	async function applyUpdate() {

@@ -31,7 +31,7 @@ export async function fetchEvents(filter: NostrFilter): Promise<NostrEvent[]> {
 	if (!relays.online || !relays.readableNormalized.length) return [];
 	try {
 		return await queryRelays(relays.readableNormalized, filter);
-	} catch (e) {
+	} catch {
 		return [];
 	}
 }
@@ -47,7 +47,7 @@ export async function fetchEventsPrimaryFirst(filter: NostrFilter): Promise<Nost
 			if (primaryEvents.length || !fallback.length) return primaryEvents;
 		}
 		return fallback.length ? await queryRelays(fallback, filter) : [];
-	} catch (e) {
+	} catch {
 		return [];
 	}
 }
@@ -66,7 +66,7 @@ export async function sendEvent(event: NostrEvent): Promise<boolean> {
 			return true;
 		}
 		return await publishToRelays(event, remaining.length ? remaining : relays.writableNormalized);
-	} catch (e) {
+	} catch {
 		return false;
 	}
 }

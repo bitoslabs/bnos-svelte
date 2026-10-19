@@ -5,6 +5,7 @@
 	 * optional per-channel pricing and live publish status.
 	 */
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { resolve } from '$app/paths';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -38,6 +39,11 @@
 	const connections = $derived(
 		glo.all<MarketplaceConnection, typeof TYPE.marketplaceConnection>(TYPE.marketplaceConnection)
 	);
+	const connectionsById = $derived.by(() => {
+		const map: Record<string, (typeof connections)[number]> = {};
+		for (const connection of connections) map[connection.id] = connection;
+		return map;
+	});
 	const products = $derived(glo.all<Product, typeof TYPE.product>(TYPE.product));
 	const listings = $derived(
 		glo.all<MarketplaceProduct, typeof TYPE.marketplaceProduct>(TYPE.marketplaceProduct)
@@ -52,20 +58,18 @@
 	let statusFilter = $state('');
 	let channelFilter = $state('');
 
-	const filtered = $derived(
-		listings.filter((l) => {
+	const filtered = $derived.by(() => {
+		const q = search.trim().toLowerCase();
+		return listings.filter((l) => {
 			if (statusFilter && l.data.status !== statusFilter) return false;
 			if (channelFilter && !l.data.channelIds.includes(channelFilter)) return false;
-			if (search.trim()) {
-				const q = search.trim().toLowerCase();
-				return (
-					l.data.productName.toLowerCase().includes(q) ||
-					(l.data.sku?.toLowerCase().includes(q) ?? false)
-				);
-			}
-			return true;
-		})
-	);
+			if (!q) return true;
+			return (
+				l.data.productName.toLowerCase().includes(q) ||
+				(l.data.sku?.toLowerCase().includes(q) ?? false)
+			);
+		});
+	});
 
 	const controls = createListControls<{ id: string; data: MarketplaceProduct }>({
 		items: () => filtered,
@@ -82,15 +86,21 @@
 	});
 
 	// ── Stats ───────────────────────────────────────────────
-	const activeCount = $derived(listings.filter((l) => l.data.status === 'active').length);
-	const lowStockCount = $derived(
-		listings.filter((l) => l.data.inventoryTracked && (l.data.stock ?? 0) <= 5).length
-	);
-	const totalViews = $derived(listings.reduce((s, l) => s + (l.data.views ?? 0), 0));
+	const listingStats = $derived.by(() => {
+		let active = 0;
+		let lowStock = 0;
+		let views = 0;
+		for (const l of listings) {
+			if (l.data.status === 'active') active++;
+			if (l.data.inventoryTracked && (l.data.stock ?? 0) <= 5) lowStock++;
+			views += l.data.views ?? 0;
+		}
+		return { active, lowStock, views };
+	});
 
 	// ── Raw data inspector ──────────────────────────────────
 	let rawOpen = $state(false);
-	let rawItem = $state<any>(null);
+	let rawItem = $state<unknown>(null);
 
 	// ── Create / edit modal ─────────────────────────────────
 	let modalOpen = $state(false);
@@ -107,15 +117,20 @@
 	let fDescription = $state('');
 	let fImages = $state<string[]>([]);
 
+	const productsById = $derived.by(() => {
+		const map: Record<string, Product> = {};
+		for (const p of products) map[p.id] = p.data;
+		return map;
+	});
+
 	function productName(id: string) {
-		return products.find((p) => p.id === id)?.data.name ?? 'Unknown product';
+		return productsById[id]?.name ?? 'Unknown product';
 	}
 
 	/** A product's images (gallery + legacy single image), de-duplicated. */
 	function productImages(id: string): string[] {
-		const p = products.find((x) => x.id === id);
-		if (!p) return [];
-		const d = p.data as { images?: string[]; image?: string };
+		const d = productsById[id] as { images?: string[]; image?: string } | undefined;
+		if (!d) return [];
 		const arr = Array.isArray(d.images) ? d.images : [];
 		const single = d.image ? String(d.image) : null;
 		const all = single && !arr.includes(single) ? [single, ...arr] : [...arr];
@@ -134,7 +149,7 @@
 			{ icon: NATIVE_STORE.icon, label: NATIVE_STORE.label, native: true }
 		];
 		for (const cid of data.channelIds) {
-			const conn = connections.find((c) => c.id === cid);
+			const conn = connectionsById[cid];
 			const m = conn ? channelMeta(conn.data.type) : null;
 			out.push({ icon: m?.icon ?? 'lucide:plug', label: conn?.data.name ?? cid.slice(0, 6) });
 		}
@@ -300,7 +315,7 @@
 						variant="subtle"
 						size="sm"
 						icon="lucide:radio"
-						href="/marketplace/channels">Connect external channel</Button
+						href={resolve('/marketplace/channels')}>Connect external channel</Button
 					>
 				{/if}
 			{/snippet}
@@ -310,17 +325,23 @@
 		<div class="grid grid-cols-3 gap-3">
 			<div class="metric-card p-3.5">
 				<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">Active</p>
-				<p class="mt-0.5 text-xl font-black text-emerald-500 tabular-nums">{activeCount}</p>
+				<p class="mt-0.5 text-xl font-black text-emerald-500 tabular-nums">
+					{listingStats.active}
+				</p>
 			</div>
 			<div class="metric-card p-3.5">
 				<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">Low stock</p>
-				<p class="mt-0.5 text-xl font-black text-amber-500 tabular-nums">{lowStockCount}</p>
+				<p class="mt-0.5 text-xl font-black text-amber-500 tabular-nums">
+					{listingStats.lowStock}
+				</p>
 			</div>
 			<div class="metric-card p-3.5">
 				<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">
 					{t('common.views')}
 				</p>
-				<p class="mt-0.5 text-xl font-black tabular-nums">{formatInt(totalViews)}</p>
+				<p class="mt-0.5 text-xl font-black tabular-nums">
+					{formatInt(listingStats.views)}
+				</p>
 			</div>
 		</div>
 
@@ -451,6 +472,8 @@
 													<img
 														src={listingCover(l.data)}
 														alt={l.data.productName}
+														loading="lazy"
+														decoding="async"
 														class="h-full w-full object-cover"
 													/>
 												{:else}
@@ -578,6 +601,8 @@
 										<img
 											src={listingCover(l.data)}
 											alt={l.data.productName}
+											loading="lazy"
+											decoding="async"
 											class="h-full w-full object-cover"
 										/>
 									{:else}
@@ -697,6 +722,8 @@
 											<img
 												src={listingCover(l.data)}
 												alt={l.data.productName}
+												loading="lazy"
+												decoding="async"
 												class="h-full w-full object-cover"
 											/>
 										{:else}
@@ -890,7 +917,7 @@
 				</div>
 			{:else}
 				<a
-					href="/marketplace/channels"
+					href={resolve('/marketplace/channels')}
 					class="inline-flex items-center gap-1 text-[11px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
 				>
 					<Icon name="lucide:plus" class="size-3" />Connect external channels (TikTok, Facebook,

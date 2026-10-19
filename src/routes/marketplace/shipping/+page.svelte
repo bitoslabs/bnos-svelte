@@ -7,20 +7,12 @@
 	import { resolve } from '$app/paths';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, relativeTime } from '$lib/utils/format';
-	import {
-		TYPE,
-		isRemoteSource,
-		SHIPPING_STATUSES,
-		shippingStatusLabel,
-		sourceLabel,
-		sourceIcon
-	} from '$lib/domain';
+	import { isRemoteSource, shippingStatusLabel, sourceLabel, sourceIcon } from '$lib/domain';
 	import type { ShippingInfo } from '$lib/domain';
 	import type { DashboardOrder } from '$lib/dashboard/metrics';
 
@@ -87,9 +79,26 @@
 		return s;
 	}
 
+	// Bucket once; `rowsFor()` is called by every kanban column on each render.
+	const rowsByColumn = $derived.by(() => {
+		const map: Record<string, FulfillRow[]> = {};
+		for (const row of fulfillable) {
+			const column = columnFor(row);
+			(map[column] ??= []).push(row);
+		}
+		for (const rows of Object.values(map)) rows.sort((a, b) => b.atMs - a.atMs);
+		return map;
+	});
+
 	function rowsFor(colStatus: string): FulfillRow[] {
-		return fulfillable.filter((r) => columnFor(r) === colStatus).sort((a, b) => b.atMs - a.atMs);
+		return rowsByColumn[colStatus] ?? [];
 	}
+
+	const ordersById = $derived.by(() => {
+		const map: Record<string, (typeof orders)[number]> = {};
+		for (const order of orders) map[order.id] = order;
+		return map;
+	});
 
 	// Advance status: pending → packed → shipped → in_transit → delivered
 	const NEXT: Record<string, string> = {
@@ -109,7 +118,7 @@
 		const cur = row.shipping?.shippingStatus ?? 'pending';
 		const next = NEXT[cur];
 		if (!next) return;
-		const obj = orders.find((o) => o.id === row.id);
+		const obj = ordersById[row.id];
 		if (!obj) return;
 		const shipping: ShippingInfo = {
 			...(obj.data.shipping as ShippingInfo | undefined),

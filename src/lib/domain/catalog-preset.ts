@@ -16,6 +16,7 @@
  */
 import type { Category, ModifierGroup, Product, Unit } from './types';
 import { TYPE } from './kind';
+import { mapLimit } from '../utils/async';
 
 export const PRESET_FORMAT = 'bnos.catalog-preset';
 export const PRESET_SCHEMA_VERSION = 1;
@@ -472,11 +473,21 @@ export async function applyCatalogPreset(
 		};
 	}
 	const plan = planPresetApplication(parsed.data, options);
-	for (const record of plan.categories) await upsert(TYPE.category, record.data, { id: record.id });
-	for (const record of plan.units) await upsert(TYPE.unit, record.data, { id: record.id });
-	for (const record of plan.modifierGroups)
-		await upsert(TYPE.modifierGroup, record.data, { id: record.id });
-	for (const record of plan.products) await upsert(TYPE.product, record.data, { id: record.id });
+	// Keep the dependency order between groups, but write each group with
+	// bounded concurrency so a large kit doesn't flood the relay queue.
+	const batchSize = 8;
+	await mapLimit(plan.categories, batchSize, (record) =>
+		Promise.resolve(upsert(TYPE.category, record.data, { id: record.id }))
+	);
+	await mapLimit(plan.units, batchSize, (record) =>
+		Promise.resolve(upsert(TYPE.unit, record.data, { id: record.id }))
+	);
+	await mapLimit(plan.modifierGroups, batchSize, (record) =>
+		Promise.resolve(upsert(TYPE.modifierGroup, record.data, { id: record.id }))
+	);
+	await mapLimit(plan.products, batchSize, (record) =>
+		Promise.resolve(upsert(TYPE.product, record.data, { id: record.id }))
+	);
 	return {
 		ok: true,
 		errors: [],

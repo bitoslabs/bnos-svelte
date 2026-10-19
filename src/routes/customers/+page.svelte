@@ -12,6 +12,7 @@
 	import Pagination from '$lib/components/list/Pagination.svelte';
 	import RowActions, { type RowAction } from '$lib/components/list/RowActions.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
+	import { buildSearchIndex } from '$lib/utils/search';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -22,7 +23,8 @@
 	import { TYPE } from '$lib/domain';
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 
-	type CustomerRow = GloObject<GloCustomer, 'crm.customer'>;
+	type CustomerView = GloCustomer & { segment?: string; totalSpend?: number };
+	type CustomerRow = GloObject<CustomerView, 'crm.customer'>;
 
 	const SEGMENTS: { value: string; label: string }[] = [
 		{ value: 'none', label: 'No segment' },
@@ -37,21 +39,28 @@
 		dataSync.pageSync([TYPE.customer], { scope: 'customers' });
 	});
 
-	const customers = $derived(glo.all<GloCustomer, 'crm.customer'>('crm.customer'));
-	const activeCustomers = $derived(
-		customers.filter((c) => (c.data.status ?? 'active') === 'active').length
-	);
-	const withContact = $derived(
-		customers.filter((c) => Boolean(c.data.phone?.trim() || c.data.email?.trim())).length
+	const customers = $derived(glo.all<CustomerView, 'crm.customer'>('crm.customer'));
+	const customerStats = $derived.by(() => {
+		let active = 0;
+		let withContact = 0;
+		for (const c of customers) {
+			if ((c.data.status ?? 'active') === 'active') active++;
+			if (c.data.phone?.trim() || c.data.email?.trim()) withContact++;
+		}
+		return { active, withContact };
+	});
+
+	const customerSearchIndex = $derived(
+		buildSearchIndex(customers, (c) =>
+			[c.data.name, c.data.phone, c.data.email, (c.data as { npub?: string }).npub]
+				.filter(Boolean)
+				.join(' ')
+		)
 	);
 
 	const controls = createListControls<CustomerRow>({
 		items: () => customers,
-		search: (c, q) =>
-			(c.data.name ?? '').toLowerCase().includes(q) ||
-			(c.data.phone ?? '').includes(q) ||
-			(c.data.email ?? '').toLowerCase().includes(q) ||
-			((c.data as { npub?: string }).npub ?? '').toLowerCase().includes(q),
+		search: (c, q) => customerSearchIndex[c.id]?.includes(q) ?? false,
 		sortOptions: () => [
 			{ key: 'name', label: t('common.name'), value: (c) => c.data.name ?? '~' },
 			{ key: 'phone', label: t('common.phone'), value: (c) => c.data.phone ?? '~' },
@@ -72,7 +81,7 @@
 	// Create dialog
 	// Raw data viewer
 	let rawOpen = $state(false);
-	let rawItem = $state<any>(null);
+	let rawItem = $state<unknown>(null);
 
 	let open = $state(false);
 	let name = $state('');
@@ -235,12 +244,14 @@
 		<div class="metric-card p-4">
 			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Active</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
-				{formatInt(activeCustomers)}
+				{formatInt(customerStats.active)}
 			</div>
 		</div>
 		<div class="metric-card p-4">
 			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">With contact</div>
-			<div class="mt-1 font-display text-lg font-bold tabular-nums">{formatInt(withContact)}</div>
+			<div class="mt-1 font-display text-lg font-bold tabular-nums">
+				{formatInt(customerStats.withContact)}
+			</div>
 		</div>
 	</div>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { SvelteDate } from 'svelte/reactivity';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -71,7 +72,7 @@
 	const filteredOrders = $derived(
 		customRangeReady
 			? orders.filter((o) => {
-					const t = new Date(o.data.occurredAt || o.data.createdAt || 0).getTime();
+					const t = new Date(o.data.occurredAt || o.data.occurredAt || 0).getTime();
 					return t >= rangeStart && t <= rangeEnd;
 				})
 			: []
@@ -79,7 +80,7 @@
 
 	const prevOrders = $derived(
 		orders.filter((o) => {
-			const t = new Date(o.data.occurredAt || o.data.createdAt || 0).getTime();
+			const t = new Date(o.data.occurredAt || o.data.occurredAt || 0).getTime();
 			return t >= prevStart && t < prevEnd;
 		})
 	);
@@ -87,24 +88,37 @@
 	const isLoading = $derived(glo.hydrating);
 	const hasData = $derived(filteredOrders.length > 0);
 
-	// ── Summary stats ───────────────────────────────────────────────
-	const totalRevenue = $derived(filteredOrders.reduce((s, o) => s + (o.data.total ?? 0), 0));
-	const orderCount = $derived(filteredOrders.length);
-	const avgOrderValue = $derived(orderCount > 0 ? totalRevenue / orderCount : 0);
-	const itemsSold = $derived(
-		filteredOrders.reduce(
-			(s, o) => s + (o.data.lines ?? []).reduce((ls, l) => ls + l.quantity, 0),
-			0
-		)
-	);
+	// ── Summary stats (one pass per period) ─────────────────────────
+	const stats = $derived.by(() => {
+		let revenue = 0;
+		let items = 0;
+		for (const o of filteredOrders) {
+			revenue += o.data.total ?? 0;
+			for (const line of o.data.lines ?? []) items += line.quantity;
+		}
+		const count = filteredOrders.length;
+		return { revenue, count, items, aov: count > 0 ? revenue / count : 0 };
+	});
+	const totalRevenue = $derived(stats.revenue);
+	const orderCount = $derived(stats.count);
+	const avgOrderValue = $derived(stats.aov);
+	const itemsSold = $derived(stats.items);
 
 	// Previous period stats
-	const prevRevenue = $derived(prevOrders.reduce((s, o) => s + (o.data.total ?? 0), 0));
-	const prevCount = $derived(prevOrders.length);
-	const prevAOV = $derived(prevCount > 0 ? prevRevenue / prevCount : 0);
-	const prevItems = $derived(
-		prevOrders.reduce((s, o) => s + (o.data.lines ?? []).reduce((ls, l) => ls + l.quantity, 0), 0)
-	);
+	const prevStats = $derived.by(() => {
+		let revenue = 0;
+		let items = 0;
+		for (const o of prevOrders) {
+			revenue += o.data.total ?? 0;
+			for (const line of o.data.lines ?? []) items += line.quantity;
+		}
+		const count = prevOrders.length;
+		return { revenue, count, items, aov: count > 0 ? revenue / count : 0 };
+	});
+	const prevRevenue = $derived(prevStats.revenue);
+	const prevCount = $derived(prevStats.count);
+	const prevAOV = $derived(prevStats.aov);
+	const prevItems = $derived(prevStats.items);
 
 	function pctChange(curr: number, prev: number): number | null {
 		if (prev === 0) return curr > 0 ? 100 : null;
@@ -120,36 +134,36 @@
 	const revenueByDay = $derived.by(() => {
 		const days: { label: string; sublabel: string; total: number; isToday: boolean }[] = [];
 		if (!customRangeReady) return days;
-		const rangeDayStart = new Date(rangeStart);
+		const rangeDayStart = new SvelteDate(rangeStart);
 		rangeDayStart.setHours(0, 0, 0, 0);
-		const rangeDayEnd = new Date(rangeEnd);
+		const rangeDayEnd = new SvelteDate(rangeEnd);
 		rangeDayEnd.setHours(0, 0, 0, 0);
-		const today = startOfDay(new Date());
+		const today = startOfDay(new SvelteDate());
 		const numDays = Math.min(
 			Math.max(1, Math.round((rangeDayEnd.getTime() - rangeDayStart.getTime()) / MS_DAY) + 1),
 			31
 		);
 		for (let i = 0; i < numDays; i++) {
-			const d = new Date(rangeDayStart);
+			const d = new SvelteDate(rangeDayStart);
 			d.setDate(rangeDayStart.getDate() + i);
-			const dayStart = d.getTime();
-			const dayEnd = new Date(d);
-			dayEnd.setDate(dayEnd.getDate() + 1);
-			const total = filteredOrders
-				.filter((o) => {
-					const t = new Date(o.data.occurredAt || o.data.createdAt || 0).getTime();
-					return t >= dayStart && t < dayEnd.getTime();
-				})
-				.reduce((s, o) => s + (o.data.total ?? 0), 0);
 			days.push({
 				label:
 					numDays <= 7
 						? d.toLocaleDateString('en-US', { weekday: 'short' })
 						: `${d.getDate()}/${d.getMonth() + 1}`,
 				sublabel: numDays > 7 && d.getTime() === today ? 'today' : '',
-				total,
+				total: 0,
 				isToday: d.getTime() === today
 			});
+		}
+		// One pass over the orders instead of re-scanning them for every day.
+		const dayStartMs = rangeDayStart.getTime();
+		for (const o of filteredOrders) {
+			const t = new Date(o.data.occurredAt || o.data.occurredAt || 0).getTime();
+			if (!Number.isFinite(t)) continue;
+			const index = Math.round((startOfDay(new SvelteDate(t)) - dayStartMs) / MS_DAY);
+			const day = days[index];
+			if (day) day.total += o.data.total ?? 0;
 		}
 		return days;
 	});
@@ -157,24 +171,26 @@
 
 	// ── Hourly sales ────────────────────────────────────────────────
 	const hourlySales = $derived.by(() => {
-		const hours: { hour: number; label: string; total: number; count: number }[] = [];
 		const startHour = 6;
 		const endHour = 23;
-		for (let h = startHour; h <= endHour; h++) {
-			const total = filteredOrders
-				.filter((o) => new Date(o.data.occurredAt || o.data.createdAt || 0).getHours() === h)
-				.reduce((s, o) => s + (o.data.total ?? 0), 0);
-			const count = filteredOrders.filter(
-				(o) => new Date(o.data.occurredAt || o.data.createdAt || 0).getHours() === h
-			).length;
-			hours.push({
-				hour: h,
-				label: `${h % 12 || 12}${h < 12 ? 'a' : 'p'}`,
-				total,
-				count
-			});
+		const totals = Array.from({ length: endHour - startHour + 1 }, () => 0);
+		const counts = Array.from({ length: endHour - startHour + 1 }, () => 0);
+		for (const o of filteredOrders) {
+			const at = new Date(o.data.occurredAt || o.data.occurredAt || 0);
+			const hour = at.getHours();
+			if (!Number.isFinite(at.getTime()) || hour < startHour || hour > endHour) continue;
+			totals[hour - startHour] += o.data.total ?? 0;
+			counts[hour - startHour] += 1;
 		}
-		return hours;
+		return totals.map((total, index) => {
+			const hour = startHour + index;
+			return {
+				hour,
+				label: `${hour % 12 || 12}${hour < 12 ? 'a' : 'p'}`,
+				total,
+				count: counts[index]
+			};
+		});
 	});
 	const maxHourTotal = $derived(Math.max(1, ...hourlySales.map((h) => h.total)));
 	const peakHour = $derived.by(() => {
@@ -197,16 +213,15 @@
 	};
 
 	const paymentBreakdown = $derived.by(() => {
-		const map = new Map<string, { total: number; count: number }>();
+		const map: Record<string, { total: number; count: number }> = {};
 		for (const o of filteredOrders) {
 			const method = (o.data as DashboardOrder).method ?? 'cash';
-			const e = map.get(method) ?? { total: 0, count: 0 };
-			e.total += o.data.total ?? 0;
-			e.count += 1;
-			map.set(method, e);
+			const entry = (map[method] ??= { total: 0, count: 0 });
+			entry.total += o.data.total ?? 0;
+			entry.count += 1;
 		}
 		const total = totalRevenue || 1;
-		return [...map.entries()]
+		return Object.entries(map)
 			.map(([key, v]) => ({
 				key,
 				...(PAYMENT_META[key] ?? {
@@ -223,18 +238,21 @@
 
 	// ── Top products ────────────────────────────────────────────────
 	const topProducts = $derived.by(() => {
-		const map = new Map<string, { name: string; qty: number; revenue: number }>();
+		const names: Record<string, string> = {};
+		for (const p of products) names[p.id] = p.data.name;
+		const map: Record<string, { name: string; qty: number; revenue: number }> = {};
 		for (const o of filteredOrders) {
 			for (const l of o.data.lines ?? []) {
 				const key = l.productId || l.name || 'unknown';
-				const name = products.find((p) => p.id === key)?.data.name ?? l.name ?? 'Unknown product';
-				const e = map.get(key) ?? { name, qty: 0, revenue: 0 };
-				e.qty += l.quantity;
-				e.revenue += l.total ?? l.quantity * l.unitPrice;
-				map.set(key, e);
+				const name = names[key] ?? l.name ?? 'Unknown product';
+				const entry = (map[key] ??= { name, qty: 0, revenue: 0 });
+				entry.qty += l.quantity;
+				entry.revenue += l.total ?? l.quantity * l.unitPrice;
 			}
 		}
-		return [...map.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+		return Object.values(map)
+			.sort((a, b) => b.revenue - a.revenue)
+			.slice(0, 10);
 	});
 
 	// ── Expenses & P&L ─────────────────────────────────────────────
@@ -279,16 +297,15 @@
 	};
 
 	const expenseBreakdown = $derived.by(() => {
-		const map = new Map<string, { total: number; count: number }>();
+		const map: Record<string, { total: number; count: number }> = {};
 		for (const e of filteredExpenses) {
 			const cat = e.data.category ?? 'other';
-			const entry = map.get(cat) ?? { total: 0, count: 0 };
+			const entry = (map[cat] ??= { total: 0, count: 0 });
 			entry.total += e.data.amount ?? 0;
 			entry.count += 1;
-			map.set(cat, entry);
 		}
 		const total = totalExpenses || 1;
-		return [...map.entries()]
+		return Object.entries(map)
 			.map(([key, v]) => ({
 				key,
 				...(EXPENSE_CATS[key] ?? { label: key, icon: 'lucide:circle-dot', color: '#94a3b8' }),
@@ -323,7 +340,7 @@
 		lines.push('Order ID,Number,Date,Status,Total,Payment Method,Items');
 		for (const o of filteredOrders) {
 			const d = o.data;
-			const date = d.occurredAt || d.createdAt || '';
+			const date = d.occurredAt || '';
 			const method = (d as DashboardOrder).method ?? 'cash';
 			const itemCount = (d.lines ?? []).reduce((s, l) => s + l.quantity, 0);
 			const row = [

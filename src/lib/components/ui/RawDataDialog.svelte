@@ -3,6 +3,7 @@
 	import Icon from './Icon.svelte';
 	import Badge from './Badge.svelte';
 	import { createGloIdentifier } from '@bitos/bnos-core/glo';
+	import type { NostrEvent } from '@bitos/bnos-core';
 	import { kindForType } from '$lib/domain/kind';
 	import { glo } from '$nostr/store.svelte';
 	import { verifyEvent } from 'nostr-tools/pure';
@@ -14,9 +15,22 @@
 	}: { open?: boolean; data: unknown; title?: string } = $props();
 
 	type Tab = 'overview' | 'data' | 'event' | 'meta';
+	type GloLike = {
+		type: string;
+		id: string;
+		data?: Record<string, unknown>;
+		scope?: { ownerPubkey?: string };
+		encryption?: unknown;
+		spec?: string;
+		version?: number;
+		visibility?: string;
+		__event?: NostrEvent;
+		__eventCreatedAt?: number;
+		__eventId?: string;
+	};
 	let tab = $state<Tab>('overview');
 	let copied = $state<'' | 'tab' | 'id' | 'pubkey' | 'sig'>('');
-	let liveOverride = $state<any>(null);
+	let liveOverride = $state<NostrEvent | null>(null);
 	let fetching = $state(false);
 
 	function flash(which: '' | 'tab' | 'id' | 'pubkey' | 'sig') {
@@ -25,17 +39,17 @@
 	}
 
 	// ── Normalize the incoming payload ───────────────────────
-	const obj = $derived(data as any);
+	const obj = $derived(data as GloLike);
 	const isGlo = $derived(
 		!!obj && typeof obj === 'object' && 'type' in obj && 'data' in obj && 'id' in obj
 	);
-	const liveEvent = $derived(liveOverride ?? (isGlo ? (obj as any).__event : undefined));
+	const liveEvent = $derived(liveOverride ?? (isGlo ? obj.__event : undefined));
 
 	/** Cryptographic id + signature check on the live event (null = no live event / preview). */
 	const sigValid = $derived.by<'yes' | 'no' | null>(() => {
 		if (!liveEvent) return null;
 		try {
-			return verifyEvent(liveEvent as any) ? 'yes' : 'no';
+			return verifyEvent(liveEvent) ? 'yes' : 'no';
 		} catch {
 			return 'no';
 		}
@@ -56,9 +70,15 @@
 		if (!isGlo) return { event: null, live: false };
 		const type = obj.type as string;
 		const id = obj.id as string;
+		const updated =
+			typeof obj.data?.updatedAt === 'string'
+				? obj.data.updatedAt
+				: typeof obj.data?.createdAt === 'string'
+					? obj.data.createdAt
+					: '';
 		const created =
-			(obj.__eventCreatedAt as number | undefined) ??
-			Math.floor(Date.parse(obj.data?.updatedAt ?? obj.data?.createdAt ?? '') / 1000) ??
+			obj.__eventCreatedAt ??
+			Math.floor(Date.parse(updated) / 1000) ??
 			Math.floor(Date.now() / 1000);
 		return {
 			event: {
@@ -84,15 +104,23 @@
 	function pretty(v: unknown): string {
 		return JSON.stringify(v, null, 2);
 	}
-	function currentJson(): string {
-		if (tab === 'overview' || tab === 'meta') return pretty(isGlo ? metaView() : obj);
-		if (tab === 'event') return eventView.event ? pretty(eventView.event) : '';
-		return pretty(isGlo ? obj.data : obj);
-	}
-	function metaView() {
+	const meta = $derived.by(() => {
 		if (!isGlo) return {};
-		const { data: _d, __event: _e, __eventCreatedAt: _c, ...rest } = obj as any;
+		const rest = { ...(obj as Record<string, unknown>) };
+		delete rest.data;
+		delete rest.__event;
+		delete rest.__eventCreatedAt;
 		return rest;
+	});
+	// Serialize once per payload/tab change instead of on every re-render.
+	const metaJson = $derived(pretty(meta));
+	const eventJson = $derived(eventView.event ? pretty(eventView.event) : 'No event available.');
+
+	function currentJson(): string {
+		if (tab === 'overview') return isGlo ? metaJson : pretty(obj);
+		if (tab === 'meta') return metaJson;
+		if (tab === 'event') return eventView.event ? eventJson : '';
+		return pretty(isGlo ? obj.data : obj);
 	}
 
 	function copy(which: '' | 'tab' | 'id' | 'pubkey' | 'sig') {
@@ -110,7 +138,7 @@
 	function download() {
 		const payload = isGlo
 			? {
-					object: metaView(),
+					object: meta,
 					data: obj.data,
 					...(eventView.event ? { event: eventView.event } : {})
 				}
@@ -406,16 +434,14 @@
 						{/each}
 					</div>
 				{/if}
-				<pre class="bg-(--ui-bg-muted) p-4 text-[11.5px] leading-relaxed"><code
-						>{eventView.event ? pretty(eventView.event) : 'No event available.'}</code
+				<pre class="bg-(--ui-bg-muted) p-4 text-[11.5px] leading-relaxed"><code>{eventJson}</code
 					></pre>
 			</div>
 		{/if}
 
 		<!-- ── Meta ── -->
 		{#if tab === 'meta'}
-			<pre class="bg-(--ui-bg-muted) p-4 text-[11.5px] leading-relaxed"><code
-					>{pretty(metaView())}</code
+			<pre class="bg-(--ui-bg-muted) p-4 text-[11.5px] leading-relaxed"><code>{metaJson}</code
 				></pre>
 		{/if}
 	</div>

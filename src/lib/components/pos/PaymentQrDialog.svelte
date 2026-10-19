@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- external lightning: wallet links */
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { scale } from 'svelte/transition';
 	import Dialog from '$lib/components/ui/Dialog.svelte';

@@ -154,7 +154,7 @@
 		try {
 			const workspace = await resolveWorkspace({ allowRelaySync: true });
 			const staffWorkspace = workspace.found ? false : await memberships.resolveStaffWorkspace();
-			await memberships.resolve();
+			if (workspace.found) await memberships.resolve();
 			memberships.autoResolve();
 
 			updateStep('workspace', 75);

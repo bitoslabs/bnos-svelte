@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { flip } from 'svelte/animate';
@@ -298,17 +300,13 @@
 		toast.success('Payment methods reset to defaults');
 	}
 
-	function typeLabel(t: PaymentType): string {
-		return TYPE_OPTIONS.find((o) => o.value === t)?.label ?? t;
-	}
-
 	// ── Cross-page readiness ───────────────────────
 	// Tells the merchant whether the enabled method will actually work at the POS.
 	function methodReadiness(
 		m: PaymentMethod
 	):
 		| { state: 'ready'; detail: string }
-		| { state: 'config'; detail: string; href: string }
+		| { state: 'config'; detail: string; href: '/settings/bitcoin' | '/settings/pay-qr' }
 		| { state: 'ok' } {
 		if (!m.enabled) return { state: 'ok' };
 		if (m.type === 'lightning' || m.id === 'lightning') {
@@ -326,7 +324,7 @@
 	// Re-evaluated on every render (methods is $state so toggles re-render).
 
 	// ── Lifecycle ──────────────────────────────────────────
-	$effect(() => {
+	onMount(() => {
 		load();
 		if (!browser) return;
 		window.addEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
@@ -418,8 +416,15 @@
 							</span>
 						{:else if methodReadiness(m).state === 'config'}
 							<a
-								href={(methodReadiness(m) as { state: 'config'; detail: string; href: string })
-									.href}
+								href={resolve(
+									(
+										methodReadiness(m) as {
+											state: 'config';
+											detail: string;
+											href: '/settings/bitcoin' | '/settings/pay-qr';
+										}
+									).href
+								)}
 								class="mt-1 inline-flex items-center gap-1 text-[10.5px] font-semibold text-amber-600 hover:underline dark:text-amber-400"
 							>
 								<Icon name="lucide:triangle-alert" class="size-3" />{(

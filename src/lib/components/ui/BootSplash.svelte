@@ -49,7 +49,7 @@
 		<div class="mt-1 flex flex-col items-center gap-2.5">
 			<!-- Proof-of-Work segments sweeping while the app initializes. -->
 			<div class="pow-bar" aria-hidden="true">
-				{#each Array(9) as _, i (i)}
+				{#each Array.from({ length: 9 }, (_, i) => i) as i (i)}
 					<span class="pow-boot-seg" style="animation-delay:{i * 0.12}s"></span>
 				{/each}
 			</div>

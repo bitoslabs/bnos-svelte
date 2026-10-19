@@ -35,14 +35,14 @@
 	const METHODS = ['__all__', 'cash', 'card', 'qr', 'lightning'] as const;
 	// Raw data viewer
 	let rawOpen = $state(false);
-	let rawItem = $state<any>(null);
+	let rawItem = $state<unknown>(null);
 
 	let methodFilter = $state<string>('__all__');
 
+	// `createListControls` owns sorting (default: date desc).
 	const ledger = $derived(
-		toOrderRows(orderObjects as never)
+		toOrderRows(orderObjects)
 			.filter((o) => methodFilter === '__all__' || o.method === methodFilter)
-			.sort((a, b) => b.atMs - a.atMs)
 			.map((o) => ({ ...o, ref: o.number, description: `${o.items} items · ${o.method}` }))
 	);
 
@@ -77,10 +77,16 @@
 		];
 	}
 
-	const inflow = $derived(ledger.reduce((s, o) => s + o.total, 0));
-	const count = $derived(ledger.length);
-	const inflowSats = $derived(ledger.reduce((s, o) => s + (o.totalSats ?? 0), 0));
-	const showSats = $derived(btcRate.canConvert(currency) || inflowSats > 0);
+	const totals = $derived.by(() => {
+		let inflow = 0;
+		let inflowSats = 0;
+		for (const row of ledger) {
+			inflow += row.total;
+			inflowSats += row.totalSats ?? 0;
+		}
+		return { inflow, inflowSats, count: ledger.length };
+	});
+	const showSats = $derived(btcRate.canConvert(currency) || totals.inflowSats > 0);
 
 	// ── Shift management ──
 	const shifts = $derived(glo.all<Shift, typeof TYPE.shift>(TYPE.shift));
@@ -126,26 +132,28 @@
 		const shift = activeShift;
 		const endedAt = new Date().toISOString();
 
-		// Compute actual totals from orders during shift period
-		const shiftOrders = glo.all<any, 'commerce.order'>('commerce.order').filter((o) => {
-			const d = o.data as any;
-			return (
-				d.cashierPubkey === shift.data.staffId &&
-				new Date(d.occurredAt).getTime() >= new Date(shift.data.openedAt).getTime() &&
-				new Date(d.occurredAt).getTime() <= new Date(endedAt).getTime()
-			);
-		});
-
-		const totalSales = shiftOrders.reduce((sum, o) => sum + (o.data.total ?? 0), 0);
-		const totalOrders = shiftOrders.length;
-		const cashOrders = shiftOrders.filter((o) => (o.data as any).method === 'cash');
-		const cashSales = cashOrders.reduce((sum, o) => sum + (o.data.total ?? 0), 0);
-		const cardOrders = shiftOrders.filter((o) => (o.data as any).method === 'card');
-		const cardSales = cardOrders.reduce((sum, o) => sum + (o.data.total ?? 0), 0);
-		const lightningOrders = shiftOrders.filter((o) => (o.data as any).method === 'lightning');
-		const lightningSales = lightningOrders.reduce((sum, o) => sum + (o.data.total ?? 0), 0);
-		const qrOrders = shiftOrders.filter((o) => (o.data as any).method === 'qr');
-		const qrSales = qrOrders.reduce((sum, o) => sum + (o.data.total ?? 0), 0);
+		// Aggregate shift totals in one pass over the order collection.
+		const startedMs = new Date(shift.data.openedAt).getTime();
+		const endedMs = new Date(endedAt).getTime();
+		let totalSales = 0;
+		let totalOrders = 0;
+		let cashSales = 0;
+		let cardSales = 0;
+		let lightningSales = 0;
+		let qrSales = 0;
+		for (const o of glo.all<DashboardOrder, 'commerce.order'>('commerce.order')) {
+			const d = o.data as DashboardOrder & { cashierPubkey?: string };
+			if (d.cashierPubkey !== shift.data.staffId) continue;
+			const at = new Date(d.occurredAt ?? 0).getTime();
+			if (at < startedMs || at > endedMs) continue;
+			const total = d.total ?? 0;
+			totalSales += total;
+			totalOrders++;
+			if (d.method === 'cash') cashSales += total;
+			else if (d.method === 'card') cardSales += total;
+			else if (d.method === 'lightning') lightningSales += total;
+			else if (d.method === 'qr') qrSales += total;
+		}
 		const otherSales = totalSales - cashSales - cardSales - lightningSales - qrSales;
 
 		const countedCash =
@@ -195,24 +203,26 @@
 		<div class="metric-card p-4">
 			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Total inflow</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
-				{formatMoney(inflow, currency)}
+				{formatMoney(totals.inflow, currency)}
 			</div>
 			{#if showSats}
 				<div
 					class="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-(--tone-warning-text)"
 				>
-					<Icon name="lucide:zap" class="size-3" />≈ {formatInt(inflowSats)} sats
+					<Icon name="lucide:zap" class="size-3" />≈ {formatInt(totals.inflowSats)} sats
 				</div>
 			{/if}
 		</div>
 		<div class="metric-card p-4">
 			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Entries</div>
-			<div class="mt-1 font-display text-lg font-bold tabular-nums">{formatInt(count)}</div>
+			<div class="mt-1 font-display text-lg font-bold tabular-nums">
+				{formatInt(totals.count)}
+			</div>
 		</div>
 		<div class="metric-card p-4">
 			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">Avg. value</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
-				{formatMoney(count ? inflow / count : 0, currency)}
+				{formatMoney(totals.count ? totals.inflow / totals.count : 0, currency)}
 			</div>
 		</div>
 	</div>

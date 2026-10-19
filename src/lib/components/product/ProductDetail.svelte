@@ -61,11 +61,8 @@
 			? glo
 					.all<Order, typeof TYPE.order>(TYPE.order)
 					.filter((o) => {
-						const lines = (o.data as Record<string, unknown>).lines ?? [];
-						return (
-							Array.isArray(lines) &&
-							lines.some((l: Record<string, unknown>) => l.productId === product.id)
-						);
+						const lines = o.data.lines ?? [];
+						return Array.isArray(lines) && lines.some((l) => l.productId === product.id);
 					})
 					.slice(0, 20)
 			: []
@@ -276,7 +273,7 @@
 					<div>
 						<span class="text-[11px] font-semibold text-(--ui-text-muted)">Tags</span>
 						<div class="mt-1 flex flex-wrap gap-1">
-							{#each d.tags as tag}
+							{#each d.tags as tag, i (i)}
 								<Badge color="neutral">{tag}</Badge>
 							{/each}
 						</div>
@@ -300,7 +297,7 @@
 							>Variants ({d.variants.length})</span
 						>
 						<ul class="mt-1 space-y-1">
-							{#each d.variants as v}
+							{#each d.variants as v (v.id ?? v.name)}
 								<li
 									class="flex items-center justify-between rounded-lg border border-(--ui-border-muted) px-2.5 py-1.5 text-[12px]"
 								>
@@ -322,7 +319,7 @@
 					</div>
 				{:else}
 					<div class="space-y-0">
-						{#each stockHistory as item}
+						{#each stockHistory as item (item.id)}
 							<div
 								class="relative ml-2 flex items-start gap-3 border-l-2 border-(--ui-border-muted) pb-4 pl-4"
 							>
@@ -363,29 +360,22 @@
 					</div>
 				{:else}
 					<ul class="space-y-2">
-						{#each orderHistory as order}
-							{@const lines = (order.data as Record<string, unknown>).lines as
-								Array<Record<string, unknown>> | undefined}
+						{#each orderHistory as order (order.id)}
+							{@const lines = order.data.lines}
 							{@const matchingLines = Array.isArray(lines)
 								? lines.filter((l) => l.productId === product?.id)
 								: []}
 							{@const qty = matchingLines.reduce((sum, l) => sum + Number(l.quantity ?? 0), 0)}
-							{@const total = matchingLines.reduce(
-								(sum, l) => sum + Number(l.total ?? l.lineTotal ?? 0),
-								0
-							)}
+							{@const total = matchingLines.reduce((sum, l) => sum + Number(l.total ?? 0), 0)}
 							<li
 								class="flex items-center justify-between rounded-lg border border-(--ui-border-muted) px-3 py-2"
 							>
 								<div class="min-w-0">
 									<span class="text-[12.5px] font-semibold"
-										>#{(order.data as Record<string, unknown>).orderNumber ??
-											order.id.slice(0, 8)}</span
+										>#{order.data.orderNumber ?? order.id.slice(0, 8)}</span
 									>
 									<span class="ml-2 text-[11px] text-(--ui-text-dimmed)"
-										>{relativeTime(
-											((order.data as Record<string, unknown>).createdAt as string) ?? ''
-										)}</span
+										>{relativeTime(order.data.occurredAt ?? '')}</span
 									>
 								</div>
 								<div class="flex items-center gap-3 text-right">
@@ -393,10 +383,7 @@
 										>Qty: <span class="font-semibold tabular-nums">{qty}</span></span
 									>
 									<span class="text-[12px] font-bold tabular-nums"
-										>{formatMoney(
-											total,
-											((order.data as Record<string, unknown>).currency as string) ?? currency
-										)}</span
+										>{formatMoney(total, order.data.currency ?? currency)}</span
 									>
 								</div>
 							</li>

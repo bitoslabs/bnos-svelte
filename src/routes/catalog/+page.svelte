@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -22,15 +23,16 @@
 	import ProductDetail from '$lib/components/product/ProductDetail.svelte';
 	import StockBadge from '$lib/components/ui/StockBadge.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
+	import { buildSearchIndex } from '$lib/utils/search';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney } from '$lib/utils/format';
 	import { newRecordId } from '$lib/utils/record-id';
+	import { mapLimit } from '$lib/utils/async';
 	import {
 		TYPE,
-		statusColor,
 		parseBrowseCatalog,
 		applyCatalogPreset,
 		CATALOG_KIT_KIND,
@@ -106,7 +108,7 @@
 
 	// Raw data viewer
 	let rawOpen = $state(false);
-	let rawItem = $state<any>(null);
+	let rawItem = $state<unknown>(null);
 
 	// Product detail slideover
 	let detailProduct = $state<{ id: string; data: Record<string, unknown> } | null>(null);
@@ -274,7 +276,7 @@
 		for (const g of bGroups) {
 			if (g.productIds.length > 0) {
 				const p = products.find((x) => x.id === g.productIds[0]);
-				if (p) total += ((p.data as any).price ?? 0) * g.includedQuantity;
+				if (p) total += (p.data.price ?? 0) * g.includedQuantity;
 			}
 		}
 		return total;
@@ -329,17 +331,24 @@
 	];
 
 	// ── Products ──
-	const products = $derived(glo.all<Product, typeof TYPE.product>(TYPE.product));
-	const prodCtrl = createListControls<{ id: string; data: Product }>({
+	type ProductRow = Product & {
+		image?: string;
+		stockLevel?: number;
+		promotionIds?: string[];
+		costPrice?: number;
+	};
+	const products = $derived(glo.all<ProductRow, typeof TYPE.product>(TYPE.product));
+	const productSearchIndex = $derived(buildSearchIndex(products, (p) => String(p.data.name ?? '')));
+	const prodCtrl = createListControls<{ id: string; data: ProductRow }>({
 		items: () => products,
-		search: (p, q) => ((p.data as any).name ?? '').toLowerCase().includes(q),
+		search: (p, q) => productSearchIndex[p.id]?.includes(q) ?? false,
 		sortOptions: () => [
-			{ key: 'name', label: t('common.name'), value: (p) => (p.data as any).name ?? '~' },
-			{ key: 'price', label: t('common.price'), value: (p) => (p.data as any).price ?? 0 },
+			{ key: 'name', label: t('common.name'), value: (p) => p.data.name ?? '~' },
+			{ key: 'price', label: t('common.price'), value: (p) => p.data.price ?? 0 },
 			{
 				key: 'category',
 				label: t('common.category'),
-				value: (p) => (p.data as any).categoryId ?? '~'
+				value: (p) => p.data.categoryId ?? '~'
 			}
 		],
 		defaultSortKey: 'name',
@@ -369,8 +378,8 @@
 			(u.data.name ?? '').toLowerCase().includes(q) ||
 			(u.data.symbol ?? '').toLowerCase().includes(q),
 		sortOptions: () => [
-			{ key: 'name', label: t('common.name'), value: (u) => (u.data as any).name },
-			{ key: 'symbol', label: 'Symbol', value: (u) => (u.data as any).symbol }
+			{ key: 'name', label: t('common.name'), value: (u) => u.data.name },
+			{ key: 'symbol', label: 'Symbol', value: (u) => u.data.symbol }
 		],
 		defaultSortKey: 'name',
 		defaultViewMode: 'table',
@@ -488,7 +497,7 @@
 	function openEditProduct(id: string) {
 		const obj = glo.get(TYPE.product, id);
 		if (!obj) return toast.warning('Product not found');
-		const d = obj.data as any;
+		const d = obj.data as ProductRow;
 		dlgKind = 'products';
 		editingId = id;
 		pName = d.name ?? '';
@@ -502,7 +511,7 @@
 		pImage = d.image ?? '';
 		pImages = Array.isArray(d.images) ? d.images : d.image ? [d.image] : [];
 		pUnitId = d.unitId ?? '';
-		pVariants = (d.variants ?? []).map((v: any) => ({
+		pVariants = (d.variants ?? []).map((v) => ({
 			name: v.name ?? v.shortName ?? '',
 			price: v.priceModifier ?? 0
 		}));
@@ -523,7 +532,7 @@
 	function openEditCategory(id: string) {
 		const obj = glo.get(TYPE.category, id);
 		if (!obj) return toast.warning('Category not found');
-		const d = obj.data as any;
+		const d = obj.data as CatalogCategory;
 		dlgKind = 'categories';
 		editingId = id;
 		cName = d.name ?? '';
@@ -538,7 +547,7 @@
 	function openEditUnit(id: string) {
 		const obj = glo.get(TYPE.unit, id);
 		if (!obj) return toast.warning('Unit not found');
-		const d = obj.data as any;
+		const d = obj.data as CatalogUnit;
 		dlgKind = 'units';
 		editingId = id;
 		uName = d.name ?? '';
@@ -552,11 +561,11 @@
 	function openEditModifier(id: string) {
 		const obj = glo.get(TYPE.modifierGroup, id);
 		if (!obj) return toast.warning('Modifier group not found');
-		const d = obj.data as any;
+		const d = obj.data as ModifierGroup;
 		dlgKind = 'modifiers';
 		editingId = id;
 		mName = d.name ?? '';
-		mOpt = (d.options ?? d.modifiers ?? []).map((o: any) => o.name).join(', ');
+		mOpt = (d.options ?? d.modifiers ?? []).map((o) => o.name).join(', ');
 		dlgOpen = true;
 	}
 
@@ -576,7 +585,7 @@
 					priceModifierType: 'fixed',
 					available: true
 				}));
-				const payload: Record<string, any> = {
+				const payload: ProductRow = {
 					name: pName.trim(),
 					price: typeof pPrice === 'number' ? pPrice : Number(pPrice) || 0,
 					currency,
@@ -654,7 +663,6 @@
 					{
 						name: uName.trim(),
 						symbol: uSymbol.trim(),
-						abbreviation: uSymbol.trim(),
 						type: uType,
 						baseUnitId: uBaseUnitId.trim() || undefined,
 						conversionFactor:
@@ -747,20 +755,24 @@
 			try {
 				const data = JSON.parse(await file.text());
 				if (data.products) {
-					for (const p of data.products) {
+					await mapLimit(data.products, 8, async (p: Record<string, unknown> & { id?: string }) => {
 						const { id, ...payload } = p;
 						await glo.upsert(TYPE.product, payload, {
 							id: typeof id === 'string' ? id : newRecordId('product')
 						});
-					}
+					});
 				}
 				if (data.categories) {
-					for (const c of data.categories) {
-						const { id, ...payload } = c;
-						await glo.upsert(TYPE.category, payload, {
-							id: typeof id === 'string' ? id : newRecordId('category')
-						});
-					}
+					await mapLimit(
+						data.categories,
+						8,
+						async (c: Record<string, unknown> & { id?: string }) => {
+							const { id, ...payload } = c;
+							await glo.upsert(TYPE.category, payload, {
+								id: typeof id === 'string' ? id : newRecordId('category')
+							});
+						}
+					);
 				}
 				toast.success('Catalog imported');
 			} catch (e) {
@@ -777,7 +789,7 @@
 	let tmplUrl = $state(TEMPLATES_CATALOG_URL);
 	let tmplPaste = $state('');
 	let tmplItems = $state<BrowseCatalogItem[]>([]);
-	let tmplSelected = $state<Set<string>>(new Set());
+	const tmplSelected = new SvelteSet<string>();
 	let tmplLoading = $state(false);
 	let tmplRelayLoading = $state(false);
 	let tmplApplying = $state(false);
@@ -807,10 +819,11 @@
 	}
 
 	function mergeTemplateItems(items: BrowseCatalogItem[]) {
-		const byId = new Map(tmplItems.map((item) => [item.presetId, item]));
-		for (const item of items) byId.set(item.presetId, item);
-		tmplItems = [...byId.values()];
-		tmplSelected = new Set([...tmplSelected, ...items.map((item) => item.presetId)]);
+		const byId: Record<string, BrowseCatalogItem> = {};
+		for (const item of tmplItems) byId[item.presetId] = item;
+		for (const item of items) byId[item.presetId] = item;
+		tmplItems = Object.values(byId);
+		for (const item of items) tmplSelected.add(item.presetId);
 		tmplLoaded = true;
 		tmplError = '';
 	}
@@ -856,17 +869,16 @@
 	}
 
 	function toggleTemplateItem(presetId: string) {
-		const next = new Set(tmplSelected);
-		if (next.has(presetId)) next.delete(presetId);
-		else next.add(presetId);
-		tmplSelected = next;
+		if (tmplSelected.has(presetId)) tmplSelected.delete(presetId);
+		else tmplSelected.add(presetId);
 	}
 
 	function toggleAllTemplates() {
-		tmplSelected =
-			tmplSelected.size === tmplItems.length
-				? new Set()
-				: new Set(tmplItems.map((item) => item.presetId));
+		if (tmplSelected.size === tmplItems.length) {
+			tmplSelected.clear();
+			return;
+		}
+		for (const item of tmplItems) tmplSelected.add(item.presetId);
 	}
 
 	async function applySelectedTemplates() {
@@ -905,15 +917,15 @@
 	}
 
 	function catName(id: string): string {
-		const c = glo.get(TYPE.category, id);
-		return (c?.data as any)?.name ?? id;
+		const c = glo.get(TYPE.category, id) as { data: CatalogCategory } | undefined;
+		return c?.data.name ?? id;
 	}
 	async function toggleProductActive(id: string, active: boolean) {
 		const obj = glo.get(TYPE.product, id);
 		if (!obj) return;
 		await glo.upsert(
 			TYPE.product,
-			{ ...(obj.data as any), available: active, status: active ? 'active' : 'inactive' },
+			{ ...(obj.data as ProductRow), available: active, status: active ? 'active' : 'inactive' },
 			{ id }
 		);
 		toast.success(active ? 'Product activated' : 'Product deactivated');
@@ -1158,10 +1170,12 @@
 											<div
 												class="size-10 shrink-0 overflow-hidden rounded-lg bg-(--ui-bg-accented)"
 											>
-												{#if (p.data as any).image}
+												{#if p.data.image}
 													<img
-														src={(p.data as any).image}
-														alt={String((p.data as any).name ?? '')}
+														src={p.data.image}
+														alt={String(p.data.name ?? '')}
+														loading="lazy"
+														decoding="async"
 														class="size-full object-cover"
 													/>
 												{:else}
@@ -1177,19 +1191,16 @@
 													</div>{/if}
 												<div class="mt-0.5 flex flex-wrap gap-1">
 													<span
-														class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold {(
-															p.data as any
-														).isPublic !== false
+														class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold {p
+															.data.isPublic !== false
 															? 'bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400'
 															: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'}"
 													>
 														<Icon
-															name={(p.data as any).isPublic !== false
-																? 'lucide:globe'
-																: 'lucide:lock'}
+															name={p.data.isPublic !== false ? 'lucide:globe' : 'lucide:lock'}
 															class="size-2.5"
 														/>
-														{(p.data as any).isPublic !== false ? 'Public' : 'Private'}
+														{p.data.isPublic !== false ? 'Public' : 'Private'}
 													</span>
 													{#if p.data.hasVariants}<Badge color="info"
 															>{p.data.variants?.length ?? 0} variants</Badge
@@ -1198,36 +1209,30 @@
 															>{p.data.modifierGroupIds.length} mods</Badge
 														>{/if}
 													{#if p.data.trackInventory}<StockBadge
-															level={Number((p.data as any).stockLevel ?? 0)}
-															threshold={Number((p.data as any).inventory?.lowStockThreshold ?? 5)}
+															level={Number(p.data.stockLevel ?? 0)}
+															threshold={Number(p.data.inventory?.lowStockThreshold ?? 5)}
 														/>{/if}
 												</div>
 											</div>
 										</div>
 									</td>
 									<td class="px-5 py-3"
-										>{#if (p.data as any).categoryId}<Badge
-												>{catName((p.data as any).categoryId)}</Badge
-											>{:else}<span class="text-(--ui-text-dimmed)">—</span>{/if}</td
+										>{#if p.data.categoryId}<Badge>{catName(p.data.categoryId)}</Badge>{:else}<span
+												class="text-(--ui-text-dimmed)">—</span
+											>{/if}</td
 									>
 									<td class="px-5 py-3 text-right">
 										<div class="font-semibold tabular-nums">
-											{formatMoney(
-												(p.data as any).price ?? 0,
-												(p.data as any).currency ?? currency
-											)}
+											{formatMoney(p.data.price ?? 0, p.data.currency ?? currency)}
 										</div>
-										{#if (p.data as any).compareAtPrice && (p.data as any).compareAtPrice > ((p.data as any).price ?? 0)}
+										{#if p.data.compareAtPrice && p.data.compareAtPrice > (p.data.price ?? 0)}
 											<div class="text-[11px] text-(--ui-text-dimmed) tabular-nums line-through">
-												{formatMoney(
-													(p.data as any).compareAtPrice,
-													(p.data as any).currency ?? currency
-												)}
+												{formatMoney(p.data.compareAtPrice, p.data.currency ?? currency)}
 											</div>
 										{/if}
 									</td>
 									<td class="px-5 py-3">
-										{#if (p.data as any).promotionIds?.length || (p.data as any).promotion?.promotionIds?.length}
+										{#if p.data.promotionIds?.length || p.data.promotion?.promotionIds?.length}
 											<span
 												class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
 											>
@@ -1239,14 +1244,13 @@
 									</td>
 									<td class="px-5 py-3 text-center">
 										<button
-											class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold {(
-												p.data as any
-											).available !== false
+											class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold {p
+												.data.available !== false
 												? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
 												: 'bg-gray-100 text-gray-400 dark:bg-gray-800'}"
-											onclick={() => toggleProductActive(p.id, (p.data as any).available === false)}
+											onclick={() => toggleProductActive(p.id, p.data.available === false)}
 										>
-											{(p.data as any).available !== false ? 'Active' : 'Inactive'}
+											{p.data.available !== false ? 'Active' : 'Inactive'}
 										</button>
 									</td>
 									<td class="px-5 py-3 text-right">
@@ -1545,7 +1549,13 @@
 									<td class="px-5 py-3">
 										<div class="flex items-center gap-2">
 											{#if b.image}
-												<img src={b.image} alt="" class="size-8 rounded-lg object-cover" />
+												<img
+													src={b.image}
+													alt=""
+													loading="lazy"
+													decoding="async"
+													class="size-8 rounded-lg object-cover"
+												/>
 											{/if}
 											<div>
 												<div class="font-semibold">{b.name}</div>

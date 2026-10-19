@@ -319,12 +319,6 @@ export function parseNwcUri(uri: string): NwcConnectionLegacy | null {
 	return { walletPubkey: m[1].toLowerCase(), relay, secret: secret.toLowerCase() };
 }
 
-function hexToBytes(hex: string): Uint8Array {
-	const out = new Uint8Array(hex.length / 2);
-	for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
-	return out;
-}
-
 /**
  * NWC provider — delegates to the shared persistent client in
  * `$lib/nostr/nwc-client` (multi-relay SimplePool, correct kind 23195 response

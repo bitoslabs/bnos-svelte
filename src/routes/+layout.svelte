@@ -124,11 +124,20 @@
 			void goto(resolve('/login'), { replaceState: true });
 		} else if (!workspaceResolutionPending) {
 			workspaceResolutionPending = true;
-			postLoginSyncState = 'checking-workspace';
+			// A locally complete workspace (including one just created by the
+			// setup wizard) needs no relay resolution, so do not block the UI on it.
+			if (!hasActiveWorkspaceContext()) postLoginSyncState = 'checking-workspace';
 			queueMicrotask(async () => {
+				const bootPubkey = session.pubkey ?? '';
 				const result = await bootstrapAuth();
+				// A newer identity switch owns the current resolution.
+				if (session.pubkey !== bootPubkey) return;
 				workspaceResolutionPending = false;
 				postLoginSyncState = result.source === 'relay' ? 'done' : 'idle';
+				// The user may have moved to onboarding / resolve while this ran
+				// (e.g. right after creating an account). Those routes own their
+				// own flow — never bounce them through /resolve again.
+				if (isPublicRoute) return;
 				if (result.access === 'setup' || result.access === 'waiting-workspace') {
 					void goto(resolve('/resolve'), { replaceState: true });
 				} else if (result.access === 'blocked') {
