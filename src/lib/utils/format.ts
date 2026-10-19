@@ -5,6 +5,14 @@
 const moneyFormatters = new Map<string, Intl.NumberFormat>();
 const numberFormatters = new Map<string, Intl.NumberFormat>();
 const relativeFormatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+	['year', 31_536_000_000],
+	['month', 2_592_000_000],
+	['day', 86_400_000],
+	['hour', 3_600_000],
+	['minute', 60_000],
+	['second', 1000]
+];
 const CURRENCY_ALIAS: Record<string, string> = {
 	$: 'USD',
 	US$: 'USD',
@@ -108,20 +116,18 @@ export function truncateNpub(npub: string, head = 8, tail = 6): string {
 	return `${npub.slice(0, head)}…${npub.slice(-tail)}`;
 }
 
+/** Local calendar-day key (Y-M-D) for comparing dates without the time part. */
+export function localDayKey(value: string | number | Date): string {
+	const d = value instanceof Date ? value : new Date(value);
+	return Number.isFinite(d.getTime()) ? `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` : '';
+}
+
 export function relativeTime(isoOrEpoch: string | number): string {
 	const t = typeof isoOrEpoch === 'number' ? isoOrEpoch : new Date(isoOrEpoch).getTime();
 	if (!Number.isFinite(t)) return '';
 	const diff = Date.now() - t;
 	const abs = Math.abs(diff);
-	const units: [Intl.RelativeTimeFormatUnit, number][] = [
-		['year', 31_536_000_000],
-		['month', 2_592_000_000],
-		['day', 86_400_000],
-		['hour', 3_600_000],
-		['minute', 60_000],
-		['second', 1000]
-	];
-	for (const [unit, ms] of units) {
+	for (const [unit, ms] of RELATIVE_UNITS) {
 		if (abs >= ms || unit === 'second') {
 			return relativeFormatter.format(-Math.round(diff / ms), unit);
 		}

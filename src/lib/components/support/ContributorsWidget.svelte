@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- external contributor URLs */
 	import { onMount } from 'svelte';
 	import { decode } from 'nostr-tools/nip19';
 	import Icon from '$lib/components/ui/Icon.svelte';

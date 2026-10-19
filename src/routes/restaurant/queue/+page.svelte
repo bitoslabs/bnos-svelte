@@ -76,23 +76,27 @@
 			.sort((a, b) => new Date(b.arrivedAt).getTime() - new Date(a.arrivedAt).getTime());
 	});
 
-	const stats = $derived({
-		waiting: queue.filter((q) => q.status === 'waiting').length,
-		seated: queue.filter((q) => q.status === 'seated').length,
-		cancelled: queue.filter((q) => q.status === 'cancelled').length
+	const stats = $derived.by(() => {
+		let waiting = 0;
+		let seated = 0;
+		let cancelled = 0;
+		let waitMinutes = 0;
+		const now = Date.now();
+		for (const q of queue) {
+			if (q.status === 'waiting') {
+				waiting++;
+				const m = Math.floor((now - new Date(q.arrivedAt).getTime()) / 60_000);
+				waitMinutes += Math.max(0, m);
+			} else if (q.status === 'seated') seated++;
+			else if (q.status === 'cancelled') cancelled++;
+		}
+		return {
+			waiting,
+			seated,
+			cancelled,
+			avgWait: waiting > 0 ? Math.round(waitMinutes / waiting) : 0
+		};
 	});
-
-	const avgWait = $derived(
-		(() => {
-			const waiting = queue.filter((q) => q.status === 'waiting');
-			if (waiting.length === 0) return 0;
-			const total = waiting.reduce((sum, q) => {
-				const m = Math.floor((Date.now() - new Date(q.arrivedAt).getTime()) / 60_000);
-				return sum + Math.max(0, m);
-			}, 0);
-			return Math.round(total / waiting.length);
-		})()
-	);
 
 	const tabs = $derived([
 		{ key: 'waiting' as const, label: t('restaurant.waiting'), count: stats.waiting },
@@ -197,7 +201,7 @@
 		>
 			<Icon name="lucide:clock" class="size-4 text-(--ui-text-dimmed)" />
 			<span class="text-[12px] font-semibold text-(--ui-text-muted)">Avg wait</span>
-			<span class="text-[14px] font-bold tabular-nums">{avgWait}m</span>
+			<span class="text-[14px] font-bold tabular-nums">{stats.avgWait}m</span>
 		</div>
 		<div
 			class="flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1.5"

@@ -88,7 +88,7 @@ describe('protect/unprotect (object surface, for GLO data)', () => {
 		const scope = getSensitiveDataScopeId('org-1', 'pk');
 		const envelope = await protectSensitiveValue(secret, { domain: 'customer', scopeId: scope });
 		expect(isEncryptionEnvelope(envelope)).toBe(true);
-		expect((envelope as any).ciphertext).not.toContain('Alice');
+		expect((envelope as { ciphertext: string }).ciphertext).not.toContain('Alice');
 		const back = await unprotectSensitiveValue<typeof secret>(envelope);
 		expect(back).toEqual(secret);
 	});

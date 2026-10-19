@@ -4,6 +4,7 @@
 	let {
 		value = $bindable(),
 		label,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars -- reserved for formatting
 		currency = 'LAK',
 		placeholder
 	}: {

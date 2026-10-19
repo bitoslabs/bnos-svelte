@@ -67,7 +67,7 @@ export function hasQrConfigured(cfg: PayConfig): boolean {
 	return cfg.bankAccountNumber.trim().length > 0;
 }
 
-export function hasLightningConfigured(_cfg: PayConfig): boolean {
+export function hasLightningConfigured(): boolean {
 	// Lightning address is owned by Settings → Bitcoin (single source of truth).
 	// Imported lazily to avoid a circular import with payment-qr/lightning.
 	if (typeof localStorage === 'undefined') return false;

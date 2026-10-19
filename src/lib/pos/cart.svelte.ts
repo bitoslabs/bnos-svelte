@@ -262,7 +262,7 @@ class PosCart {
 		const order: HeldOrder = {
 			id: this.heldCounter,
 			orderType: this.orderType,
-			items: structuredClone($state.snapshot(this.items)) as CartLine[],
+			items: $state.snapshot(this.items) as CartLine[],
 			discount: { ...this.discount },
 			customerName: this.customerName || undefined,
 			customerId: this.customerId ?? undefined,
@@ -363,12 +363,11 @@ class PosCart {
 
 		try {
 			onProgress?.('syncing');
-			await glo.upsert<Order>(TYPE.order, order, { id: orderId });
-			await glo.upsert<Payment>(
-				TYPE.payment,
-				{ ...payment, orderId },
-				{ id: newRecordId('payment') }
-			);
+			// Independent records — persist/publish them together.
+			await Promise.all([
+				glo.upsert<Order>(TYPE.order, order, { id: orderId }),
+				glo.upsert<Payment>(TYPE.payment, { ...payment, orderId }, { id: newRecordId('payment') })
+			]);
 		} catch (e) {
 			console.warn('[pos] checkout persist failed', e);
 			toast.error('Sale saved locally', 'Relay sync will retry.');
@@ -377,84 +376,101 @@ class PosCart {
 
 		// ── Post-checkout data flows ──
 
-		// A. Decrement stock for each product
-		for (const line of lines) {
-			if (line.productId) {
-				const product = glo.get(TYPE.product, line.productId);
-				if (product) {
-					const productData = product.data as Record<string, unknown>;
-					const currentStock =
-						typeof productData.stockLevel === 'number' ? productData.stockLevel : 0;
+		await Promise.all([
+			(async () => {
+				// A. Decrement stock for each product. Aggregate first so multiple lines
+				// of the same product result in one write instead of a read/write race.
+				const stockDecrements: Record<string, number> = {};
+				for (const line of lines) {
+					if (!line.productId) continue;
+					stockDecrements[line.productId] = (stockDecrements[line.productId] ?? 0) + line.quantity;
+				}
+				await Promise.all(
+					Object.entries(stockDecrements).map(async ([productId, quantity]) => {
+						const product = glo.get(TYPE.product, productId);
+						if (!product) return;
+						const productData = product.data as Record<string, unknown>;
+						const currentStock =
+							typeof productData.stockLevel === 'number' ? productData.stockLevel : 0;
+						try {
+							await glo.upsert(
+								TYPE.product,
+								{
+									...productData,
+									stockLevel: Math.max(0, currentStock - quantity)
+								},
+								{ id: product.id }
+							);
+						} catch (e) {
+							console.warn('[pos] stock decrement failed for', productId, e);
+						}
+					})
+				);
+			})(),
+			(async () => {
+				// B. Update customer spend tracking
+				if (this.customerId || this.customerName) {
 					try {
-						await glo.upsert(
-							TYPE.product,
-							{
-								...productData,
-								stockLevel: Math.max(0, currentStock - line.quantity)
-							},
-							{ id: product.id }
-						);
+						let cust: { id: string; data: Record<string, unknown> } | undefined;
+						if (this.customerId) {
+							const found = glo.get(TYPE.customer, this.customerId);
+							cust = found
+								? { id: found.id, data: found.data as Record<string, unknown> }
+								: undefined;
+						} else {
+							const customers = glo.all<Record<string, unknown>, typeof TYPE.customer>(
+								TYPE.customer
+							);
+							cust = customers.find((c) => c.data.name === this.customerName);
+						}
+						if (cust) {
+							const totalSpend =
+								typeof cust.data.totalSpend === 'number' ? cust.data.totalSpend : 0;
+							const totalOrders =
+								typeof cust.data.totalOrders === 'number' ? cust.data.totalOrders : 0;
+							await glo.upsert(
+								TYPE.customer,
+								{
+									...cust.data,
+									totalSpend: totalSpend + totals.total,
+									totalOrders: totalOrders + 1,
+									lastOrderAt: completedAt
+								},
+								{ id: cust.id }
+							);
+						}
 					} catch (e) {
-						console.warn('[pos] stock decrement failed for', line.productId, e);
+						console.warn('[pos] customer update failed', e);
 					}
 				}
-			}
-		}
-
-		// B. Update customer spend tracking
-		if (this.customerId || this.customerName) {
-			try {
-				let cust: { id: string; data: Record<string, unknown> } | undefined;
-				if (this.customerId) {
-					const found = glo.get(TYPE.customer, this.customerId);
-					cust = found ? { id: found.id, data: found.data as Record<string, unknown> } : undefined;
-				} else {
-					const customers = glo.all<Record<string, unknown>, typeof TYPE.customer>(TYPE.customer);
-					cust = customers.find((c) => c.data.name === this.customerName);
+			})(),
+			(async () => {
+				// C. Track promotion usage
+				if (this.appliedPromotionId) {
+					try {
+						const promo = glo.get(TYPE.promotion, this.appliedPromotionId);
+						const coupon = glo.get(TYPE.coupon, this.appliedPromotionId);
+						const offer = promo ?? coupon;
+						if (offer) {
+							const offerData = offer.data as Record<string, unknown>;
+							const usageField = coupon ? 'uses' : 'currentUsage';
+							const currentUsage =
+								typeof offerData[usageField] === 'number' ? offerData[usageField] : 0;
+							await glo.upsert(
+								coupon ? TYPE.coupon : TYPE.promotion,
+								{
+									...offerData,
+									[usageField]: currentUsage + 1
+								},
+								{ id: offer.id }
+							);
+						}
+					} catch (e) {
+						console.warn('[pos] promotion usage increment failed', e);
+					}
 				}
-				if (cust) {
-					const totalSpend = typeof cust.data.totalSpend === 'number' ? cust.data.totalSpend : 0;
-					const totalOrders = typeof cust.data.totalOrders === 'number' ? cust.data.totalOrders : 0;
-					await glo.upsert(
-						TYPE.customer,
-						{
-							...cust.data,
-							totalSpend: totalSpend + totals.total,
-							totalOrders: totalOrders + 1,
-							lastOrderAt: completedAt
-						},
-						{ id: cust.id }
-					);
-				}
-			} catch (e) {
-				console.warn('[pos] customer update failed', e);
-			}
-		}
-
-		// C. Track promotion usage
-		if (this.appliedPromotionId) {
-			try {
-				const promo = glo.get(TYPE.promotion, this.appliedPromotionId);
-				const coupon = glo.get(TYPE.coupon, this.appliedPromotionId);
-				const offer = promo ?? coupon;
-				if (offer) {
-					const offerData = offer.data as Record<string, unknown>;
-					const usageField = coupon ? 'uses' : 'currentUsage';
-					const currentUsage =
-						typeof offerData[usageField] === 'number' ? offerData[usageField] : 0;
-					await glo.upsert(
-						coupon ? TYPE.coupon : TYPE.promotion,
-						{
-							...offerData,
-							[usageField]: currentUsage + 1
-						},
-						{ id: offer.id }
-					);
-				}
-			} catch (e) {
-				console.warn('[pos] promotion usage increment failed', e);
-			}
-		}
+			})()
+		]);
 
 		// Snapshot the applied promotion/coupon so the receipt can show its name
 		// even after the cart is cleared below.
@@ -485,7 +501,7 @@ class PosCart {
 		const sale: CompletedSale = {
 			number,
 			orderType: this.orderType,
-			items: structuredClone($state.snapshot(this.items)) as CartLine[],
+			items: $state.snapshot(this.items) as CartLine[],
 			totals,
 			method,
 			change,

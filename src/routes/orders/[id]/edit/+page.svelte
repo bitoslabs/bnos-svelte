@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { page } from '$app/state';
@@ -11,6 +12,7 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, formatInt, titleCase } from '$lib/utils/format';
+	import { buildSearchIndex } from '$lib/utils/search';
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
 	import {
 		TYPE,
@@ -21,12 +23,17 @@
 		type OrderType,
 		type OrderSource,
 		type ShippingInfo,
-		type ShippingStatus,
 		type PickupInfo,
 		type GloObject
 	} from '$lib/domain';
 	import { ORDER_SOURCES, SHIPPING_STATUSES } from '$lib/domain/order-sources';
 	import { statusLabel } from '$lib/domain';
+
+	type OrderView = Order & {
+		priority?: 'vip' | 'normal' | 'rush';
+		paymentMethod?: string;
+		taxAmount?: number;
+	};
 
 	const id = $derived(page.params.id);
 
@@ -42,6 +49,23 @@
 	const products = $derived(glo.all<Product, typeof TYPE.product>(TYPE.product));
 	const customers = $derived(glo.all<Customer, typeof TYPE.customer>(TYPE.customer));
 	const currency = $derived(tenant.state.currency);
+
+	const productSearchIndex = $derived(
+		buildSearchIndex(products, (p) => {
+			const d = p.data;
+			return [d.name, d.sku, d.barcode].filter(Boolean).join(' ');
+		})
+	);
+	const productByCode = $derived.by(() => {
+		const map = Object.create(null) as Record<string, (typeof products)[number]>;
+		for (const p of products) {
+			for (const code of [p.data.barcode, p.data.sku]) {
+				const key = code?.toLowerCase();
+				if (key && !map[key]) map[key] = p;
+			}
+		}
+		return map;
+	});
 
 	// ── Form state ───────────────────────────────────────────
 	let search = $state('');
@@ -100,7 +124,7 @@
 	// ── Sync form from order data when it loads ──────────────
 	$effect(() => {
 		if (order && !loaded) {
-			const d = order.data as any;
+			const d = order.data as OrderView;
 			orderType = d.type ?? 'takeaway';
 			source = d.source ?? 'orders_page';
 			sourceDetail = d.sourceDetail ?? '';
@@ -128,53 +152,39 @@
 	function handleBarcodeScan() {
 		const code = barcodeInput.trim();
 		if (!code) return;
-		const product = products.find((p) => {
-			const d = p.data as any;
-			return (
-				d.barcode === code ||
-				d.sku === code ||
-				d.barcode?.toLowerCase() === code.toLowerCase() ||
-				d.sku?.toLowerCase() === code.toLowerCase()
-			);
-		});
+		const product = productByCode[code.toLowerCase()];
 		if (product) {
-			addLine(product.data as Product);
+			addLine(product);
 			barcodeInput = '';
-			toast.info(`Added: ${(product.data as any).name}`);
+			toast.info(`Added: ${product.data.name}`);
 		} else {
 			toast.warning(`No product for barcode/SKU: ${code}`);
 		}
 	}
 
-	const filteredProducts = $derived(
-		search.trim()
-			? products.filter((p) => {
-					const d = p.data as any;
-					return (
-						(d.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-						(d.sku ?? '').toLowerCase().includes(search.toLowerCase())
-					);
-				})
-			: products.slice(0, 8)
-	);
+	const filteredProducts = $derived.by(() => {
+		const q = search.trim().toLowerCase();
+		return q
+			? products.filter((p) => productSearchIndex[p.id]?.includes(q) ?? false)
+			: products.slice(0, 8);
+	});
 
-	function addLine(product: Product) {
+	function addLine(product: { id: string; data: Product }) {
 		const existing = lines.find((l) => l.productId === product.id);
 		if (existing) {
 			existing.quantity++;
 			lines = [...lines];
 		} else {
-			const price = (product as any).price ?? 0;
+			const price = product.data.price ?? 0;
 			lines = [
 				...lines,
 				{
 					id: crypto.randomUUID(),
-					productId: (product as any).id ?? '',
-					name: (product as any).name ?? '',
-					productName: (product as any).name ?? '',
+					productId: product.id,
+					name: product.data.name,
+					productName: product.data.name,
 					quantity: 1,
 					unitPrice: price,
-					price: price,
 					total: price
 				}
 			];
@@ -196,9 +206,9 @@
 	}
 
 	// ── Customer ─────────────────────────────────────────────
-	function selectCustomer(c: any) {
-		customerId = c.id ?? '';
-		customerName = c.name ?? c.phone ?? '';
+	function selectCustomer(c: { id: string; data: Customer }) {
+		customerId = c.id;
+		customerName = c.data.name ?? c.data.phone ?? '';
 		showCustomerSelect = false;
 	}
 	function clearCustomer() {
@@ -207,9 +217,7 @@
 	}
 
 	// ── Totals ───────────────────────────────────────────────
-	const subtotal = $derived(
-		lines.reduce((s, l) => s + (l.unitPrice ?? l.price ?? 0) * l.quantity, 0)
-	);
+	const subtotal = $derived(lines.reduce((s, l) => s + (l.unitPrice ?? 0) * l.quantity, 0));
 	const defaultTaxRate = $derived(tenant.state.defaultTaxRate || 0);
 	const taxAmount = $derived(
 		tenant.state.taxIncludedInPrice ? 0 : subtotal * (defaultTaxRate / 100)
@@ -226,10 +234,14 @@
 	});
 
 	// ── Change tracking ──────────────────────────────────────
-	const changes = $derived(() => {
+	const changes = $derived.by(() => {
 		if (!order || !loaded) return [];
-		const d = order.data as any;
-		const list: { label: string; oldVal: any; newVal: any }[] = [];
+		const d = order.data as OrderView;
+		const list: {
+			label: string;
+			oldVal: string | number | undefined;
+			newVal: string | number | undefined;
+		}[] = [];
 		if (status !== d.status)
 			list.push({ label: t('common.status'), oldVal: d.status, newVal: status });
 		if (orderType !== (d.type ?? 'takeaway'))
@@ -264,12 +276,12 @@
 		const savedTotalSats = btcRate.canConvert(currency)
 			? btcRate.satsFromAmount(total, currency)
 			: undefined;
-		const orderData: any = {
+		const orderData: OrderView = {
 			...order.data,
 			type: orderType,
 			source,
 			sourceDetail: source === 'other' ? sourceDetail.trim() || undefined : undefined,
-			status,
+			status: status as OrderView['status'],
 			customerId: customerId || undefined,
 			customerName: customerName || undefined,
 			lines,
@@ -300,7 +312,7 @@
 		await glo.upsert<Order>(TYPE.order, orderData, { id: order.id });
 		toast.success('Order updated');
 		saving = false;
-		goto(`/orders/${id}`);
+		goto(resolve('/orders/[id]', { id: id ?? '' }));
 	}
 
 	const ORDER_TYPES: { value: OrderType; label: string; icon: string }[] = [
@@ -337,7 +349,7 @@
 					variant="ghost"
 					size="icon-sm"
 					icon="lucide:arrow-left"
-					onclick={() => goto(`/orders/${id}`)}
+					onclick={() => goto(resolve('/orders/[id]', { id: id ?? '' }))}
 				/>
 				<div>
 					<div class="flex items-center gap-2">
@@ -357,13 +369,13 @@
 		</div>
 
 		<!-- Change tracking summary -->
-		{#if loaded && changes().length > 0}
+		{#if loaded && changes.length > 0}
 			<div
 				class="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5"
 			>
 				<Icon name="lucide:edit-3" class="size-4 text-amber-600 dark:text-amber-400" />
 				<span class="text-[12.5px] font-medium text-amber-700 dark:text-amber-300">
-					{changes().length} change{changes().length === 1 ? '' : 's'}: {changes()
+					{changes.length} change{changes.length === 1 ? '' : 's'}: {changes
 						.map((c) => c.label)
 						.join(', ')}
 				</span>
@@ -506,11 +518,11 @@
 										<button
 											type="button"
 											class="w-full border-b border-(--ui-border-muted) px-3 py-2.5 text-left text-[13px] transition-colors last:border-0 hover:bg-(--ui-bg-accented)"
-											onclick={() => selectCustomer(c.data)}
+											onclick={() => selectCustomer(c)}
 										>
 											<div class="font-medium">{c.data.name ?? 'Unknown'}</div>
-											{#if (c.data as any).phone}<div class="text-[11px] text-(--ui-text-dimmed)">
-													{(c.data as any).phone}
+											{#if c.data.phone}<div class="text-[11px] text-(--ui-text-dimmed)">
+													{c.data.phone}
 												</div>{/if}
 										</button>
 									{/each}
@@ -831,14 +843,14 @@
 										{#each filteredProducts as p (p.id)}
 											<button
 												type="button"
-												onclick={() => addLine(p.data as Product)}
+												onclick={() => addLine(p)}
 												class="flex items-center gap-2 rounded-lg border border-(--ui-border) px-3 py-2 text-left text-[12.5px] transition-colors hover:border-primary-500/40 hover:bg-primary-500/5"
 											>
 												<Icon name="lucide:plus" class="size-3.5 shrink-0 text-primary-500" />
 												<div class="min-w-0">
-													<div class="truncate font-semibold">{(p.data as any).name}</div>
+													<div class="truncate font-semibold">{p.data.name}</div>
 													<div class="text-[11px] text-(--ui-text-dimmed)">
-														{formatMoney((p.data as any).price ?? 0, currency ?? 'USD')}
+														{formatMoney(p.data.price ?? 0, currency ?? 'USD')}
 													</div>
 												</div>
 											</button>
@@ -880,7 +892,7 @@
 												{#if line.modifiers?.length}<div
 														class="text-[11px] text-(--ui-text-dimmed)"
 													>
-														{line.modifiers.map((m: any) => m.name).join(', ')}
+														{line.modifiers.map((m) => m.name).join(', ')}
 													</div>{/if}
 											</td>
 											<td class="px-3 py-3">
@@ -901,16 +913,10 @@
 												</div>
 											</td>
 											<td class="px-3 py-3 text-right tabular-nums"
-												>{formatMoney(
-													(line as any).unitPrice ?? (line as any).price ?? 0,
-													currency ?? 'USD'
-												)}</td
+												>{formatMoney(line.unitPrice ?? 0, currency ?? 'USD')}</td
 											>
 											<td class="px-3 py-3 text-right font-semibold tabular-nums"
-												>{formatMoney(
-													((line as any).unitPrice ?? (line as any).price ?? 0) * line.quantity,
-													currency ?? 'USD'
-												)}</td
+												>{formatMoney((line.unitPrice ?? 0) * line.quantity, currency ?? 'USD')}</td
 											>
 											<td class="px-3 py-3 text-right"
 												><Button
@@ -1075,7 +1081,11 @@
 					<Button color="primary" block icon="lucide:save" onclick={save} disabled={saving}>
 						{saving ? 'Saving…' : 'Save Changes'}
 					</Button>
-					<Button color="neutral" variant="ghost" block onclick={() => goto(`/orders/${id}`)}
+					<Button
+						color="neutral"
+						variant="ghost"
+						block
+						onclick={() => goto(resolve('/orders/[id]', { id: id ?? '' }))}
 						>{t('common.cancel')}</Button
 					>
 				</div>

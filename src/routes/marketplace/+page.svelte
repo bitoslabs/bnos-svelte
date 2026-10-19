@@ -12,7 +12,7 @@
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
-	import { formatMoney, formatInt, relativeTime, titleCase } from '$lib/utils/format';
+	import { formatMoney, formatInt, relativeTime } from '$lib/utils/format';
 	import {
 		TYPE,
 		statusColor,
@@ -26,7 +26,7 @@
 	} from '$lib/domain';
 	import type { MarketplaceConnection, MarketplaceProduct, MarketplaceReview } from '$lib/domain';
 	import type { DashboardOrder } from '$lib/dashboard/metrics';
-	import { toOrderRows, metricsSummary } from '$lib/dashboard/metrics';
+	import { toOrderRows, metricsSummary, latestRows } from '$lib/dashboard/metrics';
 
 	const currency = $derived(tenant.state.currency);
 
@@ -47,37 +47,54 @@
 	const summary = $derived(metricsSummary(mpRows));
 
 	// ── Channel health ───────────────────────────────────────
-	const connectedChannels = $derived(connections.filter((c) => c.data.status === 'connected'));
+	const connectionByType = $derived.by(() => {
+		const map: Record<string, (typeof connections)[number]> = {};
+		for (const c of connections) map[c.data.type] ??= c;
+		return map;
+	});
 	const channelRevenue = $derived.by(() => {
-		const map = new Map<string, { total: number; count: number }>();
+		const map: Record<string, { total: number; count: number }> = {};
 		for (const o of mpRows) {
-			const conn = connections.find((c) => c.data.type === o.source);
+			const conn = connectionByType[o.source ?? ''];
 			const key = conn?.id ?? o.source ?? 'other';
-			const e = map.get(key) ?? { total: 0, count: 0 };
-			e.total += o.total;
-			e.count += 1;
-			map.set(key, e);
+			const entry = (map[key] ??= { total: 0, count: 0 });
+			entry.total += o.total;
+			entry.count += 1;
 		}
 		return map;
 	});
 
 	// ── Action queue ─────────────────────────────────────────
 	const ordersToAct = $derived(
-		mpRows
-			.filter((o) => !['completed', 'cancelled', 'refunded'].includes(o.status.toLowerCase()))
-			.sort((a, b) => b.atMs - a.atMs)
-			.slice(0, 5)
+		latestRows(
+			mpRows.filter(
+				(o) => !['completed', 'cancelled', 'refunded'].includes(o.status.toLowerCase())
+			),
+			5
+		)
 	);
 
 	const avgRating = $derived.by(() => {
-		const r = reviews.map((x) => x.data.rating).filter((x) => x > 0);
-		return r.length ? r.reduce((s, x) => s + x, 0) / r.length : 0;
+		let sum = 0;
+		let count = 0;
+		for (const review of reviews) {
+			const rating = review.data.rating;
+			if (rating > 0) {
+				sum += rating;
+				count++;
+			}
+		}
+		return count ? sum / count : 0;
 	});
 
 	const conversionRate = $derived.by(() => {
-		const views = listings.reduce((s, l) => s + (l.data.views ?? 0), 0);
-		const conv = listings.reduce((s, l) => s + (l.data.conversions ?? 0), 0);
-		return views > 0 ? (conv / views) * 100 : 0;
+		let views = 0;
+		let conversions = 0;
+		for (const listing of listings) {
+			views += listing.data.views ?? 0;
+			conversions += listing.data.conversions ?? 0;
+		}
+		return views > 0 ? (conversions / views) * 100 : 0;
 	});
 
 	const hasChannels = $derived(connections.length > 0);
@@ -245,7 +262,7 @@
 				<div class="divide-y divide-(--ui-border-muted)">
 					{#each connections.slice(0, 5) as c (c.id)}
 						{@const m = channelMeta(c.data.type)}
-						{@const rev = channelRevenue.get(c.id)}
+						{@const rev = channelRevenue[c.id]}
 						<div class="flex items-center gap-3 px-5 py-3">
 							<div class="grid size-8 shrink-0 place-items-center rounded-lg {m.color}">
 								<Icon name={m.icon} class="size-4" />

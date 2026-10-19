@@ -77,6 +77,9 @@ export class PaymentQrFlowStore {
 
 	private timer: ReturnType<typeof setInterval> | null = null;
 	private pollTimer: ReturnType<typeof setInterval> | null = null;
+	private pollingGeneration = -1;
+	/** Invalidates in-flight polls/watchers when the dialog is reset or reopened. */
+	private detectionGeneration = 0;
 	private watchStop: (() => void) | null = null;
 
 	constructor(private readonly deps: PaymentFlowDeps) {}
@@ -200,7 +203,8 @@ export class PaymentQrFlowStore {
 
 	/** Payment confirmed (any path): freeze state and hand off to the page. */
 	markPaid() {
-		if (this.paid) return;
+		// Ignore late callbacks from a poll/watch that outlived a closed dialog.
+		if (!this.open || this.paid) return;
 		this.paid = true;
 		this.stopDetection();
 		this.deps.onAutoPaid();
@@ -304,23 +308,34 @@ export class PaymentQrFlowStore {
 	private startDetection(provider: LightningProvider, pr: string) {
 		this.stopDetection();
 		if (!provider.autoConfirms) return;
+		const generation = this.detectionGeneration;
 		const hasPush = typeof provider.watchPayment === 'function';
 		if (hasPush) {
-			this.watchStop = provider.watchPayment!(pr, () => this.markPaid());
+			this.watchStop = provider.watchPayment!(pr, () => {
+				if (generation === this.detectionGeneration) this.markPaid();
+			});
 		}
 		if (!provider.getPaymentStatus) return;
 		const intervalMs = hasPush ? 10_000 : 4_000;
 		this.pollTimer = setInterval(async () => {
+			if (generation !== this.detectionGeneration || this.pollingGeneration === generation) return;
 			if (!this.open || this.paid || this.expired) {
 				this.stopDetection();
 				return;
 			}
-			const status = await provider.getPaymentStatus!(pr).catch(() => 'unknown' as const);
-			if (status === 'paid') this.markPaid();
+			this.pollingGeneration = generation;
+			try {
+				const status = await provider.getPaymentStatus!(pr).catch(() => 'unknown' as const);
+				if (generation === this.detectionGeneration && status === 'paid') this.markPaid();
+			} finally {
+				if (this.pollingGeneration === generation) this.pollingGeneration = -1;
+			}
 		}, intervalMs);
 	}
 
 	private stopDetection() {
+		this.detectionGeneration++;
+		this.pollingGeneration = -1;
 		if (this.pollTimer) {
 			clearInterval(this.pollTimer);
 			this.pollTimer = null;

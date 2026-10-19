@@ -6,13 +6,38 @@
  * imports here as needed without changing any call sites.
  */
 import { addCollection } from '@iconify/svelte';
-import lucide from '@iconify-json/lucide/icons.json';
+import { LUCIDE_SUBSET } from './icons-subset.generated';
 
 let registered = false;
+let fullIcons: Promise<void> | null = null;
+
 export function registerIcons() {
 	if (registered) return;
-	addCollection(lucide);
+	addCollection(LUCIDE_SUBSET);
 	registered = true;
+}
+
+/** True when `resolveIcon(name)` is available in the generated subset. */
+export function hasLocalIcon(name: string): boolean {
+	const icon = resolveIcon(name);
+	if (!icon.startsWith('lucide:')) return true;
+	const subset = LUCIDE_SUBSET as {
+		icons: Record<string, unknown>;
+		aliases?: Record<string, unknown>;
+	};
+	const key = icon.slice('lucide:'.length);
+	return Object.hasOwn(subset.icons, key) || Object.hasOwn(subset.aliases ?? {}, key);
+}
+
+/** Load the full Lucide collection when an icon name came from external data
+ *  rather than the source scan. Cached; called lazily by <Icon>. */
+export function loadFullIcons(): Promise<void> {
+	if (!fullIcons) {
+		fullIcons = import('@iconify-json/lucide/icons.json').then(({ default: full }) => {
+			addCollection(full);
+		});
+	}
+	return fullIcons;
 }
 
 /**
@@ -62,7 +87,15 @@ export const ICON_FALLBACK: Record<string, string> = {
 	'solar:alt-arrow-right-linear': 'lucide:chevron-right',
 	'solar:alt-arrow-up-linear': 'lucide:chevron-up',
 	'solar:alt-arrow-down-linear': 'lucide:chevron-down',
-	'solar:cloud-cross-linear': 'lucide:cloud-off'
+	'solar:cloud-cross-linear': 'lucide:cloud-off',
+	// Names referenced in the UI but absent from this Lucide version.
+	'lucide:bag': 'lucide:shopping-bag',
+	'lucide:cart': 'lucide:shopping-cart',
+	'lucide:cart-x': 'lucide:trash-2',
+	'lucide:cart-plus': 'lucide:shopping-cart',
+	'lucide:card-receipt': 'lucide:receipt',
+	'lucide:cloud-save': 'lucide:cloud-upload',
+	'lucide:shop': 'lucide:store'
 };
 
 export function resolveIcon(name: string): string {

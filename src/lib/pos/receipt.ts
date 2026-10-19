@@ -50,7 +50,7 @@ export interface BuildOrderInput {
 	btcRateCurrency?: string;
 }
 
-export function buildOrder(input: BuildOrderInput): Order {
+export function buildOrder(input: BuildOrderInput): Order & { method?: string } {
 	const occurredAt = input.occurredAt ?? new Date().toISOString();
 	const lines: OrderLine[] = input.lines.map((l, i) => {
 		const modifierTotal = (l.modifiers ?? []).reduce((s, m) => s + m.priceAdjustment, 0);

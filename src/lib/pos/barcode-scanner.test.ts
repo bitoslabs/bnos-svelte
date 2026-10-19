@@ -8,14 +8,15 @@ function feedBurst(keys: string[], gap: number): string | null {
 	const orig = performance.now;
 	let result: string | null = null;
 	let i = 0;
-	(performance as any).now = () => i++ * gap;
+	const perf = performance as unknown as { now: () => number };
+	perf.now = () => i++ * gap;
 	try {
 		for (const k of keys) {
 			const r = feedScan(state, { key: k });
 			if (r !== null) result = r;
 		}
 	} finally {
-		(performance as any).now = orig;
+		perf.now = orig;
 	}
 	return result;
 }

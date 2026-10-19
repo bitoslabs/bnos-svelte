@@ -1,6 +1,7 @@
 <script lang="ts" module>
 	import Iconify from '@iconify/svelte';
-	import { resolveIcon } from '$lib/icons';
+	import IconFallback from './IconFallback.svelte';
+	import { hasLocalIcon, resolveIcon } from '$lib/icons';
 </script>
 
 <script lang="ts">
@@ -19,8 +20,15 @@
 		class?: string;
 		size?: string;
 	} = $props();
+
+	const iconName = $derived(resolveIcon(name));
 </script>
 
 {#if name}
-	<Iconify icon={resolveIcon(name)} width={size} height={size} class={cls} />
+	{#if hasLocalIcon(iconName)}
+		<Iconify icon={iconName} width={size} height={size} class={cls} />
+	{:else}
+		<!-- Name came from external data rather than the source scan. -->
+		<IconFallback icon={iconName} {size} class={cls} />
+	{/if}
 {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -158,11 +159,11 @@
 	const RATE_APIS = [
 		{
 			url: 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd',
-			extract: (d: any) => d?.bitcoin?.usd
+			extract: (d: { bitcoin?: { usd?: number } }) => d?.bitcoin?.usd
 		},
 		{
 			url: 'https://api.coinbase.com/v2/prices/BTC-USD/spot',
-			extract: (d: any) => parseFloat(d?.data?.amount)
+			extract: (d: { data?: { amount?: string } }) => parseFloat(d?.data?.amount ?? '')
 		}
 	];
 
@@ -181,7 +182,7 @@
 		throw new Error('All rate sources failed');
 	}
 
-	async function refreshRates(force = false) {
+	async function refreshRates() {
 		rateLoading = true;
 		rateError = '';
 		try {
@@ -550,7 +551,7 @@
 		if (dataSync.status === 'done') toast.success('Settings loaded from relay');
 	}
 
-	$effect(() => {
+	onMount(() => {
 		if (!browser) return;
 		window.addEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
 		return () => window.removeEventListener(PAYMENT_SETTINGS_SYNC_EVENT, onPaymentSettingsSync);
@@ -634,7 +635,7 @@
 					variant="ghost"
 					size="icon-sm"
 					icon="lucide:refresh-cw"
-					onclick={() => refreshRates(true)}
+					onclick={() => refreshRates()}
 					disabled={rateLoading}
 				/>
 			</div>
@@ -1135,7 +1136,7 @@
 						checkout, this address is reused by the POS “Show QR” flow.
 					</p>
 					<a
-						href="/settings/pay-qr"
+						href={resolve('/settings/pay-qr')}
 						class="mt-3 inline-flex items-center gap-1 text-[11.5px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
 					>
 						<Icon name="lucide:arrow-right" class="size-3.5" />Manage Pay QR

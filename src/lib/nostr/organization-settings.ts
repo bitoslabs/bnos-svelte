@@ -203,59 +203,58 @@ export async function syncOrganizationSettingsToWorkspace(snapshot?: Organizatio
 	const settings = snapshot ?? readOrganizationSettings();
 	if (!settings) return 0;
 
-	let synced = 0;
+	// Shared extension payload is identical for every company in this snapshot.
+	const baseExt = currentWorkspaceSettingsPayload();
 
-	for (const company of settings.companies) {
-		const nextExt = {
-			...currentWorkspaceSettingsPayload(),
-			businessModel: company.businessModel,
-			businessType: company.businessType,
-			taxRate: company.enableTax ? company.taxRate : 0,
-			taxIncluded: company.taxIncluded
-		};
-		await glo.upsert(
-			'organization',
-			{
-				name: company.name,
-				code: company.code,
-				currency: company.currency,
-				status: 'active'
-			},
-			{
-				id: company.id,
-				scope: { organizationId: company.id },
-				extensions: {
-					'org.bitos.bnos': nextExt
+	await Promise.all([
+		...settings.companies.map((company) =>
+			glo.upsert(
+				'organization',
+				{
+					name: company.name,
+					code: company.code,
+					currency: company.currency,
+					status: 'active'
+				},
+				{
+					id: company.id,
+					scope: { organizationId: company.id },
+					extensions: {
+						'org.bitos.bnos': {
+							...baseExt,
+							businessModel: company.businessModel,
+							businessType: company.businessType,
+							taxRate: company.enableTax ? company.taxRate : 0,
+							taxIncluded: company.taxIncluded
+						}
+					}
 				}
-			}
-		);
-		synced++;
-	}
-
-	for (const branch of settings.branches) {
-		await glo.upsert(
-			'location',
-			{
-				name: branch.name,
-				code: branch.code,
-				type: 'store',
-				status: branch.status,
-				address: branch.address,
-				phone: branch.phone,
-				email: branch.email
-			},
-			{
-				id: branch.id,
-				scope: {
-					organizationId: branch.storeId,
-					locationId: branch.id
+			)
+		),
+		...settings.branches.map((branch) =>
+			glo.upsert(
+				'location',
+				{
+					name: branch.name,
+					code: branch.code,
+					type: 'store',
+					status: branch.status,
+					address: branch.address,
+					phone: branch.phone,
+					email: branch.email
+				},
+				{
+					id: branch.id,
+					scope: {
+						organizationId: branch.storeId,
+						locationId: branch.id
+					}
 				}
-			}
-		);
-		synced++;
-	}
+			)
+		)
+	]);
 
-	return synced;
+	return settings.companies.length + settings.branches.length;
 }
 
 export function upsertOrganizationSettingsFromTenant(tenant: TenantContext) {

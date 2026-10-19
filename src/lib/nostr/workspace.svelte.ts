@@ -25,7 +25,19 @@ async function waitFor(check: () => boolean, attempts: number, delayMs: number) 
 }
 
 export function restoreTenantFromWorkspace(options: { organizationId?: string } = {}) {
-	const orgs = glo.all<Record<string, unknown>>('organization');
+	const me = session.pubkey?.trim().toLowerCase() ?? '';
+	// The GLO cache is device-wide, so a different account on the same device can
+	// leave organization records behind. Only accept records owned by the active
+	// key, plus the id explicitly resolved through a verified staff membership.
+	const trustedOrgId =
+		options.organizationId || (tenant.state.activeStaffId ? tenant.state.organizationId : '');
+	const orgs = glo.all<Record<string, unknown>>('organization').filter((item) => {
+		const owner = ((item.scope as { ownerPubkey?: string } | undefined)?.ownerPubkey ?? '')
+			.trim()
+			.toLowerCase();
+		if (!owner || !me || owner === me) return true;
+		return !!trustedOrgId && item.id === trustedOrgId;
+	});
 	if (orgs.length === 0) return false;
 
 	const settingsSnapshot = readOrganizationSettings();
@@ -54,7 +66,10 @@ export function restoreTenantFromWorkspace(options: { organizationId?: string } 
 		taxIncludedInPrice: (bnosExt.taxInclusive as boolean) ?? tenant.state.taxIncludedInPrice
 	});
 
-	const locations = glo.all<Record<string, unknown>>('location');
+	const locations = glo.all<Record<string, unknown>>('location').filter((item) => {
+		const scopeOrg = (item.scope as { organizationId?: string } | undefined)?.organizationId;
+		return !scopeOrg || scopeOrg === org.id;
+	});
 	if (locations.length > 0) {
 		const preferredLocationId = tenant.state.locationId || settingsSnapshot?.activeBranchId || '';
 		const location =
@@ -100,7 +115,6 @@ export async function resolveWorkspace(options: { allowRelaySync?: boolean } = {
 
 	try {
 		await warmRelays();
-		await sleep(400);
 		// Bootstrap needs the full workspace collections so a fresh device can
 		// rebuild the complete company + branch list from relay data.
 		await Promise.all([

@@ -19,7 +19,7 @@ const order = (over: Partial<Order> = {}): { data: Order } => ({
 			{ id: 'l2', productId: 'p2', name: 'Cake', quantity: 1, unitPrice: 500 }
 		],
 		...over
-	} as any
+	} as Order
 });
 
 describe('refund engine', () => {

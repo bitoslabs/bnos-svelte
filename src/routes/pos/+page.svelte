@@ -66,13 +66,12 @@
 	import { computeStock, availableFor, canSell } from '$lib/pos/stock';
 	import { printPosReceipt } from '$lib/pos/pos-receipt';
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
-	import { buildPaymentQr, isQrMethod, type PaymentQrResult } from '$lib/pos/payment-qr';
+	import { buildPaymentQr, isQrMethod } from '$lib/pos/payment-qr';
 	import { loadPayConfig } from '$lib/pos/pay-config';
-	import { getMerchantLightning, loadBitcoinLightningSettings } from '$lib/pos/lightning';
+	import { loadBitcoinLightningSettings } from '$lib/pos/lightning';
 	import { PaymentQrFlowStore } from '$lib/pos/payment-qr-flow.svelte';
 	import { resolveInvoiceMemo } from '$lib/pos/invoice-memo';
 	import PaymentQrDialog from '$lib/components/pos/PaymentQrDialog.svelte';
-	import QrCode from '$lib/components/ui/QrCode.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import {
@@ -83,6 +82,22 @@
 		type HardwareSettings,
 		type ReceiptSettings
 	} from '$lib/settings/local';
+
+	const clockFormatter = new Intl.DateTimeFormat('en-US', {
+		hour: 'numeric',
+		minute: '2-digit'
+	});
+	const dateFormatter = new Intl.DateTimeFormat('en-US', {
+		weekday: 'short',
+		month: 'short',
+		day: 'numeric'
+	});
+	const orderTimeFormatter = new Intl.DateTimeFormat('en-US', {
+		hour: 'numeric',
+		minute: '2-digit',
+		day: 'numeric',
+		month: 'short'
+	});
 
 	interface PromotionData {
 		code?: string;
@@ -260,13 +275,46 @@
 	}
 
 	const currency = $derived(tenant.state.currency);
-	const products = $derived(glo.all<Product, typeof TYPE.product>(TYPE.product));
+	type ProductView = Product & { image?: string };
+	const products = $derived(glo.all<ProductView, typeof TYPE.product>(TYPE.product));
 
-	function productImage(product: Product): string {
+	/** Lowercased name + barcode + SKU per product, built once per catalog
+	 *  change instead of per keystroke. */
+	const productSearchIndex = $derived.by(() => {
+		const index: Record<string, string> = {};
+		for (const p of products) {
+			const d = p.data;
+			index[p.id] = [d.name, d.sku, d.barcode].filter(Boolean).join('\n').toLowerCase();
+		}
+		return index;
+	});
+
+	/** Exact barcode/SKU → product, shared by scan, Enter and auto-add. */
+	const productByCode = $derived.by(() => {
+		// Null prototype so values like "constructor" can never hit Object.prototype.
+		const map = Object.create(null) as Record<string, GloObject<Product, typeof TYPE.product>>;
+		for (const p of products) {
+			for (const code of [p.data.barcode, p.data.sku]) {
+				if (code && !map[code]) map[code] = p;
+			}
+		}
+		return map;
+	});
+
+	const productHasModifiers = $derived.by(() => {
+		const map: Record<string, boolean> = {};
+		for (const p of products) {
+			map[p.id] = (p.data.modifierGroupIds ?? []).some((id) => modifierGroupsById.has(id));
+		}
+		return map;
+	});
+
+	function productImage(product: ProductView): string {
 		return product.images?.[0] ?? product.image ?? '';
 	}
 
 	const modifiers = $derived(glo.all<ModifierGroup, typeof TYPE.modifierGroup>(TYPE.modifierGroup));
+	const modifierGroupsById = $derived(new Map(modifiers.map((m) => [m.id, m.data])));
 	const branchId = $derived(tenant.state.locationId ?? undefined);
 	const stockMap = $derived(computeStock(glo.all(TYPE.adjustment), branchId));
 
@@ -291,10 +339,13 @@
 		cartCategoryIds
 	});
 	// Offers the current cart qualifies for AND the cart can apply automatically.
+	// Liveness is product-independent — evaluate it once per promo, not once
+	// per product × promotion.
+	const liveAutoPromotions = $derived(
+		allPromotions.filter((p) => isAutoApplicable(p.data) && isPromoLive(p.data, now).ok)
+	);
 	const eligiblePromotions = $derived(
-		allPromotions.filter(
-			(p) => isAutoApplicable(p.data) && isPromotionEligible(p.data, promoCtx).ok
-		)
+		liveAutoPromotions.filter((p) => isPromotionEligible(p.data, promoCtx).ok)
 	);
 	// The promotion currently linked to the cart (drives the "applied" banner).
 	const appliedPromoObj = $derived(
@@ -367,15 +418,14 @@
 	type ProductPromo = { data: PromoData; savings: number; newPrice: number; label: string };
 	const productPromoMap = $derived.by(() => {
 		const map: Record<string, ProductPromo> = {};
-		if (allPromotions.length === 0) return map;
+		if (!liveAutoPromotions.length) return map;
 		for (const prod of products) {
 			const price = prod.data.price ?? 0;
 			if (price <= 0) continue;
 			const cat = prod.data.categoryId as string | undefined;
 			let best: { data: PromoData; savings: number } | null = null;
-			for (const promo of allPromotions) {
+			for (const promo of liveAutoPromotions) {
 				const d = promo.data;
-				if (!isAutoApplicable(d) || !isPromoLive(d, now).ok) continue;
 				if (!promoCoversProduct(d, prod.id, cat)) continue;
 				const savings = promoSavings(d, price);
 				if (savings <= 0) continue;
@@ -406,7 +456,7 @@
 	const scanMatch = $derived.by(() => {
 		const code = query.trim();
 		if (code.length < 2) return null;
-		return products.find((p) => p.data.barcode === code || p.data.sku === code) ?? null;
+		return productByCode[code] ?? null;
 	});
 
 	function focusSearch() {
@@ -435,10 +485,7 @@
 	let scanDebounce: ReturnType<typeof setTimeout> | null = null;
 	$effect(() => {
 		const code = query.trim();
-		const match =
-			code.length >= 4
-				? (products.find((p) => p.data.barcode === code || p.data.sku === code) ?? null)
-				: null;
+		const match = code.length >= 4 ? (productByCode[code] ?? null) : null;
 		if (scanDebounce) clearTimeout(scanDebounce);
 		if (match) {
 			scanDebounce = setTimeout(() => {
@@ -460,60 +507,49 @@
 		new Map(catalogCategories.map((category) => [category.id, category.data.name]))
 	);
 	const categories = $derived.by(() => {
-		const categories: string[] = [];
+		const seen: Record<string, true> = {};
 		for (const p of products) {
 			const categoryId = p.data.categoryId as string | undefined;
-			if (categoryId && !categories.includes(categoryId)) categories.push(categoryId);
+			if (categoryId) seen[categoryId] = true;
 		}
-		return ['all', ...categories];
+		return ['all', ...Object.keys(seen)];
 	});
 	function categoryLabel(categoryId: string): string {
 		return categoryId === 'all' ? 'All items' : (categoryNames.get(categoryId) ?? categoryId);
 	}
-	const filtered = $derived(
-		products.filter((p) => {
-			const matchesCat = activeCat === 'all' || p.data.categoryId === activeCat;
-			const q = query.trim().toLowerCase();
-			const matchesQuery = !q || (p.data.name ?? '').toLowerCase().includes(q);
+	const filtered = $derived.by(() => {
+		const q = query.trim().toLowerCase();
+		const cat = activeCat;
+		return products.filter((p) => {
+			const matchesCat = cat === 'all' || p.data.categoryId === cat;
+			const matchesQuery = !q || (productSearchIndex[p.id]?.includes(q) ?? false);
 			const sellable = p.data.status !== 'inactive' && p.data.status !== 'archived';
 			const matchesOffers = !offersOnly || !!productPromoMap[p.id];
 			return matchesCat && matchesQuery && sellable && matchesOffers;
-		})
-	);
+		});
+	});
 	const trackedProducts = $derived(products.filter((p) => p.data.trackInventory).length);
-	const lowStockCount = $derived(
+	const lowStockProducts = $derived(
 		products.filter((p) => {
 			const threshold = p.data.inventory?.lowStockThreshold ?? 0;
 			return p.data.trackInventory && threshold > 0 && availableFor(stockMap, p.id) <= threshold;
-		}).length
+		})
 	);
-	const lowStockItems = $derived(
-		products
-			.filter((p) => {
-				const threshold = p.data.inventory?.lowStockThreshold ?? 0;
-				return p.data.trackInventory && threshold > 0 && availableFor(stockMap, p.id) <= threshold;
-			})
-			.slice(0, 6)
-	);
-	const clockLabel = $derived(
-		new Intl.DateTimeFormat('en-US', {
-			hour: 'numeric',
-			minute: '2-digit'
-		}).format(now)
-	);
-	const dateLabel = $derived(
-		new Intl.DateTimeFormat('en-US', {
-			weekday: 'short',
-			month: 'short',
-			day: 'numeric'
-		}).format(now)
-	);
+	const lowStockCount = $derived(lowStockProducts.length);
+	const lowStockItems = $derived(lowStockProducts.slice(0, 6));
+	const clockLabel = $derived(clockFormatter.format(now));
+	const dateLabel = $derived(dateFormatter.format(now));
 
 	// ── product → modifier groups resolver ──
 	function groupsFor(p: Product): ModifierGroup[] {
 		const ids = p.modifierGroupIds ?? [];
 		if (!ids.length) return [];
-		return modifiers.filter((m) => m.data && ids.includes(m.id)).map((m) => m.data);
+		const groups: ModifierGroup[] = [];
+		for (const id of ids) {
+			const group = modifierGroupsById.get(id);
+			if (group) groups.push(group);
+		}
+		return groups;
 	}
 	function variants(p: Product) {
 		return p.variants ?? [];
@@ -677,7 +713,10 @@
 	// ── Loyalty ──
 	const customers = $derived(glo.all<Customer, typeof TYPE.customer>(TYPE.customer));
 	const cartCustomer = $derived(
-		cart.customerId ? (customers.find((c) => c.id === cart.customerId) ?? null) : null
+		cart.customerId
+			? ((glo.get(TYPE.customer, cart.customerId) as
+					GloObject<Customer, typeof TYPE.customer> | undefined) ?? null)
+			: null
 	);
 	const customerPoints = $derived(cartCustomer?.data.loyaltyPoints ?? 0);
 	// Largest redemption possible for this cart (capped at the subtotal).
@@ -715,7 +754,7 @@
 	}
 
 	// Award / deduct loyalty points after a completed sale.
-	async function processLoyalty(sale: CompletedSale) {
+	async function processLoyalty(sale: CompletedSale, redeemedPoints: number) {
 		if (!loyaltySettings.enabled) return;
 		const custId = sale.customerId ?? cart.customerId;
 		if (!custId) return;
@@ -723,45 +762,49 @@
 			GloObject<Customer, typeof TYPE.customer> | undefined;
 		if (!cust) return;
 		const balanceBefore = cust.data.loyaltyPoints ?? 0;
-		const redeemed = loyaltyRedeemOn ? loyaltyRedeem.points : 0;
+		const redeemed = redeemedPoints;
 		const earned = pointsForSpend(sale.totals.total, loyaltySettings.pointsPerCurrency);
 		if (redeemed === 0 && earned === 0) return;
 		const afterRedeem = Math.max(0, balanceBefore - redeemed);
 		const balanceAfter = afterRedeem + earned;
 		try {
-			await glo.upsert(
-				TYPE.customer,
-				{ ...cust.data, loyaltyPoints: balanceAfter },
-				{ id: cust.id }
-			);
+			// The customer balance and the two ledger transactions are independent.
+			const writes: Promise<unknown>[] = [
+				glo.upsert(TYPE.customer, { ...cust.data, loyaltyPoints: balanceAfter }, { id: cust.id })
+			];
 			if (redeemed > 0) {
-				await glo.upsert<LoyaltyPoints>(
-					TYPE.loyaltyPoints,
-					buildLoyaltyTx({
-						customerId: custId,
-						type: 'redeem',
-						points: redeemed,
-						balanceAfter: afterRedeem,
-						reason: 'Checkout redemption',
-						orderId: sale.number
-					}),
-					{ id: newRecordId('loyalty') }
+				writes.push(
+					glo.upsert<LoyaltyPoints>(
+						TYPE.loyaltyPoints,
+						buildLoyaltyTx({
+							customerId: custId,
+							type: 'redeem',
+							points: redeemed,
+							balanceAfter: afterRedeem,
+							reason: 'Checkout redemption',
+							orderId: sale.number
+						}),
+						{ id: newRecordId('loyalty') }
+					)
 				);
 			}
 			if (earned > 0) {
-				await glo.upsert<LoyaltyPoints>(
-					TYPE.loyaltyPoints,
-					buildLoyaltyTx({
-						customerId: custId,
-						type: 'earn',
-						points: earned,
-						balanceAfter,
-						reason: 'Sale reward',
-						orderId: sale.number
-					}),
-					{ id: newRecordId('loyalty') }
+				writes.push(
+					glo.upsert<LoyaltyPoints>(
+						TYPE.loyaltyPoints,
+						buildLoyaltyTx({
+							customerId: custId,
+							type: 'earn',
+							points: earned,
+							balanceAfter,
+							reason: 'Sale reward',
+							orderId: sale.number
+						}),
+						{ id: newRecordId('loyalty') }
+					)
 				);
 			}
+			await Promise.all(writes);
 			loyaltyRedeemOn = false;
 			const net = earned - redeemed;
 			if (redeemed > 0) {
@@ -824,10 +867,7 @@
 			50000,
 			100000 // common denominations
 		];
-		return candidates
-			.filter((v, index) => v > 0 && candidates.indexOf(v) === index)
-			.sort((a, b) => a - b)
-			.slice(0, 8);
+		return [...new Set(candidates.filter((v) => v > 0))].sort((a, b) => a - b).slice(0, 8);
 	});
 
 	// Split payment state
@@ -951,13 +991,15 @@
 		payFlow.close();
 		processing = true;
 		try {
+			const redeemedPoints = loyaltyRedeemOn ? loyaltyRedeem.points : 0;
 			const sale = await cart.checkout(paidMethod, 0);
 			if (sale) {
+				loyaltyRedeemOn = false;
 				playSuccessChime();
 				successTip = tipAmount;
 				successTendered = 0;
 				broadcastCheckoutSuccess(paidAmount, paidMethod);
-				await processLoyalty(sale);
+				await processLoyalty(sale, redeemedPoints);
 				toast.success('Payment received', `${formatMoney(paidAmount, currency)} · ${sale.number}`);
 				tendered = '';
 				tipAmount = 0;
@@ -985,18 +1027,23 @@
 		checkoutProgressStage = 'saving';
 		receiptOpen = true;
 		try {
+			const redeemedPoints = loyaltyRedeemOn ? loyaltyRedeem.points : 0;
 			const sale = await cart.checkout(
 				method as PaymentMethod,
 				typeof tendered === 'number' ? tendered : 0,
 				updateCheckoutProgress
 			);
 			if (sale) {
+				loyaltyRedeemOn = false;
 				playSuccessChime();
 				successTip = tipAmount;
 				successTendered = typeof tendered === 'number' ? tendered : 0;
-				broadcastCheckoutSuccess(grandTotal, method);
-				await processLoyalty(sale);
-				toast.success('Sale complete', `${formatMoney(grandTotal, currency)} · ${sale.number}`);
+				broadcastCheckoutSuccess(sale.totals.total, method);
+				await processLoyalty(sale, redeemedPoints);
+				toast.success(
+					'Sale complete',
+					`${formatMoney(sale.totals.total, currency)} · ${sale.number}`
+				);
 				tendered = '';
 				tipAmount = 0;
 				resetSplit();
@@ -1028,20 +1075,22 @@
 		receiptOpen = true;
 		try {
 			const primary = splitPayments[0];
+			const redeemedPoints = loyaltyRedeemOn ? loyaltyRedeem.points : 0;
 			const sale = await cart.checkout(
 				primary.method as PaymentMethod,
 				primary.amount,
 				updateCheckoutProgress
 			);
 			if (sale) {
+				loyaltyRedeemOn = false;
 				playSuccessChime();
 				successTip = tipAmount;
 				successTendered = splitPayments.reduce((s, p) => s + p.amount, 0);
-				broadcastCheckoutSuccess(grandTotal, splitPayments[0].method);
-				await processLoyalty(sale);
+				broadcastCheckoutSuccess(sale.totals.total, splitPayments[0].method);
+				await processLoyalty(sale, redeemedPoints);
 				toast.success(
 					'Sale complete',
-					`${formatMoney(grandTotal, currency)} · ${sale.number} · ${splitPayments.length} payments`
+					`${formatMoney(sale.totals.total, currency)} · ${sale.number} · ${splitPayments.length} payments`
 				);
 				resetSplit();
 				tipAmount = 0;
@@ -1317,11 +1366,7 @@
 		return formatDuration(ms);
 	});
 	const openedTimeLabel = $derived(
-		openShift
-			? new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(
-					new Date(openShift.data.openedAt)
-				)
-			: '—'
+		openShift ? clockFormatter.format(new Date(openShift.data.openedAt)) : '—'
 	);
 	const tenderRows = $derived.by(() => {
 		const s = shiftSummary;
@@ -1538,7 +1583,7 @@
 
 	// HID barcode scanner → look up product by barcode/SKU and add to the cart.
 	function handleScan(code: string) {
-		const match = products.find((p) => p.data.barcode === code || p.data.sku === code);
+		const match = productByCode[code];
 		if (query) query = ''; // clear any scanner text that landed in search
 		if (match) {
 			tapProduct(match); // opens variant/modifier picker if needed, else adds
@@ -2131,6 +2176,8 @@
 									!p.data.inventory.allowBackorder &&
 									avail <= 0}
 								{@const promo = productPromoMap[p.id]}
+								{@const image = productImage(p.data)}
+								{@const hasModifiers = productHasModifiers[p.id] ?? false}
 								<button
 									type="button"
 									onclick={() => tapProduct(p)}
@@ -2143,10 +2190,12 @@
 										class="relative grid aspect-square w-full place-items-center rounded-xl bg-(--ui-bg-accented) text-(--ui-text-dimmed)"
 									>
 										<Icon name="lucide:cup-soda" class="size-6 sm:size-7" />
-										{#if productImage(p.data)}
+										{#if image}
 											<img
-												src={productImage(p.data)}
+												src={image}
 												alt={p.data.name}
+												loading="lazy"
+												decoding="async"
 												class="absolute inset-0 size-full rounded-xl object-cover"
 												onerror={(event) => {
 													(event.currentTarget as HTMLImageElement).style.display = 'none';
@@ -2165,7 +2214,7 @@
 												class="absolute top-1.5 right-1.5 rounded-full bg-black/45 px-1.5 py-0.5 text-[8.5px] font-bold text-white"
 												>{formatInt(p.data.variants.length)} sizes</span
 											>
-										{:else if groupsFor(p.data).length}
+										{:else if hasModifiers}
 											<span
 												class="absolute top-1.5 right-1.5 grid size-4.5 place-items-center rounded-full bg-black/45 text-white"
 												><Icon name="lucide:sliders-horizontal" class="size-2.5" /></span
@@ -3583,10 +3632,7 @@
 				<div class="rounded-lg bg-(--ui-bg-muted) px-3 py-2 text-[12.5px]">
 					<div class="font-semibold">{openShift.data.number}</div>
 					<div class="text-(--ui-text-muted)">
-						Opened: {new Intl.DateTimeFormat('en-US', {
-							hour: 'numeric',
-							minute: '2-digit'
-						}).format(new Date(openShift.data.openedAt))}
+						Opened: {clockFormatter.format(new Date(openShift.data.openedAt))}
 					</div>
 					<div class="text-(--ui-text-muted)">
 						Opening cash: {formatMoney(openShift.data.openingCash ?? 0, currency)}
@@ -3680,14 +3726,7 @@
 							: typeof orderData.createdAt === 'string'
 								? orderData.createdAt
 								: ''}
-					{@const orderTime = rawDate
-						? new Intl.DateTimeFormat('en-US', {
-								hour: 'numeric',
-								minute: '2-digit',
-								day: 'numeric',
-								month: 'short'
-							}).format(new Date(rawDate))
-						: '—'}
+					{@const orderTime = rawDate ? orderTimeFormatter.format(new Date(rawDate)) : '—'}
 					<li>
 						<button
 							type="button"

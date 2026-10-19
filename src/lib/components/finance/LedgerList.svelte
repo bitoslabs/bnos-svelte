@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- external attachment URLs */
 	/**
 	 * Shared finance ledger table — drives both the Expenses and Income pages.
 	 * All entity-specific behaviour (types, categories, field mapping, labels,
@@ -71,20 +72,21 @@
 	let dateFrom = $state('');
 	let dateTo = $state('');
 
-	const filtered = $derived(
-		entries.filter((e) => {
+	const filtered = $derived.by(() => {
+		const fromMs = dateFrom ? new Date(dateFrom).getTime() : null;
+		const to = dateTo ? new SvelteDate(dateTo) : null;
+		if (to) to.setHours(23, 59, 59, 999);
+		const toMs = to ? to.getTime() : null;
+		return entries.filter((e) => {
 			const d = e.data as Record<string, unknown>;
 			if (catFilter !== '__all__' && str(d, 'category') !== catFilter) return false;
 			if (statusFilter !== '__all__' && str(d, 'status') !== statusFilter) return false;
-			if (dateFrom && new Date(str(d, 'occurredAt')) < new Date(dateFrom)) return false;
-			if (dateTo) {
-				const to = new SvelteDate(dateTo);
-				to.setHours(23, 59, 59, 999);
-				if (new Date(str(d, 'occurredAt')) > to) return false;
-			}
+			const at = new Date(str(d, 'occurredAt')).getTime();
+			if (fromMs !== null && at < fromMs) return false;
+			if (toMs !== null && at > toMs) return false;
 			return true;
-		})
-	);
+		});
+	});
 
 	const controls = createListControls<{ id: string; data: Record<string, unknown> }>({
 		items: () => filtered,
@@ -106,21 +108,21 @@
 	// Totals reflect the visible (filtered + searched) set, restricted to the
 	// active currency so mixed-currency sums stay correct.
 	const scoped = $derived(controls.list);
-	const totalOut = $derived(
-		scoped
-			.filter((e) => str(e.data, 'status') !== 'cancelled' && matchesCurrency(e.data))
-			.reduce((s, e) => s + amountOf(e.data), 0)
-	);
-	const monthOut = $derived(
-		scoped
-			.filter((e) => {
-				if (str(e.data, 'status') === 'cancelled' || !matchesCurrency(e.data)) return false;
-				const d = new Date(str(e.data, 'occurredAt'));
-				const now = new Date();
-				return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-			})
-			.reduce((s, e) => s + amountOf(e.data), 0)
-	);
+	const totals = $derived.by(() => {
+		const now = new Date();
+		let totalOut = 0;
+		let monthOut = 0;
+		for (const e of scoped) {
+			if (str(e.data, 'status') === 'cancelled' || !matchesCurrency(e.data)) continue;
+			const amount = amountOf(e.data);
+			totalOut += amount;
+			const d = new Date(str(e.data, 'occurredAt'));
+			if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) {
+				monthOut += amount;
+			}
+		}
+		return { totalOut, monthOut };
+	});
 	const entriesCount = $derived(scoped.length);
 	const mixedCurrencyCount = $derived(
 		entries.filter((e) => !matchesCurrency(e.data as Record<string, unknown>)).length
@@ -308,13 +310,13 @@
 		<div class="surface-card p-4">
 			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">{labels.totalOut}</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
-				{formatMoney(totalOut, config.currency)}
+				{formatMoney(totals.totalOut, config.currency)}
 			</div>
 		</div>
 		<div class="surface-card p-4">
 			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">{labels.thisMonth}</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
-				{formatMoney(monthOut, config.currency)}
+				{formatMoney(totals.monthOut, config.currency)}
 			</div>
 		</div>
 		<div class="surface-card p-4">

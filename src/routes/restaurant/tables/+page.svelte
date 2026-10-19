@@ -109,12 +109,15 @@
 		})
 	);
 
-	const stats = $derived({
-		total: tables.length,
-		available: tables.filter((t) => t.status === 'available').length,
-		occupied: tables.filter((t) => t.status === 'occupied').length,
-		reserved: tables.filter((t) => t.status === 'reserved').length,
-		cleaning: tables.filter((t) => t.status === 'cleaning').length
+	const stats = $derived.by(() => {
+		const counts = { total: tables.length, available: 0, occupied: 0, reserved: 0, cleaning: 0 };
+		for (const table of tables) {
+			if (table.status === 'available') counts.available++;
+			else if (table.status === 'occupied') counts.occupied++;
+			else if (table.status === 'reserved') counts.reserved++;
+			else if (table.status === 'cleaning') counts.cleaning++;
+		}
+		return counts;
 	});
 
 	const filterTabs = $derived([

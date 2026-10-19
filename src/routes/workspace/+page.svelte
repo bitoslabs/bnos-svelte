@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
@@ -86,10 +87,13 @@
 			color="neutral"
 			variant="subtle"
 			icon="lucide:sliders-horizontal"
-			onclick={() => goto('/settings')}>Workspace settings</Button
+			onclick={() => goto(resolve('/settings'))}>Workspace settings</Button
 		>
-		<Button color="neutral" variant="subtle" icon="lucide:plus" onclick={() => goto('/setup')}
-			>Reconfigure</Button
+		<Button
+			color="neutral"
+			variant="subtle"
+			icon="lucide:plus"
+			onclick={() => goto(resolve('/setup'))}>Reconfigure</Button
 		>
 	</div>
 </div>

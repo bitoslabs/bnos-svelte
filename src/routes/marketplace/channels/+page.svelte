@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- external store URLs */
 	/**
 	 * Sales Channels — connect and manage external sales channels.
 	 * Gallery of connectable platforms + connected channels with sync control.
@@ -12,9 +13,8 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { glo } from '$nostr/store.svelte';
-	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { relativeTime, titleCase } from '$lib/utils/format';
+	import { relativeTime } from '$lib/utils/format';
 	import { newRecordId } from '$lib/utils/record-id';
 	import {
 		TYPE,
@@ -25,7 +25,6 @@
 		type MarketplaceConnection
 	} from '$lib/domain';
 
-	const currency = $derived(tenant.state.currency);
 	const connections = $derived(
 		glo.all<MarketplaceConnection, typeof TYPE.marketplaceConnection>(TYPE.marketplaceConnection)
 	);

@@ -17,11 +17,7 @@
 	 */
 	let { class: cls }: { class?: string } = $props();
 
-	const groups: {
-		label: string;
-		labelKey: string;
-		items: { to: string; icon: string; label: string; labelKey: string }[];
-	}[] = [
+	const groups = [
 		{
 			label: 'Account',
 			labelKey: 'settings.grpAccount',
@@ -184,7 +180,7 @@
 				}
 			]
 		}
-	];
+	] as const;
 
 	function active(to: string) {
 		const p = page.url.pathname;
@@ -211,7 +207,7 @@
 			<div
 				class="settings-nav-label px-1 pb-1.5 text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase lg:px-3 lg:text-[10px] lg:tracking-[0.16em]"
 			>
-				{g.labelKey ? t(g.labelKey) : g.label}
+				{t(g.labelKey)}
 			</div>
 			<ul
 				class="settings-nav-list divide-y divide-(--ui-border-muted) overflow-hidden rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) lg:divide-y-0 lg:rounded-none lg:border-0 lg:bg-transparent"
@@ -235,7 +231,7 @@
 										: 'text-(--ui-text-dimmed) group-hover:text-(--ui-text-muted)'
 								)}
 							/>
-							<span class="flex-1 truncate">{it.labelKey ? t(it.labelKey) : it.label}</span>
+							<span class="flex-1 truncate">{t(it.labelKey)}</span>
 							<Icon
 								name="lucide:chevron-right"
 								class="size-4 shrink-0 text-(--ui-text-dimmed) lg:hidden"

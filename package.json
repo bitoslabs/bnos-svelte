@@ -27,7 +27,8 @@
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright install && playwright test",
-		"format": "prettier --write ."
+		"format": "prettier --write .",
+		"icons": "node scripts/generate-icons.mjs && prettier --write src/lib/icons-subset.generated.ts"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

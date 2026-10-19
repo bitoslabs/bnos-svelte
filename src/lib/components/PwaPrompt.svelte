@@ -11,36 +11,69 @@
 	let canInstall = $state(false);
 
 	onMount(() => {
+		const onBeforeInstall = (event: Event) => {
+			event.preventDefault();
+			deferredPrompt = event as never;
+			canInstall = true;
+		};
+		const onInstalled = () => {
+			canInstall = false;
+			deferredPrompt = null;
+		};
+
+		let cancelled = false;
 		if ('serviceWorker' in navigator) {
-			navigator.serviceWorker.addEventListener('controllerchange', () => {
-				// Page will reload via the SW registration
+			const hadController = !!navigator.serviceWorker.controller;
+			void navigator.serviceWorker.ready.then((registration) => {
+				if (cancelled) return;
+				if (!hadController) {
+					offlineReady = true;
+					setTimeout(() => (offlineReady = false), 4000);
+				}
+				if (registration.waiting) updateAvailable = true;
+				registration.addEventListener('updatefound', () => {
+					const installing = registration.installing;
+					if (!installing) return;
+					installing.addEventListener('statechange', () => {
+						if (
+							!cancelled &&
+							installing.state === 'installed' &&
+							navigator.serviceWorker.controller
+						) {
+							updateAvailable = true;
+						}
+					});
+				});
 			});
 		}
 
-		// Listen for beforeinstallprompt
-		window.addEventListener('beforeinstallprompt', (e) => {
-			e.preventDefault();
-			deferredPrompt = e as never;
-			canInstall = true;
-		});
-
-		window.addEventListener('appinstalled', () => {
-			canInstall = false;
-			deferredPrompt = null;
-		});
+		window.addEventListener('beforeinstallprompt', onBeforeInstall);
+		window.addEventListener('appinstalled', onInstalled);
+		return () => {
+			cancelled = true;
+			window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+			window.removeEventListener('appinstalled', onInstalled);
+		};
 	});
 
-	async function applyUpdate() {
-		if (deferredPrompt) {
-			// If install prompt available, trigger it
-			await deferredPrompt.prompt();
-			deferredPrompt = null;
-			canInstall = false;
+	async function installApp() {
+		if (!deferredPrompt) return;
+		await deferredPrompt.prompt();
+		deferredPrompt = null;
+		canInstall = false;
+	}
+
+	function applyUpdate() {
+		if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+			// Wait for the new worker to take control before reloading; reloading
+			// immediately can re-run the old worker before skipWaiting is handled.
+			const onControllerChange = () => {
+				navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+				location.reload();
+			};
+			navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+			navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
 		} else {
-			// Send message to SW to skip waiting
-			if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-				navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
-			}
 			location.reload();
 		}
 		updateAvailable = false;
@@ -89,7 +122,7 @@
 		<button
 			type="button"
 			class="rounded-lg bg-(--accent) px-3 py-1.5 text-sm font-medium text-white"
-			onclick={applyUpdate}
+			onclick={installApp}
 		>
 			{t('pwa.install')}
 		</button>

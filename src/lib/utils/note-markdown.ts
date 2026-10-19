@@ -168,7 +168,14 @@ function spanText(s: Span): string | null {
  * flattens inline markdown to text, and collapses whitespace. Long alerts that
  * are just a wall of image URLs become a short `text` plus a `media` list.
  */
+const summaryCache = new Map<string, NoteSummary>();
+const SUMMARY_CACHE_LIMIT = 300;
+
 export function summarizeNote(content: string, maxChars = 140): NoteSummary {
+	const cacheKey = `${maxChars}\u0000${content}`;
+	const cached = summaryCache.get(cacheKey);
+	if (cached) return cached;
+
 	const media: MediaSpan[] = [];
 	const parts: string[] = [];
 
@@ -193,7 +200,14 @@ export function summarizeNote(content: string, maxChars = 140): NoteSummary {
 
 	let text = parts.join(' ').trim();
 	if (text.length > maxChars) text = `${text.slice(0, maxChars).trimEnd()}…`;
-	return { text, media };
+	const summary = { text, media };
+
+	// Notifications re-render often; identical descriptions reuse the parse.
+	if (summaryCache.size >= SUMMARY_CACHE_LIMIT) {
+		summaryCache.delete(summaryCache.keys().next().value!);
+	}
+	summaryCache.set(cacheKey, summary);
+	return summary;
 }
 
 /** Parse notice content into block-level nodes. */

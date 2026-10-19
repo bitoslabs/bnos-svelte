@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- external project URLs */
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -42,8 +43,8 @@
 		}
 	});
 
-	function routeAfterLogin(destination = '/') {
-		void goto(destination, { replaceState: true });
+	function routeAfterLogin(destination: '/' | '/setup/identity' = '/') {
+		void goto(resolve(destination), { replaceState: true });
 	}
 
 	async function handleExtension() {
@@ -66,7 +67,7 @@
 			toast.success(t('common.signIn'), t('auth.signInNostr'));
 			nsec = '';
 			routeAfterLogin();
-		} catch (e) {
+		} catch {
 			toast.error(t('auth.invalidKey'), t('auth.invalidKeyMsg'));
 		} finally {
 			loading = false;

@@ -19,7 +19,6 @@
 		statusColor,
 		REVIEW_STATUSES,
 		ratingStars,
-		ratingDistribution,
 		channelMeta,
 		type MarketplaceReview
 	} from '$lib/domain';
@@ -39,17 +38,29 @@
 		})
 	);
 
-	// ── Aggregate ───────────────────────────────────────────
-	const ratings = $derived(reviews.map((r) => r.data.rating).filter((r) => r > 0));
-	const avgRating = $derived(
-		ratings.length ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 0
-	);
-	const dist = $derived(ratingDistribution(ratings));
-	const totalRatings = $derived(ratings.length);
-
-	const pendingCount = $derived(
-		reviews.filter((r) => r.data.status === 'pending' || r.data.status === 'flagged').length
-	);
+	// ── Aggregate (one pass) ────────────────────────────────
+	const reviewStats = $derived.by(() => {
+		let sum = 0;
+		let totalRatings = 0;
+		let pendingCount = 0;
+		const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+		for (const review of reviews) {
+			const rating = review.data.rating;
+			if (rating > 0) {
+				sum += rating;
+				totalRatings++;
+				const bucket = Math.max(1, Math.min(5, Math.round(rating)));
+				dist[bucket] = (dist[bucket] ?? 0) + 1;
+			}
+			if (review.data.status === 'pending' || review.data.status === 'flagged') pendingCount++;
+		}
+		return {
+			avgRating: totalRatings ? sum / totalRatings : 0,
+			dist,
+			totalRatings,
+			pendingCount
+		};
+	});
 
 	// ── Reply modal ─────────────────────────────────────────
 	let replyOpen = $state(false);
@@ -100,7 +111,7 @@
 		<div>
 			<h2 class="font-display text-lg font-bold tracking-tight">{t('nav.reviews')}</h2>
 			<p class="text-[12px] text-(--ui-text-muted)">
-				{reviews.length} reviews · {pendingCount} need attention
+				{reviews.length} reviews · {reviewStats.pendingCount} need attention
 			</p>
 		</div>
 	</div>
@@ -118,15 +129,21 @@
 				class="flex items-center gap-4 sm:w-48 sm:border-r sm:border-(--ui-border-muted) sm:pr-5"
 			>
 				<div class="text-center">
-					<div class="font-display text-4xl font-black tabular-nums">{avgRating.toFixed(2)}</div>
-					<div class="mt-1 text-lg tracking-tight text-amber-500">{ratingStars(avgRating)}</div>
-					<div class="mt-0.5 text-[11px] text-(--ui-text-dimmed)">{totalRatings} ratings</div>
+					<div class="font-display text-4xl font-black tabular-nums">
+						{reviewStats.avgRating.toFixed(2)}
+					</div>
+					<div class="mt-1 text-lg tracking-tight text-amber-500">
+						{ratingStars(reviewStats.avgRating)}
+					</div>
+					<div class="mt-0.5 text-[11px] text-(--ui-text-dimmed)">
+						{reviewStats.totalRatings} ratings
+					</div>
 				</div>
 			</div>
 			<div class="flex-1 space-y-1.5">
 				{#each [5, 4, 3, 2, 1] as star (star)}
-					{@const n = dist[star] ?? 0}
-					{@const pct = totalRatings > 0 ? (n / totalRatings) * 100 : 0}
+					{@const n = reviewStats.dist[star] ?? 0}
+					{@const pct = reviewStats.totalRatings > 0 ? (n / reviewStats.totalRatings) * 100 : 0}
 					<div class="flex items-center gap-2">
 						<span class="w-3 text-[11px] font-semibold text-(--ui-text-muted) tabular-nums"
 							>{star}</span

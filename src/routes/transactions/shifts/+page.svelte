@@ -63,19 +63,19 @@
 	// ── Branch-scoped reactive lookups ────────────────────────────────────
 	const allShifts = $derived(shiftStore.all);
 	const activeShift = $derived(shiftStore.activeShiftFor(branchId));
+	const shiftBranchById = $derived.by(() => {
+		const map: Record<string, string | null> = {};
+		for (const shift of allShifts) map[shift.id] = shift.data.branchId ?? null;
+		return map;
+	});
 	const branchShifts = $derived(
 		allShifts
 			.filter((s) => (s.data.branchId ?? null) === branchId)
-			.slice()
 			.sort((a, b) => (a.data.openedAt < b.data.openedAt ? 1 : -1))
 	);
 	const branchEvents = $derived(
 		shiftStore.allCashEvents
-			.filter((e) => {
-				const parent = e.data.shiftId ? allShifts.find((s) => s.id === e.data.shiftId) : null;
-				return parent ? (parent.data.branchId ?? null) === branchId : false;
-			})
-			.slice()
+			.filter((e) => !!e.data.shiftId && shiftBranchById[e.data.shiftId] === branchId)
 			.sort((a, b) => (a.data.occurredAt < b.data.occurredAt ? 1 : -1))
 	);
 	const summary = $derived(activeShift ? shiftStore.summaryFor(activeShift.id) : null);
@@ -130,7 +130,7 @@
 
 	// ── Raw data viewer ───────────────────────────────────────────────────
 	let rawOpen = $state(false);
-	let rawItem = $state<any>(null);
+	let rawItem = $state<unknown>(null);
 
 	// ── Cancel (void) an active shift opened by mistake ──────────────────
 	let cancelling = $state<{ shift: { id: string; data: Shift } } | null>(null);

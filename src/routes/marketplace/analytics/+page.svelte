@@ -8,9 +8,10 @@
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
-	import { formatMoney, formatInt, titleCase } from '$lib/utils/format';
-	import { TYPE, isRemoteSource, channelMeta, sourceLabel, sourceIcon } from '$lib/domain';
-	import type { MarketplaceConnection, MarketplaceProduct, MarketplaceReview } from '$lib/domain';
+	import { formatMoney, formatInt } from '$lib/utils/format';
+	import { topScored } from '$lib/utils/search';
+	import { TYPE, isRemoteSource, channelMeta, sourceLabel } from '$lib/domain';
+	import type { MarketplaceProduct, MarketplaceReview } from '$lib/domain';
 	import type { DashboardOrder } from '$lib/dashboard/metrics';
 	import { toOrderRows, buildChartBars, type OrderRow } from '$lib/dashboard/metrics';
 
@@ -18,9 +19,6 @@
 	const orders = $derived(glo.all<DashboardOrder, 'commerce.order'>('commerce.order'));
 	const listings = $derived(
 		glo.all<MarketplaceProduct, typeof TYPE.marketplaceProduct>(TYPE.marketplaceProduct)
-	);
-	const connections = $derived(
-		glo.all<MarketplaceConnection, typeof TYPE.marketplaceConnection>(TYPE.marketplaceConnection)
 	);
 	const reviews = $derived(
 		glo.all<MarketplaceReview, typeof TYPE.marketplaceReview>(TYPE.marketplaceReview)
@@ -30,43 +28,53 @@
 
 	// 7-day revenue trend
 	const bars = $derived(buildChartBars(mpRows as OrderRow[]));
-	const maxBar = $derived(Math.max(...bars.map((b) => b.value), 0));
 	const trendTotal = $derived(bars.reduce((s, b) => s + b.value, 0));
 
 	// Channel breakdown
 	const channelPerf = $derived.by(() => {
-		const map = new Map<string, { total: number; count: number; source: string }>();
+		const map: Record<string, { total: number; count: number; source: string }> = {};
 		for (const o of mpRows) {
 			const src = o.source ?? 'other';
-			const e = map.get(src) ?? { total: 0, count: 0, source: src };
-			e.total += o.total;
-			e.count += 1;
-			map.set(src, e);
+			const entry = (map[src] ??= { total: 0, count: 0, source: src });
+			entry.total += o.total;
+			entry.count += 1;
 		}
-		const grand = [...map.values()].reduce((s, e) => s + e.total, 0) || 1;
-		return [...map.values()]
+		const values = Object.values(map);
+		const grand = values.reduce((s, e) => s + e.total, 0) || 1;
+		return values
 			.map((e) => ({ ...e, percent: (e.total / grand) * 100 }))
 			.sort((a, b) => b.total - a.total);
 	});
 
 	// Conversion funnel
 	const funnel = $derived.by(() => {
-		const views = listings.reduce((s, l) => s + (l.data.views ?? 0), 0);
-		const clicks = listings.reduce((s, l) => s + (l.data.clicks ?? 0), 0);
-		const conv = listings.reduce((s, l) => s + (l.data.conversions ?? 0), 0);
+		let views = 0;
+		let clicks = 0;
+		let conv = 0;
+		for (const listing of listings) {
+			views += listing.data.views ?? 0;
+			clicks += listing.data.clicks ?? 0;
+			conv += listing.data.conversions ?? 0;
+		}
 		return { views, clicks, conv };
 	});
 	const funnelMax = $derived(Math.max(funnel.views, funnel.clicks, funnel.conv, 1));
 
 	// Top products
-	const topListings = $derived(
-		[...listings].sort((a, b) => (b.data.conversions ?? 0) - (a.data.conversions ?? 0)).slice(0, 5)
-	);
+	const topListings = $derived(topScored(listings, 5, (l) => l.data.conversions ?? 0));
 
 	// Avg rating
 	const avgRating = $derived.by(() => {
-		const r = reviews.map((x) => x.data.rating).filter((x) => x > 0);
-		return r.length ? r.reduce((s, x) => s + x, 0) / r.length : 0;
+		let sum = 0;
+		let count = 0;
+		for (const review of reviews) {
+			const rating = review.data.rating;
+			if (rating > 0) {
+				sum += rating;
+				count++;
+			}
+		}
+		return count ? sum / count : 0;
 	});
 
 	// AOV

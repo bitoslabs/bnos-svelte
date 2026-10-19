@@ -18,6 +18,7 @@
 	import Pagination from '$lib/components/list/Pagination.svelte';
 	import RowActions, { type RowAction } from '$lib/components/list/RowActions.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
+	import { buildSearchIndex } from '$lib/utils/search';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
@@ -81,11 +82,12 @@
 	// ── Stats ──
 	const stats = $derived.by(() => {
 		const total = staff.length;
-		const active = staff.filter((s) => (s.data.status ?? 'active') === 'active').length;
+		let active = 0;
 		const byRole: Record<string, number> = {};
-		for (const s of staff) {
-			const r = s.data.role ?? 'unknown';
-			byRole[r] = (byRole[r] ?? 0) + 1;
+		for (const member of staff) {
+			if ((member.data.status ?? 'active') === 'active') active++;
+			const role = member.data.role ?? 'unknown';
+			byRole[role] = (byRole[role] ?? 0) + 1;
 		}
 		return { total, active, inactive: total - active, byRole };
 	});
@@ -101,12 +103,14 @@
 		roleFilter === 'all' ? staff : staff.filter((s) => s.data.role === roleFilter)
 	);
 
+	const staffSearchIndex = $derived(
+		buildSearchIndex(staff, (s) =>
+			[s.data.name, s.data.role, s.data.email].filter(Boolean).join(' ')
+		)
+	);
 	const controls = createListControls<{ id: string; data: Staff }>({
 		items: () => filteredStaff,
-		search: (s, q) =>
-			(s.data.name ?? '').toLowerCase().includes(q) ||
-			(s.data.role ?? '').toLowerCase().includes(q) ||
-			(s.data.email ?? '').toLowerCase().includes(q),
+		search: (s, q) => staffSearchIndex[s.id]?.includes(q) ?? false,
 		sortOptions: () => [
 			{ key: 'name', label: t('common.name'), value: (s) => s.data.name },
 			{ key: 'role', label: t('common.role'), value: (s) => s.data.role },
@@ -134,6 +138,7 @@
 	// ── Add / Edit dialog ──
 	let open = $state(false);
 	let editingId = $state<string | null>(null);
+	const editingStaff = $derived(editingId ? staff.find((s) => s.id === editingId) : undefined);
 	let generatedNsec = $state<string | null>(null);
 	let showNsec = $state(false);
 	let rawOpen = $state(false);
@@ -305,7 +310,7 @@
 
 	async function setPin() {
 		if (!editingId || form.pin.length < 4) return;
-		const existing = staff.find((s) => s.id === editingId);
+		const existing = editingStaff;
 		await glo.upsert<Staff>(
 			TYPE.staff,
 			{ ...existing!.data, pinHash: await hashPin(form.pin), pin: undefined },
@@ -316,7 +321,7 @@
 	}
 	async function removePin() {
 		if (!editingId) return;
-		const existing = staff.find((s) => s.id === editingId);
+		const existing = editingStaff;
 		await glo.upsert<Staff>(
 			TYPE.staff,
 			{ ...existing!.data, pinHash: undefined, pin: undefined },
@@ -369,7 +374,7 @@
 
 		try {
 			if (editingId) {
-				const existing = staff.find((s) => s.id === editingId);
+				const existing = editingStaff;
 				await glo.upsert<Staff>(TYPE.staff, { ...existing!.data, ...payload }, { id: editingId });
 				if (generatedNsec && hexPk) {
 					saveStaffKey({
@@ -863,14 +868,14 @@
 				{#if editingId && form.pin.length >= 4}
 					<Button color="neutral" variant="subtle" size="sm" onclick={setPin}>Set PIN</Button>
 				{/if}
-				{#if editingId && staff.find((s) => s.id === editingId)?.data.pinHash}
+				{#if editingId && editingStaff?.data.pinHash}
 					<Button color="neutral" variant="subtle" size="sm" icon="lucide:x" onclick={removePin}
 						>{t('common.remove')}</Button
 					>
 				{/if}
 			</div>
 			<span class="mt-1 block text-[11px] text-(--ui-text-dimmed)">
-				{editingId && staff.find((s) => s.id === editingId)?.data.pinHash && !form.pin
+				{editingId && editingStaff?.data.pinHash && !form.pin
 					? '✓ PIN set (hashed)'
 					: 'Stored as a SHA-256 hash, never plaintext.'}
 			</span>

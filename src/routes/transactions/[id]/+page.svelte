@@ -3,6 +3,7 @@
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
@@ -10,7 +11,6 @@
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
-	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMoney, relativeTime } from '$lib/utils/format';
 	import { TYPE, statusColor, type Order, type Payment, type GloObject } from '$lib/domain';
 
@@ -23,9 +23,10 @@
 
 	// Try to find as order first, then as payment
 	let rawOpen = $state(false);
-	let rawItem = $state<any>(null);
+	let rawItem = $state<unknown>(null);
 	const order = $derived(
-		glo.get(TYPE.order, id ?? '') as GloObject<Order, typeof TYPE.order> | undefined
+		glo.get(TYPE.order, id ?? '') as
+			GloObject<Order & { taxAmount?: number }, typeof TYPE.order> | undefined
 	);
 	const payment = $derived(
 		glo.get(TYPE.payment, id ?? '') as GloObject<Payment, typeof TYPE.payment> | undefined
@@ -33,12 +34,9 @@
 	const currency = $derived(tenant.state.currency);
 
 	const txType = $derived(order ? 'order' : payment ? 'payment' : null);
-	const txData = $derived(order?.data ?? payment?.data);
-	const txAmount = $derived((order?.data as any)?.total ?? (payment?.data as any)?.amount ?? 0);
-	const txStatus = $derived(
-		(order?.data as any)?.status ?? (payment?.data as any)?.status ?? 'unknown'
-	);
-	const txDate = $derived((order?.data as any)?.occurredAt ?? (payment?.data as any)?.occurredAt);
+	const txAmount = $derived(order?.data.total ?? payment?.data.amount ?? 0);
+	const txStatus = $derived(order?.data.status ?? payment?.data.status ?? 'unknown');
+	const txDate = $derived(order?.data.occurredAt ?? payment?.data.paidAt);
 
 	// For orders: find related payments
 	const orderPayments = $derived(
@@ -61,7 +59,7 @@
 				variant="subtle"
 				size="sm"
 				icon="lucide:arrow-left"
-				href="/transactions">Back to transactions</Button
+				href={resolve('/transactions')}>Back to transactions</Button
 			>{/snippet}
 	</EmptyState>
 {:else}
@@ -74,7 +72,7 @@
 					variant="ghost"
 					size="icon-sm"
 					icon="lucide:arrow-left"
-					onclick={() => goto('/transactions')}
+					onclick={() => goto(resolve('/transactions'))}
 				/>
 				<div>
 					<div class="flex items-center gap-2">
@@ -84,7 +82,7 @@
 						<Badge color={statusColor(txStatus)}>{txStatus}</Badge>
 					</div>
 					<p class="text-[12px] text-(--ui-text-muted) capitalize">
-						{txType} · {txDate ? relativeTime(txDate as string) : '—'}
+						{txType} · {txDate ? relativeTime(txDate) : '—'}
 					</p>
 				</div>
 			</div>
@@ -94,7 +92,7 @@
 					variant="subtle"
 					size="sm"
 					icon="lucide:receipt-text"
-					href="/orders/{id}">{t('orders.viewOrder')}</Button
+					href={resolve('/orders/[id]', { id: id ?? '' })}>{t('orders.viewOrder')}</Button
 				>
 			{/if}
 			<Button
@@ -103,7 +101,7 @@
 				size="sm"
 				icon="lucide:code"
 				onclick={() => {
-					rawItem = (order ?? payment) as any;
+					rawItem = order ?? payment;
 					rawOpen = true;
 				}}>{t('common.viewRaw')}</Button
 			>
@@ -158,9 +156,7 @@
 						<div class="flex items-center gap-3 px-5 py-3">
 							<Icon name="lucide:clock" class="size-4 text-(--ui-text-dimmed)" /><span
 								class="text-(--ui-text-muted)">{t('common.date')}</span
-							><span class="ml-auto font-semibold"
-								>{txDate ? relativeTime(txDate as string) : '—'}</span
-							>
+							><span class="ml-auto font-semibold">{txDate ? relativeTime(txDate) : '—'}</span>
 						</div>
 						{#if txType === 'order' && order?.data.type}<div
 								class="flex items-center gap-3 px-5 py-3"
@@ -168,7 +164,7 @@
 								<Icon name="lucide:utensils" class="size-4 text-(--ui-text-dimmed)" /><span
 									class="text-(--ui-text-muted)">Order type</span
 								><span class="ml-auto font-semibold capitalize"
-									>{(order.data as any).type?.replace(/_/g, ' ')}</span
+									>{order.data.type?.replace(/_/g, ' ')}</span
 								>
 							</div>{/if}
 						{#if txType === 'payment' && payment?.data.method}<div
@@ -176,8 +172,7 @@
 							>
 								<Icon name="lucide:wallet" class="size-4 text-(--ui-text-dimmed)" /><span
 									class="text-(--ui-text-muted)">{t('common.method')}</span
-								><span class="ml-auto font-semibold capitalize">{(payment.data as any).method}</span
-								>
+								><span class="ml-auto font-semibold capitalize">{payment.data.method}</span>
 							</div>{/if}
 						{#if txType === 'order' && order?.data.customerName}<div
 								class="flex items-center gap-3 px-5 py-3"
@@ -209,10 +204,7 @@
 										><td class="px-5 py-3 font-semibold">{line.name}</td><td
 											class="px-5 py-3 text-center tabular-nums">{line.quantity}</td
 										><td class="px-5 py-3 text-right tabular-nums"
-											>{formatMoney(
-												(line.unitPrice ?? line.price ?? 0) * line.quantity,
-												currency
-											)}</td
+											>{formatMoney(line.unitPrice ?? 0 * line.quantity, currency)}</td
 										></tr
 									>
 								{/each}
@@ -233,27 +225,25 @@
 						<div class="space-y-2 px-5 py-4 text-[13px]">
 							<div class="flex justify-between">
 								<span class="text-(--ui-text-muted)">{t('common.subtotal')}</span><span
-									class="tabular-nums"
-									>{formatMoney((order.data as any).subtotal ?? 0, currency)}</span
+									class="tabular-nums">{formatMoney(order.data.subtotal ?? 0, currency)}</span
 								>
 							</div>
 							{#if order.data.taxAmount}<div class="flex justify-between">
 									<span class="text-(--ui-text-muted)">{t('common.tax')}</span><span
-										class="tabular-nums"
-										>{formatMoney((order.data as any).taxAmount ?? 0, currency)}</span
+										class="tabular-nums">{formatMoney(order.data.taxAmount ?? 0, currency)}</span
 									>
 								</div>{/if}
 							{#if order.data.discount}<div class="flex justify-between">
 									<span class="text-(--ui-text-muted)">{t('common.discount')}</span><span
 										class="text-(--tone-error-text) tabular-nums"
-										>−{formatMoney((order.data as any).discount ?? 0, currency)}</span
+										>−{formatMoney(order.data.discount ?? 0, currency)}</span
 									>
 								</div>{/if}
 							<div
 								class="flex justify-between border-t border-(--ui-border-muted) pt-2 font-display text-[15px] font-bold"
 							>
 								<span>{t('common.total')}</span><span class="tabular-nums"
-									>{formatMoney((order.data as any).total ?? 0, currency)}</span
+									>{formatMoney(order.data.total ?? 0, currency)}</span
 								>
 							</div>
 						</div>
@@ -269,16 +259,17 @@
 						{#each orderPayments as p (p.id)}
 							<div class="px-5 py-3 text-[13px]">
 								<div class="flex items-center justify-between">
-									<span class="text-(--ui-text-muted) capitalize">{(p.data as any).method}</span
-									><Badge color={statusColor(p.data.status ?? 'paid')}
-										>{p.data.status ?? 'paid'}</Badge
+									<span class="text-(--ui-text-muted) capitalize">{p.data.method}</span><Badge
+										color={statusColor(p.data.status ?? 'paid')}>{p.data.status ?? 'paid'}</Badge
 									>
 								</div>
 								<div class="mt-1 flex justify-between">
 									<span class="text-(--ui-text-dimmed)"
-										>{relativeTime((p.data as any).occurredAt ?? '')}</span
+										>{relativeTime(
+											(p.data as Payment & { occurredAt?: string }).occurredAt ?? ''
+										)}</span
 									><span class="font-semibold tabular-nums"
-										>{formatMoney((p.data as any).amount ?? 0, currency)}</span
+										>{formatMoney(p.data.amount ?? 0, currency)}</span
 									>
 								</div>
 							</div>
@@ -297,7 +288,7 @@
 									<Icon name="lucide:link" class="size-4 text-(--ui-text-dimmed)" /><span
 										class="text-(--ui-text-muted)">{t('common.order')}</span
 									><a
-										href="/transactions/{payment.data.orderId}"
+										href={resolve('/orders/[id]', { id: payment.data.orderId })}
 										class="ml-auto font-mono text-[12px] text-primary-500"
 										>{payment.data.orderId.slice(0, 12)}</a
 									>

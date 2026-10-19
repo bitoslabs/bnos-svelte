@@ -11,6 +11,7 @@
 		trailing,
 		size = 'md',
 		textarea = false,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept off the native input
 		label,
 		...rest
 	}: {

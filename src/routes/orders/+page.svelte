@@ -13,6 +13,7 @@
 	import RowActions, { type RowAction } from '$lib/components/list/RowActions.svelte';
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
+	import { buildSearchIndex } from '$lib/utils/search';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -94,19 +95,18 @@
 	let sourceFilter = $state<string>('__all__');
 	let dateRangeFilter = $state<string>('__all__');
 
-	function matchDateRange(atMs: number): boolean {
+	function matchDateRange(atMs: number, now: number): boolean {
 		if (dateRangeFilter === '__all__') return true;
-		const t = atMs > 0 ? atMs : Date.now();
-		const now = Date.now();
-		const diff = now - t;
+		const diff = now - (atMs > 0 ? atMs : now);
 		if (dateRangeFilter === 'today') return diff < 86_400_000;
 		if (dateRangeFilter === '7d') return diff < 7 * 86_400_000;
 		if (dateRangeFilter === '30d') return diff < 30 * 86_400_000;
 		return true;
 	}
 
-	const filteredByCriteria = $derived(
-		orderRows.filter((o) => {
+	const filteredByCriteria = $derived.by(() => {
+		const now = Date.now();
+		return orderRows.filter((o) => {
 			const s = o.status.toLowerCase();
 			const matchesStatus =
 				statusFilter === '__all__' ||
@@ -122,19 +122,24 @@
 				// active location only when that matches the filter.
 				(o.branchId == null && tenant.state.locationId === activeBranchId);
 			return (
-				matchesStatus && matchesType && matchesSource && matchesBranch && matchDateRange(o.atMs)
+				matchesStatus &&
+				matchesType &&
+				matchesSource &&
+				matchesBranch &&
+				matchDateRange(o.atMs, now)
 			);
-		})
+		});
+	});
+
+	const orderSearchIndex = $derived(
+		buildSearchIndex(orderRows, (o) =>
+			[o.number, o.status, o.type, sourceLabel(o.source), o.method].join(' ')
+		)
 	);
 
 	const controls = createListControls<OrderRow>({
 		items: () => filteredByCriteria,
-		search: (o, q) =>
-			o.number.toLowerCase().includes(q) ||
-			o.status.toLowerCase().includes(q) ||
-			o.type.toLowerCase().includes(q) ||
-			sourceLabel(o.source).toLowerCase().includes(q) ||
-			o.method.toLowerCase().includes(q),
+		search: (o, q) => orderSearchIndex[o.id]?.includes(q) ?? false,
 		sortOptions: () => [
 			{ key: 'number', label: 'Order no.', value: (o) => o.number },
 			{ key: 'status', label: t('common.status'), value: (o) => o.status },
@@ -156,11 +161,11 @@
 	let rawItem = $state<unknown>(null);
 
 	function getOrderDetail(rowId: string) {
-		return orderObjects.find((o) => o.id === rowId);
+		return glo.get('commerce.order', rowId) as (typeof orderObjects)[number] | undefined;
 	}
 
 	async function quickUpdateStatus(orderId: string, newStatus: string) {
-		const obj = orderObjects.find((o) => o.id === orderId);
+		const obj = glo.get('commerce.order', orderId) as (typeof orderObjects)[number] | undefined;
 		if (!obj) return;
 		await glo.upsert('commerce.order', { ...obj.data, status: newStatus }, { id: orderId });
 		toast.success(`Order → ${newStatus}`);
@@ -233,12 +238,16 @@
 
 	async function bulkUpdateStatus(newStatus: string) {
 		if (selectedIds.size === 0) return;
-		for (const rowId of selectedIds) {
-			const obj = orderObjects.find((o) => o.id === rowId);
-			if (obj) {
-				await glo.upsert('commerce.order', { ...obj.data, status: newStatus }, { id: rowId });
-			}
-		}
+		const byId: Record<string, (typeof orderObjects)[number]> = Object.fromEntries(
+			orderObjects.map((obj) => [obj.id, obj])
+		);
+		await Promise.all(
+			[...selectedIds].map(async (rowId) => {
+				const obj = byId[rowId];
+				if (obj)
+					await glo.upsert('commerce.order', { ...obj.data, status: newStatus }, { id: rowId });
+			})
+		);
 		toast.success(`${selectedIds.size} orders → ${newStatus}`);
 		selectedIds.clear();
 		selectAll = false;
@@ -338,7 +347,7 @@
 					icon: 'lucide:package',
 					onSelect: () => {
 						const obj = glo.get('commerce.order', o.id);
-						if (obj) printPackingSlip(obj as any);
+						if (obj) printPackingSlip(obj as { data: DashboardOrder });
 					}
 				}
 			],
@@ -984,8 +993,8 @@
 													>
 														Payment
 													</h4>
-													{#if (data as any)?.discount || (data as any)?.orderDiscount}
-														{@const od = (data as any).orderDiscount}
+													{#if data?.discount || data?.orderDiscount}
+														{@const od = data?.orderDiscount}
 														<div
 															class="mb-1.5 flex items-center justify-between rounded-md bg-emerald-500/5 px-2 py-1 text-[11px]"
 														>
@@ -1000,10 +1009,7 @@
 																		: 'Discount'}
 															</span>
 															<span class="font-semibold text-red-600 tabular-nums"
-																>−{formatMoney(
-																	od?.amount ?? (data as any).discount ?? 0,
-																	currency
-																)}</span
+																>−{formatMoney(od?.amount ?? data?.discount ?? 0, currency)}</span
 															>
 														</div>
 													{/if}

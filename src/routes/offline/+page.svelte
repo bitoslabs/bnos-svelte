@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -22,7 +23,9 @@
 			sync to relays when the connection comes back.
 		</p>
 		<div class="mt-8 flex flex-wrap gap-3">
-			<Button color="primary" icon="lucide:scan-line" onclick={() => goto('/pos')}>Open POS</Button>
+			<Button color="primary" icon="lucide:scan-line" onclick={() => goto(resolve('/pos'))}
+				>Open POS</Button
+			>
 			<Button color="neutral" variant="subtle" icon="lucide:refresh-cw" onclick={reload}
 				>Retry connection</Button
 			>

@@ -11,6 +11,7 @@ import { tenant } from '$nostr/tenant.svelte';
 import { session } from '$nostr/session.svelte';
 import { TYPE, type Activity, type ActivityAction } from '$lib/domain';
 import { newRecordId } from '$lib/utils/record-id';
+import { SvelteDate } from 'svelte/reactivity';
 
 type LogInput = {
 	action: ActivityAction;
@@ -23,6 +24,8 @@ type LogInput = {
 };
 
 export async function logActivity(input: LogInput): Promise<void> {
+	// A late fire-and-forget call must not write into a signed-out workspace.
+	if (!session.pubkey) return;
 	const staff = tenant.state.activeStaffInfo;
 	const entry: Activity = {
 		action: input.action,
@@ -35,7 +38,7 @@ export async function logActivity(input: LogInput): Promise<void> {
 		actorName: staff?.name ?? session.shortNpub ?? 'System',
 		actorRole: tenant.state.activeRole ?? undefined,
 		branchId: tenant.state.locationId ?? undefined,
-		at: new Date().toISOString(),
+		at: new SvelteDate().toISOString(),
 		meta: input.meta
 	};
 	try {

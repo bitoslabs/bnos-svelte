@@ -1,5 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { lowStockSummary } from './metrics';
+import { latestRows, lowStockSummary, type OrderRow } from './metrics';
+
+function row(id: string, atMs: number): OrderRow {
+	return {
+		id,
+		number: id,
+		status: 'completed',
+		total: 1,
+		items: 1,
+		method: 'cash',
+		type: 'pos',
+		customerName: '',
+		atMs
+	};
+}
+
+describe('latestRows', () => {
+	it('returns the newest rows in descending order', () => {
+		const rows = [row('a', 10), row('b', 40), row('c', 20), row('d', 30)];
+		expect(latestRows(rows, 2).map((r) => r.id)).toEqual(['b', 'd']);
+	});
+
+	it('handles fewer rows than the limit and non-positive limits', () => {
+		expect(latestRows([row('a', 1)], 5).map((r) => r.id)).toEqual(['a']);
+		expect(latestRows([row('a', 1)], 0)).toEqual([]);
+	});
+});
 
 describe('lowStockSummary', () => {
 	it('only includes products with stock tracking enabled', () => {

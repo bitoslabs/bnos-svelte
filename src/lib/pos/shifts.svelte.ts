@@ -297,13 +297,31 @@ class ShiftsStore {
 	 */
 	summaryFor(shiftId?: string): ShiftSummary {
 		if (!shiftId) return { ...ZERO_SUMMARY };
-		const shift = this.all.find((s) => s.id === shiftId);
+		const shift = glo.get(TYPE.shift, shiftId) as { data: Shift } | undefined;
+
+		// Filter each collection once. Payments/refunds prefer direct `shiftId`
+		// links and only fall back to joining through the shift's orders.
+		const orders = this.ordersFor(shiftId);
+		const orderIds = new Set(orders.map((o) => o.id));
+
+		const allPayments = glo.all<Payment, typeof TYPE.payment>(TYPE.payment);
+		const directPayments = allPayments.filter((p) => p.data.shiftId === shiftId);
+		const payments = directPayments.length
+			? directPayments
+			: allPayments.filter((p) => p.data.orderId && orderIds.has(p.data.orderId));
+
+		const allRefunds = glo.all<Refund, typeof TYPE.refund>(TYPE.refund);
+		const directRefunds = allRefunds.filter((r) => r.data.shiftId === shiftId);
+		const refunds = directRefunds.length
+			? directRefunds
+			: allRefunds.filter((r) => r.data.orderId && orderIds.has(r.data.orderId));
+
 		return computeShiftSummary({
 			openingCash: shift?.data.openingCash ?? 0,
-			orders: this.ordersFor(shiftId),
-			payments: this.paymentsFor(shiftId),
+			orders,
+			payments,
 			cashEvents: this.cashEventsFor(shiftId),
-			refunds: this.refundsFor(shiftId)
+			refunds
 		});
 	}
 

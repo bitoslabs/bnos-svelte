@@ -184,5 +184,5 @@ export function isQrMethod(method: string): boolean {
 export function qrCheckoutReady(): boolean {
 	if (!browser) return false;
 	const cfg = loadPayConfig();
-	return hasQrConfigured(cfg) || hasLightningConfigured(cfg);
+	return hasQrConfigured(cfg) || hasLightningConfigured();
 }

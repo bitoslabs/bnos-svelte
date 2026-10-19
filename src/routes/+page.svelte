@@ -22,6 +22,7 @@
 		paymentBreakdown,
 		orderTypeSegments,
 		topProducts,
+		latestRows,
 		startOfToday,
 		type DashboardOrder
 	} from '$lib/dashboard/metrics';
@@ -31,6 +32,17 @@
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { btcRate } from '$lib/bitcoin/rate.svelte';
 	import { shifts as shiftStore } from '$lib/pos/shifts.svelte';
+
+	const clockFormatter = new Intl.DateTimeFormat('en-US', {
+		hour: '2-digit',
+		minute: '2-digit',
+		hour12: true
+	});
+	const dateFormatter = new Intl.DateTimeFormat('en-US', {
+		weekday: 'short',
+		month: 'short',
+		day: 'numeric'
+	});
 
 	let clock = $state('');
 	let blockHeight = $state<number | null>(null);
@@ -92,12 +104,7 @@
 		})();
 
 		// live clock — drives both the time display and the shift duration tick
-		const tick = () =>
-			(clock = new Date().toLocaleTimeString('en-US', {
-				hour: '2-digit',
-				minute: '2-digit',
-				hour12: true
-			}));
+		const tick = () => (clock = clockFormatter.format(new Date()));
 		tick();
 		const id = setInterval(tick, 1000);
 		void refreshBlockchain();
@@ -121,7 +128,7 @@
 		return methods;
 	});
 
-	const rows = $derived(toOrderRows(orderObjects as never, paymentMethodMap));
+	const rows = $derived(toOrderRows(orderObjects, paymentMethodMap));
 	const todayRows = $derived(rows.filter((o) => o.atMs >= startOfToday()));
 	const currency = $derived(tenant.state.currency);
 	const btcPrice = $derived(btcRate.rateFor(currency));
@@ -165,10 +172,10 @@
 	const chartBars = $derived(buildChartBars(rows));
 	const payments = $derived(paymentBreakdown(todayRows));
 	const segments = $derived(orderTypeSegments(todayRows));
-	const products = $derived(topProducts(orderObjects as never));
-	const recent = $derived([...rows].sort((a, b) => b.atMs - a.atMs).slice(0, 8));
+	const products = $derived(topProducts(orderObjects));
+	const recent = $derived(latestRows(rows, 8));
 	const allProducts = $derived(glo.all<GloProduct, 'catalog.product'>('catalog.product'));
-	const stock = $derived(lowStockSummary(allProducts as never));
+	const stock = $derived(lowStockSummary(allProducts));
 	const productCount = $derived(allProducts.length);
 	const customerCount = $derived(glo.all<GloCustomer, 'crm.customer'>('crm.customer').length);
 
@@ -199,9 +206,7 @@
 		};
 	});
 
-	const todayLong = $derived(
-		new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-	);
+	const todayLong = $derived(dateFormatter.format(new Date()));
 
 	async function refreshRate() {
 		await Promise.all([

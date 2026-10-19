@@ -10,11 +10,18 @@ import qrcodegen from '$lib/vendor/qrcodegen';
 
 export type EccLevel = 'low' | 'medium' | 'quartile' | 'high';
 
+type QrCodeLike = { getModules(): boolean[][] };
+type QrCodeStatic = {
+	encodeText(text: string, ecl: unknown): QrCodeLike;
+	Ecc: Record<'LOW' | 'MEDIUM' | 'QUARTILE' | 'HIGH', unknown>;
+};
+const QrCode = (qrcodegen as { QrCode: QrCodeStatic }).QrCode;
+
 const ECC_BY_LEVEL: Record<EccLevel, unknown> = {
-	low: (qrcodegen.QrCode.Ecc as any).LOW,
-	medium: (qrcodegen.QrCode.Ecc as any).MEDIUM,
-	quartile: (qrcodegen.QrCode.Ecc as any).QUARTILE,
-	high: (qrcodegen.QrCode.Ecc as any).HIGH
+	low: QrCode.Ecc.LOW,
+	medium: QrCode.Ecc.MEDIUM,
+	quartile: QrCode.Ecc.QUARTILE,
+	high: QrCode.Ecc.HIGH
 };
 
 /**
@@ -23,7 +30,7 @@ const ECC_BY_LEVEL: Record<EccLevel, unknown> = {
  * large for version 1–40 (extremely unlikely for payment strings).
  */
 export function encodeText(text: string, ecl: EccLevel = 'medium'): Uint8Array[] {
-	const qr = (qrcodegen.QrCode as any).encodeText(text, ECC_BY_LEVEL[ecl]);
+	const qr = QrCode.encodeText(text, ECC_BY_LEVEL[ecl]);
 	const bools: boolean[][] = qr.getModules();
 	const n = bools.length;
 	const out: Uint8Array[] = new Array(n);

@@ -6,7 +6,6 @@
 	 */
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
-	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';

@@ -20,6 +20,7 @@ export interface ListControlsOptions<T> {
 }
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 20, 50];
+const collator = new Intl.Collator();
 
 /**
  * Reactive search + sort + view-mode + pagination controls for list/data-table
@@ -64,16 +65,18 @@ export function createListControls<T>(opts: ListControlsOptions<T>) {
 	const list = $derived.by(() => {
 		const items = opts.items();
 		const q = search.trim().toLowerCase();
-		const filtered = q ? items.filter((item) => opts.search(item, q)) : [...items];
+		const option = sortItems.find((o) => o.key === sortKey);
+		// Copy only when sorting in place; filtering already allocates. With no
+		// search and no sort the source array can be returned as-is.
+		const filtered = q ? items.filter((item) => opts.search(item, q)) : option ? [...items] : items;
 
-		const option = opts.sortOptions().find((o) => o.key === sortKey);
 		if (option) {
 			const dir = sortDir === 'asc' ? 1 : -1;
 			filtered.sort((a, b) => {
 				const va = option.value(a);
 				const vb = option.value(b);
 				if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
-				return String(va).localeCompare(String(vb)) * dir;
+				return collator.compare(String(va), String(vb)) * dir;
 			});
 		}
 		return filtered;

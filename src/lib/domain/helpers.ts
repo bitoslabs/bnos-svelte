@@ -15,13 +15,12 @@ import {
 	isGloObject,
 	parseGloEvent,
 	type GloObject,
-	type GloObjectType,
 	type GloVisibility
 } from '@bitos/bnos-core/glo';
 import { getGloKindForType } from '@bitos/bnos-core/glo';
 import type { GloScope } from '@bitos/bnos-core/glo';
 
-import { TYPE, type DomainType, type DomainTypeValue } from './kind';
+import { TYPE, type DomainTypeValue } from './kind';
 
 /** Reverse-domain extension namespace for bdgo-os / bnos-svelte vendor fields. */
 export const BNOS_EXT_KEY = 'org.bitos.bnos';

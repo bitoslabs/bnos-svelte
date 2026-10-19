@@ -34,7 +34,7 @@
 	type Tab = 'coupons' | 'promotions';
 	let tab = $state<Tab>('promotions');
 	let rawOpen = $state(false);
-	let rawItem = $state<any>(null);
+	let rawItem = $state<unknown>(null);
 
 	onMount(() => {
 		dataSync.pageSync([TYPE.coupon, TYPE.promotion, TYPE.product, TYPE.category], {
@@ -87,13 +87,6 @@
 		return formatMoney(p.value, currency);
 	}
 
-	const PERCENT_TYPES: PromotionType[] = [
-		'percent',
-		'discount_percent',
-		'flash_sale',
-		'happy_hour'
-	];
-
 	const PROMO_TYPES: { value: PromotionType; label: string; icon: string }[] = [
 		{ value: 'percent', label: '% Off', icon: 'lucide:percent' },
 		{ value: 'fixed', label: 'Fixed Off', icon: 'lucide:dollar-sign' },
@@ -130,9 +123,29 @@
 	const promoTypeLabel = (t: string) => PROMO_TYPES.find((p) => p.value === t)?.label ?? t;
 
 	// ── Stats ─────────────────────────────────────────────────────────
-	const activeCount = $derived(promos.filter((p) => promoStatus(p.data) === 'active').length);
-	const scheduledCount = $derived(promos.filter((p) => promoStatus(p.data) === 'scheduled').length);
-	const expiredCount = $derived(promos.filter((p) => promoStatus(p.data) === 'expired').length);
+	const promoStats = $derived.by(() => {
+		let active = 0;
+		let scheduled = 0;
+		let expired = 0;
+		for (const promo of promos) {
+			const status = promoStatus(promo.data);
+			if (status === 'active') active++;
+			else if (status === 'scheduled') scheduled++;
+			else if (status === 'expired') expired++;
+		}
+		return { active, scheduled, expired };
+	});
+
+	const categoryNameById = $derived.by(() => {
+		const map: Record<string, string> = {};
+		for (const c of categories) map[c.id] = c.data.name;
+		return map;
+	});
+	const productNameById = $derived.by(() => {
+		const map: Record<string, string> = {};
+		for (const p of products) map[p.id] = p.data.name;
+		return map;
+	});
 
 	// ── Filters ───────────────────────────────────────────────────────
 	let searchQuery = $state('');
@@ -518,16 +531,20 @@
 			</div>
 			<div class="surface-card p-4">
 				<p class="text-[11px] tracking-wider text-(--ui-text-dimmed) uppercase">Active</p>
-				<p class="mt-1 text-2xl font-black text-emerald-500 tabular-nums">{activeCount}</p>
+				<p class="mt-1 text-2xl font-black text-emerald-500 tabular-nums">
+					{promoStats.active}
+				</p>
 			</div>
 			<div class="surface-card p-4">
 				<p class="text-[11px] tracking-wider text-(--ui-text-dimmed) uppercase">Scheduled</p>
-				<p class="mt-1 text-2xl font-black text-blue-500 tabular-nums">{scheduledCount}</p>
+				<p class="mt-1 text-2xl font-black text-blue-500 tabular-nums">
+					{promoStats.scheduled}
+				</p>
 			</div>
 			<div class="surface-card p-4">
 				<p class="text-[11px] tracking-wider text-(--ui-text-dimmed) uppercase">Expired</p>
 				<p class="mt-1 text-2xl font-black text-(--ui-text-dimmed) tabular-nums">
-					{expiredCount}
+					{promoStats.expired}
 				</p>
 			</div>
 		</div>
@@ -940,7 +957,7 @@
 														class="inline-flex items-center gap-0.5 rounded-full bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-medium text-blue-500"
 													>
 														<Icon name="lucide:folder" class="size-2.5" />
-														{categories.find((c) => c.id === catId)?.data.name ?? catId}
+														{categoryNameById[catId] ?? catId}
 													</span>
 												{/each}
 												{#each (p.data.productIds ?? []).slice(0, 2) as prodId (prodId)}
@@ -948,7 +965,7 @@
 														class="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-500"
 													>
 														<Icon name="lucide:package" class="size-2.5" />
-														{products.find((pr) => pr.id === prodId)?.data.name ?? prodId}
+														{productNameById[prodId] ?? prodId}
 													</span>
 												{/each}
 												{#if (p.data.categoryIds?.length ?? 0) > 3 || (p.data.productIds?.length ?? 0) > 2}

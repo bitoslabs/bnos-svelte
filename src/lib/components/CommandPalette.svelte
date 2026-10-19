@@ -28,6 +28,7 @@
 	import { dataSync } from '$nostr/sync.svelte';
 	import { setMode, userPrefersMode } from 'mode-watcher';
 	import { formatMoney } from '$lib/utils/format';
+	import { topScored } from '$lib/utils/search';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { navLabel, navSectionLabel } from '$lib/nav';
 
@@ -152,88 +153,73 @@
 		}
 		return qi === needle.length ? score : -1;
 	}
-	function topMatches(items: { c: Cmd; s: number }[], n: number): Cmd[] {
-		return items
-			.filter((x) => x.s >= 0)
-			.sort((a, b) => b.s - a.s)
-			.slice(0, n)
-			.map((x) => x.c);
-	}
-
+	// Score first, build command objects only for the top matches — the data
+	// collections can hold thousands of records.
 	const orderCmds = $derived.by(() => {
-		if (!query.trim()) return [];
-		return topMatches(
-			glo.all<Order, typeof TYPE.order>(TYPE.order).map((o) => {
-				const d = o.data;
-				const num = d.number ?? o.id.slice(0, 8);
-				const kw = `${num} ${d.customerName ?? ''} ${d.status ?? ''}`;
-				return {
-					c: {
-						id: 'order:' + o.id,
-						label: `Order ${num}`,
-						icon: 'lucide:receipt-text',
-						group: t('nav.orders'),
-						tone: 'data',
-						keywords: kw,
-						trailing: formatMoney(d.total ?? 0, d.currency ?? currency),
-						run: () => goto(resolve('/orders/[id]', { id: o.id }))
-					} as Cmd,
-					s: fuzzy(query, `Order ${num}`, kw)
-				};
-			}),
-			3
-		);
+		const q = query.trim();
+		if (!q) return [];
+		return topScored(glo.all<Order, typeof TYPE.order>(TYPE.order), 3, (o) => {
+			const d = o.data;
+			const num = d.number ?? o.id.slice(0, 8);
+			return fuzzy(q, `Order ${num}`, `${num} ${d.customerName ?? ''} ${d.status ?? ''}`);
+		}).map((o) => {
+			const d = o.data;
+			const num = d.number ?? o.id.slice(0, 8);
+			return {
+				id: 'order:' + o.id,
+				label: `Order ${num}`,
+				icon: 'lucide:receipt-text',
+				group: t('nav.orders'),
+				tone: 'data',
+				keywords: `${num} ${d.customerName ?? ''} ${d.status ?? ''}`,
+				trailing: formatMoney(d.total ?? 0, d.currency ?? currency),
+				run: () => goto(resolve('/orders/[id]', { id: o.id }))
+			} satisfies Cmd;
+		});
 	});
 
 	const productCmds = $derived.by(() => {
-		if (!query.trim()) return [];
-		return topMatches(
-			glo.all<Product, typeof TYPE.product>(TYPE.product).map((p) => {
-				const d = p.data;
-				const name = d.name ?? 'Product';
-				const sku = d.sku ?? '';
-				return {
-					c: {
-						id: 'product:' + p.id,
-						label: name,
-						icon: 'lucide:package',
-						group: t('nav.products'),
-						tone: 'data',
-						keywords: sku,
-						trailing: d.price != null ? formatMoney(d.price, d.currency ?? currency) : undefined,
-						run: () => goto(resolve('/catalog'))
-					} as Cmd,
-					s: fuzzy(query, name, sku)
-				};
-			}),
-			3
-		);
+		const q = query.trim();
+		if (!q) return [];
+		return topScored(glo.all<Product, typeof TYPE.product>(TYPE.product), 3, (p) => {
+			const d = p.data;
+			return fuzzy(q, d.name ?? 'Product', d.sku ?? '');
+		}).map((p) => {
+			const d = p.data;
+			return {
+				id: 'product:' + p.id,
+				label: d.name ?? 'Product',
+				icon: 'lucide:package',
+				group: t('nav.products'),
+				tone: 'data',
+				keywords: d.sku ?? '',
+				trailing: d.price != null ? formatMoney(d.price, d.currency ?? currency) : undefined,
+				run: () => goto(resolve('/catalog'))
+			} satisfies Cmd;
+		});
 	});
 
 	const customerCmds = $derived.by(() => {
-		if (!query.trim()) return [];
-		return topMatches(
-			glo.all<Customer, typeof TYPE.customer>(TYPE.customer).map((c) => {
-				const d = c.data;
-				const name = d.name ?? 'Customer';
-				const phone = d.phone ?? '';
-				const email = d.email ?? '';
-				return {
-					c: {
-						id: 'customer:' + c.id,
-						label: name,
-						icon: 'lucide:user',
-						group: t('nav.customers'),
-						tone: 'data',
-						keywords: `${phone} ${email}`,
-						trailing: phone || email || undefined,
-						run: () => goto(resolve('/customers'))
-					} as Cmd,
-					s: fuzzy(query, name, `${phone} ${email}`)
-				};
-			}),
-			3
-		);
+		const q = query.trim();
+		if (!q) return [];
+		return topScored(glo.all<Customer, typeof TYPE.customer>(TYPE.customer), 3, (c) => {
+			const d = c.data;
+			return fuzzy(q, d.name ?? 'Customer', `${d.phone ?? ''} ${d.email ?? ''}`);
+		}).map((c) => {
+			const d = c.data;
+			const phone = d.phone ?? '';
+			const email = d.email ?? '';
+			return {
+				id: 'customer:' + c.id,
+				label: d.name ?? 'Customer',
+				icon: 'lucide:user',
+				group: t('nav.customers'),
+				tone: 'data',
+				keywords: `${phone} ${email}`,
+				trailing: phone || email || undefined,
+				run: () => goto(resolve('/customers'))
+			} satisfies Cmd;
+		});
 	});
 
 	// ── Recent commands (persisted) ───────────────────────────────────────

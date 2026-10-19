@@ -22,7 +22,6 @@ import {
 	type MediaProviderId,
 	type MediaSettings,
 	type S3Config,
-	type UploadOptions,
 	type UploadedMedia,
 	type UploadedMediaProviderId
 } from './uploaders';
@@ -135,11 +134,7 @@ class MediaStore {
 	 * The active org id is passed as `owner` automatically so server-side uploads
 	 * land in an org-scoped folder. Callers pass just `{ purpose }`.
 	 */
-	upload = async (
-		file: File,
-		provider?: MediaProviderId,
-		options: UploadOptions = {}
-	): Promise<UploadedMedia> => {
+	upload = async (file: File, provider?: MediaProviderId): Promise<UploadedMedia> => {
 		const id = provider ?? this.state.defaultProvider;
 		if (id === 'none') {
 			const snap = session.snapshot;

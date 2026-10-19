@@ -101,7 +101,7 @@ describe('LnurlAddressProvider auto-confirm flow (mocked provider)', () => {
 			recipientPubkey: PK64,
 			relays: ['wss://nos.lol']
 		});
-		const inv = await provider.makeInvoice(100_000);
+		await provider.makeInvoice(100_000);
 
 		expect(await provider.getPaymentStatus(PR)).toBe('pending');
 		verifyResponse = { status: 'OK', settled: true };

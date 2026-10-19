@@ -33,6 +33,7 @@
 	import { popovers } from '$lib/stores/popovers.svelte';
 	import { startSystemNotifications } from '$lib/stores/notifications.svelte';
 	import { startOwnerFeed } from '$nostr/owner-feed.svelte';
+	import { clearIdentityStores } from '$nostr/sign-out';
 	import { permissionForPath } from '$lib/nav';
 	import { permissions } from '$lib/permissions.svelte';
 	import favicon from '$lib/assets/favicon.svg';
@@ -75,11 +76,16 @@
 		// Owner/system notices from allow-listed npubs (PUBLIC_OWNER_NPUBS + local
 		// trusted keys). Idempotent and a no-op when no allow-list is configured.
 		startOwnerFeed();
+
+		const onRemoteClear = () => clearIdentityStores();
+		window.addEventListener('bnos:clear-all', onRemoteClear);
 		session.load();
 		tenant.load();
 		profile.load();
 		i18n.init();
 		if (session.isAuthenticated) void warmRelays();
+
+		return () => window.removeEventListener('bnos:clear-all', onRemoteClear);
 	});
 
 	// Hydrate the kind-0 profile cache from relays whenever the active pubkey
@@ -124,11 +130,20 @@
 			void goto(resolve('/login'), { replaceState: true });
 		} else if (!workspaceResolutionPending) {
 			workspaceResolutionPending = true;
-			postLoginSyncState = 'checking-workspace';
+			// A locally complete workspace (including one just created by the
+			// setup wizard) needs no relay resolution, so do not block the UI on it.
+			if (!hasActiveWorkspaceContext()) postLoginSyncState = 'checking-workspace';
 			queueMicrotask(async () => {
+				const bootPubkey = session.pubkey ?? '';
 				const result = await bootstrapAuth();
+				// A newer identity switch owns the current resolution.
+				if (session.pubkey !== bootPubkey) return;
 				workspaceResolutionPending = false;
 				postLoginSyncState = result.source === 'relay' ? 'done' : 'idle';
+				// The user may have moved to onboarding / resolve while this ran
+				// (e.g. right after creating an account). Those routes own their
+				// own flow — never bounce them through /resolve again.
+				if (isPublicRoute) return;
 				if (result.access === 'setup' || result.access === 'waiting-workspace') {
 					void goto(resolve('/resolve'), { replaceState: true });
 				} else if (result.access === 'blocked') {

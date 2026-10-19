@@ -13,7 +13,7 @@
 	import { onMount } from 'svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import type { CompletedSale } from '$lib/pos/cart.svelte';
-	import { formatMoney, formatInt } from '$lib/utils/format';
+	import { formatMoney } from '$lib/utils/format';
 	import { methodMetaFor } from '$lib/pos/payment-methods';
 	import { t } from '$lib/i18n/i18n.svelte';
 

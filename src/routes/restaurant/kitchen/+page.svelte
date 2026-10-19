@@ -1,13 +1,10 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { relativeTime } from '$lib/utils/format';
 	import type { GloOrder, GloOrderLine } from '@bitos/bnos-core/glo';
 
 	type TicketStatus = 'new' | 'preparing' | 'ready' | 'served';
@@ -95,11 +92,10 @@
 		return buildTickets();
 	});
 
-	const stats = $derived({
-		new: tickets.filter((t) => t.status === 'new').length,
-		preparing: tickets.filter((t) => t.status === 'preparing').length,
-		ready: tickets.filter((t) => t.status === 'ready').length,
-		served: tickets.filter((t) => t.status === 'served').length
+	const stats = $derived.by(() => {
+		const counts = { new: 0, preparing: 0, ready: 0, served: 0 };
+		for (const ticket of tickets) counts[ticket.status]++;
+		return counts;
 	});
 
 	function elapsedMin(iso: string): number {

@@ -7,8 +7,7 @@ import type {
 	MarketplaceChannelType,
 	MarketplaceProductStatus,
 	MarketplaceConnectionStatus,
-	MarketplaceReviewStatus,
-	MarketplaceConnection
+	MarketplaceReviewStatus
 } from './types';
 
 // ── Channels ────────────────────────────────────────────────────────────────

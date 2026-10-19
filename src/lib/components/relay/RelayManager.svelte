@@ -202,7 +202,8 @@
 						class="grid size-7 shrink-0 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--tone-error-bg) hover:text-(--tone-error-text)"
 						onclick={() => {
 							relays.remove(url);
-							const { [url]: _removed, ...rest } = relayTests;
+							const rest = { ...relayTests };
+							delete rest[url];
 							relayTests = rest;
 						}}
 						aria-label="Remove {url}"

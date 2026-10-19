@@ -22,8 +22,11 @@
 	);
 
 	async function seedSamples() {
-		for (const data of SAMPLE)
-			await glo.upsert<GloProduct>('catalog.product', data, { id: newRecordId('product') });
+		await Promise.all(
+			SAMPLE.map((data) =>
+				glo.upsert<GloProduct>('catalog.product', data, { id: newRecordId('product') })
+			)
+		);
 	}
 	function clear() {
 		for (const p of glo.all('catalog.product')) glo.remove('catalog.product', p.id);

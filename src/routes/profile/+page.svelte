@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { goto } from '$app/navigation';
@@ -6,8 +7,8 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { session } from '$nostr/session.svelte';
+	import { signOutAndClear } from '$nostr/sign-out';
 	import { tenant } from '$nostr/tenant.svelte';
-	import { glo } from '$nostr/store.svelte';
 	import { relays } from '$nostr/relay.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { truncateNpub } from '$lib/utils/format';
@@ -19,11 +20,9 @@
 	});
 
 	async function signOut() {
-		await session.logout();
-		tenant.reset();
-		glo.clearAll();
+		await signOutAndClear();
 		toast.info('Signed out');
-		await goto('/login', { replaceState: true });
+		await goto(resolve('/login'), { replaceState: true });
 	}
 </script>
 

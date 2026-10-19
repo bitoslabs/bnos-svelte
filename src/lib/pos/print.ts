@@ -10,6 +10,7 @@
  */
 import type { Order, Refund } from '$lib/domain';
 import { loadReceiptSettings } from '$lib/settings/local';
+import type { OrderLine } from '$lib/domain';
 import { formatMoney } from '$lib/utils/format';
 import { sourceLabel } from '$lib/domain/order-sources';
 import { toast } from '$lib/stores/toast.svelte';
@@ -17,7 +18,9 @@ import { toast } from '$lib/stores/toast.svelte';
 export interface PrintOrderOptions {
 	currency?: string;
 	/** Payments may be raw `Payment` objects or GLO-wrapped `{ data: Payment }`. */
-	payments?: readonly unknown[];
+	payments?: readonly (
+		{ method?: string; amount?: number } | { data: { method?: string; amount?: number } }
+	)[];
 	/** Optional sats equivalent of the total (shown under TOTAL when provided). */
 	satsTotal?: number;
 }
@@ -30,21 +33,24 @@ function esc(s: unknown): string {
 		.replace(/"/g, '&quot;');
 }
 
-function lineName(line: any): string {
+type ReceiptLine = OrderLine & { price?: number };
+type ReceiptOrder = Order & { taxAmount?: number };
+
+function lineName(line: ReceiptLine): string {
 	const base = line.productName || line.name || 'Item';
 	return line.variantName ? `${base} (${line.variantName})` : base;
 }
 
-function lineQty(line: any): number {
+function lineQty(line: ReceiptLine): number {
 	return Number(line.quantity ?? 1) || 1;
 }
 
-function lineUnit(line: any): number {
+function lineUnit(line: ReceiptLine): number {
 	return Number(line.unitPrice ?? line.price ?? 0) || 0;
 }
 
 function orderNumber(o: Order): string {
-	return String((o as any).orderNumber ?? o.number ?? '');
+	return String(o.orderNumber ?? o.number ?? '');
 }
 
 function openWindow(width = 420) {
@@ -73,19 +79,19 @@ const BASE_STYLE = `
 
 /** Customer-facing receipt that honours Receipt settings. */
 export function printReceiptForOrder(order: { data: Order }, opts: PrintOrderOptions = {}) {
-	const d = order.data as any;
+	const d = order.data as ReceiptOrder;
 	const s = loadReceiptSettings();
 	const currency = opts.currency ?? d.currency ?? 'USD';
 	const width = s.paperSize === '58mm' ? 320 : 420;
 
-	const lines = (d.lines ?? []) as any[];
+	const lines = d.lines ?? [];
 	const itemsHtml = lines
 		.map(
 			(l) =>
 				`<tr><td>${lineQty(l)}× ${esc(lineName(l))}</td><td class="right">${formatMoney(
 					((lineUnit(l) +
 						(l.modifiers ?? []).reduce(
-							(a: number, m: any) => a + (m.priceAdjustment ?? 0),
+							(a: number, m) => a + (m.priceAdjustment ?? 0),
 							0
 						)) as number) * lineQty(l),
 					currency
@@ -97,7 +103,7 @@ export function printReceiptForOrder(order: { data: Order }, opts: PrintOrderOpt
 	const paymentsHtml = payments.length
 		? payments
 				.map((p) => {
-					const pd: any = (p as any).data ?? p;
+					const pd = 'data' in p ? p.data : p;
 					return `<tr><td>${esc(pd.method ?? 'payment')}</td><td class="right">${formatMoney(pd.amount ?? 0, currency)}</td></tr>`;
 				})
 				.join('')
@@ -145,7 +151,7 @@ export function printReceiptForOrder(order: { data: Order }, opts: PrintOrderOpt
 		);
 	if (d.taxAmount ?? d.tax)
 		totals.push(
-			`<tr><td>Tax</td><td class="right">${formatMoney(d.taxAmount ?? d.tax, currency)}</td></tr>`
+			`<tr><td>Tax</td><td class="right">${formatMoney(d.taxAmount ?? d.tax ?? 0, currency)}</td></tr>`
 		);
 	if (d.tip)
 		totals.push(`<tr><td>Tip</td><td class="right">${formatMoney(d.tip, currency)}</td></tr>`);
@@ -189,16 +195,16 @@ export function printReceiptForOrder(order: { data: Order }, opts: PrintOrderOpt
 
 /** Packer-facing slip: items + qty + ship-to, NO prices. */
 export function printPackingSlip(order: { data: Order }) {
-	const d = order.data as any;
+	const d = order.data as ReceiptOrder;
 	const s = loadReceiptSettings();
-	const lines = (d.lines ?? []) as any[];
+	const lines = d.lines ?? [];
 
 	const itemsHtml = lines
 		.map(
 			(l) =>
 				`<tr><td>☐</td><td class="bold">${lineQty(l)}</td><td>${esc(lineName(l))}${
 					l.modifiers?.length
-						? `<div class="muted">${l.modifiers.map((m: any) => esc(m.name)).join(', ')}</div>`
+						? `<div class="muted">${l.modifiers.map((m) => esc(m.name)).join(', ')}</div>`
 						: ''
 				}${l.notes ? `<div class="muted">↳ ${esc(l.notes)}</div>` : ''}</td></tr>`
 		)
@@ -269,7 +275,7 @@ export function printRefundReceipt(
 	refund: Refund,
 	opts: { currency?: string; cashier?: string } = {}
 ) {
-	const d = order.data as any;
+	const d = order.data as ReceiptOrder;
 	const s = loadReceiptSettings();
 	const currency = opts.currency ?? refund.currency ?? d.currency ?? 'USD';
 	const width = s.paperSize === '58mm' ? 320 : 420;
@@ -336,9 +342,9 @@ export function printRefundReceipt(
 
 /** Compose a customer-facing WhatsApp share link with order summary. */
 export function buildWhatsAppLink(order: { data: Order }): string {
-	const d = order.data as any;
+	const d = order.data as ReceiptOrder;
 	const phone = (d.shipping?.phone || d.pickup?.phone || '').replace(/[^\d]/g, '');
-	const lines = (d.lines ?? []) as any[];
+	const lines = d.lines ?? [];
 	const msg =
 		`*${d.customerName ? 'Hi ' + d.customerName + '!' : 'Hello!'}*\n` +
 		`Your order #${orderNumber(d)}:\n` +

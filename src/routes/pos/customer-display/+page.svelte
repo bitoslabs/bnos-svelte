@@ -5,7 +5,6 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import QrCode from '$lib/components/ui/QrCode.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
-	import { browser } from '$app/environment';
 	import { formatMoney } from '$lib/utils/format';
 	import PaymentSuccessOverlay from '$lib/pos/PaymentSuccessOverlay.svelte';
 	import type { CompletedSale } from '$lib/pos/cart.svelte';
@@ -220,7 +219,12 @@
 				{#if payQr.imageUrl}
 					<img src={payQr.imageUrl} alt="Bank payment QR" class="size-[320px] object-contain" />
 				{:else}
-					<QrCode value={payQr.payload} size={320} badge={payQr.badge as any} />
+					<QrCode
+						value={payQr.payload}
+						size={320}
+						badge={payQr.badge as
+							'lightning' | 'bitcoin' | 'bank' | 'qr' | 'store' | 'none' | undefined}
+					/>
 				{/if}
 			</div>
 
@@ -426,7 +430,7 @@
 
 		<!-- Slide indicators -->
 		<div class="relative z-10 flex justify-center gap-2 pb-8">
-			{#each Array(SLIDES) as _, i (i)}
+			{#each Array.from({ length: SLIDES }, (_, i) => i) as i (i)}
 				<button
 					type="button"
 					aria-label={`Slide ${i + 1}`}

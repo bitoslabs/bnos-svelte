@@ -114,6 +114,12 @@ class FeaturesStore {
 		this.hydrated = true;
 	};
 
+	reset = () => {
+		this.state = { ...DEFAULTS };
+		this.persist();
+		this.hydrated = false;
+	};
+
 	isEnabled = (key: FeatureKey): boolean => this.state[key];
 
 	set = (key: FeatureKey, value: boolean) => {

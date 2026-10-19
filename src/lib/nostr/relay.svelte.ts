@@ -61,6 +61,8 @@ class RelayStore {
 	online = $state(true);
 	hydrated = $state(false);
 
+	private listening = false;
+
 	private defaultPermissions = (): Record<string, RelayPermissions> =>
 		Object.fromEntries(DEFAULT_RELAYS.map((url) => [url, { read: true, write: true }]));
 
@@ -154,8 +156,13 @@ class RelayStore {
 		this.online = navigator.onLine;
 		this.hydrated = true;
 
-		window.addEventListener('online', () => (this.online = true));
-		window.addEventListener('offline', () => (this.online = false));
+		// `load()` is called from several routes; register the network listeners
+		// only once per page session.
+		if (!this.listening) {
+			this.listening = true;
+			window.addEventListener('online', () => (this.online = true));
+			window.addEventListener('offline', () => (this.online = false));
+		}
 	};
 
 	set = (urls: string[]) => {
@@ -220,49 +227,49 @@ class RelayStore {
 		this.save();
 	};
 
-	get normalized() {
-		return normalizeRelayUrls(this.relays);
-	}
+	// Derived so hot paths (every publish/sync) reuse the normalized lists
+	// instead of re-normalizing the full relay set on each access.
+	normalized = $derived(normalizeRelayUrls(this.relays));
 
-	get activeRelays() {
-		return this.primaryFirst(this.relays.filter((url) => this.isActive(url)));
-	}
+	activeRelays = $derived(this.primaryFirst(this.relays.filter((url) => this.isActive(url))));
 
-	get activeNormalized() {
-		return normalizeRelayUrls(this.activeRelays);
-	}
+	activeNormalized = $derived(normalizeRelayUrls(this.activeRelays));
 
-	get readableRelays() {
-		return this.primaryFirst(this.relays.filter((url) => this.permissions[url]?.read ?? true));
-	}
+	readableRelays = $derived(
+		this.primaryFirst(this.relays.filter((url) => this.permissions[url]?.read ?? true))
+	);
 
-	get writableRelays() {
-		return this.primaryFirst(this.relays.filter((url) => this.permissions[url]?.write ?? true));
-	}
+	writableRelays = $derived(
+		this.primaryFirst(this.relays.filter((url) => this.permissions[url]?.write ?? true))
+	);
 
-	get readableNormalized() {
-		return normalizeRelayUrls(this.readableRelays);
-	}
+	readableNormalized = $derived(normalizeRelayUrls(this.readableRelays));
 
-	get writableNormalized() {
-		return normalizeRelayUrls(this.writableRelays);
-	}
+	writableNormalized = $derived(normalizeRelayUrls(this.writableRelays));
 
-	get primaryReadableNormalized() {
-		return this.primaryRelay && this.canRead(this.primaryRelay)
+	primaryReadableNormalized = $derived(
+		this.primaryRelay && (this.permissions[this.primaryRelay]?.read ?? true)
 			? normalizeRelayUrls([this.primaryRelay])
-			: [];
-	}
+			: []
+	);
 
-	get primaryWritableNormalized() {
-		return this.primaryRelay && this.canWrite(this.primaryRelay)
+	primaryWritableNormalized = $derived(
+		this.primaryRelay && (this.permissions[this.primaryRelay]?.write ?? true)
 			? normalizeRelayUrls([this.primaryRelay])
-			: [];
+			: []
+	);
+
+	canRead(url: string) {
+		return this.permissions[url]?.read ?? true;
 	}
 
-	canRead = (url: string) => this.permissions[url]?.read ?? true;
-	canWrite = (url: string) => this.permissions[url]?.write ?? true;
-	isActive = (url: string) => this.canRead(url) || this.canWrite(url);
+	canWrite(url: string) {
+		return this.permissions[url]?.write ?? true;
+	}
+
+	isActive(url: string) {
+		return this.canRead(url) || this.canWrite(url);
+	}
 }
 
 export const relays = new RelayStore();

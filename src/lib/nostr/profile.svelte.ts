@@ -179,7 +179,7 @@ class ProfileStore {
 				this.persist();
 			}
 			return ok;
-		} catch (e) {
+		} catch {
 			return false;
 		} finally {
 			this.publishing = false;
@@ -212,7 +212,7 @@ class ProfileStore {
 			this.seenCreatedAt = best.created_at;
 			this.persist();
 			return true;
-		} catch (e) {
+		} catch {
 			return false;
 		} finally {
 			this.loading = false;

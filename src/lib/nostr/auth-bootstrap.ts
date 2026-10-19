@@ -21,14 +21,15 @@ export interface BootstrapResult {
 let inFlight: Promise<BootstrapResult> | null = null;
 let inFlightPubkey = '';
 
-async function runBootstrap(): Promise<BootstrapResult> {
-	if (!browser || !session.pubkey) return { access: 'setup', source: 'none' };
+async function runBootstrap(pubkey: string): Promise<BootstrapResult> {
+	if (!browser || !pubkey || session.pubkey !== pubkey) return { access: 'setup', source: 'none' };
 
 	let source: BootstrapResult['source'] = 'local';
 	let workspaceFound = hasActiveWorkspaceContext();
 
 	if (!workspaceFound) {
 		const workspace = await resolveWorkspace({ allowRelaySync: true });
+		if (session.pubkey !== pubkey) return { access: 'setup', source: 'none' };
 		workspaceFound = workspace.found;
 		source = workspace.source;
 
@@ -36,6 +37,7 @@ async function runBootstrap(): Promise<BootstrapResult> {
 			// Staff devices do not author organization/location events. Resolve
 			// through the user's #p membership before sending them to setup.
 			const staffWorkspace = await memberships.resolveStaffWorkspace();
+			if (session.pubkey !== pubkey) return { access: 'setup', source: 'none' };
 			if (staffWorkspace) {
 				workspaceFound = true;
 				source = 'membership';
@@ -50,9 +52,11 @@ async function runBootstrap(): Promise<BootstrapResult> {
 	}
 
 	// resolveStaffWorkspace already resolves and activates the staff record.
-	// Owner/local workspace paths still need the membership lookup here.
-	if (tenant.state.activeStaffId === null) {
+	// For owner/local workspaces, try the local membership records first so the
+	// post-setup dashboard does not wait on relay round trips.
+	if (tenant.state.activeStaffId === null && !memberships.autoResolve()) {
 		await memberships.resolve();
+		if (session.pubkey !== pubkey) return { access: 'setup', source: 'none' };
 		if (!memberships.autoResolve()) {
 			await memberships.bootstrapOwnerIfMissing();
 			memberships.autoResolve();
@@ -78,11 +82,15 @@ export function bootstrapAuth(): Promise<BootstrapResult> {
 	if (inFlight && inFlightPubkey === pubkey) return inFlight;
 
 	inFlightPubkey = pubkey;
-	inFlight = runBootstrap().finally(() => {
+	const pending = runBootstrap(pubkey).finally(() => {
+		// A slower run for a previous identity must not clear the cache entry of
+		// the identity that is currently active.
+		if (inFlight !== pending) return;
 		inFlight = null;
 		inFlightPubkey = '';
 	});
-	return inFlight;
+	inFlight = pending;
+	return pending;
 }
 
 export function clearBootstrap() {

@@ -198,8 +198,11 @@ export const notifications = new NotificationStore();
  * alert preferences (Settings → Notifications) so `system_sync` / `system_error`
  * toggles are honoured. Idempotent — the first call wins per app session.
  */
+let systemNotificationsStarted = false;
+
 export function startSystemNotifications() {
-	if (!browser) return;
+	if (!browser || systemNotificationsStarted) return;
+	systemNotificationsStarted = true;
 	notifications.load();
 
 	const prefAllows = (key: 'system_sync' | 'system_error'): boolean => {

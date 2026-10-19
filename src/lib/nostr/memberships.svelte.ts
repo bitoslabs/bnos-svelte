@@ -21,7 +21,7 @@ import { syncKeyGrantsForCurrentUser } from '$lib/crypto/organization-key-grants
 /** A status prevents login / app access. */
 const BLOCKING_STATUSES = new Set(['suspended', 'inactive', 'terminated']);
 
-function syncTenantBranchForStaff(member: { id: string; data: Staff }, reason: string) {
+function syncTenantBranchForStaff(member: { id: string; data: Staff }) {
 	const branchIds = member.data.branchIds ?? [];
 	if (branchIds.length === 0) return;
 
@@ -80,10 +80,14 @@ class MembershipsStore {
 		if (!browser || !session.pubkey) return [];
 		this.resolving = true;
 		try {
-			// 1. Owner-operated records authored by this device's key.
-			await glo.sync(TYPE.staff, { relayStrategy: 'primary-first' });
-			// 2. Records authored by other owners where this user is the staff member.
-			await this.fetchMembershipsByPTag();
+			// 1 + 2 are independent relay queries — run them together so login and
+			// workspace resolution wait for one round trip instead of two.
+			await Promise.all([
+				// Owner-operated records authored by this device's key.
+				glo.sync(TYPE.staff, { relayStrategy: 'primary-first' }),
+				// Records authored by other owners where this user is the staff member.
+				this.fetchMembershipsByPTag()
+			]);
 			// 3. Pull NIP-44 company key grants addressed to this user (kind 30512) so
 			//    the staff device can decrypt owner-authored records. Best-effort.
 			await syncKeyGrantsForCurrentUser().catch(() => ({ imported: 0, failed: 0 }));
@@ -131,7 +135,7 @@ class MembershipsStore {
 					setupComplete: true
 				});
 			}
-			syncTenantBranchForStaff(me, 'resolveStaffWorkspace');
+			syncTenantBranchForStaff(me);
 			tenant.completeSetup();
 			tenant.setActiveStaff(toActiveStaffInfo(me));
 			return true;
@@ -239,7 +243,7 @@ class MembershipsStore {
 		const me = active[0];
 		const status = me.data.status ?? 'active';
 		if (BLOCKING_STATUSES.has(status)) return false;
-		syncTenantBranchForStaff(me, 'autoResolve');
+		syncTenantBranchForStaff(me);
 		tenant.setActiveStaff(toActiveStaffInfo(me));
 		return true;
 	};
@@ -268,7 +272,7 @@ class MembershipsStore {
 		// Re-resolve so the just-created record is picked up.
 		const records = this.myStaffRecords;
 		if (records[0]) {
-			syncTenantBranchForStaff(records[0], 'bootstrapOwnerIfMissing');
+			syncTenantBranchForStaff(records[0]);
 			tenant.setActiveStaff(toActiveStaffInfo(records[0]));
 		}
 	};

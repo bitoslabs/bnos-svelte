@@ -60,7 +60,7 @@ export function toOrderRows(
 ): OrderRow[] {
 	return objects.map((o) => {
 		const d = o.data;
-		const atMs = new Date(d.occurredAt || d.createdAt || 0).getTime();
+		const atMs = new Date(d.occurredAt || 0).getTime();
 		const method = d.method ?? paymentLookup?.[o.id] ?? 'cash';
 		return {
 			id: o.id,
@@ -85,6 +85,20 @@ export function toOrderRows(
 
 export function sumTotal(rows: OrderRow[]): number {
 	return rows.reduce((s, o) => s + o.total, 0);
+}
+
+/** Newest `limit` rows without sorting the full collection (O(n·limit)). */
+export function latestRows(rows: readonly OrderRow[], limit: number): OrderRow[] {
+	if (limit <= 0) return [];
+	const top: OrderRow[] = [];
+	for (const row of rows) {
+		if (top.length === limit && row.atMs <= top[top.length - 1]!.atMs) continue;
+		let index = top.length;
+		while (index > 0 && top[index - 1]!.atMs < row.atMs) index--;
+		top.splice(index, 0, row);
+		if (top.length > limit) top.pop();
+	}
+	return top;
 }
 
 export interface MetricSummary {

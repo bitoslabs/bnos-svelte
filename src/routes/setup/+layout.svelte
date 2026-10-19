@@ -12,12 +12,13 @@
 	import { setupSteps, stepIndex } from './steps';
 	import { relays } from '$nostr/relay.svelte';
 	import { session } from '$nostr/session.svelte';
+	import { signOutAndClear } from '$nostr/sign-out';
 	import { tenant } from '$nostr/tenant.svelte';
-	import { glo } from '$nostr/store.svelte';
 	import { createSetupWorkspace } from '$nostr/setup-workspace';
 	import { resolveWorkspace } from '$nostr/workspace.svelte';
 	import { memberships } from '$nostr/memberships.svelte';
 	import { preferences } from '$lib/theme/preferences.svelte';
+	import { newOrganizationId, newLocationId } from '$lib/utils/record-id';
 	import { setMode, mode } from 'mode-watcher';
 	import AppearanceControls from '$lib/components/AppearanceControls.svelte';
 
@@ -33,6 +34,14 @@
 		preferences.load();
 		preferences.apply();
 		relays.load();
+		// Reserve the workspace identity before any step can create records, so
+		// catalog samples and other drafts are scoped to the new organization.
+		if (session.isAuthenticated) {
+			tenant.configure({
+				organizationId: tenant.state.organizationId || newOrganizationId(),
+				locationId: tenant.state.locationId || newLocationId()
+			});
+		}
 	});
 
 	// Guard: setup requires a session, and unknown steps fall back to the start.
@@ -47,9 +56,7 @@
 	});
 
 	async function signOut() {
-		await session.logout();
-		tenant.reset();
-		glo.clearAll();
+		await signOutAndClear();
 		await goto(resolve('/login'), { replaceState: true });
 	}
 
@@ -58,8 +65,10 @@
 		resolvingWorkspace = true;
 		try {
 			const workspace = await resolveWorkspace({ allowRelaySync: true });
+			// The staff path already resolves memberships inside
+			// resolveStaffWorkspace; only the owner path needs an extra lookup.
 			const staffWorkspace = workspace.found ? false : await memberships.resolveStaffWorkspace();
-			await memberships.resolve();
+			if (workspace.found) await memberships.resolve();
 			memberships.autoResolve();
 
 			if (workspace.found || staffWorkspace || tenant.state.setupComplete) {

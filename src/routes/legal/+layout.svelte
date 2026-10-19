@@ -14,7 +14,7 @@
 		{ to: '/legal/license', icon: 'lucide:scale', label: 'Open-source License' },
 		// about
 		{ to: '/about', icon: 'lucide:info', label: 'About' }
-	];
+	] as const;
 
 	function active(to: string) {
 		return page.url.pathname.startsWith(to);

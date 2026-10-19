@@ -114,6 +114,9 @@ class SessionStore {
 			const canonical = readCanonicalAuthSnapshot(localStorage);
 			const legacy = canonical ? null : readLegacyBnosSpaceAuthSnapshot(localStorage);
 			this.snapshot = canonical ?? legacy ?? null;
+			// Migrate a legacy bnos-space session to the canonical keys so tenant
+			// ownership checks (`nostr_pubkey`) keep working across reloads.
+			if (!canonical && legacy) this.persist(legacy);
 		} catch (e) {
 			this.error = e instanceof Error ? e.message : String(e);
 		} finally {
@@ -126,6 +129,7 @@ class SessionStore {
 	loginWithNsec = (inputKey: string): BnosAuthSnapshot => {
 		const snap = createAuthSnapshotFromPrivateKey(inputKey);
 		this.snapshot = snap;
+		this.hydrated = true;
 		this.persist(snap);
 		return snap;
 	};
@@ -162,6 +166,7 @@ class SessionStore {
 			loginMethod: 'extension'
 		};
 		this.snapshot = snap;
+		this.hydrated = true;
 		this.persist(snap);
 		return snap;
 	};
@@ -202,21 +207,21 @@ class SessionStore {
 			for (const key of keysToRemove) {
 				localStorage.removeItem(key);
 			}
-		} catch (e) {
+		} catch {
 			/* best effort */
 		}
 
 		// 2. sessionStorage — clear entirely
 		try {
 			sessionStorage.clear();
-		} catch (e) {
+		} catch {
 			/* best effort */
 		}
 
 		// 3. IndexedDB (idb-keyval) — wipe all GLO collections + publish queue
 		try {
 			await bounded(idbClear(), 1500);
-		} catch (e) {
+		} catch {
 			/* best effort */
 		}
 
@@ -227,7 +232,7 @@ class SessionStore {
 				if (cacheNames) {
 					await bounded(Promise.all(cacheNames.map((name) => window.caches.delete(name))), 1500);
 				}
-			} catch (e) {
+			} catch {
 				/* best effort */
 			}
 		}

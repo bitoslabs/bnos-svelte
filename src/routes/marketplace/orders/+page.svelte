@@ -13,19 +13,12 @@
 	import Pagination from '$lib/components/list/Pagination.svelte';
 	import SortableTh from '$lib/components/list/SortableTh.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
+	import { buildSearchIndex } from '$lib/utils/search';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
-	import { formatMoney, formatInt, relativeTime, titleCase } from '$lib/utils/format';
+	import { formatMoney, formatInt, relativeTime } from '$lib/utils/format';
 	import { toOrderRows, type DashboardOrder } from '$lib/dashboard/metrics';
-	import {
-		TYPE,
-		statusColor,
-		statusLabel,
-		ORDER_SOURCES,
-		sourceLabel,
-		sourceIcon,
-		isRemoteSource
-	} from '$lib/domain';
+	import { statusColor, statusLabel, sourceLabel, sourceIcon, isRemoteSource } from '$lib/domain';
 
 	const currency = $derived(tenant.state.currency);
 	const orders = $derived(glo.all<DashboardOrder, 'commerce.order'>('commerce.order'));
@@ -37,24 +30,20 @@
 	let statusFilter = $state<string>('__all__');
 	let search = $state('');
 
-	const REMOTE_SOURCE_OPTIONS = ORDER_SOURCES.filter((s) => isRemoteSource(s.value));
-
-	const filtered = $derived(
-		mpRows.filter((o) => {
+	const searchIndex = $derived(
+		buildSearchIndex(mpRows, (o) =>
+			[o.number, o.customerName ?? '', sourceLabel(o.source)].join(' ')
+		)
+	);
+	const filtered = $derived.by(() => {
+		const q = search.trim().toLowerCase();
+		return mpRows.filter((o) => {
 			if (sourceFilter !== '__all__' && o.source !== sourceFilter) return false;
 			if (statusFilter !== '__all__' && !o.status.toLowerCase().includes(statusFilter))
 				return false;
-			if (search.trim()) {
-				const q = search.trim().toLowerCase();
-				return (
-					o.number.toLowerCase().includes(q) ||
-					(o.customerName ?? '').toLowerCase().includes(q) ||
-					sourceLabel(o.source).toLowerCase().includes(q)
-				);
-			}
-			return true;
-		})
-	);
+			return !q || (searchIndex[o.id]?.includes(q) ?? false);
+		});
+	});
 
 	const controls = createListControls({
 		items: () => filtered,
@@ -72,26 +61,29 @@
 	});
 
 	// ── Stats ───────────────────────────────────────────────
-	const revenue = $derived(filtered.reduce((s, o) => s + o.total, 0));
-	const pending = $derived(
-		filtered.filter((o) => o.status.toLowerCase().includes('pending')).length
-	);
-	const awaitingFulfillment = $derived(
-		filtered.filter((o) => !['completed', 'cancelled', 'refunded'].includes(o.status.toLowerCase()))
-			.length
-	);
+	const stats = $derived.by(() => {
+		let revenue = 0;
+		let pending = 0;
+		let awaitingFulfillment = 0;
+		for (const o of filtered) {
+			revenue += o.total;
+			const status = o.status.toLowerCase();
+			if (status.includes('pending')) pending++;
+			if (!['completed', 'cancelled', 'refunded'].includes(status)) awaitingFulfillment++;
+		}
+		return { revenue, pending, awaitingFulfillment };
+	});
 
 	// ── Source breakdown ────────────────────────────────────
 	const sourceBreakdown = $derived.by(() => {
-		const map = new Map<string, { count: number; total: number }>();
+		const map: Record<string, { count: number; total: number }> = {};
 		for (const o of mpRows) {
-			const k = o.source ?? 'other';
-			const e = map.get(k) ?? { count: 0, total: 0 };
-			e.count++;
-			e.total += o.total;
-			map.set(k, e);
+			const key = o.source ?? 'other';
+			const entry = (map[key] ??= { count: 0, total: 0 });
+			entry.count++;
+			entry.total += o.total;
 		}
-		return [...map.entries()].sort((a, b) => b[1].total - a[1].total);
+		return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
 	});
 </script>
 
@@ -102,7 +94,7 @@
 		<div>
 			<h2 class="font-display text-lg font-bold tracking-tight">Marketplace Orders</h2>
 			<p class="text-[12px] text-(--ui-text-muted)">
-				{formatInt(filtered.length)} orders · {formatMoney(revenue, currency)}
+				{formatInt(filtered.length)} orders · {formatMoney(stats.revenue, currency)}
 			</p>
 		</div>
 		<Button
@@ -120,17 +112,21 @@
 			<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">
 				{t('dashboard.revenue')}
 			</p>
-			<p class="mt-0.5 text-xl font-black tabular-nums">{formatMoney(revenue, currency)}</p>
+			<p class="mt-0.5 text-xl font-black tabular-nums">
+				{formatMoney(stats.revenue, currency)}
+			</p>
 		</div>
 		<div class="metric-card p-3.5">
 			<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">To fulfill</p>
-			<p class="mt-0.5 text-xl font-black text-amber-500 tabular-nums">{awaitingFulfillment}</p>
+			<p class="mt-0.5 text-xl font-black text-amber-500 tabular-nums">
+				{stats.awaitingFulfillment}
+			</p>
 		</div>
 		<div class="metric-card p-3.5">
 			<p class="text-[10px] font-semibold text-(--ui-text-dimmed) uppercase">
 				{t('status.pending')}
 			</p>
-			<p class="mt-0.5 text-xl font-black text-blue-500 tabular-nums">{pending}</p>
+			<p class="mt-0.5 text-xl font-black text-blue-500 tabular-nums">{stats.pending}</p>
 		</div>
 	</div>
 

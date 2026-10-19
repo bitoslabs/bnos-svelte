@@ -29,7 +29,7 @@
 		try {
 			const blob = new Blob(['BNOS upload test\n'], { type: 'text/plain' });
 			const file = new File([blob], 'bnos-test.txt', { type: 'text/plain' });
-			await media.upload(file, id, { purpose: 'test' });
+			await media.upload(file, id);
 			toast.success(`Test upload OK via ${providerLabel(id)}`);
 		} catch (e) {
 			toast.error('Test failed', e instanceof Error ? e.message : undefined);

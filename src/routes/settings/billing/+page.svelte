@@ -298,16 +298,18 @@
 	});
 
 	// ── Helpers ──
+	const kipFormatter = new Intl.NumberFormat('en', { maximumFractionDigits: 0 });
+
 	function formatPlanPrice(code: PlanCode): string {
 		const plan = PLANS[code];
 		if (plan.price < 0) return 'Contact Us';
 		if (plan.price === 0) return 'Free';
-		return new Intl.NumberFormat('en', { maximumFractionDigits: 0 }).format(plan.price) + ' ₭';
+		return kipFormatter.format(plan.price) + ' ₭';
 	}
 
 	function formatAmount(amount: number): string {
 		if (!amount && amount !== 0) return '-';
-		return new Intl.NumberFormat('en', { maximumFractionDigits: 0 }).format(amount) + ' ₭';
+		return kipFormatter.format(amount) + ' ₭';
 	}
 
 	function formatDate(ts?: number): string {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveSyncScope } from './store.svelte';
+import { glo, resolveSyncScope } from './store.svelte';
 
 describe('resolveSyncScope (owner ↔ staff device sync strategy)', () => {
 	const ME = 'a'.repeat(64);
@@ -89,5 +89,38 @@ describe('resolveSyncScope (owner ↔ staff device sync strategy)', () => {
 		});
 		expect(params.authors).toEqual(['owner-pubkey', ME]);
 		expect(params.organizationId).toBe(ORG);
+	});
+});
+
+describe('deletion tombstones in the reactive store', () => {
+	it('does not resurrect a deleted object from an older relay copy', () => {
+		const type = 'test.tombstone';
+		const makeObject = (updatedAt: string) =>
+			({
+				type,
+				id: 'deleted-1',
+				spec: 'org.bitos.glo',
+				version: 1,
+				data: { updatedAt, value: 'x' },
+				scope: { organizationId: 'org-1' },
+				visibility: 'organization'
+			}) as Parameters<typeof glo.batchUpsert>[1][number];
+
+		glo.clearAll();
+		const oldCopy = makeObject('2020-01-01T00:00:00.000Z');
+		glo.batchUpsert(type, [oldCopy]);
+		expect(glo.get(type, 'deleted-1')).toBeDefined();
+
+		glo.remove(type, 'deleted-1');
+		expect(glo.get(type, 'deleted-1')).toBeUndefined();
+
+		// The relay still serves the old event: it must stay deleted.
+		glo.batchUpsert(type, [oldCopy]);
+		expect(glo.get(type, 'deleted-1')).toBeUndefined();
+
+		// A genuinely newer edit from elsewhere wins and clears the tombstone.
+		const newer = makeObject(new Date(Date.now() + 60_000).toISOString());
+		glo.batchUpsert(type, [newer]);
+		expect(glo.get(type, 'deleted-1')).toBeDefined();
 	});
 });

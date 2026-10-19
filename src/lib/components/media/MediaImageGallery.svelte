@@ -19,9 +19,11 @@
 	import { humanBytes } from '$lib/media/uploaders';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { cn } from '$lib/utils/cn';
+	import { mapLimit } from '$lib/utils/async';
 
 	let {
 		value = $bindable(),
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars -- retained component API
 		purpose,
 		accept = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml',
 		maxBytes = 5 * 1024 * 1024,
@@ -73,23 +75,35 @@
 			toast.info(`Added ${room} of ${list.length} — image limit is ${maxImages}`);
 		}
 
+		const uploadable: File[] = [];
 		for (const file of queue) {
 			const err = validate(file);
-			if (err) {
-				toast.warning(err);
-				continue;
-			}
+			if (err) toast.warning(err);
+			else uploadable.push(file);
+		}
+		if (!uploadable.length) {
+			if (inputEl) inputEl.value = '';
+			return;
+		}
+
+		// Upload concurrently but keep the selection order in the gallery.
+		const urls = await mapLimit(uploadable, 3, async (file) => {
 			uploadingCount++;
 			try {
-				const result = await media.upload(file, undefined, { purpose });
-				value = [...value, result.url];
+				const result = await media.upload(file, undefined);
+				return result.url;
 			} catch (e) {
 				toast.error('Upload failed', e instanceof Error ? e.message : undefined);
+				return null;
 			} finally {
 				uploadingCount--;
 			}
+		});
+		const added = urls.filter((url): url is string => !!url);
+		value = [...value, ...added];
+		if (added.length) {
+			toast.success(`${added.length} image${added.length > 1 ? 's' : ''} added`);
 		}
-		toast.success(`${queue.length} image${queue.length > 1 ? 's' : ''} added`);
 		if (inputEl) inputEl.value = '';
 	}
 
@@ -229,7 +243,13 @@
 				<div
 					class="group relative aspect-square overflow-hidden rounded-xl border border-(--ui-border) bg-(--ui-bg-muted)"
 				>
-					<img src={img} alt={`Image ${i + 1}`} class="h-full w-full object-cover" loading="lazy" />
+					<img
+						src={img}
+						alt={`Image ${i + 1}`}
+						class="h-full w-full object-cover"
+						loading="lazy"
+						decoding="async"
+					/>
 
 					<!-- Cover badge -->
 					{#if i === 0}

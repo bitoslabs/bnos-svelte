@@ -69,21 +69,20 @@
 	});
 
 	const all = $derived(glo.all<Activity, typeof TYPE.activity>(TYPE.activity));
-	const activities = $derived(
-		all
-			.slice()
-			.sort((a, b) => (b.data.at ?? '').localeCompare(a.data.at ?? ''))
-			.filter((a) => (filter === 'all' ? true : a.data.action === filter))
-			.filter((a) => {
-				const q = query.trim().toLowerCase();
-				if (!q) return true;
-				return (
-					(a.data.summary ?? '').toLowerCase().includes(q) ||
-					(a.data.actorName ?? '').toLowerCase().includes(q)
-				);
-			})
-			.slice(0, 200)
-	);
+	const activities = $derived.by(() => {
+		const q = query.trim().toLowerCase();
+		// Filter before sorting so only the visible set is ordered.
+		const matches = all.filter((a) => {
+			if (filter !== 'all' && a.data.action !== filter) return false;
+			if (!q) return true;
+			return (
+				(a.data.summary ?? '').toLowerCase().includes(q) ||
+				(a.data.actorName ?? '').toLowerCase().includes(q)
+			);
+		});
+		matches.sort((a, b) => (b.data.at ?? '').localeCompare(a.data.at ?? ''));
+		return matches.slice(0, 200);
+	});
 
 	const counts = $derived.by(() => {
 		const c: Record<string, number> = {};
