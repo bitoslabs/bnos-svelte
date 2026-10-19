@@ -24,6 +24,8 @@ type LogInput = {
 };
 
 export async function logActivity(input: LogInput): Promise<void> {
+	// A late fire-and-forget call must not write into a signed-out workspace.
+	if (!session.pubkey) return;
 	const staff = tenant.state.activeStaffInfo;
 	const entry: Activity = {
 		action: input.action,

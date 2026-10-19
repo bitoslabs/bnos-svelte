@@ -33,6 +33,7 @@
 	import { popovers } from '$lib/stores/popovers.svelte';
 	import { startSystemNotifications } from '$lib/stores/notifications.svelte';
 	import { startOwnerFeed } from '$nostr/owner-feed.svelte';
+	import { clearIdentityStores } from '$nostr/sign-out';
 	import { permissionForPath } from '$lib/nav';
 	import { permissions } from '$lib/permissions.svelte';
 	import favicon from '$lib/assets/favicon.svg';
@@ -75,11 +76,16 @@
 		// Owner/system notices from allow-listed npubs (PUBLIC_OWNER_NPUBS + local
 		// trusted keys). Idempotent and a no-op when no allow-list is configured.
 		startOwnerFeed();
+
+		const onRemoteClear = () => clearIdentityStores();
+		window.addEventListener('bnos:clear-all', onRemoteClear);
 		session.load();
 		tenant.load();
 		profile.load();
 		i18n.init();
 		if (session.isAuthenticated) void warmRelays();
+
+		return () => window.removeEventListener('bnos:clear-all', onRemoteClear);
 	});
 
 	// Hydrate the kind-0 profile cache from relays whenever the active pubkey

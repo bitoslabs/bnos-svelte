@@ -18,6 +18,7 @@
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { buildSearchIndex } from '$lib/utils/search';
 	import { formatMoney, relativeTime } from '$lib/utils/format';
 	import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
 	import {
@@ -202,12 +203,14 @@
 	let overviewSearch = $state('');
 	let overviewFilter = $state<'all' | 'in_stock' | 'low_stock' | 'out_of_stock'>('all');
 
+	const overviewSearchIndex = $derived(
+		buildSearchIndex(trackedProducts, (p) => String(p.data.name ?? ''))
+	);
 	const overviewList = $derived.by(() => {
 		const q = overviewSearch.toLowerCase();
 		return trackedProducts
 			.filter((p) => {
-				const name = String(p.data.name ?? '').toLowerCase();
-				if (q && !name.includes(q)) return false;
+				if (q && !(overviewSearchIndex[p.id]?.includes(q) ?? false)) return false;
 				if (overviewFilter !== 'all' && stockStatus(p.data) !== overviewFilter) return false;
 				return true;
 			})

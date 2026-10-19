@@ -7,8 +7,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { goto } from '$app/navigation';
 	import { glo } from '$nostr/store.svelte';
-	import { session } from '$nostr/session.svelte';
-	import { tenant } from '$nostr/tenant.svelte';
+	import { signOutAndClear } from '$nostr/sign-out';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 
@@ -124,9 +123,7 @@
 			const k = localStorage.key(i);
 			if (k && k.startsWith('bnos-os:') && k !== 'bnos-os:relays') localStorage.removeItem(k);
 		}
-		await session.logout();
-		tenant.reset();
-		glo.clearAll();
+		await signOutAndClear();
 		toast.info('Local data wiped');
 		goto(resolve('/login'));
 	}

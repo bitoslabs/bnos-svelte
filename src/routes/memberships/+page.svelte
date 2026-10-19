@@ -14,6 +14,7 @@
 	import ListToolbar from '$lib/components/list/ListToolbar.svelte';
 	import SortableTh from '$lib/components/list/SortableTh.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
+	import { buildSearchIndex } from '$lib/utils/search';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -60,9 +61,14 @@
 		return { totalPlans: plans.length, activePlans, activeSubs, checkinsToday };
 	});
 
+	const planSearchIndex = $derived(buildSearchIndex(plans, (m) => String(m.data.name ?? '')));
+	const subSearchIndex = $derived(buildSearchIndex(subs, (s) => String(s.data.customerName ?? '')));
+	const checkinSearchIndex = $derived(
+		buildSearchIndex(checkins, (c) => String(c.data.customerName ?? ''))
+	);
 	const planCtrl = createListControls<{ id: string; data: MembershipView }>({
 		items: () => plans,
-		search: (m, q) => (m.data.name ?? '').toLowerCase().includes(q),
+		search: (m, q) => planSearchIndex[m.id]?.includes(q) ?? false,
 		sortOptions: () => [
 			{ key: 'name', label: t('common.name'), value: (m) => m.data.name },
 			{ key: 'price', label: t('common.price'), value: (m) => m.data.price }
@@ -73,7 +79,7 @@
 	});
 	const subCtrl = createListControls<{ id: string; data: MembershipSubscription }>({
 		items: () => subs,
-		search: (s, q) => (s.data.customerName ?? '').toLowerCase().includes(q),
+		search: (s, q) => subSearchIndex[s.id]?.includes(q) ?? false,
 		sortOptions: () => [
 			{ key: 'customer', label: t('common.customer'), value: (s) => s.data.customerName ?? '~' },
 			{ key: 'status', label: t('common.status'), value: (s) => s.data.status }
@@ -84,7 +90,7 @@
 	});
 	const ciCtrl = createListControls<{ id: string; data: MembershipCheckIn }>({
 		items: () => checkins,
-		search: (c, q) => (c.data.customerName ?? '').toLowerCase().includes(q),
+		search: (c, q) => checkinSearchIndex[c.id]?.includes(q) ?? false,
 		sortOptions: () => [{ key: 'date', label: t('common.date'), value: (c) => c.data.occurredAt }],
 		defaultSortKey: 'date',
 		defaultSortDir: 'desc',

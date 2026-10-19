@@ -255,8 +255,13 @@ async function readLocal(type: string): Promise<AnyGloObject[]> {
 async function writeLocal(type: string, items: AnyGloObject[]) {
 	if (!browser) return;
 	try {
-		// Strip Svelte $state proxies — IndexedDB structured clone can't handle them.
-		const plain = JSON.parse(JSON.stringify(items, (k, v) => (k === '__event' ? undefined : v)));
+		// `$state.snapshot` strips proxies for structured clone; drop the large
+		// ephemeral relay event, which is only needed in memory by the raw viewer.
+		const plain = ($state.snapshot(items) as AnyGloObject[]).map((object) => {
+			const copy = { ...object };
+			delete copy.__event;
+			return copy;
+		});
 		await idbSet(STORAGE_PREFIX + type, plain);
 	} catch {
 		/* best effort */
@@ -302,10 +307,11 @@ async function writePublishQueue(items: QueuedPublish[]) {
 		// A failed publish may already have an in-memory event attached. Never
 		// persist it: retrying such an item would nest the previous event inside
 		// its next GLO content and grow exponentially on repeated failures.
-		await idbSet(
-			PUBLISH_QUEUE_KEY,
-			JSON.parse(JSON.stringify(items, (key, value) => (key === '__event' ? undefined : value)))
-		);
+		const plain = ($state.snapshot(items) as QueuedPublish[]).map((item) => ({
+			...item,
+			object: withoutEphemeralEvent(item.object as AnyGloObject)
+		}));
+		await idbSet(PUBLISH_QUEUE_KEY, plain);
 	} catch {
 		/* best effort */
 	}
@@ -337,6 +343,10 @@ class ReactiveCollections {
 	private _removedWhileHydrating: Record<string, Record<string, true>> = {};
 	/** Bumped on clearAll so in-flight reads cannot repopulate a cleared store. */
 	private _generation = 0;
+
+	get generation(): number {
+		return this._generation;
+	}
 
 	private finishHydration(type: string, loaded: AnyGloObject[], generation: number) {
 		this._hydrating.delete(type);
@@ -392,6 +402,22 @@ class ReactiveCollections {
 		return this._map[type] ?? [];
 	}
 
+	/** Relay event ids already stored for a type (cached per array). */
+	eventIds(type: string): Record<string, true> {
+		const items = this._map[type];
+		if (!items) return {};
+		let ids = this._eventIdIndexes.get(items);
+		if (!ids) {
+			ids = {};
+			for (const obj of items) {
+				const eventId = obj.__eventId;
+				if (typeof eventId === 'string') ids[eventId] = true;
+			}
+			this._eventIdIndexes.set(items, ids);
+		}
+		return ids;
+	}
+
 	/** Replace the entire array for a type (triggers $state reactivity).
 	 *  Persists to IndexedDB asynchronously (fire-and-forget). */
 	set(type: string, items: AnyGloObject[]) {
@@ -433,6 +459,7 @@ class ReactiveCollections {
 	/** Per-array id index. Array identity changes on every mutation, so this
 	 *  cache is invalidated automatically without extra bookkeeping. */
 	private _indexes = new WeakMap<AnyGloObject[], Map<string, AnyGloObject>>();
+	private _eventIdIndexes = new WeakMap<AnyGloObject[], Record<string, true>>();
 
 	find(type: string, id: string): AnyGloObject | undefined {
 		if (!this._hydrated.has(type) && !this._hydrating.has(type)) {
@@ -722,7 +749,9 @@ class GloStore {
 		options: { queueOnFailure?: boolean } = {}
 	) => {
 		const { queueOnFailure = true } = options;
-		if (!session.snapshot || !relays.online || !relays.writableNormalized.length) {
+		const generation = this.collections.generation;
+		const snapshot = session.snapshot;
+		if (!snapshot || !relays.online || !relays.writableNormalized.length) {
 			if (queueOnFailure) await this.queuePublish(type, object);
 			return false;
 		}
@@ -752,11 +781,14 @@ class GloStore {
 				}
 			}
 
+			// Logout/account switch clears the store; never sign the old
+			// account's object with the new session.
+			if (generation !== this.collections.generation) return false;
 			const event = await signNostrEvent({
 				template,
-				fallbackPubkey: session.snapshot.pubkey,
-				loginMethod: session.snapshot.loginMethod,
-				nsec: session.snapshot.nsec,
+				fallbackPubkey: snapshot.pubkey,
+				loginMethod: snapshot.loginMethod,
+				nsec: snapshot.nsec,
 				extensionSigner: session.extensionSigner ?? undefined
 			});
 			// Retain the signed event in-memory so the Raw Data viewer can show the
@@ -764,8 +796,11 @@ class GloStore {
 			(object as AnyGloObject).__event = event as NostrEvent;
 			(object as AnyGloObject).__eventId = (event as NostrEvent).id;
 			(object as AnyGloObject).__eventCreatedAt = (event as NostrEvent).created_at;
+			if (generation !== this.collections.generation) return false;
 			const published = await sendEvent(event as NostrEvent);
-			if (!published && queueOnFailure) await this.queuePublish(type, object);
+			if (!published && queueOnFailure && generation === this.collections.generation) {
+				await this.queuePublish(type, object);
+			}
 			return published;
 		} catch {
 			if (queueOnFailure) await this.queuePublish(type, object);
@@ -847,6 +882,7 @@ class GloStore {
 		if (!session.pubkey || !relays.online || !relays.readableNormalized.length) return;
 		if (this.syncing.has(type)) return;
 		this.syncing.add(type);
+		const generation = this.collections.generation;
 		try {
 			await this.flushPublishQueue();
 			await this.publishLocalKindUpgrade(type);
@@ -873,11 +909,7 @@ class GloStore {
 			// Relays return recent events on every sync. Skip event ids already
 			// parsed and stored — this avoids repeated decryption of the same
 			// payloads on each cooldown tick.
-			const knownEventIds: Record<string, true> = {};
-			for (const obj of this.collections.get(type)) {
-				const eventId = (obj as AnyGloObject).__eventId;
-				if (typeof eventId === 'string') knownEventIds[eventId] = true;
-			}
+			const knownEventIds = this.collections.eventIds(type);
 			// Multiple relays commonly return the same event; de-dupe before
 			// decrypting as well as dropping already-stored ids.
 			const seenEventIds: Record<string, true> = { ...knownEventIds };
@@ -910,6 +942,8 @@ class GloStore {
 				}
 			);
 			const incoming = parsedEvents.filter((obj): obj is AnyGloObject => obj !== null);
+			// Logout can clear the store while a relay query is in flight.
+			if (generation !== this.collections.generation) return;
 			if (incoming.length) this.batchUpsert(type, incoming);
 		} finally {
 			this.syncing.delete(type);
@@ -999,10 +1033,11 @@ class GloStore {
 		this.bump();
 	};
 
-	clearAll = () => {
+	clearAll = (options: { signOut?: boolean } = {}) => {
 		this.resetLocal();
-		// Broadcast to other tabs so they also clear.
-		getBroadcastChannel()?.postMessage({ type: 'clear-all' });
+		// `sign-out` also clears identity in other tabs; a plain `clear-all`
+		// (identity switch / local reset) only clears collections.
+		getBroadcastChannel()?.postMessage({ type: options.signOut ? 'sign-out' : 'clear-all' });
 	};
 
 	/** Cross-tab sync: listen for BroadcastChannel messages from other tabs. */
@@ -1012,9 +1047,19 @@ class GloStore {
 		if (!channel) return;
 		channel.addEventListener('message', (e) => {
 			const msg = e.data;
-			if (msg?.type === 'clear-all') {
+			if (msg?.type === 'sign-out') {
 				// Never rebroadcast: that would ping-pong forever between tabs.
 				this.resetLocal();
+				void session.logout();
+				window.dispatchEvent(new Event('bnos:clear-all'));
+				return;
+			}
+			if (msg?.type === 'clear-all') {
+				// Identity switch in another tab: drop the old collections and
+				// adopt the new persisted session without signing this tab out.
+				this.resetLocal();
+				session.load();
+				window.dispatchEvent(new Event('bnos:clear-all'));
 				return;
 			}
 			if (!msg?.collectionType) return;

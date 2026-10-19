@@ -5,13 +5,10 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { session } from '$nostr/session.svelte';
-	import { tenant } from '$nostr/tenant.svelte';
-	import { glo } from '$nostr/store.svelte';
+	import { signOutAndClear } from '$nostr/sign-out';
 
 	async function signOut() {
-		await session.logout();
-		tenant.reset();
-		glo.clearAll();
+		await signOutAndClear();
 		goto(resolve('/login'), { replaceState: true });
 	}
 </script>

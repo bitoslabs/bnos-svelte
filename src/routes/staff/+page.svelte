@@ -18,6 +18,7 @@
 	import Pagination from '$lib/components/list/Pagination.svelte';
 	import RowActions, { type RowAction } from '$lib/components/list/RowActions.svelte';
 	import { createListControls } from '$lib/utils/list.svelte';
+	import { buildSearchIndex } from '$lib/utils/search';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
@@ -102,12 +103,14 @@
 		roleFilter === 'all' ? staff : staff.filter((s) => s.data.role === roleFilter)
 	);
 
+	const staffSearchIndex = $derived(
+		buildSearchIndex(staff, (s) =>
+			[s.data.name, s.data.role, s.data.email].filter(Boolean).join(' ')
+		)
+	);
 	const controls = createListControls<{ id: string; data: Staff }>({
 		items: () => filteredStaff,
-		search: (s, q) =>
-			(s.data.name ?? '').toLowerCase().includes(q) ||
-			(s.data.role ?? '').toLowerCase().includes(q) ||
-			(s.data.email ?? '').toLowerCase().includes(q),
+		search: (s, q) => staffSearchIndex[s.id]?.includes(q) ?? false,
 		sortOptions: () => [
 			{ key: 'name', label: t('common.name'), value: (s) => s.data.name },
 			{ key: 'role', label: t('common.role'), value: (s) => s.data.role },

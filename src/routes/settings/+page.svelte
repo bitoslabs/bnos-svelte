@@ -12,7 +12,7 @@
 	import QrCode from '$lib/components/ui/QrCode.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { session } from '$nostr/session.svelte';
-	import { glo } from '$nostr/store.svelte';
+	import { signOutAndClear } from '$nostr/sign-out';
 	import { preferences } from '$lib/theme/preferences.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { truncateNpub, titleCase } from '$lib/utils/format';
@@ -211,9 +211,7 @@
 					tone="danger"
 					icon="lucide:log-out"
 					onclick={async () => {
-						await session.logout();
-						tenant.reset();
-						glo.clearAll();
+						await signOutAndClear();
 						await goto(resolve('/login'), { replaceState: true });
 					}}>{t('common.signOut')}</MenuItem
 				>

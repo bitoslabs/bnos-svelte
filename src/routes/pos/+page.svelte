@@ -339,10 +339,13 @@
 		cartCategoryIds
 	});
 	// Offers the current cart qualifies for AND the cart can apply automatically.
+	// Liveness is product-independent — evaluate it once per promo, not once
+	// per product × promotion.
+	const liveAutoPromotions = $derived(
+		allPromotions.filter((p) => isAutoApplicable(p.data) && isPromoLive(p.data, now).ok)
+	);
 	const eligiblePromotions = $derived(
-		allPromotions.filter(
-			(p) => isAutoApplicable(p.data) && isPromotionEligible(p.data, promoCtx).ok
-		)
+		liveAutoPromotions.filter((p) => isPromotionEligible(p.data, promoCtx).ok)
 	);
 	// The promotion currently linked to the cart (drives the "applied" banner).
 	const appliedPromoObj = $derived(
@@ -413,11 +416,6 @@
 	// (discounted) price on each product card. Ignores cart state so the badge is
 	// stable; the cart rail handles actual eligibility + apply.
 	type ProductPromo = { data: PromoData; savings: number; newPrice: number; label: string };
-	// Liveness is product-independent — evaluate it once per promo, not once
-	// per product × promotion.
-	const liveAutoPromotions = $derived(
-		allPromotions.filter((p) => isAutoApplicable(p.data) && isPromoLive(p.data, now).ok)
-	);
 	const productPromoMap = $derived.by(() => {
 		const map: Record<string, ProductPromo> = {};
 		if (!liveAutoPromotions.length) return map;
@@ -756,7 +754,7 @@
 	}
 
 	// Award / deduct loyalty points after a completed sale.
-	async function processLoyalty(sale: CompletedSale) {
+	async function processLoyalty(sale: CompletedSale, redeemedPoints: number) {
 		if (!loyaltySettings.enabled) return;
 		const custId = sale.customerId ?? cart.customerId;
 		if (!custId) return;
@@ -764,7 +762,7 @@
 			GloObject<Customer, typeof TYPE.customer> | undefined;
 		if (!cust) return;
 		const balanceBefore = cust.data.loyaltyPoints ?? 0;
-		const redeemed = loyaltyRedeemOn ? loyaltyRedeem.points : 0;
+		const redeemed = redeemedPoints;
 		const earned = pointsForSpend(sale.totals.total, loyaltySettings.pointsPerCurrency);
 		if (redeemed === 0 && earned === 0) return;
 		const afterRedeem = Math.max(0, balanceBefore - redeemed);
@@ -993,13 +991,15 @@
 		payFlow.close();
 		processing = true;
 		try {
+			const redeemedPoints = loyaltyRedeemOn ? loyaltyRedeem.points : 0;
 			const sale = await cart.checkout(paidMethod, 0);
 			if (sale) {
+				loyaltyRedeemOn = false;
 				playSuccessChime();
 				successTip = tipAmount;
 				successTendered = 0;
 				broadcastCheckoutSuccess(paidAmount, paidMethod);
-				await processLoyalty(sale);
+				await processLoyalty(sale, redeemedPoints);
 				toast.success('Payment received', `${formatMoney(paidAmount, currency)} · ${sale.number}`);
 				tendered = '';
 				tipAmount = 0;
@@ -1027,18 +1027,23 @@
 		checkoutProgressStage = 'saving';
 		receiptOpen = true;
 		try {
+			const redeemedPoints = loyaltyRedeemOn ? loyaltyRedeem.points : 0;
 			const sale = await cart.checkout(
 				method as PaymentMethod,
 				typeof tendered === 'number' ? tendered : 0,
 				updateCheckoutProgress
 			);
 			if (sale) {
+				loyaltyRedeemOn = false;
 				playSuccessChime();
 				successTip = tipAmount;
 				successTendered = typeof tendered === 'number' ? tendered : 0;
-				broadcastCheckoutSuccess(grandTotal, method);
-				await processLoyalty(sale);
-				toast.success('Sale complete', `${formatMoney(grandTotal, currency)} · ${sale.number}`);
+				broadcastCheckoutSuccess(sale.totals.total, method);
+				await processLoyalty(sale, redeemedPoints);
+				toast.success(
+					'Sale complete',
+					`${formatMoney(sale.totals.total, currency)} · ${sale.number}`
+				);
 				tendered = '';
 				tipAmount = 0;
 				resetSplit();
@@ -1070,20 +1075,22 @@
 		receiptOpen = true;
 		try {
 			const primary = splitPayments[0];
+			const redeemedPoints = loyaltyRedeemOn ? loyaltyRedeem.points : 0;
 			const sale = await cart.checkout(
 				primary.method as PaymentMethod,
 				primary.amount,
 				updateCheckoutProgress
 			);
 			if (sale) {
+				loyaltyRedeemOn = false;
 				playSuccessChime();
 				successTip = tipAmount;
 				successTendered = splitPayments.reduce((s, p) => s + p.amount, 0);
-				broadcastCheckoutSuccess(grandTotal, splitPayments[0].method);
-				await processLoyalty(sale);
+				broadcastCheckoutSuccess(sale.totals.total, splitPayments[0].method);
+				await processLoyalty(sale, redeemedPoints);
 				toast.success(
 					'Sale complete',
-					`${formatMoney(grandTotal, currency)} · ${sale.number} · ${splitPayments.length} payments`
+					`${formatMoney(sale.totals.total, currency)} · ${sale.number} · ${splitPayments.length} payments`
 				);
 				resetSplit();
 				tipAmount = 0;

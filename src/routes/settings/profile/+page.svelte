@@ -12,6 +12,7 @@
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import { session, hasNip07Extension } from '$nostr/session.svelte';
+	import { clearIdentityStores, signOutAndClear } from '$nostr/sign-out';
 	import { createAuthSnapshotFromPrivateKey } from '@bitos/bnos-core';
 	import { profile } from '$nostr/profile.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -115,9 +116,7 @@
 
 	/** Switching keys must not leak the previous identity's workspace. */
 	async function clearIdentityState() {
-		await session.logout();
-		tenant.reset();
-		glo.clearAll();
+		await signOutAndClear();
 		profile.reset();
 		clearBootstrap();
 	}
@@ -171,9 +170,8 @@
 			// returned a (possibly different) key, so a rejected prompt cannot
 			// sign the current user out.
 			if (previous && previous !== s.pubkey) {
-				tenant.reset();
+				clearIdentityStores();
 				glo.clearAll();
-				profile.reset();
 				clearBootstrap();
 			}
 			toast.success(t('settings.connected'), truncateNpub(s.npub, 10, 6));
@@ -186,9 +184,7 @@
 	}
 
 	async function signOut() {
-		await session.logout();
-		tenant.reset();
-		glo.clearAll();
+		await signOutAndClear();
 		toast.info(t('toast.signedOut'));
 		await goto(resolve('/login'), { replaceState: true });
 	}

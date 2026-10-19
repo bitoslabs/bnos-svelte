@@ -38,6 +38,7 @@ import { nip19 } from 'nostr-tools';
 import { SvelteSet } from 'svelte/reactivity';
 import { fetchEvents } from './client';
 import { relays } from './relay.svelte';
+import { session } from './session.svelte';
 import { notifications, type NotificationTone } from '$lib/stores/notifications.svelte';
 import { t as translate } from '$lib/i18n/i18n.svelte';
 import type { NostrEvent } from '@bitos/bnos-core';
@@ -355,7 +356,7 @@ let syncing = false;
 
 /** Query relays for new allowed owner notices and feed them to the bell. */
 export async function syncOwnerNotices(): Promise<void> {
-	if (!browser || syncing) return;
+	if (!browser || syncing || !session.pubkey) return;
 	const authors = ownerAllowList();
 	if (!authors.length || !ownerNoticesEnabled()) return;
 	if (!relays.online || !relays.readableNormalized.length) return;
@@ -409,7 +410,8 @@ export function startOwnerFeed(): () => void {
 
 	const stopEffect = $effect.root(() => {
 		$effect(() => {
-			if (!relays.online) return;
+			// Re-run when the session or relay connectivity changes.
+			if (!relays.online || !session.pubkey) return;
 			void syncOwnerNotices();
 		});
 	});

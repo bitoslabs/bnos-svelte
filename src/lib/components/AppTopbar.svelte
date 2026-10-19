@@ -14,8 +14,7 @@
 	import { findNavItem, navSections, navSectionLabel } from '$lib/nav';
 	import { relays } from '$nostr/relay.svelte';
 	import { session } from '$nostr/session.svelte';
-	import { tenant } from '$nostr/tenant.svelte';
-	import { glo } from '$nostr/store.svelte';
+	import { signOutAndClear } from '$nostr/sign-out';
 	import { profile } from '$nostr/profile.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -163,9 +162,7 @@
 		});
 		if (!ok) return;
 		accountOpen = false;
-		await session.logout();
-		tenant.reset();
-		glo.clearAll();
+		await signOutAndClear();
 		await goto(resolve('/login'));
 	}
 </script>

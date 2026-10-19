@@ -12,8 +12,8 @@
 	import { setupSteps, stepIndex } from './steps';
 	import { relays } from '$nostr/relay.svelte';
 	import { session } from '$nostr/session.svelte';
+	import { signOutAndClear } from '$nostr/sign-out';
 	import { tenant } from '$nostr/tenant.svelte';
-	import { glo } from '$nostr/store.svelte';
 	import { createSetupWorkspace } from '$nostr/setup-workspace';
 	import { resolveWorkspace } from '$nostr/workspace.svelte';
 	import { memberships } from '$nostr/memberships.svelte';
@@ -56,9 +56,7 @@
 	});
 
 	async function signOut() {
-		await session.logout();
-		tenant.reset();
-		glo.clearAll();
+		await signOutAndClear();
 		await goto(resolve('/login'), { replaceState: true });
 	}
 
