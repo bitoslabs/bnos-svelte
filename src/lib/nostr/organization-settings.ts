@@ -10,6 +10,7 @@ export interface CompanySettings {
 	id: string;
 	code: string;
 	name: string;
+	logoUrl: string;
 	businessModel: BusinessModel;
 	businessType: BusinessType;
 	currency: string;
@@ -45,6 +46,7 @@ function normalizeCompanySettings(value: Partial<CompanySettings>): CompanySetti
 		id: value.id ?? '',
 		code: value.code ?? '',
 		name: value.name ?? '',
+		logoUrl: value.logoUrl ?? '',
 		businessModel: value.businessModel ?? 'single',
 		businessType: value.businessType ?? 'retail',
 		currency: value.currency ?? 'USD',
@@ -93,6 +95,7 @@ function companyFromWorkspaceObject(object: {
 		id: object.id,
 		code: stringOr(data.code, object.id),
 		name: stringOr(data.name, ''),
+		logoUrl: stringOr(ext.logoUrl, ''),
 		businessModel: stringOr(ext.businessModel, 'single') as BusinessModel,
 		businessType: stringOr(ext.businessType, 'retail') as BusinessType,
 		currency: stringOr(data.currency, 'USD'),
@@ -224,6 +227,7 @@ export async function syncOrganizationSettingsToWorkspace(snapshot?: Organizatio
 							...baseExt,
 							businessModel: company.businessModel,
 							businessType: company.businessType,
+							logoUrl: company.logoUrl,
 							taxRate: company.enableTax ? company.taxRate : 0,
 							taxIncluded: company.taxIncluded
 						}
@@ -271,6 +275,10 @@ export function upsertOrganizationSettingsFromTenant(tenant: TenantContext) {
 		id: tenant.organizationId,
 		code: tenant.organizationCode || tenant.organizationId,
 		name: tenant.organizationName,
+		logoUrl:
+			current.companies.find((item) => item.id === tenant.organizationId)?.logoUrl ??
+			tenant.organizationLogoUrl ??
+			'',
 		businessModel: tenant.businessModel,
 		businessType: tenant.businessType,
 		currency: tenant.currency,

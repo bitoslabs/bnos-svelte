@@ -29,9 +29,17 @@
 	<div class="surface-card accent-bar p-6" style="--accent:var(--ui-color-primary-500);">
 		<div class="flex items-start gap-4">
 			<div
-				class="grid size-14 shrink-0 place-items-center rounded-2xl bg-primary-500/10 text-lg font-bold text-primary-600 dark:text-primary-400"
+				class="grid size-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-primary-500/10 text-lg font-bold text-primary-600 dark:text-primary-400"
 			>
-				{(tenant.state.organizationName || 'BD').slice(0, 2).toUpperCase()}
+				{#if tenant.state.organizationLogoUrl}
+					<img
+						src={tenant.state.organizationLogoUrl}
+						alt={tenant.state.organizationName}
+						class="h-full w-full object-cover"
+					/>
+				{:else}
+					{(tenant.state.organizationName || 'BD').slice(0, 2).toUpperCase()}
+				{/if}
 			</div>
 			<div class="min-w-0 flex-1">
 				<div class="flex items-center gap-2">

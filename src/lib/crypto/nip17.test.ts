@@ -77,6 +77,7 @@ describe('NIP-17 gift wrap', () => {
 		expect(rumor.content).toBe(message);
 		expect(rumor.tags).toContainEqual(['p', receiver.hex]);
 		expect(rumor.tags).toContainEqual(['t', 'bnos-feedback']);
+		expect(rumor.tags).toContainEqual(['client', 'bnos']);
 		expect(rumor.id).toMatch(/^[0-9a-f]{64}$/);
 	});
 

@@ -10,6 +10,7 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import { tenant, type BusinessModel, type BusinessType } from '$nostr/tenant.svelte';
 	import {
 		hydrateOrganizationSettingsFromWorkspace,
@@ -48,6 +49,7 @@
 	let companyForm = $state({
 		name: '',
 		code: '',
+		logoUrl: '',
 		businessModel: 'single' as BusinessModel,
 		businessType: 'retail' as BusinessType,
 		currency: 'USD',
@@ -75,7 +77,8 @@
 	const businessTypes = bizTypes.map((t) => ({ value: t.value, label: t.label }));
 
 	// ── Derived ──
-	const activeCompanyName = $derived(companies.find((c) => c.id === activeCompanyId)?.name ?? '');
+	const activeCompany = $derived(companies.find((c) => c.id === activeCompanyId));
+	const activeCompanyName = $derived(activeCompany?.name ?? '');
 	const activeBranchName = $derived(branches.find((b) => b.id === activeBranchId)?.name ?? '');
 	const companyCount = $derived(companies.length);
 	const filteredSwitchBranches = $derived(
@@ -112,6 +115,7 @@
 							id: tenant.state.organizationId,
 							code: tenant.state.organizationCode || tenant.state.organizationId,
 							name: tenant.state.organizationName,
+							logoUrl: tenant.state.organizationLogoUrl || '',
 							businessModel: tenant.state.businessModel,
 							businessType: tenant.state.businessType,
 							currency: tenant.state.currency,
@@ -219,6 +223,7 @@
 			organizationId: company?.id ?? '',
 			organizationCode: company?.code ?? '',
 			organizationName: company?.name ?? '',
+			organizationLogoUrl: company?.logoUrl ?? '',
 			businessModel: company?.businessModel ?? 'single',
 			businessType: company?.businessType ?? 'retail',
 			currency: company?.currency ?? 'USD',
@@ -249,6 +254,7 @@
 			companyForm = {
 				name: company.name,
 				code: company.code,
+				logoUrl: company.logoUrl,
 				businessModel: company.businessModel,
 				businessType: company.businessType,
 				currency: company.currency,
@@ -261,6 +267,7 @@
 			companyForm = {
 				name: '',
 				code: '',
+				logoUrl: '',
 				businessModel: 'single',
 				businessType: 'retail',
 				currency: 'USD',
@@ -499,9 +506,17 @@
 				{#if activeCompanyId}
 					<div class="flex items-center gap-2">
 						<div
-							class="grid size-7 shrink-0 place-items-center rounded-lg bg-primary-500/10 text-[10px] font-bold text-primary-600 dark:text-primary-400"
+							class="grid size-7 shrink-0 place-items-center overflow-hidden rounded-lg bg-primary-500/10 text-[10px] font-bold text-primary-600 dark:text-primary-400"
 						>
-							{activeCompanyName?.charAt(0)?.toUpperCase() || '?'}
+							{#if activeCompany?.logoUrl}
+								<img
+									src={activeCompany.logoUrl}
+									alt={activeCompanyName}
+									class="h-full w-full object-cover"
+								/>
+							{:else}
+								{activeCompanyName?.charAt(0)?.toUpperCase() || '?'}
+							{/if}
 						</div>
 						<div class="min-w-0">
 							<p class="truncate text-[13px] font-bold">{activeCompanyName || activeCompanyId}</p>
@@ -609,12 +624,20 @@
 					<div class="flex items-start justify-between gap-3">
 						<div class="flex min-w-0 items-start gap-3">
 							<div
-								class="grid size-9 shrink-0 place-items-center rounded-xl text-[12px] font-bold text-white {activeCompanyId ===
+								class="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl text-[12px] font-bold text-white {activeCompanyId ===
 								company.id
 									? 'bg-primary-500'
 									: 'bg-(--ui-text-dimmed)'}"
 							>
-								{company.name?.charAt(0)?.toUpperCase() || '?'}
+								{#if company.logoUrl}
+									<img
+										src={company.logoUrl}
+										alt={company.name}
+										class="h-full w-full object-cover"
+									/>
+								{:else}
+									{company.name?.charAt(0)?.toUpperCase() || '?'}
+								{/if}
 							</div>
 							<div class="min-w-0">
 								<p class="truncate text-[13px] font-bold">{company.name}</p>
@@ -773,6 +796,17 @@
 			<p class="mt-1 text-[10px] text-(--ui-text-dimmed)">
 				{editingCompanyCode ? t('settings.readOnly') : t('settings.autoFromName')}
 			</p>
+		</div>
+
+		<div>
+			<MediaImageInput
+				bind:value={companyForm.logoUrl}
+				purpose="logo"
+				label={t('settings.storeLogo')}
+				hint={t('settings.storeLogoHint')}
+				preview="square"
+				size={64}
+			/>
 		</div>
 
 		<div>

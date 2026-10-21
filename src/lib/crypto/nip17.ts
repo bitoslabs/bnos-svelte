@@ -19,6 +19,7 @@ import {
 	type NostrEvent,
 	type NostrExtensionSigner
 } from '@bitos/bnos-core';
+import { BNOS_CLIENT_ID } from '$nostr/client-id';
 
 const KIND_CHAT_MESSAGE = 14; // rumor
 const KIND_SEAL = 13;
@@ -82,11 +83,16 @@ export async function buildGiftWrap(input: GiftWrapInput): Promise<NostrEvent> {
 	const nowSec = input.now ?? Math.floor(Date.now() / 1000);
 
 	// 1. Rumor — unsigned kind-14 chat message (never published as-is).
+	const extraTags = input.tags ?? [];
 	const rumor = {
 		pubkey: input.senderPubkey,
 		created_at: nowSec,
 		kind: KIND_CHAT_MESSAGE,
-		tags: [['p', input.recipientPubkey], ...(input.tags ?? [])],
+		tags: [
+			['p', input.recipientPubkey],
+			...extraTags,
+			...(extraTags.some((tag) => tag[0] === 'client') ? [] : [['client', BNOS_CLIENT_ID]])
+		],
 		content: input.content
 	};
 	const sealed = { ...rumor, id: getEventHash(rumor) };

@@ -15,6 +15,7 @@
 import { nip19, nip44 } from 'nostr-tools';
 import { NOSTR_KINDS, signNostrEvent, type NostrEvent } from '@bitos/bnos-core';
 import { fetchEvents, sendEvent } from '$nostr/client';
+import { BNOS_CLIENT_ID } from '$nostr/client-id';
 import { session } from '$nostr/session.svelte';
 import {
 	fromBase64Url,
@@ -133,7 +134,8 @@ export async function buildOrganizationKeyGrantEvent(
 			['t', 'organization_key_grant'],
 			['organization', input.organizationId],
 			['p', input.recipientPubkey],
-			['key_id', keyId]
+			['key_id', keyId],
+			['client', BNOS_CLIENT_ID]
 		]
 	};
 

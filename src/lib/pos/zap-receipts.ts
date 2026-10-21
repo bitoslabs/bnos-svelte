@@ -18,6 +18,7 @@
 import { browser } from '$app/environment';
 import { SimplePool } from 'nostr-tools/pool';
 import { finalizeEvent, generateSecretKey, type Event } from 'nostr-tools/pure';
+import { BNOS_CLIENT_ID } from '$nostr/client-id';
 
 export const ZAP_REQUEST_KIND = 9734;
 export const ZAP_RECEIPT_KIND = 9735;
@@ -45,7 +46,8 @@ export function buildZapRequest(params: ZapRequestParams): Event {
 			tags: [
 				['relays', ...params.relays],
 				['amount', String(Math.round(params.amountMsat))],
-				['p', params.recipientPubkey]
+				['p', params.recipientPubkey],
+				['client', BNOS_CLIENT_ID]
 			],
 			content: params.memo?.slice(0, 180) ?? ''
 		},
