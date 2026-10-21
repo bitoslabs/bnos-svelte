@@ -20,6 +20,7 @@ import { browser } from '$app/environment';
 import { nip04 } from 'nostr-tools';
 import { SimplePool } from 'nostr-tools/pool';
 import { finalizeEvent, getPublicKey, type Event } from 'nostr-tools/pure';
+import { BNOS_CLIENT_ID } from './client-id';
 
 export const NWC_REQUEST_KIND = 23194;
 export const NWC_RESPONSE_KIND = 23195;
@@ -138,7 +139,10 @@ export async function nwcRequest(
 		{
 			kind: NWC_REQUEST_KIND,
 			created_at: Math.floor(Date.now() / 1000),
-			tags: [['p', active.walletPubkey]],
+			tags: [
+				['p', active.walletPubkey],
+				['client', BNOS_CLIENT_ID]
+			],
 			content
 		},
 		sk

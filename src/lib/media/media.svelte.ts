@@ -26,6 +26,7 @@ import {
 	type UploadedMediaProviderId
 } from './uploaders';
 import { session } from '$nostr/session.svelte';
+import { BNOS_CLIENT_ID } from '$nostr/client-id';
 import { signNostrEvent, type NostrEvent } from '@bitos/bnos-core';
 
 export const STORAGE_KEY = 'bnos-os:settings-media';
@@ -148,7 +149,8 @@ class MediaStore {
 							['t', 'upload'],
 							['expiration', String(Math.floor(Date.now() / 1000) + 60)],
 							['server', 'blossom.nostr.build'],
-							['x', sha256]
+							['x', sha256],
+							['client', BNOS_CLIENT_ID]
 						],
 						content: 'Upload blob to Blossom'
 					},

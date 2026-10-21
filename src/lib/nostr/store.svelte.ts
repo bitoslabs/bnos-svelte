@@ -49,6 +49,7 @@ import { session } from './session.svelte';
 import { relays } from './relay.svelte';
 import { tenant } from './tenant.svelte';
 import { fetchEvents, fetchEventsPrimaryFirst, sendEvent } from './client';
+import { BNOS_CLIENT_ID } from './client-id';
 import { verifyEvent } from 'nostr-tools/pure';
 import { encryptGloObject, decryptGloEvent, shouldEncryptType } from '$lib/crypto/glo-cipher';
 import { mergeHydratedCollection } from './collection-merge';
@@ -761,7 +762,7 @@ class GloStore {
 			// part of the next event's GLO content.
 			const publishObject = withoutEphemeralEvent(object as AnyGloObject);
 			const template = createAppGloEventTemplate(publishObject, {
-				client: 'bnos',
+				client: BNOS_CLIENT_ID,
 				summary: `${type} ${publishObject.id}`
 			});
 

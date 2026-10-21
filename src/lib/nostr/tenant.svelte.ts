@@ -31,6 +31,7 @@ export interface TenantContext {
 	organizationId: string;
 	organizationName: string;
 	organizationCode: string;
+	organizationLogoUrl: string;
 	businessModel: BusinessModel;
 	businessType: BusinessType;
 	locationId: string | null;
@@ -51,6 +52,7 @@ export const DEFAULT_TENANT: TenantContext = {
 	organizationId: '',
 	organizationName: '',
 	organizationCode: '',
+	organizationLogoUrl: '',
 	businessModel: 'single',
 	businessType: 'retail',
 	locationId: null,

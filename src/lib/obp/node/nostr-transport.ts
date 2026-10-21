@@ -20,6 +20,7 @@
 import { finalizeEvent, nip44, type Event } from 'nostr-tools';
 import { schnorr } from '@noble/curves/secp256k1.js';
 import { toHex } from '../canonical';
+import { BNOS_CLIENT_ID } from '../../nostr/client-id';
 import type { ObpTransport, ObpTransportResult } from './transport';
 import type { BusinessNode } from './business-node';
 
@@ -78,7 +79,10 @@ export class NostrTransport implements ObpTransport {
 				{
 					kind: this.eventKind,
 					created_at: Math.floor(Date.now() / 1000),
-					tags: [['p', recipientPubkey]],
+					tags: [
+						['p', recipientPubkey],
+						['client', BNOS_CLIENT_ID]
+					],
 					content
 				},
 				this.secretKey

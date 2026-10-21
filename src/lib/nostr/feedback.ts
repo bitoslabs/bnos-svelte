@@ -131,8 +131,7 @@ export async function sendFeedback(input: FeedbackInput): Promise<FeedbackResult
 				content: text,
 				tags: [
 					['t', FEEDBACK_TAG],
-					['t', input.category],
-					['client', 'bnos']
+					['t', input.category]
 				],
 				loginMethod: snap.loginMethod,
 				nsec: snap.nsec,

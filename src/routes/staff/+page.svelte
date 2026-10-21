@@ -20,6 +20,7 @@
 	import { createListControls } from '$lib/utils/list.svelte';
 	import { buildSearchIndex } from '$lib/utils/search';
 	import { glo } from '$nostr/store.svelte';
+	import { BNOS_CLIENT_ID } from '$nostr/client-id';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -274,7 +275,7 @@
 	function openEventPreview(s: { id: string; data: Staff }) {
 		const object = sanitizedStaffObject(s);
 		const template = createGloEventTemplate(object as never, {
-			client: 'bnos',
+			client: BNOS_CLIENT_ID,
 			summary: `${TYPE.staff} ${object.id}`
 		});
 		const staffPubkey = object.data.pubkey;

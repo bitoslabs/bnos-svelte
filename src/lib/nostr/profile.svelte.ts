@@ -22,6 +22,7 @@ import { NOSTR_KINDS, signNostrEvent, type NostrEvent } from '@bitos/bnos-core';
 import { session } from './session.svelte';
 import { relays } from './relay.svelte';
 import { fetchEvents, sendEvent } from './client';
+import { BNOS_CLIENT_ID } from './client-id';
 
 /** localStorage key (kept stable with the legacy profile page). */
 export const PROFILE_STORAGE_KEY = 'nostr_profile_kind0';
@@ -163,7 +164,7 @@ class ProfileStore {
 			const template = {
 				kind: NOSTR_KINDS.PROFILE,
 				created_at: Math.floor(Date.now() / 1000),
-				tags: [] as string[][],
+				tags: [['client', BNOS_CLIENT_ID]] as string[][],
 				content: JSON.stringify(clean)
 			};
 			const event = (await signNostrEvent({

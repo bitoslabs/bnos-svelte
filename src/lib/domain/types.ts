@@ -668,6 +668,7 @@ export interface OrganizationBnosExt {
 	businessModel?: BusinessModel;
 	businessType?: BusinessType;
 	description?: string;
+	logoUrl?: string;
 	currencySymbol?: string;
 	taxRate?: number;
 	taxInclusive?: boolean;
