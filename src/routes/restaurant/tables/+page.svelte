@@ -7,11 +7,12 @@
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import FilterChips from '$lib/components/ui/FilterChips.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { formatInt, formatMoney } from '$lib/utils/format';
+	import { formatMoney } from '$lib/utils/format';
 
 	// ── Types ──
 	type TableStatus = 'available' | 'occupied' | 'reserved' | 'cleaning';
@@ -27,34 +28,37 @@
 	const TABLE_TYPE = 'restaurant.table';
 	const STORAGE_KEY = 'bnos-os:tables';
 
-	const STATUS_OPTIONS: {
-		value: TableStatus;
-		label: string;
-		color: 'success' | 'error' | 'warning' | 'info';
-	}[] = [
-		{ value: 'available', label: 'Available', color: 'success' },
-		{ value: 'occupied', label: 'Occupied', color: 'error' },
-		{ value: 'reserved', label: 'Reserved', color: 'warning' },
-		{ value: 'cleaning', label: 'Cleaning', color: 'info' }
-	];
+	const STATUS_ORDER: TableStatus[] = ['available', 'occupied', 'reserved', 'cleaning'];
 
-	const statusBg = (s: TableStatus) =>
-		s === 'available'
-			? 'border-emerald-200 dark:border-emerald-900/30 bg-emerald-50 dark:bg-emerald-950/20'
-			: s === 'occupied'
-				? 'border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-950/20'
-				: s === 'reserved'
-					? 'border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-950/20'
-					: 'border-blue-200 dark:border-blue-900/30 bg-blue-50 dark:bg-blue-950/20';
-
-	const statusDot = (s: TableStatus) =>
-		s === 'available'
-			? 'bg-emerald-500'
-			: s === 'occupied'
-				? 'bg-red-500'
-				: s === 'reserved'
-					? 'bg-amber-500'
-					: 'bg-blue-500';
+	const STATUS_META: Record<
+		TableStatus,
+		{ labelKey: string; dot: string; card: string; badge: string }
+	> = {
+		available: {
+			labelKey: 'restaurant.available',
+			dot: 'bg-emerald-500',
+			card: 'border-emerald-200 dark:border-emerald-900/30 bg-emerald-50 dark:bg-emerald-950/20',
+			badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+		},
+		occupied: {
+			labelKey: 'restaurant.occupied',
+			dot: 'bg-red-500',
+			card: 'border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-950/20',
+			badge: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+		},
+		reserved: {
+			labelKey: 'restaurant.reserved',
+			dot: 'bg-amber-500',
+			card: 'border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-950/20',
+			badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+		},
+		cleaning: {
+			labelKey: 'restaurant.cleaning',
+			dot: 'bg-blue-500',
+			card: 'border-blue-200 dark:border-blue-900/30 bg-blue-50 dark:bg-blue-950/20',
+			badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+		}
+	};
 
 	// ── Load tables from glo or localStorage fallback ──
 	function loadTables(): Table[] {
@@ -82,7 +86,7 @@
 
 	// ── State ──
 	let tables = $state<Table[]>(loadTables());
-	let filterStatus = $state<TableStatus | 'all'>('all');
+	let filterStatus = $state<string>('all');
 	let filterArea = $state<string>('all');
 
 	// Add/Edit dialog
@@ -120,33 +124,19 @@
 		return counts;
 	});
 
-	const filterTabs = $derived([
-		{ status: 'all' as const, label: 'All', count: stats.total, dotColor: '' },
-		{
-			status: 'available' as const,
-			label: 'Available',
-			count: stats.available,
-			dotColor: 'bg-emerald-500'
-		},
-		{
-			status: 'occupied' as const,
-			label: 'Occupied',
-			count: stats.occupied,
-			dotColor: 'bg-red-500'
-		},
-		{
-			status: 'reserved' as const,
-			label: 'Reserved',
-			count: stats.reserved,
-			dotColor: 'bg-amber-500'
-		},
-		{
-			status: 'cleaning' as const,
-			label: 'Cleaning',
-			count: stats.cleaning,
-			dotColor: 'bg-blue-500'
-		}
+	const filterChipOptions = $derived([
+		{ value: 'all', label: t('common.all'), count: stats.total },
+		...STATUS_ORDER.map((s) => ({
+			value: s,
+			label: t(STATUS_META[s].labelKey),
+			count: stats[s],
+			dot: STATUS_META[s].dot
+		}))
 	]);
+
+	const statusOptions = $derived(
+		STATUS_ORDER.map((s) => ({ value: s, label: t(STATUS_META[s].labelKey) }))
+	);
 
 	// ── Actions ──
 	function openAdd() {
@@ -306,53 +296,18 @@
 	<!-- Header -->
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Floor &amp; tables</h1>
-			<p class="text-[12.5px] text-(--ui-text-muted)">
-				Table layout &amp; live status · kind 30610
-			</p>
+			<h1 class="font-display text-xl font-bold tracking-tight">{t('restaurant.floorTables')}</h1>
+			<p class="text-[12.5px] text-(--ui-text-muted)">{t('restaurant.floorTablesDesc')}</p>
 		</div>
 		<Button color="primary" variant="solid" icon="lucide:plus" onclick={openAdd}
 			>{t('common.add') + ' ' + t('common.table')}</Button
 		>
 	</div>
 
-	<!-- Stats bar -->
-	<div class="flex flex-wrap items-center gap-3">
-		{#each [{ label: t('common.total'), value: stats.total, color: 'neutral' as const, dot: 'bg-(--ui-text-dimmed)' }, { label: 'Available', value: stats.available, color: 'success' as const, dot: 'bg-emerald-500' }, { label: 'Occupied', value: stats.occupied, color: 'error' as const, dot: 'bg-red-500' }, { label: 'Reserved', value: stats.reserved, color: 'warning' as const, dot: 'bg-amber-500' }, { label: 'Cleaning', value: stats.cleaning, color: 'info' as const, dot: 'bg-blue-500' }] as stat (stat.label)}
-			<div
-				class="flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1.5"
-			>
-				<span class="size-2 rounded-full {stat.dot}"></span>
-				<span class="text-[12px] font-semibold text-(--ui-text-muted)">{stat.label}</span>
-				<span class="text-[14px] font-bold tabular-nums">{formatInt(stat.value)}</span>
-			</div>
-		{/each}
-	</div>
-
 	<!-- Filter bar -->
 	<div class="flex flex-wrap items-center gap-2">
-		<!-- Status filter pills -->
-		<div class="flex flex-wrap items-center gap-1.5">
-			{#each filterTabs as ft (ft.status)}
-				<button
-					type="button"
-					class="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors
-						{filterStatus === ft.status
-						? 'border-primary-500/30 bg-primary-500/10 text-primary-700 dark:text-primary-300'
-						: 'border-(--ui-border) text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'}"
-					onclick={() => (filterStatus = ft.status)}
-				>
-					{#if ft.dotColor}
-						<span class="size-2 rounded-full {ft.dotColor}"></span>
-					{/if}
-					{ft.label}
-					<span
-						class="ml-0.5 rounded-md bg-(--ui-bg-accented) px-1.5 py-0.5 text-[10px] font-bold tabular-nums"
-						>{ft.count}</span
-					>
-				</button>
-			{/each}
-		</div>
+		<!-- Status filter chips -->
+		<FilterChips bind:value={filterStatus} options={filterChipOptions} label={t('common.status')} />
 
 		<!-- Area filter -->
 		{#if areas.length > 1}
@@ -361,7 +316,7 @@
 					size="sm"
 					value={filterArea}
 					options={[
-						{ value: 'all', label: 'All areas' },
+						{ value: 'all', label: t('restaurant.allAreas') },
 						...areas.map((a) => ({ value: a, label: a }))
 					]}
 					onchange={(e: Event) => (filterArea = (e.currentTarget as HTMLSelectElement).value)}
@@ -375,7 +330,7 @@
 		<EmptyState
 			icon="lucide:armchair"
 			title={t('restaurant.noTables')}
-			description="Add tables to manage your floor plan and track live status."
+			description={t('restaurant.noTablesDesc')}
 		>
 			{#snippet actions()}
 				<Button color="primary" variant="soft" size="sm" onclick={seedDemo}>Add demo tables</Button>
@@ -405,7 +360,7 @@
 								{openPopoverId === tbl.id
 									? 'z-30 scale-[1.02] border-transparent shadow-lg ring-2 ring-primary-500'
 									: 'hover:-translate-y-0.5 hover:shadow-md'}
-								{statusBg(tbl.status)}"
+								{STATUS_META[tbl.status].card}"
 								role="button"
 								tabindex="0"
 								onclick={() => (openPopoverId = openPopoverId === tbl.id ? null : tbl.id)}
@@ -417,16 +372,10 @@
 									<span class="truncate font-display text-[15px] font-bold">{tbl.name}</span>
 									<span
 										class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase
-										{tbl.status === 'available'
-											? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-											: tbl.status === 'occupied'
-												? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-												: tbl.status === 'reserved'
-													? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-													: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'}"
+										{STATUS_META[tbl.status].badge}"
 									>
-										<span class="size-1.5 rounded-full {statusDot(tbl.status)}"></span>
-										{tbl.status}
+										<span class="size-1.5 rounded-full {STATUS_META[tbl.status].dot}"></span>
+										{t(STATUS_META[tbl.status].labelKey)}
 									</span>
 								</div>
 
@@ -437,7 +386,7 @@
 										<span class="text-[20px] font-bold text-(--ui-text) tabular-nums"
 											>{tbl.seats}</span
 										>
-										<span class="text-[11px] font-medium">seats</span>
+										<span class="text-[11px] font-medium">{t('restaurant.seats')}</span>
 									</div>
 									{#if tbl.status === 'occupied' && tbl.orderInfo}
 										<div class="mt-2 rounded-md bg-(--ui-bg-elevated)/80 px-2.5 py-1 text-center">
@@ -449,12 +398,12 @@
 									{:else if tbl.status === 'reserved'}
 										<div class="mt-2 text-center text-[11px] text-(--ui-text-muted)">
 											<Icon name="lucide:clock" class="mr-1 inline size-3" />
-											Reserved
+											{t('restaurant.reserved')}
 										</div>
 									{:else if tbl.status === 'cleaning'}
 										<div class="mt-2 text-center text-[11px] text-(--ui-text-muted)">
 											<Icon name="lucide:sparkles" class="mr-1 inline size-3" />
-											Cleaning…
+											{t('restaurant.cleaning')}…
 										</div>
 									{/if}
 								</div>
@@ -466,7 +415,9 @@
 										role="menu"
 									>
 										<div class="mb-1.5 flex items-center justify-between px-1">
-											<span class="text-[11px] font-bold text-(--ui-text-muted)">Set status</span>
+											<span class="text-[11px] font-bold text-(--ui-text-muted)"
+												>{t('restaurant.setStatus')}</span
+											>
 											<div class="flex items-center gap-1">
 												<button
 													type="button"
@@ -493,19 +444,19 @@
 											</div>
 										</div>
 										<div class="grid grid-cols-2 gap-1">
-											{#each STATUS_OPTIONS as opt (opt.value)}
+											{#each STATUS_ORDER as status (status)}
 												<button
 													type="button"
 													class="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors hover:bg-(--ui-bg-accented)
-														{tbl.status === opt.value ? 'bg-(--ui-bg-accented) text-(--ui-text)' : 'text-(--ui-text-muted)'}"
+														{tbl.status === status ? 'bg-(--ui-bg-accented) text-(--ui-text)' : 'text-(--ui-text-muted)'}"
 													onclick={(e) => {
 														e.stopPropagation();
-														setStatus(tbl.id, opt.value);
+														setStatus(tbl.id, status);
 													}}
 													role="menuitem"
 												>
-													<span class="size-2 rounded-full {statusDot(opt.value)}"></span>
-													{opt.label}
+													<span class="size-2 rounded-full {STATUS_META[status].dot}"></span>
+													{t(STATUS_META[status].labelKey)}
 												</button>
 											{/each}
 										</div>
@@ -521,7 +472,13 @@
 </div>
 
 <!-- Add / Edit Dialog -->
-<Dialog bind:open={dialogOpen} title={editMode ? 'Edit table' : 'Add table'} size="md">
+<Dialog
+	bind:open={dialogOpen}
+	title={editMode
+		? t('common.edit') + ' ' + t('common.table')
+		: t('common.add') + ' ' + t('common.table')}
+	size="md"
+>
 	<div class="space-y-3">
 		<div>
 			<label for="table-name" class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
@@ -532,13 +489,13 @@
 		<div class="grid grid-cols-2 gap-3">
 			<div>
 				<label for="table-seats" class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>Seats</label
+					>{t('restaurant.seats')}</label
 				>
 				<Input id="table-seats" type="number" min="1" max="50" bind:value={formSeats} />
 			</div>
 			<div>
 				<label for="table-area" class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>Area</label
+					>{t('restaurant.area')}</label
 				>
 				<Input id="table-area" bind:value={formArea} placeholder="Main, Patio, VIP…" />
 			</div>
@@ -550,7 +507,7 @@
 			<Select
 				id="table-status"
 				value={formStatus}
-				options={STATUS_OPTIONS.map((s) => ({ value: s.value, label: s.label }))}
+				options={statusOptions}
 				onchange={(e: Event) =>
 					(formStatus = (e.currentTarget as HTMLSelectElement).value as TableStatus)}
 			/>
@@ -558,6 +515,8 @@
 	</div>
 	{#snippet footer()}
 		<Button variant="ghost" onclick={() => (dialogOpen = false)}>{t('common.cancel')}</Button>
-		<Button color="primary" onclick={saveTable}>{editMode ? 'Save' : 'Add table'}</Button>
+		<Button color="primary" onclick={saveTable}
+			>{editMode ? t('common.save') : t('common.add') + ' ' + t('common.table')}</Button
+		>
 	{/snippet}
 </Dialog>

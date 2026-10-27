@@ -5,6 +5,7 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import FilterChips from '$lib/components/ui/FilterChips.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
@@ -73,14 +74,18 @@
 		})
 	);
 
-	const statusTabs = [
-		{ key: 'all', label: 'All' },
-		{ key: 'pending', label: 'Pending' },
-		{ key: 'confirmed', label: 'Confirmed' },
-		{ key: 'preparing', label: 'Cooking' },
-		{ key: 'ready', label: 'Ready' },
-		{ key: 'served', label: 'Served' }
-	];
+	const STATUS_META: Record<
+		string,
+		{ labelKey: string; dot: string; badge: 'neutral' | 'warning' | 'info' | 'success' | 'primary' }
+	> = {
+		pending: { labelKey: 'status.pending', dot: 'bg-amber-500', badge: 'warning' },
+		confirmed: { labelKey: 'status.confirmed', dot: 'bg-blue-500', badge: 'info' },
+		preparing: { labelKey: 'restaurant.cooking', dot: 'bg-indigo-500', badge: 'primary' },
+		ready: { labelKey: 'status.ready', dot: 'bg-emerald-500', badge: 'success' },
+		served: { labelKey: 'status.served', dot: 'bg-gray-400', badge: 'neutral' },
+		completed: { labelKey: 'status.completed', dot: 'bg-gray-400', badge: 'neutral' }
+	};
+	const STATUS_FLOW = ['pending', 'confirmed', 'preparing', 'ready', 'served'] as const;
 
 	const NEXT_STATUS: Record<string, string> = {
 		pending: 'confirmed',
@@ -88,15 +93,6 @@
 		preparing: 'ready',
 		ready: 'served',
 		served: 'completed'
-	};
-
-	const STATUS_COLOR: Record<string, 'neutral' | 'warning' | 'info' | 'success' | 'primary'> = {
-		pending: 'warning',
-		confirmed: 'info',
-		preparing: 'primary',
-		ready: 'success',
-		served: 'neutral',
-		completed: 'neutral'
 	};
 
 	// Waiter list
@@ -112,17 +108,23 @@
 	// Grouped by waiter for assignment view
 	// Stats
 	const stats = $derived.by(() => {
-		let pending = 0;
-		let preparing = 0;
-		let ready = 0;
+		const counts = { pending: 0, confirmed: 0, preparing: 0, ready: 0, served: 0 };
 		for (const o of openOrders) {
 			const status = (o.data.status ?? '').toLowerCase();
-			if (status === 'pending') pending++;
-			else if (status === 'preparing') preparing++;
-			else if (status === 'ready') ready++;
+			if (status in counts) counts[status as keyof typeof counts]++;
 		}
-		return { total: openOrders.length, pending, preparing, ready };
+		return { total: openOrders.length, ...counts };
 	});
+
+	const statusTabs = $derived([
+		{ value: 'all', label: t('common.all'), count: stats.total },
+		...STATUS_FLOW.map((key) => ({
+			value: key,
+			label: t(STATUS_META[key].labelKey),
+			count: stats[key],
+			dot: STATUS_META[key].dot
+		}))
+	]);
 
 	// ── Actions ──
 	async function updateStatus(orderId: string) {
@@ -168,67 +170,45 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Waiter station</h1>
-			<p class="text-[12.5px] text-(--ui-text-muted)">Open tabs &amp; table service</p>
+			<h1 class="font-display text-xl font-bold tracking-tight">
+				{t('restaurant.waiterStation')}
+			</h1>
+			<p class="text-[12.5px] text-(--ui-text-muted)">{t('restaurant.waiterStationDesc')}</p>
 		</div>
 		<!-- View toggle -->
-		<div class="flex items-center gap-0.5 rounded-lg bg-(--ui-bg-muted) p-0.5">
+		<div class="segmented flex items-center gap-0.5" role="group" aria-label={t('common.view')}>
 			<button
 				type="button"
-				class="flex items-center gap-1 rounded-md px-3 py-1.5 text-[12px] font-bold transition-colors
+				aria-pressed={viewMode === 'orders'}
+				class="focus-ring flex items-center gap-1 rounded-md px-3 py-1.5 text-[12px] font-bold transition-colors
 					{viewMode === 'orders'
-					? 'bg-(--ui-bg-elevated) text-primary-600 shadow-sm dark:text-primary-400'
+					? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
 					: 'text-(--ui-text-muted) hover:text-(--ui-text)'}"
 				onclick={() => (viewMode = 'orders')}
 			>
 				<Icon name="lucide:clipboard-list" class="size-3.5" />
-				Orders
+				{t('restaurant.orders')}
 			</button>
 			<button
 				type="button"
-				class="flex items-center gap-1 rounded-md px-3 py-1.5 text-[12px] font-bold transition-colors
+				aria-pressed={viewMode === 'waiters'}
+				class="focus-ring flex items-center gap-1 rounded-md px-3 py-1.5 text-[12px] font-bold transition-colors
 					{viewMode === 'waiters'
-					? 'bg-(--ui-bg-elevated) text-primary-600 shadow-sm dark:text-primary-400'
+					? 'bg-(--ui-bg-elevated) text-(--ui-text) shadow-sm'
 					: 'text-(--ui-text-muted) hover:text-(--ui-text)'}"
 				onclick={() => (viewMode = 'waiters')}
 			>
 				<Icon name="lucide:users" class="size-3.5" />
-				Waiters
+				{t('restaurant.waiters')}
 			</button>
 		</div>
-	</div>
-
-	<!-- Stats bar -->
-	<div class="flex flex-wrap items-center gap-3">
-		{#each [{ label: t('common.open'), value: stats.total, color: 'bg-(--ui-text-dimmed)' }, { label: t('status.pending'), value: stats.pending, color: 'bg-amber-500' }, { label: 'Cooking', value: stats.preparing, color: 'bg-blue-500' }, { label: 'Ready', value: stats.ready, color: 'bg-emerald-500' }] as stat (stat.label)}
-			<div
-				class="flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1.5"
-			>
-				<span class="size-2 rounded-full {stat.color}"></span>
-				<span class="text-[12px] font-semibold text-(--ui-text-muted)">{stat.label}</span>
-				<span class="text-[14px] font-bold tabular-nums">{stat.value}</span>
-			</div>
-		{/each}
 	</div>
 
 	{#if viewMode === 'orders'}
 		<!-- Filters -->
 		<div class="flex flex-wrap items-center gap-2">
-			<!-- Status tabs -->
-			<div class="flex flex-wrap items-center gap-1">
-				{#each statusTabs as tab (tab.key)}
-					<button
-						type="button"
-						class="rounded-lg px-2.5 py-1 text-[12px] font-bold transition-colors
-							{filterStatus === tab.key
-							? 'bg-primary-500/10 text-primary-700 dark:text-primary-300'
-							: 'text-(--ui-text-muted) hover:bg-(--ui-bg-accented)'}"
-						onclick={() => (filterStatus = tab.key)}
-					>
-						{tab.label}
-					</button>
-				{/each}
-			</div>
+			<!-- Status filter chips -->
+			<FilterChips bind:value={filterStatus} options={statusTabs} label={t('common.status')} />
 			<!-- Waiter filter -->
 			{#if waiterNames.length > 0}
 				<div class="ml-auto">
@@ -236,7 +216,7 @@
 						size="sm"
 						value={filterWaiter}
 						options={[
-							{ value: 'all', label: 'All waiters' },
+							{ value: 'all', label: t('restaurant.allWaiters') },
 							...waiterNames.map((w) => ({ value: w, label: w }))
 						]}
 						onchange={(e: Event) => (filterWaiter = (e.currentTarget as HTMLSelectElement).value)}
@@ -250,7 +230,7 @@
 			<EmptyState
 				icon="lucide:concierge-bell"
 				title={t('common.noOpenTabs')}
-				description="Orders started from the POS that aren't yet completed show up here."
+				description={t('restaurant.noOpenTabsDesc')}
 			/>
 		{:else}
 			<ul class="space-y-2">
@@ -268,11 +248,13 @@
 									<span
 										class="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
 									>
-										Table {(o.data as { tableId?: string }).tableId}
+										{t('common.table')}
+										{(o.data as { tableId?: string }).tableId}
 									</span>
 								{/if}
 								<span class="text-[11px] text-(--ui-text-muted)">
-									{o.data.lines?.length ?? 0} items · {relativeTime(o.data.occurredAt ?? '')}
+									{t('restaurant.itemsCount', { count: o.data.lines?.length ?? 0 })} ·
+									{relativeTime(o.data.occurredAt ?? '')}
 								</span>
 							</div>
 							{#if o.data.lines && o.data.lines.length > 0}
@@ -288,7 +270,7 @@
 								size="sm"
 								value={w}
 								options={[
-									{ value: '', label: 'Unassigned' },
+									{ value: '', label: t('restaurant.unassigned') },
 									...waiterNames.map((wn) => ({ value: wn, label: wn }))
 								]}
 								onchange={(e: Event) =>
@@ -297,7 +279,9 @@
 						</div>
 
 						<!-- Status badge -->
-						<Badge color={STATUS_COLOR[status] ?? 'neutral'}>{status}</Badge>
+						<Badge color={STATUS_META[status]?.badge ?? 'neutral'}>
+							{t(STATUS_META[status]?.labelKey ?? 'common.status')}
+						</Badge>
 
 						<!-- Advance button -->
 						{#if NEXT_STATUS[status] && status !== 'served'}
@@ -316,7 +300,7 @@
 			<EmptyState
 				icon="lucide:user-cog"
 				title={t('restaurant.noWaiterAssignments')}
-				description="Assign waiters to orders from the Orders view."
+				description={t('restaurant.waiterAssign')}
 			/>
 		{:else}
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -336,9 +320,11 @@
 											.join('')}
 							</div>
 							<div>
-								<div class="text-[14px] font-bold">{waiterName}</div>
+								<div class="text-[14px] font-bold">
+									{waiterName === 'Unassigned' ? t('restaurant.unassigned') : waiterName}
+								</div>
 								<div class="text-[11px] text-(--ui-text-muted)">
-									{orders.length} table{orders.length !== 1 ? 's' : ''}
+									{t('restaurant.tables', { count: orders.length })}
 								</div>
 							</div>
 						</div>
@@ -356,7 +342,9 @@
 										>
 									{/if}
 									<span class="ml-auto">
-										<Badge color={STATUS_COLOR[status] ?? 'neutral'}>{status}</Badge>
+										<Badge color={STATUS_META[status]?.badge ?? 'neutral'}>
+											{t(STATUS_META[status]?.labelKey ?? 'common.status')}
+										</Badge>
 									</span>
 								</li>
 							{/each}

@@ -7,6 +7,7 @@
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import FilterChips from '$lib/components/ui/FilterChips.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -57,7 +58,7 @@
 	}
 
 	let queue = $state<QueueEntry[]>(loadQueue());
-	let activeTab = $state<QueueStatus | 'all'>('waiting');
+	let activeTab = $state<string>('waiting');
 
 	// Add dialog
 	let dialogOpen = $state(false);
@@ -99,9 +100,9 @@
 	});
 
 	const tabs = $derived([
-		{ key: 'waiting' as const, label: t('restaurant.waiting'), count: stats.waiting },
-		{ key: 'seated' as const, label: t('restaurant.seated'), count: stats.seated },
-		{ key: 'all' as const, label: t('common.all'), count: queue.length }
+		{ value: 'waiting', label: t('restaurant.waiting'), count: stats.waiting, dot: 'bg-amber-500' },
+		{ value: 'seated', label: t('restaurant.seated'), count: stats.seated, dot: 'bg-emerald-500' },
+		{ value: 'all', label: t('common.all'), count: queue.length }
 	]);
 
 	// ── Actions ──
@@ -179,56 +180,22 @@
 	<!-- Header -->
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Waitlist &amp; queue</h1>
-			<p class="text-[12.5px] text-(--ui-text-muted)">Manage parties waiting for a table</p>
+			<h1 class="font-display text-xl font-bold tracking-tight">{t('restaurant.waitlist')}</h1>
+			<p class="text-[12.5px] text-(--ui-text-muted)">{t('restaurant.waitlistDesc')}</p>
 		</div>
 		<Button color="primary" icon="lucide:user-plus" onclick={openAdd}
 			>{t('common.add') + ' ' + t('common.party')}</Button
 		>
 	</div>
 
-	<!-- Stats bar -->
-	<div class="flex flex-wrap items-center gap-3">
-		<div
-			class="flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1.5"
-		>
-			<Icon name="lucide:users" class="size-4 text-(--ui-text-dimmed)" />
-			<span class="text-[12px] font-semibold text-(--ui-text-muted)">Waiting</span>
-			<span class="text-[14px] font-bold tabular-nums">{stats.waiting}</span>
+	<!-- Filters + wait summary -->
+	<div class="flex flex-wrap items-center justify-between gap-2">
+		<FilterChips bind:value={activeTab} options={tabs} label={t('common.status')} />
+		<div class="flex items-center gap-1.5 text-[12px] text-(--ui-text-muted)">
+			<Icon name="lucide:clock" class="size-3.5 text-(--ui-text-dimmed)" />
+			{t('restaurant.avgWait')}
+			<span class="font-bold text-(--ui-text) tabular-nums">{stats.avgWait}m</span>
 		</div>
-		<div
-			class="flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1.5"
-		>
-			<Icon name="lucide:clock" class="size-4 text-(--ui-text-dimmed)" />
-			<span class="text-[12px] font-semibold text-(--ui-text-muted)">Avg wait</span>
-			<span class="text-[14px] font-bold tabular-nums">{stats.avgWait}m</span>
-		</div>
-		<div
-			class="flex items-center gap-2 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1.5"
-		>
-			<Icon name="lucide:check-circle" class="size-4 text-(--ui-text-dimmed)" />
-			<span class="text-[12px] font-semibold text-(--ui-text-muted)">Seated</span>
-			<span class="text-[14px] font-bold tabular-nums">{stats.seated}</span>
-		</div>
-	</div>
-
-	<!-- Tabs -->
-	<div class="flex items-center gap-1">
-		{#each tabs as tab (tab.key)}
-			<button
-				type="button"
-				class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-bold transition-colors
-					{activeTab === tab.key
-					? 'bg-primary-500/10 text-primary-700 dark:text-primary-300'
-					: 'text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)'}"
-				onclick={() => (activeTab = tab.key)}
-			>
-				{tab.label}
-				<span class="rounded-md bg-(--ui-bg-accented) px-1.5 py-0.5 text-[10px] tabular-nums"
-					>{tab.count}</span
-				>
-			</button>
-		{/each}
 	</div>
 
 	<!-- Queue list -->
@@ -236,7 +203,7 @@
 		<EmptyState
 			icon="lucide:clipboard-list"
 			title={t('common.queueEmpty')}
-			description="Add parties to the waitlist when you're at capacity."
+			description={t('restaurant.queueDesc')}
 		/>
 	{:else}
 		<ol class="space-y-2">
@@ -309,7 +276,7 @@
 								<Icon name="lucide:bell" class="size-4" />
 							</Button>
 							<Button size="sm" color="primary" variant="soft" onclick={() => seatParty(entry.id)}
-								>Seat</Button
+								>{t('restaurant.seat')}</Button
 							>
 							<Button
 								size="icon-sm"
@@ -357,7 +324,8 @@
 			<div>
 				<label
 					for="queue-party-size"
-					class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)">Party size</label
+					class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
+					>{t('restaurant.partySize')}</label
 				>
 				<Input id="queue-party-size" type="number" min="1" max="30" bind:value={formPartySize} />
 			</div>
@@ -383,6 +351,6 @@
 	</div>
 	{#snippet footer()}
 		<Button variant="ghost" onclick={() => (dialogOpen = false)}>{t('common.cancel')}</Button>
-		<Button color="primary" onclick={addParty}>Add to queue</Button>
+		<Button color="primary" onclick={addParty}>{t('restaurant.addToQueue')}</Button>
 	{/snippet}
 </Dialog>
