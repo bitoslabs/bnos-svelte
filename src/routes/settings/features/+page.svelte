@@ -127,7 +127,7 @@
 	</SettingsSection>
 
 	<div
-		class="flex items-center gap-3 rounded-xl border border-(--tone-warning-border) bg-(--tone-warning-bg) px-4 py-3"
+		class="flex items-center gap-3 rounded-xl border border-(--tone-warning-text)/30 bg-(--tone-warning-bg) px-4 py-3"
 	>
 		<Icon name="lucide:info" class="size-4 shrink-0 text-(--tone-warning-text)" />
 		<p class="text-[11px] text-(--tone-warning-text)">

@@ -26,7 +26,7 @@ if [[ ! -d "$release" ]]; then
   if [[ -f "$base/.env" ]]; then
     ln -s "$base/.env" "$staging/.env"
   fi
-  (cd "$staging" && corepack yarn install --frozen-lockfile --non-interactive && corepack yarn build)
+  (cd "$staging" && corepack pnpm install --frozen-lockfile && corepack pnpm build)
   mv "$staging" "$release"
   trap - EXIT
 fi

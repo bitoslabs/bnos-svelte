@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
 	webServer: {
-		command: 'yarn build && yarn preview',
+		command: 'pnpm build && pnpm preview',
 		port: 4173,
 		timeout: 120_000,
 		reuseExistingServer: !process.env.CI
