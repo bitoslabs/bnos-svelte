@@ -1033,6 +1033,7 @@ export const en = {
 		quickSwitch: 'Quick switch',
 		selectCompany: 'Select company…',
 		selectBranch: 'Select branch…',
+		mainBranch: 'Main Branch',
 		companies: 'Companies',
 		addCompany: 'Add company',
 		addFirstCompany: 'Add first company',

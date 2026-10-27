@@ -41,10 +41,15 @@ function staffCanUseCurrentBranch(
 ) {
 	if (!member) return true;
 	if (member.status && member.status !== 'active') return false;
+	const branchIds = member.branchIds ?? [];
+	// Company-wide membership (no branch restriction) covers every branch —
+	// including a company that has no active branch selected yet. This check
+	// must run before requiring a branch, otherwise switching to a branchless
+	// company would hide every nav item from the owner.
+	if (branchIds.length === 0) return true;
 	const targetBranchId = branchId ?? tenant.state.locationId;
 	if (!targetBranchId) return false;
-	const branchIds = member.branchIds ?? [];
-	return branchIds.length === 0 || branchIds.includes(targetBranchId);
+	return branchIds.includes(targetBranchId);
 }
 
 /** Resolve custom-permission strings into structured permissions. */

@@ -64,18 +64,34 @@ src/
 
 ## Develop
 
+Use Node.js 22.21.1 and the pnpm version pinned in `package.json`.
+
 ```bash
-yarn install
-yarn run dev        # http://localhost:5173
-yarn run check      # svelte-kit sync + svelte-check (types + a11y)
-yarn run lint       # prettier --check + eslint
-yarn run format     # prettier --write
-yarn run build      # production build (0 vite-plugin-svelte warnings expected)
-yarn run test:unit  # vitest
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run dev        # http://localhost:5173
+pnpm run check      # svelte-kit sync + svelte-check (types + a11y)
+pnpm run lint       # prettier --check + eslint
+pnpm run format     # prettier --write
+pnpm run build      # production build (0 vite-plugin-svelte warnings expected)
+pnpm run test:unit  # vitest
 ```
 
-> The `@bitos/bnos-core` dependency is linked from `../packages/bnos-core`
-> (`file:`). Rebuild the package (`npm run build` there) after editing it.
+The `@bitos/bnos-core` dependency is installed from the npm registry.
+
+### Server deployment
+
+CI installs with `pnpm install --frozen-lockfile`, then verifies and builds the
+checked commit. The server uses `corepack pnpm` with the same pinned version.
+When migrating an existing server, install the updated deployment helper once
+using an administrator account before deploying the first pnpm commit:
+
+```bash
+sudo install -m 755 ops/bnos-deploy /usr/local/bin/bnos-deploy
+```
+
+Run this from a checkout containing the updated helper on the server. Node.js
+22.21.1 and Corepack must be available at the paths configured in the helper.
 
 ## Acknowledgments
 

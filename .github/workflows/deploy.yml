@@ -18,18 +18,18 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22.21.1'
-          cache: yarn
+          cache: pnpm
       - name: Install and verify
         run: |
-          corepack enable
-          yarn install --frozen-lockfile --non-interactive
-          yarn lint
-          yarn run check
-          yarn test:unit --run
-          yarn build
+          pnpm install --frozen-lockfile
+          pnpm lint
+          pnpm run check
+          pnpm test:unit --run
+          pnpm build
       - name: Deploy checked commit
         env:
           BNOS_DEPLOY_SSH_KEY: ${{ secrets.BNOS_DEPLOY_SSH_KEY }}

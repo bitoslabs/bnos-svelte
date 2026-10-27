@@ -66,24 +66,28 @@ export function restoreTenantFromWorkspace(options: { organizationId?: string } 
 		taxIncludedInPrice: (bnosExt.taxInclusive as boolean) ?? tenant.state.taxIncludedInPrice
 	});
 
-	const locations = glo.all<Record<string, unknown>>('location').filter((item) => {
-		const scopeOrg = (item.scope as { organizationId?: string } | undefined)?.organizationId;
-		return !scopeOrg || scopeOrg === org.id;
-	});
-	if (locations.length > 0) {
+	const scopeOrgOf = (item: { scope?: unknown }) =>
+		(item.scope as { organizationId?: string } | undefined)?.organizationId;
+	const allLocations = glo.all<Record<string, unknown>>('location');
+	// Only locations explicitly scoped to this org are safe to auto-attach.
+	// Unscoped ones are a legacy fallback; locations scoped to another company
+	// must never become this org's active branch.
+	const orgLocations = allLocations.filter((item) => scopeOrgOf(item) === org.id);
+	const unscopedLocations = allLocations.filter((item) => !scopeOrgOf(item));
+	const candidates = orgLocations.length > 0 ? orgLocations : unscopedLocations;
+	if (candidates.length > 0) {
 		const preferredLocationId = tenant.state.locationId || settingsSnapshot?.activeBranchId || '';
-		const location =
-			locations.find((item) => item.id === preferredLocationId) ??
-			locations.find((item) => {
-				const scope = item.scope as Record<string, unknown> | undefined;
-				return scope?.organizationId === org.id;
-			}) ??
-			locations[0];
+		const location = candidates.find((item) => item.id === preferredLocationId) ?? candidates[0];
 		const locationData = location.data as Record<string, unknown>;
 		tenant.configure({
 			locationId: location.id,
 			locationName: ((locationData.name as string) ?? tenant.state.locationName) || 'Main'
 		});
+	} else if (tenant.state.locationId) {
+		// This company has no branches (e.g. just created / switched to):
+		// drop any location left over from a previous company instead of
+		// operating under a foreign branch.
+		tenant.configure({ locationId: null, locationName: '' });
 	}
 
 	tenant.completeSetup();

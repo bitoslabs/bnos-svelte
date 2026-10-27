@@ -9,9 +9,9 @@ runes + Tailwind CSS v4**, using `@bitos/bnos-core` for the GLO / Nostr data
 
 ## Package manager
 
-**yarn** (via corepack). The only lockfile is `yarn.lock` — CI runs
-`yarn install --frozen-lockfile --non-interactive`. Do **not** add
-`package-lock.json` or `pnpm-lock.yaml`.
+**pnpm** (via corepack). The only lockfile is `pnpm-lock.yaml` — CI runs
+`pnpm install --frozen-lockfile`. Do **not** add
+`package-lock.json` or `yarn.lock`.
 
 Node version: see the deploy workflow (currently `22.21.1`).
 
@@ -19,15 +19,15 @@ Node version: see the deploy workflow (currently `22.21.1`).
 
 | Command          | What it does                                                            |
 | ---------------- | ----------------------------------------------------------------------- |
-| `yarn dev`       | Dev server                                                              |
-| `yarn check`     | `svelte-kit sync && svelte-check` — types + a11y compiler warnings      |
-| `yarn lint`      | `prettier --check . && eslint .`                                        |
-| `yarn format`    | `prettier --write .`                                                    |
-| `yarn build`     | Production build — **must finish with 0 `vite-plugin-svelte` warnings** |
-| `yarn test:unit` | Vitest (`*.test.ts`, `*.svelte.test.ts`)                                |
-| `yarn test:e2e`  | Playwright                                                              |
+| `pnpm dev`       | Dev server                                                              |
+| `pnpm check`     | `svelte-kit sync && svelte-check` — types + a11y compiler warnings      |
+| `pnpm lint`      | `prettier --check . && eslint .`                                        |
+| `pnpm format`    | `prettier --write .`                                                    |
+| `pnpm build`     | Production build — **must finish with 0 `vite-plugin-svelte` warnings** |
+| `pnpm test:unit` | Vitest (`*.test.ts`, `*.svelte.test.ts`)                                |
+| `pnpm test:e2e`  | Playwright                                                              |
 
-After non-trivial changes run `yarn format && yarn check && yarn build`.
+After non-trivial changes run `pnpm format && pnpm check && pnpm build`.
 
 > **Known pre-existing debt (do not churn it in unrelated changes):**
 > `eslint` reports existing `@typescript-eslint/no-explicit-any` and
@@ -58,7 +58,7 @@ After non-trivial changes run `yarn format && yarn check && yarn build`.
 - **Canonical arbitrary values** — use the v4 parenthesis shorthand:
   - ✅ `text-(--ui-text-muted)` · ✅ `bg-(--ui-bg-muted)/50`
   - ❌ `text-[var(--ui-text-muted)]`
-- Class **order** is owned by `prettier-plugin-tailwindcss`. Run `yarn format`;
+- Class **order** is owned by `prettier-plugin-tailwindcss`. Run `pnpm format`;
   never hand-sort classes.
 - Reuse the primitives in `src/lib/components/ui/*` (Button, Input, Select,
   Switch, Checkbox, Dialog, Badge, …). `cn()` (`$lib/utils/cn`) merges classes.

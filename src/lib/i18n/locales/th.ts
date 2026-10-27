@@ -942,6 +942,7 @@ export const th = {
 		quickSwitch: 'สลับด่วน',
 		selectCompany: 'เลือกบริษัท…',
 		selectBranch: 'เลือกสาขา…',
+		mainBranch: 'สาขาหลัก',
 		companies: 'บริษัท',
 		addCompany: 'เพิ่มบริษัท',
 		addFirstCompany: 'เพิ่มบริษัทแรก',

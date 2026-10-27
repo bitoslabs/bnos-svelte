@@ -12,6 +12,8 @@
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import { tenant, type BusinessModel, type BusinessType } from '$nostr/tenant.svelte';
+	import { memberships } from '$nostr/memberships.svelte';
+	import { WORKSPACE_SWITCHED_EVENT } from '$nostr/workspace-switch';
 	import {
 		hydrateOrganizationSettingsFromWorkspace,
 		readOrganizationSettings,
@@ -30,6 +32,7 @@
 		businessModels as bizModels,
 		businessTypes as bizTypes
 	} from '$lib/business';
+	import { newOrganizationId, newLocationId } from '$lib/utils/record-id';
 
 	// ── State ──
 	let companies = $state<Company[]>([]);
@@ -178,6 +181,11 @@
 	onMount(() => {
 		loadSettings();
 		void loadCurrencyOptions();
+		// The account menu can switch the workspace while this page is open;
+		// reload so the local company/branch state matches the new context.
+		const onWorkspaceSwitched = () => loadSettings();
+		window.addEventListener(WORKSPACE_SWITCHED_EVENT, onWorkspaceSwitched);
+		return () => window.removeEventListener(WORKSPACE_SWITCHED_EVENT, onWorkspaceSwitched);
 	});
 
 	// ── Helpers ──
@@ -198,21 +206,33 @@
 	}
 
 	// ── Quick Switch ──
+	function firstBranchOf(companyId: string): Branch | undefined {
+		return (
+			branches.find((b) => b.storeId === companyId && b.status === 'active') ??
+			branches.find((b) => b.storeId === companyId)
+		);
+	}
+
 	async function handleSwitchCompany() {
 		if (!switchCompanyId) return;
 		activeCompanyId = switchCompanyId;
-		activeBranchId = '';
-		switchBranchId = '';
-		await persist();
+		// Land on the target company's own branch (never keep the previous
+		// company's branch, and never a blank one when branches exist).
+		activeBranchId = firstBranchOf(activeCompanyId)?.id ?? '';
+		switchBranchId = activeBranchId;
 		syncTenant();
+		// Rebind role/branch access to the target company: the previous
+		// company's staff record must not gate the new company's nav.
+		await memberships.resolveActiveCompany();
+		await persist();
 		toast.success(t('settings.toastCompanySwitched'));
 	}
 
 	async function handleSwitchBranch() {
 		if (!switchBranchId) return;
 		activeBranchId = switchBranchId;
-		await persist();
 		syncTenant();
+		await persist();
 		toast.success(t('settings.toastBranchSwitched'));
 	}
 
@@ -296,18 +316,38 @@
 				toast.error(t('settings.toastCodeUsed'));
 				return;
 			}
-			companies = [...companies, { id: crypto.randomUUID(), ...companyForm }];
+			const companyId = newOrganizationId();
+			companies = [...companies, { id: companyId, ...companyForm }];
+			// Every company starts with an operable main branch, mirroring the
+			// setup wizard — a branchless company cannot anchor a workspace.
+			branches = [
+				...branches,
+				{
+					id: newLocationId(),
+					code: 'MAIN',
+					storeId: companyId,
+					name: t('settings.mainBranch'),
+					address: '',
+					phone: '',
+					email: '',
+					status: 'active' as const
+				}
+			];
 			toast.success(t('settings.toastCompanyCreated'));
 		}
 
 		// Auto-activate first company
 		if (!activeCompanyId && companies.length === 1) {
 			activeCompanyId = companies[0].id;
+			activeBranchId = firstBranchOf(activeCompanyId)?.id ?? '';
 		}
+		switchCompanyId = activeCompanyId;
+		switchBranchId = activeBranchId;
 
 		companyModalOpen = false;
-		await persist();
 		syncTenant();
+		await memberships.resolveActiveCompany();
+		await persist();
 	}
 
 	async function handleDeleteCompany(id: string) {
@@ -325,11 +365,16 @@
 		companies = companies.filter((c) => c.id !== id);
 		branches = branches.filter((b) => b.storeId !== id);
 		if (activeCompanyId === id) {
-			activeCompanyId = '';
-			activeBranchId = '';
+			// Fall back to another company instead of leaving the device without
+			// a workspace context (which would bounce the user to /resolve).
+			activeCompanyId = companies[0]?.id ?? '';
+			activeBranchId = activeCompanyId ? (firstBranchOf(activeCompanyId)?.id ?? '') : '';
+			switchCompanyId = activeCompanyId;
+			switchBranchId = activeBranchId;
 		}
-		await persist();
 		syncTenant();
+		await memberships.resolveActiveCompany();
+		await persist();
 		toast.success(t('settings.toastCompanyDeleted'));
 	}
 
@@ -391,7 +436,7 @@
 				toast.error(t('settings.toastBranchCodeUsed'));
 				return;
 			}
-			savedBranchId = `${branchFormCompanyId}-${code}-${Date.now()}`;
+			savedBranchId = newLocationId();
 			branches = [
 				...branches,
 				{
@@ -421,8 +466,8 @@
 		}
 
 		branchModalOpen = false;
-		await persist();
 		syncTenant();
+		await persist();
 	}
 
 	// Auto-generate branch code from name for new branches
@@ -444,13 +489,14 @@
 			}))
 		)
 			return;
+		const wasActive = activeBranchId === id;
 		branches = branches.filter((b) => b.id !== id);
-		const removed = branches.find((b) => b.id === id);
-		if (removed && activeBranchId === removed.id) {
-			activeBranchId = '';
+		if (wasActive) {
+			activeBranchId = firstBranchOf(activeCompanyId)?.id ?? '';
+			switchBranchId = activeBranchId;
 		}
-		await persist();
 		syncTenant();
+		await persist();
 		toast.success(t('settings.toastBranchDeleted'));
 	}
 

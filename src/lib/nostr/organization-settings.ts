@@ -175,11 +175,12 @@ export function buildOrganizationSettingsFromWorkspace(active?: {
 			? active.activeCompanyId
 			: (companies[0]?.id ?? '');
 	const activeBranchId =
-		active?.activeBranchId && branches.some((branch) => branch.id === active.activeBranchId)
+		active?.activeBranchId &&
+		branches.some(
+			(branch) => branch.id === active.activeBranchId && branch.storeId === activeCompanyId
+		)
 			? active.activeBranchId
-			: (branches.find((branch) => branch.storeId === activeCompanyId)?.id ??
-				branches[0]?.id ??
-				'');
+			: (branches.find((branch) => branch.storeId === activeCompanyId)?.id ?? '');
 
 	return {
 		companies,
@@ -221,7 +222,10 @@ export async function syncOrganizationSettingsToWorkspace(snapshot?: Organizatio
 				},
 				{
 					id: company.id,
-					scope: { organizationId: company.id },
+					// An organization record must never inherit the active tenant's
+					// locationId — otherwise another company's branch indexes this
+					// org's relay event under a foreign `glo:scope:org:loc` topic.
+					scope: { organizationId: company.id, locationId: undefined },
 					extensions: {
 						'org.bitos.bnos': {
 							...baseExt,

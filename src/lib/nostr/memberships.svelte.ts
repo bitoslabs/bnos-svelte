@@ -59,6 +59,14 @@ class MembershipsStore {
 		return this.myStaffRecords.filter((s) => (s.data.status ?? 'active') === 'active');
 	}
 
+	/** Active staff records for one company (defaults to the active tenant). */
+	recordsForCompany(companyId: string | null = tenant.state.organizationId) {
+		if (!companyId) return this.myActiveRecords;
+		return this.myActiveRecords.filter(
+			(s) => (s.data.companyId ?? tenant.state.organizationId) === companyId
+		);
+	}
+
 	/** Distinct companies the current user belongs to. */
 	get myCompanies(): string[] {
 		return [
@@ -234,13 +242,18 @@ class MembershipsStore {
 	};
 
 	/**
-	 * Auto-set the active staff/role when there's a single membership. Returns
-	 * `true` when the role context was set.
+	 * Auto-set the active staff/role for the active company. Prefers the
+	 * membership belonging to the current organization so a company switch
+	 * never keeps evaluating another company's staff record. Returns `true`
+	 * when the role context was set.
 	 */
 	autoResolve = (): boolean => {
 		const active = this.myActiveRecords;
 		if (active.length === 0) return false;
-		const me = active[0];
+		const me =
+			active.find(
+				(s) => (s.data.companyId ?? tenant.state.organizationId) === tenant.state.organizationId
+			) ?? active[0];
 		const status = me.data.status ?? 'active';
 		if (BLOCKING_STATUSES.has(status)) return false;
 		syncTenantBranchForStaff(me);
@@ -249,28 +262,64 @@ class MembershipsStore {
 	};
 
 	/**
-	 * First-run bootstrap: if the org creator has no staff record yet, create an
-	 * Owner record keyed to their pubkey so the permission system has a role to
-	 * evaluate. Mirrors bdgo-os-nuxt's setup flow. No-op once any staff exists.
+	 * Activate the current user's membership for the active company after a
+	 * company switch. Falls back to creating the Owner record when this device
+	 * owns the workspace, and clears a foreign role otherwise so permissions
+	 * are never evaluated against another company's staff record.
 	 */
-	bootstrapOwnerIfMissing = async (): Promise<void> => {
-		if (!browser || !session.pubkey || !tenant.state.organizationId) return;
-		if (this.allStaff().length > 0) return;
+	resolveActiveCompany = async (): Promise<boolean> => {
+		if (!browser || !session.pubkey || !tenant.state.organizationId) return false;
+		const companyId = tenant.state.organizationId;
+		const existing = this.recordsForCompany(companyId)[0];
+		if (existing) {
+			syncTenantBranchForStaff(existing);
+			tenant.setActiveStaff(toActiveStaffInfo(existing));
+			return true;
+		}
+		await this.bootstrapOwnerIfMissing(companyId);
+		const created = this.recordsForCompany(companyId)[0];
+		if (created) {
+			syncTenantBranchForStaff(created);
+			tenant.setActiveStaff(toActiveStaffInfo(created));
+			return true;
+		}
+		tenant.clearActiveStaff();
+		return false;
+	};
+
+	/**
+	 * First-run bootstrap: if the company creator has no staff record yet, create
+	 * an Owner record keyed to their pubkey so the permission system has a role
+	 * to evaluate. Mirrors bdgo-os-nuxt's setup flow. Idempotent per company, and
+	 * only mints a record for a workspace this key owns.
+	 */
+	bootstrapOwnerIfMissing = async (companyId = tenant.state.organizationId): Promise<void> => {
+		if (!browser || !session.pubkey || !companyId) return;
 		const me = session.pubkey;
+		const hasRecord = this.allStaff().some(
+			(s) =>
+				(s.data.pubkey ?? '').toLowerCase() === me.toLowerCase() &&
+				(s.data.companyId ?? companyId) === companyId
+		);
+		if (hasRecord) return;
+		// Staff devices must not fabricate an owner record for someone else's org.
+		const org = glo.get(TYPE.organization, companyId);
+		const orgOwner = (org?.scope as { ownerPubkey?: string } | undefined)?.ownerPubkey;
+		if (orgOwner && orgOwner.toLowerCase() !== me.toLowerCase()) return;
 		const owner: Staff = {
 			name: tenant.state.organizationName || 'Owner',
 			role: 'owner',
 			status: 'active',
 			pubkey: me,
 			npub: session.npub ?? undefined,
-			companyId: tenant.state.organizationId,
+			companyId,
 			companyName: tenant.state.organizationName,
 			companyCode: tenant.state.organizationCode,
 			branchIds: []
 		};
-		await glo.upsert<Staff>(TYPE.staff, owner, { id: `owner-${me}` });
+		await glo.upsert<Staff>(TYPE.staff, owner, { id: `owner-${companyId}-${me}` });
 		// Re-resolve so the just-created record is picked up.
-		const records = this.myStaffRecords;
+		const records = this.recordsForCompany(companyId);
 		if (records[0]) {
 			syncTenantBranchForStaff(records[0]);
 			tenant.setActiveStaff(toActiveStaffInfo(records[0]));
