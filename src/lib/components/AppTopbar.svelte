@@ -17,6 +17,10 @@
 	import { signOutAndClear } from '$nostr/sign-out';
 	import { profile } from '$nostr/profile.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
+	import { tenant } from '$nostr/tenant.svelte';
+	import { workspaceSwitchOptions, switchWorkspace } from '$nostr/workspace-switch';
+	import type { BranchSettings, CompanySettings } from '$nostr/organization-settings';
+	import Select from '$lib/components/ui/Select.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
@@ -147,6 +151,56 @@
 	let quickOpen = $state(false);
 	let accountOpen = $state(false);
 	let feedbackOpen = $state(false);
+
+	// ── Workspace switcher (account menu header) ───────────────────────────
+	let workspaceCompanies = $state<CompanySettings[]>([]);
+	let workspaceBranches = $state<BranchSettings[]>([]);
+	let companySwitchId = $state('');
+	let branchSwitchId = $state('');
+	let workspaceSwitching = $state(false);
+
+	const companyBranches = $derived(
+		workspaceBranches.filter((b) => b.storeId === tenant.state.organizationId)
+	);
+
+	$effect(() => {
+		if (!accountOpen) return;
+		const options = workspaceSwitchOptions();
+		workspaceCompanies = options.companies;
+		workspaceBranches = options.branches;
+	});
+
+	$effect(() => {
+		if (!accountOpen) return;
+		companySwitchId = tenant.state.organizationId;
+		branchSwitchId = tenant.state.locationId ?? '';
+	});
+
+	async function handleCompanySwitch() {
+		if (!companySwitchId || companySwitchId === tenant.state.organizationId) return;
+		workspaceSwitching = true;
+		try {
+			if (await switchWorkspace(companySwitchId)) {
+				toast.success(t('settings.toastCompanySwitched'));
+				if (page.url.pathname !== '/') await goto(resolve('/'));
+			}
+		} finally {
+			workspaceSwitching = false;
+		}
+	}
+
+	async function handleBranchSwitch() {
+		if (!branchSwitchId || branchSwitchId === tenant.state.locationId) return;
+		workspaceSwitching = true;
+		try {
+			if (await switchWorkspace(tenant.state.organizationId, branchSwitchId)) {
+				toast.success(t('settings.toastBranchSwitched'));
+				if (page.url.pathname !== '/') await goto(resolve('/'));
+			}
+		} finally {
+			workspaceSwitching = false;
+		}
+	}
 
 	async function signOut() {
 		const usesLocalKey = session.loginMethod === 'nsec';
@@ -624,7 +678,7 @@
 	</Popover>
 
 	<!-- Account menu (moved from sidebar bottom) -->
-	<Popover bind:open={accountOpen} align="end" side="bottom" class="w-64 p-0">
+	<Popover bind:open={accountOpen} align="end" side="bottom" class="w-72 p-0">
 		{#snippet trigger()}
 			<div
 				class="grid size-9 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[12px] font-bold text-white shadow-sm ring-(--surface-bg) transition-shadow hover:ring-2 hover:ring-primary-500/30"
@@ -643,6 +697,77 @@
 		{/snippet}
 		{#snippet content()}
 			<div class="w-full p-1">
+				<!-- Active workspace: company + branch, switchable in place -->
+				{#if tenant.state.organizationId}
+					<div class="mb-1.5 rounded-lg border border-(--ui-border-muted) bg-(--ui-bg-muted) p-2">
+						<div class="flex items-center gap-2">
+							<div
+								class="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md bg-primary-500/10 text-[11px] font-bold text-primary-600 dark:text-primary-400"
+							>
+								{#if tenant.state.organizationLogoUrl}
+									<img
+										src={tenant.state.organizationLogoUrl}
+										alt=""
+										class="h-full w-full object-cover"
+									/>
+								{:else}
+									{(tenant.state.organizationName || '?').charAt(0).toUpperCase()}
+								{/if}
+							</div>
+							<div class="min-w-0 flex-1 leading-tight">
+								<div class="truncate text-[12px] font-semibold">
+									{tenant.state.organizationName || t('settings.noneSelected')}
+								</div>
+								<div class="flex items-center gap-1 truncate text-[10.5px] text-(--ui-text-dimmed)">
+									<Icon name="lucide:map-pin" class="size-2.5 shrink-0" />
+									<span class="truncate"
+										>{tenant.state.locationName || t('settings.noneSelected')}</span
+									>
+								</div>
+							</div>
+							<a
+								href={resolve('/settings/organization')}
+								onclick={() => (accountOpen = false)}
+								title={t('settings.workspace')}
+								aria-label={t('settings.workspace')}
+								class="focus-ring grid size-6 shrink-0 place-items-center rounded-md text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
+							>
+								<Icon name="lucide:settings-2" class="size-3.5" />
+							</a>
+						</div>
+
+						{#if workspaceCompanies.length > 1 || companyBranches.length > 1}
+							<div class="mt-2 space-y-1.5">
+								{#if workspaceCompanies.length > 1}
+									<Select
+										bind:value={companySwitchId}
+										options={workspaceCompanies.map((c) => ({ value: c.id, label: c.name }))}
+										size="sm"
+										class="w-full"
+										aria-label={t('settings.company')}
+										disabled={workspaceSwitching}
+										onchange={handleCompanySwitch}
+									/>
+								{/if}
+								{#if companyBranches.length > 1}
+									<Select
+										bind:value={branchSwitchId}
+										options={companyBranches.map((b) => ({
+											value: b.id,
+											label: `${b.name} (${b.code})`
+										}))}
+										size="sm"
+										class="w-full"
+										aria-label={t('settings.branchLabel')}
+										disabled={workspaceSwitching}
+										onchange={handleBranchSwitch}
+									/>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/if}
+
 				<!-- Account summary -->
 				<div class="mb-2 flex items-center gap-2.5 rounded-lg px-2.5 py-2">
 					<div

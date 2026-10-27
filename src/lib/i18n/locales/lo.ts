@@ -942,6 +942,7 @@ export const lo = {
 		quickSwitch: 'ສະຫຼັບດ່ວນ',
 		selectCompany: 'ເລືອກບໍລິສັດ…',
 		selectBranch: 'ເລືອກສາຂາ…',
+		mainBranch: 'ສາຂາຫຼັກ',
 		companies: 'ບໍລິສັດ',
 		addCompany: 'ເພີ່ມບໍລິສັດ',
 		addFirstCompany: 'ເພີ່ມບໍລິສັດທຳອິດ',
