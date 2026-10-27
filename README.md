@@ -82,16 +82,17 @@ The `@bitos/bnos-core` dependency is installed from the npm registry.
 ### Server deployment
 
 CI installs with `pnpm install --frozen-lockfile`, then verifies and builds the
-checked commit. The server uses `corepack pnpm` with the same pinned version.
+checked commit. The server uses a pnpm installation with the same pinned version.
 When migrating an existing server, install the updated deployment helper once
 using an administrator account before deploying the first pnpm commit:
 
 ```bash
+sudo env PATH=/opt/node/v22.21.1/bin:/usr/bin:/bin npm install -g pnpm@12.15.0
 sudo install -m 755 ops/bnos-deploy /usr/local/bin/bnos-deploy
 ```
 
 Run this from a checkout containing the updated helper on the server. Node.js
-22.21.1 and Corepack must be available at the paths configured in the helper.
+22.21.1 and pnpm must be available at the paths configured in the helper.
 
 ## Acknowledgments
 
