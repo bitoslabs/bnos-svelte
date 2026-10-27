@@ -22,16 +22,31 @@
 		orderType?: string;
 	}
 
-	const COLUMNS: { status: TicketStatus; label: string; color: string; dotColor: string }[] = [
-		{ status: 'new', label: 'New', color: 'border-t-amber-400', dotColor: 'bg-amber-400' },
+	const COLUMNS: { status: TicketStatus; labelKey: string; color: string; dotColor: string }[] = [
+		{
+			status: 'new',
+			labelKey: 'common.new',
+			color: 'border-t-amber-400',
+			dotColor: 'bg-amber-400'
+		},
 		{
 			status: 'preparing',
-			label: 'Preparing',
+			labelKey: 'status.preparing',
 			color: 'border-t-blue-400',
 			dotColor: 'bg-blue-400'
 		},
-		{ status: 'ready', label: 'Ready', color: 'border-t-emerald-400', dotColor: 'bg-emerald-400' },
-		{ status: 'served', label: 'Served', color: 'border-t-gray-400', dotColor: 'bg-gray-400' }
+		{
+			status: 'ready',
+			labelKey: 'status.ready',
+			color: 'border-t-emerald-400',
+			dotColor: 'bg-emerald-400'
+		},
+		{
+			status: 'served',
+			labelKey: 'status.served',
+			color: 'border-t-gray-400',
+			dotColor: 'bg-gray-400'
+		}
 	];
 
 	let tick = $state(0);
@@ -97,6 +112,8 @@
 		for (const ticket of tickets) counts[ticket.status]++;
 		return counts;
 	});
+
+	const emptyTicketsLabel = $derived(t('restaurant.nothingToFulfill'));
 
 	function elapsedMin(iso: string): number {
 		const t = new Date(iso).getTime();
@@ -187,10 +204,10 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div>
-			<h1 class="font-display text-xl font-bold tracking-tight">Kitchen display</h1>
-			<p class="text-[12.5px] text-(--ui-text-muted)">
-				Prep tickets from active orders · kind 30211
-			</p>
+			<h1 class="font-display text-xl font-bold tracking-tight">
+				{t('restaurant.kitchenDisplay')}
+			</h1>
+			<p class="text-[12.5px] text-(--ui-text-muted)">{t('restaurant.kitchenDisplayDesc')}</p>
 		</div>
 		<div class="flex items-center gap-3 text-[10px] text-(--ui-text-dimmed)">
 			<span class="flex items-center gap-1"
@@ -223,7 +240,7 @@
 					>
 						<div class="flex items-center gap-2">
 							<span class="size-2 rounded-full {col.dotColor}"></span>
-							<span class="text-[13px] font-bold">{col.label}</span>
+							<span class="text-[13px] font-bold">{t(col.labelKey)}</span>
 						</div>
 						<span
 							class="rounded-md bg-(--ui-bg-accented) px-1.5 py-0.5 text-[11px] font-bold tabular-nums"
@@ -309,7 +326,9 @@
 								{/if}
 							</div>
 						{:else}
-							<div class="py-6 text-center text-[12px] text-(--ui-text-dimmed)">No tickets</div>
+							<div class="py-6 text-center text-[12px] text-(--ui-text-dimmed)">
+								{emptyTicketsLabel}
+							</div>
 						{/each}
 					</div>
 				</div>
