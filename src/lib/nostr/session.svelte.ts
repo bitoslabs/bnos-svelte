@@ -23,6 +23,12 @@ import {
 } from '@bitos/bnos-core';
 import { clear as idbClear } from 'idb-keyval';
 import { truncateNpub } from '$lib/utils/format';
+import {
+	clearKnownDevice,
+	markKnownDevice,
+	requestPersistentStorage,
+	wasKnownDevice
+} from '$lib/storage/persistence';
 import { relays } from './relay.svelte';
 import {
 	connectWithBunker,
@@ -54,6 +60,13 @@ function getNip46Pool(): SimplePool | undefined {
 	if (!browser) return undefined;
 	if (!nip46Pool) nip46Pool = new SimplePool();
 	return nip46Pool;
+}
+
+/** True when the browser's Data Saver mode is on (skip background probes). */
+function isDataSaverOn(): boolean {
+	if (!browser) return false;
+	const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+	return !!conn?.saveData;
 }
 
 /** Decode an `nsec` into its 32-byte secret key. */
@@ -122,9 +135,27 @@ class SessionStore {
 	hydrated = $state(false);
 	loading = $state(false);
 	error = $state<string | null>(null);
+	/**
+	 * True when this device signed in before but the auth snapshot is gone —
+	 * usually because the browser evicted storage. The login screen uses this
+	 * to explain the unexpected sign-out instead of showing a blank first run.
+	 */
+	sessionLost = $state(false);
+	/**
+	 * True when a NIP-46 session is still in memory but the remote signer no
+	 * longer accepts requests — usually because the owner removed this app's
+	 * connection in the signer app.
+	 */
+	remoteSignerLost = $state(false);
 
 	/** Live NIP-46 signer (not reactive — it owns a relay subscription). */
 	private nip46Signer: Nip46Signer | null = null;
+	/** Persisted connection, kept in memory so a lost signer can be rebuilt. */
+	private nip46Connection: Nip46Connection | null = null;
+	/** Throttle for remote-signer health checks (epoch ms). */
+	private lastRemoteCheck = 0;
+	/** Shared in-flight check so resume + online never ping twice. */
+	private remoteCheckInFlight: Promise<boolean> | null = null;
 
 	get isAuthenticated() {
 		return !!this.snapshot?.pubkey;
@@ -161,6 +192,17 @@ class SessionStore {
 			// ownership checks (`nostr_pubkey`) keep working across reloads.
 			if (!canonical && legacy) this.persist(legacy);
 			this.restoreNip46();
+
+			if (this.snapshot) {
+				// A live session is a known device; also ask the browser to keep the
+				// storage so mobile eviction does not sign the user out later.
+				markKnownDevice();
+				void requestPersistentStorage();
+				this.sessionLost = false;
+			} else {
+				// No auth snapshot: distinguish a first visit from a cleared session.
+				this.sessionLost = wasKnownDevice();
+			}
 		} catch (e) {
 			this.error = e instanceof Error ? e.message : String(e);
 		} finally {
@@ -173,7 +215,24 @@ class SessionStore {
 	private clearNip46() {
 		void this.nip46Signer?.close().catch(() => {});
 		this.nip46Signer = null;
+		this.nip46Connection = null;
+		this.remoteSignerLost = false;
+		this.lastRemoteCheck = 0;
 		if (browser) localStorage.removeItem(NIP46_STORAGE_KEY);
+	}
+
+	/** Rebuild the signer from the persisted connection (used by Retry). */
+	private reconnectNip46(): boolean {
+		if (!this.nip46Connection) return false;
+		try {
+			this.nip46Signer = restoreNip46Signer(this.nip46Connection, {
+				pool: getNip46Pool()
+			});
+			return true;
+		} catch {
+			this.nip46Signer = null;
+			return false;
+		}
 	}
 
 	/** Sign in with an nsec / hex private key. */
@@ -290,6 +349,9 @@ class SessionStore {
 		};
 		void this.nip46Signer?.close().catch(() => {});
 		this.nip46Signer = signer;
+		this.nip46Connection = connection;
+		this.remoteSignerLost = false;
+		this.lastRemoteCheck = 0;
 		this.snapshot = snap;
 		this.hydrated = true;
 		this.persist(snap);
@@ -314,10 +376,12 @@ class SessionStore {
 			const raw = localStorage.getItem(NIP46_STORAGE_KEY);
 			if (!raw) throw new Error('Missing NIP-46 connection');
 			const connection = JSON.parse(raw) as Nip46Connection;
+			this.nip46Connection = connection;
 			this.nip46Signer = restoreNip46Signer(connection, { pool: getNip46Pool() });
 		} catch {
 			// A broken connection must not leave a half-signed-in session behind.
 			this.nip46Signer = null;
+			this.nip46Connection = null;
 			this.snapshot = null;
 			localStorage.removeItem(NIP46_STORAGE_KEY);
 		}
@@ -327,7 +391,14 @@ class SessionStore {
 	signEvent = async (template: EventTemplate): Promise<NostrEvent> => {
 		const signer = this.activeSigner;
 		if (!signer) throw new Error('No Nostr signer available');
-		return signer.signEvent(template);
+		try {
+			return await signer.signEvent(template);
+		} catch (e) {
+			// A failed remote-signing request is a free revocation signal — confirm
+			// it with one ping instead of polling on a timer.
+			if (this.snapshot?.loginMethod === 'nip46') void this.verifyRemoteSigner(true);
+			throw e;
+		}
 	};
 
 	/** NIP-44 encrypt to a peer with the active login method. */
@@ -338,7 +409,12 @@ class SessionStore {
 				'NIP-44 encryption requires a NIP-07 extension, NIP-46 signer, or nsec login'
 			);
 		}
-		return signer.nip44Encrypt(peerHex, plaintext);
+		try {
+			return await signer.nip44Encrypt(peerHex, plaintext);
+		} catch (e) {
+			if (this.snapshot?.loginMethod === 'nip46') void this.verifyRemoteSigner(true);
+			throw e;
+		}
 	};
 
 	/** NIP-44 decrypt from a peer with the active login method. */
@@ -349,7 +425,12 @@ class SessionStore {
 				'NIP-44 decryption requires a NIP-07 extension, NIP-46 signer, or nsec login'
 			);
 		}
-		return signer.nip44Decrypt(peerHex, ciphertext);
+		try {
+			return await signer.nip44Decrypt(peerHex, ciphertext);
+		} catch (e) {
+			if (this.snapshot?.loginMethod === 'nip46') void this.verifyRemoteSigner(true);
+			throw e;
+		}
 	};
 
 	/**
@@ -405,6 +486,10 @@ class SessionStore {
 	 */
 	logout = async () => {
 		this.clearNip46();
+		// An explicit sign-out is not a lost session — forget the marker so the
+		// login screen does not claim the session was cleared by the browser.
+		clearKnownDevice();
+		this.sessionLost = false;
 		this.snapshot = null;
 		this.hydrated = false;
 
@@ -457,6 +542,10 @@ class SessionStore {
 
 	private persist(snap: BnosAuthSnapshot) {
 		if (!browser) return;
+		// Remember this device and request durable storage from the login gesture.
+		markKnownDevice();
+		void requestPersistentStorage();
+		this.sessionLost = false;
 		localStorage.setItem(BNOS_AUTH_STORAGE_KEYS.PUBKEY, snap.pubkey);
 		localStorage.setItem('nostr_npub', snap.npub);
 		localStorage.setItem(BNOS_AUTH_STORAGE_KEYS.LOGIN_METHOD, snap.loginMethod);
@@ -470,6 +559,94 @@ class SessionStore {
 			localStorage.removeItem(BNOS_AUTH_STORAGE_KEYS.PRIVKEY);
 		}
 	}
+
+	/**
+	 * Ping the NIP-46 signer to confirm the owner has not removed this app's
+	 * connection. No-op for other login methods and while offline. Retries once
+	 * to avoid signing out on a transient relay hiccup.
+	 */
+	verifyRemoteSigner = (force = false): Promise<boolean> => {
+		if (this.remoteCheckInFlight) return this.remoteCheckInFlight;
+		const pending = this.runRemoteCheck(force).finally(() => {
+			if (this.remoteCheckInFlight === pending) this.remoteCheckInFlight = null;
+		});
+		this.remoteCheckInFlight = pending;
+		return pending;
+	};
+
+	private runRemoteCheck = async (force: boolean): Promise<boolean> => {
+		if (!browser || this.snapshot?.loginMethod !== 'nip46') return true;
+		if (!navigator.onLine) return true;
+		// Respect Data Saver: never spend metered traffic on a background probe.
+		if (!force && isDataSaverOn()) return true;
+
+		// A forced check is the banner's Retry: rebuild a signer we closed after
+		// the previous failure, then ping again.
+		if (this.remoteSignerLost) {
+			if (!force) return false;
+			if (!this.nip46Signer && !this.reconnectNip46()) return false;
+		} else if (!this.nip46Signer) {
+			return true;
+		}
+
+		const now = Date.now();
+		if (!force && now - this.lastRemoteCheck < 120_000) return true;
+		this.lastRemoteCheck = now;
+
+		const signer = this.nip46Signer;
+		if (!signer) return false;
+
+		const first = await signer.checkConnection();
+		if (first === 'ok') {
+			this.remoteSignerLost = false;
+			return true;
+		}
+		// An explicit rejection is a definite revocation — no need to retry.
+		if (first === 'rejected') {
+			this.markRemoteSignerLost(signer);
+			return false;
+		}
+
+		// Timeout: one short retry to rule out a relay hiccup.
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+		if (!navigator.onLine) return true;
+		const second = await signer.checkConnection(3000);
+		if (second === 'ok') {
+			this.remoteSignerLost = false;
+			return true;
+		}
+
+		this.markRemoteSignerLost(signer);
+		return false;
+	};
+
+	/** Mark the remote signer lost and release its pending request/subscription. */
+	private markRemoteSignerLost(signer: Nip46Signer) {
+		this.remoteSignerLost = true;
+		void signer.close().catch(() => {});
+		this.nip46Signer = null;
+	}
+
+	/**
+	 * Re-write the auth snapshot if the browser cleared it while the app was
+	 * open (mobile browsers can evict storage in the background). Called when
+	 * the app becomes visible again so a reload does not lose the session.
+	 */
+	reassertPersistence = () => {
+		if (!browser || !this.snapshot) return;
+		try {
+			if (!localStorage.getItem(BNOS_AUTH_STORAGE_KEYS.PUBKEY)) {
+				this.persist(this.snapshot);
+			}
+		} catch {
+			/* storage may be unavailable */
+		}
+	};
+
+	/** Dismiss the "session was cleared" notice on the login screen. */
+	dismissSessionLost = () => {
+		this.sessionLost = false;
+	};
 
 	/** Re-export login method type for convenience. */
 	static method = (m: BnosLoginMethod) => m;

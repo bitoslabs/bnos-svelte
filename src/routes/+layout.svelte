@@ -29,6 +29,7 @@
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
+	import RemoteSignerBanner from '$lib/components/RemoteSignerBanner.svelte';
 	import PwaPrompt from '$lib/components/PwaPrompt.svelte';
 	import OfflineBadge from '$lib/components/OfflineBadge.svelte';
 	import BootSplash from '$lib/components/ui/BootSplash.svelte';
@@ -83,13 +84,37 @@
 
 		const onRemoteClear = () => clearIdentityStores();
 		window.addEventListener('bnos:clear-all', onRemoteClear);
+		// Mobile browsers can evict storage while the app is backgrounded. When the
+		// app resumes, re-write the auth snapshot if it disappeared so a reload
+		// does not silently sign the user out.
+		let hiddenAt = 0;
+		const onVisibility = () => {
+			if (document.visibilityState === 'hidden') {
+				hiddenAt = Date.now();
+				return;
+			}
+			session.reassertPersistence();
+			// NIP-46: the owner may have removed this app's connection while the
+			// app was in the background. Only ping after a real absence — not on
+			// every tab switch — to avoid needless relay traffic.
+			if (Date.now() - hiddenAt > 15 * 60_000) void session.verifyRemoteSigner();
+		};
+		document.addEventListener('visibilitychange', onVisibility);
+		// No timer: revocation is also detected for free when a signing request
+		// fails. Re-check only when connectivity returns (checks are skipped offline).
+		const onOnline = () => void session.verifyRemoteSigner();
+		window.addEventListener('online', onOnline);
 		session.load();
 		tenant.load();
 		profile.load();
 		i18n.init();
 		if (session.isAuthenticated) void warmRelays();
 
-		return () => window.removeEventListener('bnos:clear-all', onRemoteClear);
+		return () => {
+			window.removeEventListener('bnos:clear-all', onRemoteClear);
+			document.removeEventListener('visibilitychange', onVisibility);
+			window.removeEventListener('online', onOnline);
+		};
 	});
 
 	// Hydrate the kind-0 profile cache from relays whenever the active pubkey
@@ -304,4 +329,5 @@
 <CommandPalette />
 {#if !isPublicRoute}
 	<WorkspacePicker />
+	<RemoteSignerBanner />
 {/if}

@@ -1,17 +1,56 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
 	import { goto } from '$app/navigation';
 	import { glo } from '$nostr/store.svelte';
 	import { signOutAndClear } from '$nostr/sign-out';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
+	import {
+		requestPersistentStorage,
+		storageStatus,
+		type StorageStatus
+	} from '$lib/storage/persistence';
 
 	const GLO_PREFIX = 'bnos-os:glo:';
+
+	// ── Device storage protection ──────────────────────────────────────────
+	let storage = $state<StorageStatus | null>(null);
+	let protecting = $state(false);
+
+	onMount(() => {
+		void refreshStorage();
+	});
+
+	async function refreshStorage() {
+		storage = await storageStatus();
+	}
+
+	async function protectStorage() {
+		protecting = true;
+		try {
+			const ok = await requestPersistentStorage();
+			await refreshStorage();
+			if (ok) toast.success(t('settings.storageProtectedToast'));
+			else toast.warning(t('settings.storageProtectFailed'));
+		} finally {
+			protecting = false;
+		}
+	}
+
+	function formatBytes(bytes: number | null): string {
+		if (bytes === null) return '—';
+		if (bytes < 1024) return `${bytes} B`;
+		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+		if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+		return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+	}
 
 	function allData() {
 		if (!browser) return {};
@@ -188,6 +227,57 @@
 		<p class="mt-1.5 text-[11px] text-(--ui-text-dimmed)">
 			{storageKb < 50 ? t('settings.storageLight') : t('settings.storageHeavy')}
 		</p>
+	</section>
+
+	<!-- Device storage protection -->
+	<section class="surface-card p-5">
+		<div class="mb-4 flex items-center gap-3">
+			<Icon name="lucide:shield-check" class="size-5 text-primary-500" />
+			<div>
+				<h2 class="font-display text-[15px] font-semibold tracking-tight">
+					{t('settings.storageProtection')}
+				</h2>
+				<p class="text-[12px] text-(--ui-text-muted)">{t('settings.storageProtectionDesc')}</p>
+			</div>
+		</div>
+
+		<div
+			class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-(--ui-bg-muted) p-3"
+		>
+			<div class="min-w-0">
+				<div class="text-[12px] font-semibold">
+					{storage?.persisted ? t('settings.storagePersisted') : t('settings.storageNotPersisted')}
+				</div>
+				<div class="mt-0.5 text-[11px] text-(--ui-text-muted)">
+					{#if storage?.usage !== null && storage?.usage !== undefined}
+						{formatBytes(storage.usage)}{#if storage?.quota}
+							/ {formatBytes(storage.quota)}{/if}
+					{:else}
+						{t('settings.storageEstimateUnavailable')}
+					{/if}
+				</div>
+			</div>
+			<Badge color={storage?.persisted ? 'success' : 'warning'}>
+				{storage?.persisted ? t('settings.storageProtected') : t('settings.storageAtRisk')}
+			</Badge>
+		</div>
+
+		{#if !storage?.persisted}
+			<Button
+				color="primary"
+				variant="soft"
+				size="sm"
+				class="mt-3"
+				disabled={protecting || !storage?.supported}
+				onclick={protectStorage}
+			>
+				<Icon name="lucide:shield-check" class="size-4" />
+				{protecting ? t('settings.storageProtecting') : t('settings.protectStorage')}
+			</Button>
+			<p class="mt-2 text-[11px] leading-relaxed text-(--ui-text-dimmed)">
+				{t('settings.storageMobileHint')}
+			</p>
+		{/if}
 	</section>
 
 	<!-- Local records -->

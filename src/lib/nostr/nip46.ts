@@ -87,6 +87,36 @@ export class Nip46Signer {
 		return this.bunker.nip44Decrypt(peerHex, ciphertext);
 	}
 
+	/**
+	 * Verify the remote signer still accepts requests.
+	 *
+	 * Returns:
+	 *  - `'ok'`       — the signer answered `pong`.
+	 *  - `'rejected'` — the signer answered with an error (definite revocation).
+	 *  - `'timeout'`  — no answer within `timeoutMs` (could be a relay hiccup).
+	 *
+	 * `BunkerSigner.ping()` has no built-in timeout, so the race is required;
+	 * the caller closes the signer on a final failure to release the pending
+	 * request and its relay subscription.
+	 */
+	async checkConnection(timeoutMs = 4000): Promise<'ok' | 'timeout' | 'rejected'> {
+		let timedOut = false;
+		try {
+			await Promise.race([
+				this.bunker.ping(),
+				new Promise<never>((_, reject) => {
+					setTimeout(() => {
+						timedOut = true;
+						reject(new Error('Remote signer did not respond'));
+					}, timeoutMs);
+				})
+			]);
+			return 'ok';
+		} catch {
+			return timedOut ? 'timeout' : 'rejected';
+		}
+	}
+
 	async close(): Promise<void> {
 		await this.bunker.close();
 	}
