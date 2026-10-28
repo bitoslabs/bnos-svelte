@@ -217,6 +217,29 @@
 			<p class="mt-1.5 text-sm text-(--ui-text-muted)">{t('auth.signInDesc')}</p>
 		</div>
 
+		{#if session.sessionLost}
+			<div
+				in:fly={{ y: 8, duration: 300 }}
+				class="mb-4 flex items-start gap-3 rounded-xl border border-(--ui-border) bg-(--tone-warning-bg) p-3.5 text-(--tone-warning-text)"
+			>
+				<Icon name="lucide:shield-alert" class="mt-0.5 size-4 shrink-0" />
+				<div class="min-w-0 flex-1">
+					<p class="text-[12.5px] font-semibold">{t('auth.sessionLostTitle')}</p>
+					<p class="mt-0.5 text-[11.5px] leading-relaxed opacity-90">
+						{t('auth.sessionLostDesc')}
+					</p>
+				</div>
+				<button
+					type="button"
+					class="shrink-0 rounded-md p-1 opacity-80 transition-opacity hover:opacity-100"
+					onclick={() => session.dismissSessionLost()}
+					aria-label={t('auth.sessionLostDismiss')}
+				>
+					<Icon name="lucide:x" class="size-3.5" />
+				</button>
+			</div>
+		{/if}
+
 		<!-- Card -->
 		<div in:fly={{ y: 12, duration: 300, delay: 80 }} class="surface-card overflow-hidden">
 			{#if view === 'login'}
