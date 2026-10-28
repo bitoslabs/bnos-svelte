@@ -401,6 +401,7 @@ export const lo = {
 	},
 	sidebar: {
 		nip07Extension: 'ສ່ວນຂະຫຍາຍ NIP-07',
+		nip46Signer: 'ຕົວລົງນາມ NIP-46',
 		privateKey: 'ກະແຈສ່ວນຕົວ',
 		bnosDashboard: 'ແດສບອດ BNOS',
 		expandSidebar: 'ຂະຫຍາຍແຖບຂ້າງ',
@@ -448,6 +449,16 @@ export const lo = {
 	layout: {
 		checkingWorkspace: 'ກຳລັງກວດສອບພື້ນທີ່ເຮັດວຽກ',
 		checkingWorkspaceDesc: 'ກຳລັງກູ້ຄືນພື້ນທີ່ເຮັດວຽກແລະສາຂາປັດຈຸບັນ…'
+	},
+	workspacePicker: {
+		title: 'ເລືອກພື້ນທີ່ເຮັດວຽກ',
+		desc: 'ທ່ານມີສິດເຂົ້າເຖິງຫຼາຍບໍລິສັດ. ເລືອກບໍລິສັດທີ່ຕ້ອງການເຮັດວຽກ.',
+		company: 'ບໍລິສັດ',
+		branch: 'ສາຂາ',
+		continue: 'ດຳເນີນການຕໍ່',
+		keepCurrent: 'ໃຊ້ບໍລິສັດປັດຈຸບັນ',
+		switching: 'ກຳລັງສະຫຼັບ…',
+		switched: 'ສະຫຼັບພື້ນທີ່ເຮັດວຽກແລ້ວ'
 	},
 	auth: {
 		privateKey: 'ກະແຈສ່ວນຕົວ (nsec…)',
@@ -948,6 +959,7 @@ export const lo = {
 		off: 'ປິດ',
 		showQr: 'ສະແດງ QR',
 		nip07Extension: 'NIP-07 extension',
+		nip46Signer: 'ຕົວລົງນາມ NIP-46',
 		privateKey: 'ຄີສ່ວນຕົວ',
 		scanToVerify: 'ສະແກນເພື່ອຕິດຕາມ / ຢືນຢັນໄອເດັນຕິຕີ Nostr ນີ້',
 		payloadEncryption: 'ການເຂົ້າລະຫັດເພຍໂຫລດ',

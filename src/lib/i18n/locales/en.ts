@@ -422,6 +422,7 @@ export const en = {
 	},
 	sidebar: {
 		nip07Extension: 'NIP-07 extension',
+		nip46Signer: 'NIP-46 signer',
 		privateKey: 'Private key',
 		bnosDashboard: 'BNOS Dashboard',
 		expandSidebar: 'Expand sidebar',
@@ -479,6 +480,16 @@ export const en = {
 	layout: {
 		checkingWorkspace: 'Checking workspace',
 		checkingWorkspaceDesc: 'Restoring your active workspace and branch…'
+	},
+	workspacePicker: {
+		title: 'Choose a workspace',
+		desc: 'You have access to multiple companies. Pick the one you want to work in.',
+		company: 'Company',
+		branch: 'Branch',
+		continue: 'Continue',
+		keepCurrent: 'Keep current',
+		switching: 'Switching…',
+		switched: 'Workspace switched'
 	},
 	auth: {
 		privateKey: 'Private key (nsec…)',
@@ -1035,6 +1046,7 @@ export const en = {
 		// Identity (settings index)
 		showQr: 'Show QR',
 		nip07Extension: 'NIP-07 extension',
+		nip46Signer: 'NIP-46 signer',
 		privateKey: 'Private key',
 		scanToVerify: 'Scan to follow / verify this Nostr identity',
 		// Encryption (settings index)

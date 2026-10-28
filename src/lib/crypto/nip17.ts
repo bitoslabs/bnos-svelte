@@ -13,6 +13,7 @@
  * `created_at` cannot correlate sender and recipient.
  */
 import { finalizeEvent, generateSecretKey, getEventHash, nip19, nip44 } from 'nostr-tools';
+import type { EventTemplate } from 'nostr-tools/pure';
 import {
 	signNostrEvent,
 	type BnosLoginMethod,
@@ -40,12 +41,20 @@ function getNip44Ext() {
 	return (window as Nip44Window).nostr?.nip44 ?? null;
 }
 
-/** NIP-44 encrypt to a recipient (extension first, then nsec). */
+/** A signer that can sign events and optionally NIP-44 encrypt. */
+export interface Nip17Signer {
+	signEvent(template: EventTemplate): Promise<NostrEvent>;
+	nip44Encrypt?: (peerHex: string, plaintext: string) => Promise<string>;
+}
+
+/** NIP-44 encrypt to a recipient (active signer first, then extension, then nsec). */
 async function nip44EncryptTo(
 	recipientPubkey: string,
 	plaintext: string,
-	senderNsec?: string | null
+	senderNsec?: string | null,
+	signer?: Nip17Signer
 ): Promise<string> {
+	if (signer?.nip44Encrypt) return signer.nip44Encrypt(recipientPubkey, plaintext);
 	const ext = getNip44Ext();
 	if (ext) return ext.encrypt(recipientPubkey, plaintext);
 	if (!senderNsec) {
@@ -72,6 +81,8 @@ export interface GiftWrapInput {
 	loginMethod: BnosLoginMethod;
 	nsec?: string | null;
 	extensionSigner?: NostrExtensionSigner;
+	/** Active signer (NIP-07 / NIP-46 / nsec). Preferred over the legacy fields. */
+	signer?: Nip17Signer;
 	now?: number;
 }
 
@@ -102,15 +113,22 @@ export async function buildGiftWrap(input: GiftWrapInput): Promise<NostrEvent> {
 		kind: KIND_SEAL,
 		created_at: backdate(nowSec),
 		tags: [] as string[][],
-		content: await nip44EncryptTo(input.recipientPubkey, JSON.stringify(sealed), input.nsec ?? null)
+		content: await nip44EncryptTo(
+			input.recipientPubkey,
+			JSON.stringify(sealed),
+			input.nsec ?? null,
+			input.signer
+		)
 	};
-	const seal = (await signNostrEvent({
-		template: sealTemplate,
-		fallbackPubkey: input.senderPubkey,
-		loginMethod: input.loginMethod,
-		nsec: input.nsec,
-		extensionSigner: input.extensionSigner
-	})) as NostrEvent;
+	const seal = input.signer
+		? await input.signer.signEvent(sealTemplate)
+		: ((await signNostrEvent({
+				template: sealTemplate,
+				fallbackPubkey: input.senderPubkey,
+				loginMethod: input.loginMethod,
+				nsec: input.nsec,
+				extensionSigner: input.extensionSigner
+			})) as NostrEvent);
 
 	// 3. Gift wrap — kind 1059, signed by a throwaway key, NIP-44 to recipient.
 	const wrapSecret = generateSecretKey();

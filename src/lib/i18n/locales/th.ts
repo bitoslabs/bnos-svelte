@@ -401,6 +401,7 @@ export const th = {
 	},
 	sidebar: {
 		nip07Extension: 'ส่วนขยาย NIP-07',
+		nip46Signer: 'ตัวลงนาม NIP-46',
 		privateKey: 'คีย์ส่วนตัว',
 		bnosDashboard: 'แดชบอร์ด BNOS',
 		expandSidebar: 'ขยายแถบด้านข้าง',
@@ -448,6 +449,16 @@ export const th = {
 	layout: {
 		checkingWorkspace: 'กำลังตรวจสอบพื้นที่ทำงาน',
 		checkingWorkspaceDesc: 'กำลังกู้คืนพื้นที่ทำงานและสาขาปัจจุบัน…'
+	},
+	workspacePicker: {
+		title: 'เลือกพื้นที่ทำงาน',
+		desc: 'คุณมีสิทธิ์เข้าถึงหลายบริษัท เลือกบริษัทที่ต้องการทำงาน',
+		company: 'บริษัท',
+		branch: 'สาขา',
+		continue: 'ดำเนินการต่อ',
+		keepCurrent: 'ใช้บริษัทปัจจุบัน',
+		switching: 'กำลังสลับ…',
+		switched: 'สลับพื้นที่ทำงานแล้ว'
 	},
 	auth: {
 		privateKey: 'คีย์ส่วนตัว (nsec…)',
@@ -948,6 +959,7 @@ export const th = {
 		off: 'ปิด',
 		showQr: 'แสดง QR',
 		nip07Extension: 'NIP-07 extension',
+		nip46Signer: 'ตัวลงนาม NIP-46',
 		privateKey: 'คีย์ส่วนตัว',
 		scanToVerify: 'สแกนเพื่อติดตาม / ยืนยันไอเดนติตี้ Nostr นี้',
 		payloadEncryption: 'การเข้ารหัสเพย์โหลด',

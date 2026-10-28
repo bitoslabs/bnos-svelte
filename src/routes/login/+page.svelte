@@ -1,6 +1,6 @@
 <script lang="ts">
 	/* eslint-disable svelte/no-navigation-without-resolve -- external project URLs */
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { fly } from 'svelte/transition';
@@ -9,6 +9,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
+	import QrCode from '$lib/components/ui/QrCode.svelte';
 	import Popover from '$lib/components/ui/Popover.svelte';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import RelayStatusPopover from '$lib/components/RelayStatusPopover.svelte';
@@ -31,6 +32,14 @@
 	let generated = $state<{ nsec: string; npub: string } | null>(null);
 	let backedUp = $state(false);
 	let copied = $state(false);
+
+	// NIP-46 remote signer
+	let showRemote = $state(false);
+	let bunkerInput = $state('');
+	let nostrConnectUri = $state<string | null>(null);
+	let nostrConnectController: AbortController | null = null;
+
+	onDestroy(() => nostrConnectController?.abort());
 
 	onMount(() => {
 		session.load();
@@ -72,6 +81,56 @@
 		} finally {
 			loading = false;
 		}
+	}
+
+	function authChallenge(url: string) {
+		toast.info('Signer approval needed', url);
+	}
+
+	/** NIP-46 bunker-initiated login. */
+	async function handleBunker() {
+		loading = true;
+		try {
+			await session.loginWithBunker(bunkerInput, authChallenge);
+			toast.success(t('common.signIn'), 'Connected with a remote signer.');
+			routeAfterLogin();
+		} catch (e) {
+			toast.error(
+				'Could not connect the remote signer',
+				e instanceof Error ? e.message : undefined
+			);
+		} finally {
+			loading = false;
+		}
+	}
+
+	/** NIP-46 client-initiated login (QR / signer app). */
+	async function handleNostrConnect() {
+		nostrConnectController?.abort();
+		const controller = new AbortController();
+		nostrConnectController = controller;
+		nostrConnectUri = null;
+		try {
+			await session.loginWithNostrConnect({
+				signal: controller.signal,
+				onUri: (uri) => (nostrConnectUri = uri),
+				onAuth: authChallenge
+			});
+			toast.success(t('common.signIn'), 'Connected with a remote signer.');
+			routeAfterLogin();
+		} catch (e) {
+			if (!controller.signal.aborted) {
+				toast.error('Could not connect the signer app', e instanceof Error ? e.message : undefined);
+			}
+		} finally {
+			if (nostrConnectController === controller) nostrConnectController = null;
+		}
+	}
+
+	function cancelNostrConnect() {
+		nostrConnectController?.abort();
+		nostrConnectController = null;
+		nostrConnectUri = null;
 	}
 
 	function handleCreate() {
@@ -248,6 +307,103 @@
 							{t('auth.signInWithKey')}
 						</Button>
 					</form>
+
+					<div class="flex items-center gap-3">
+						<div class="h-px flex-1 bg-(--ui-border)"></div>
+						<span
+							class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
+						>
+							{t('auth.or')}
+						</span>
+						<div class="h-px flex-1 bg-(--ui-border)"></div>
+					</div>
+
+					{#if !showRemote}
+						<Button color="neutral" variant="subtle" block onclick={() => (showRemote = true)}>
+							<Icon name="lucide:plug-zap" class="size-4" />
+							Use a remote signer (NIP-46)
+						</Button>
+					{:else}
+						<div class="space-y-3 rounded-xl border border-(--ui-border) p-3">
+							<div class="flex items-center justify-between">
+								<span class="text-[12px] font-semibold text-(--ui-text)">Remote signer</span>
+								<button
+									type="button"
+									class="text-[11px] font-semibold text-(--ui-text-muted) hover:text-(--ui-text)"
+									onclick={() => {
+										cancelNostrConnect();
+										showRemote = false;
+									}}>Close</button
+								>
+							</div>
+
+							{#if nostrConnectUri}
+								<div class="flex flex-col items-center">
+									<div class="rounded-lg bg-white p-2">
+										<QrCode value={nostrConnectUri} size={160} />
+									</div>
+									<p class="mt-2 text-center text-[11px] text-(--ui-text-muted)">
+										Scan with a NIP-46 signer app (Amber, nsec.app, …) or open the link.
+									</p>
+									<a
+										href={nostrConnectUri}
+										class="mt-2 inline-flex items-center gap-1 text-[11.5px] font-semibold text-primary-600 hover:text-primary-500 dark:text-primary-400"
+									>
+										<Icon name="lucide:external-link" class="size-3" /> Open signer app
+									</a>
+									<button
+										type="button"
+										class="mt-2 text-[11px] font-semibold text-(--ui-text-muted) hover:text-(--ui-text)"
+										onclick={cancelNostrConnect}>Cancel</button
+									>
+								</div>
+							{:else}
+								<label class="block">
+									<span class="mb-1 block text-[11.5px] font-semibold text-(--ui-text-muted)"
+										>Bunker URL</span
+									>
+									<Input
+										bind:value={bunkerInput}
+										icon="lucide:link"
+										placeholder="bunker://…?relay=wss://…"
+										class="w-full font-mono text-[11.5px]"
+									/>
+								</label>
+								<Button
+									color="primary"
+									variant="soft"
+									block
+									size="sm"
+									disabled={loading || !bunkerInput.trim()}
+									onclick={handleBunker}
+								>
+									<Icon name="lucide:plug-zap" class="size-4" /> Connect bunker
+								</Button>
+								<div class="flex items-center gap-3">
+									<div class="h-px flex-1 bg-(--ui-border)"></div>
+									<span
+										class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase"
+										>{t('auth.or')}</span
+									>
+									<div class="h-px flex-1 bg-(--ui-border)"></div>
+								</div>
+								<Button
+									color="neutral"
+									variant="subtle"
+									block
+									size="sm"
+									disabled={loading}
+									onclick={handleNostrConnect}
+								>
+									<Icon name="lucide:qr-code" class="size-4" /> Connect with signer app
+								</Button>
+								<p class="text-[10.5px] leading-relaxed text-(--ui-text-dimmed)">
+									Your key stays inside the signer app. This device only holds a disposable
+									connection key.
+								</p>
+							{/if}
+						</div>
+					{/if}
 				</div>
 
 				<!-- New to Nostr → {t('auth.createAccount')} -->

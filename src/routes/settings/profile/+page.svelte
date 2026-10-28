@@ -240,6 +240,10 @@
 								<Badge color="info">
 									<Icon name="lucide:puzzle" class="mr-1 size-3" />NIP-07 extension
 								</Badge>
+							{:else if snap.loginMethod === 'nip46'}
+								<Badge color="info">
+									<Icon name="lucide:plug-zap" class="mr-1 size-3" />NIP-46 signer
+								</Badge>
 							{:else}
 								<Badge color="success">
 									<span class="live-dot mr-1.5"></span>Private key

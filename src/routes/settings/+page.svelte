@@ -227,7 +227,9 @@
 				<div class="text-[11.5px] text-(--ui-text-dimmed)">
 					{session.loginMethod === 'extension'
 						? t('settings.nip07Extension')
-						: t('settings.privateKey')}
+						: session.loginMethod === 'nip46'
+							? t('settings.nip46Signer')
+							: t('settings.privateKey')}
 				</div>
 			</div>
 			<Badge color="success"><span class="live-dot"></span> {t('common.active')}</Badge>

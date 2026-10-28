@@ -25,7 +25,11 @@
 		</div>
 		<div class="min-w-0">
 			<div class="text-[11px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
-				{session.loginMethod === 'extension' ? 'NIP-07 extension' : 'Private key'}
+				{session.loginMethod === 'extension'
+					? 'NIP-07 extension'
+					: session.loginMethod === 'nip46'
+						? 'NIP-46 signer'
+						: 'Private key'}
 			</div>
 			<div class="truncate font-mono text-[13.5px] font-semibold">{session.npub ?? '—'}</div>
 		</div>

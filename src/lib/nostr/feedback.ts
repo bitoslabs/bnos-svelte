@@ -135,7 +135,8 @@ export async function sendFeedback(input: FeedbackInput): Promise<FeedbackResult
 				],
 				loginMethod: snap.loginMethod,
 				nsec: snap.nsec,
-				extensionSigner: session.extensionSigner ?? undefined
+				extensionSigner: session.extensionSigner ?? undefined,
+				signer: session.activeSigner ?? undefined
 			});
 			wraps.push({ recipient, event });
 		}

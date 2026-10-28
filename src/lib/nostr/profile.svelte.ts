@@ -18,7 +18,7 @@
  * data.
  */
 import { browser } from '$app/environment';
-import { NOSTR_KINDS, signNostrEvent, type NostrEvent } from '@bitos/bnos-core';
+import { NOSTR_KINDS, type NostrEvent } from '@bitos/bnos-core';
 import { session } from './session.svelte';
 import { relays } from './relay.svelte';
 import { fetchEvents, sendEvent } from './client';
@@ -167,13 +167,7 @@ class ProfileStore {
 				tags: [['client', BNOS_CLIENT_ID]] as string[][],
 				content: JSON.stringify(clean)
 			};
-			const event = (await signNostrEvent({
-				template,
-				fallbackPubkey: snap.pubkey,
-				loginMethod: snap.loginMethod,
-				nsec: snap.nsec,
-				extensionSigner: session.extensionSigner ?? undefined
-			})) as NostrEvent;
+			const event = await session.signEvent(template);
 			const ok = await sendEvent(event);
 			if (ok) {
 				this.seenCreatedAt = event.created_at;
