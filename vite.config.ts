@@ -12,6 +12,7 @@ export default defineConfig({
 		tailwindcss(),
 		sveltekit(),
 		SvelteKitPWA({
+			disable: process.env.BNOS_DESKTOP === '1',
 			strategies: 'generateSW',
 			registerType: 'prompt',
 			manifest: {

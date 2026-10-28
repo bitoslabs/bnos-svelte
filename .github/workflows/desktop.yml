@@ -1,0 +1,49 @@
+name: Build desktop apps
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos
+            os: macos-latest
+            bundles: dmg
+          - platform: linux
+            os: ubuntu-22.04
+            bundles: deb
+          - platform: windows
+            os: windows-latest
+            bundles: nsis
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.21.1'
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev librsvg2-dev patchelf
+      - run: pnpm install --frozen-lockfile
+      - name: Build installer
+        run: pnpm desktop:package -- --bundles ${{ matrix.bundles }}
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: bnos-console-${{ matrix.platform }}
+          path: src-tauri/target/release/bundle/${{ matrix.bundles }}/*
+          if-no-files-found: error
