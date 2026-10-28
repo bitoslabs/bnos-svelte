@@ -77,6 +77,53 @@ interface MarketplaceListing {
 }
 ```
 
+### Publishing and on/off (status)
+
+The console controls whether a listing is live with two paths on
+`/marketplace/listings`:
+
+- the row **Pause / Activate** button (`quickStatus()` → `active` ↔ `paused`);
+- the **Status** dropdown in the editor (`draft` · `active` · `paused` ·
+  `out_of_stock` · `archived`). New listings start as `draft`.
+
+Both call `glo.upsert(...)`, so the change is saved locally and published to
+relays. What the buyer storefront does with each status:
+
+| Status         | Browse / search / home / store | Direct `/product/[id]` | Can order          |
+| -------------- | ------------------------------ | ---------------------- | ------------------ |
+| `active`       | shown                          | shown                  | yes (if in stock)  |
+| `paused`       | hidden                         | **shown**              | **yes**            |
+| `draft`        | hidden                         | **shown**              | **yes**            |
+| `out_of_stock` | hidden                         | **shown**              | yes if `stock > 0` |
+| `archived`     | hidden                         | **shown**              | **yes**            |
+
+```mermaid
+stateDiagram-v2
+    [*] --> draft: create listing
+    draft --> active: Activate
+    active --> paused: Pause
+    paused --> active: Activate
+    active --> out_of_stock: mark Out of stock
+    out_of_stock --> active: restock
+    active --> archived: Archive
+    paused --> archived: Archive
+    archived --> draft: restore
+```
+
+Two gaps make "off" weaker than it looks:
+
+1. **"On" does not reach the marketplace yet.** The console publishes with the
+   `glo.upsert` default `visibility: "organization"`; the marketplace only
+   accepts `visibility: "public"`. Until the console passes
+   `visibility: "public"` for `marketplace.product` (and `.review`), no listing
+   appears at all.
+2. **"Off" is not enforced on direct links.** The marketplace product page has
+   no status guard and `addToCart` does not re-check status, so a paused or
+   draft listing is still orderable by URL.
+
+The authoritative buyer-side rules live in
+[`bnos-marketplace/docs/CONTRACTS.md` § Visibility and purchase gating](../../bnos-marketplace/docs/CONTRACTS.md#visibility-and-purchase-gating).
+
 ### `marketplace.review` — product/store review (pulled or manual)
 
 ```ts

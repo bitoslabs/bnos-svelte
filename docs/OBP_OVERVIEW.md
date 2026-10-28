@@ -65,6 +65,13 @@ sequenceDiagram
 
 This is the **v0.1 target**, not an existing feature. Discovery can start from a preconfigured supplier directory. Shipment, cross-border exchange, public supplier search, autonomous purchasing and shared stock movement are later extensions.
 
+OBP purchasing is **not** a marketplace flow. RFQ → quote → purchase order →
+invoice → payment evidence → receipt are confidential, bilateral documents
+between two business nodes; they never appear as a public shop or listing.
+Marketplace discovery is a separate public path — see
+[OBP_GLO_MAPPING.md § Marketplace visibility](OBP_GLO_MAPPING.md#marketplace-visibility-not-an-obp-flow)
+and [`bnos-marketplace/docs/CONTRACTS.md`](../../bnos-marketplace/docs/CONTRACTS.md#visibility-and-purchase-gating).
+
 ## How today's data moves into the new system
 
 ```mermaid
