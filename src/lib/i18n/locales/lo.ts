@@ -401,6 +401,7 @@ export const lo = {
 	},
 	sidebar: {
 		nip07Extension: 'ສ່ວນຂະຫຍາຍ NIP-07',
+		nip46Signer: 'ຕົວລົງນາມ NIP-46',
 		privateKey: 'ກະແຈສ່ວນຕົວ',
 		bnosDashboard: 'ແດສບອດ BNOS',
 		expandSidebar: 'ຂະຫຍາຍແຖບຂ້າງ',
@@ -948,6 +949,7 @@ export const lo = {
 		off: 'ປິດ',
 		showQr: 'ສະແດງ QR',
 		nip07Extension: 'NIP-07 extension',
+		nip46Signer: 'ຕົວລົງນາມ NIP-46',
 		privateKey: 'ຄີສ່ວນຕົວ',
 		scanToVerify: 'ສະແກນເພື່ອຕິດຕາມ / ຢືນຢັນໄອເດັນຕິຕີ Nostr ນີ້',
 		payloadEncryption: 'ການເຂົ້າລະຫັດເພຍໂຫລດ',

@@ -13,7 +13,7 @@
  * @bitos/bnos-core for the contract this implements.
  */
 import { nip19, nip44 } from 'nostr-tools';
-import { NOSTR_KINDS, signNostrEvent, type NostrEvent } from '@bitos/bnos-core';
+import { NOSTR_KINDS, type NostrEvent } from '@bitos/bnos-core';
 import { fetchEvents, sendEvent } from '$nostr/client';
 import { BNOS_CLIENT_ID } from '$nostr/client-id';
 import { session } from '$nostr/session.svelte';
@@ -57,12 +57,20 @@ function getNip44Ext() {
 	return (window as Nip44Window).nostr?.nip44 ?? null;
 }
 
-/** NIP-44 encrypt to a recipient pubkey (extension first, then nsec). */
+/** A signer that can NIP-44 encrypt/decrypt (NIP-07, NIP-46 or nsec). */
+export interface Nip44Signer {
+	nip44Encrypt?: (peerHex: string, plaintext: string) => Promise<string>;
+	nip44Decrypt?: (peerHex: string, ciphertext: string) => Promise<string>;
+}
+
+/** NIP-44 encrypt to a recipient pubkey (active signer first, then extension, then nsec). */
 export async function encryptToPubkey(
 	recipientPubkey: string,
 	plaintext: string,
-	senderNsec?: string | null
+	senderNsec?: string | null,
+	signer?: Nip44Signer
 ): Promise<string> {
+	if (signer?.nip44Encrypt) return signer.nip44Encrypt(recipientPubkey, plaintext);
 	const ext = getNip44Ext();
 	if (ext) return ext.encrypt(recipientPubkey, plaintext);
 	if (!senderNsec) {
@@ -74,12 +82,14 @@ export async function encryptToPubkey(
 	return nip44.v2.encrypt(plaintext, conversationKey);
 }
 
-/** NIP-44 decrypt from a sender pubkey (extension first, then nsec). */
+/** NIP-44 decrypt from a sender pubkey (active signer first, then extension, then nsec). */
 export async function decryptFromPubkey(
 	senderPubkey: string,
 	ciphertext: string,
-	recipientNsec?: string | null
+	recipientNsec?: string | null,
+	signer?: Nip44Signer
 ): Promise<string> {
+	if (signer?.nip44Decrypt) return signer.nip44Decrypt(senderPubkey, ciphertext);
 	const ext = getNip44Ext();
 	if (ext) return ext.decrypt(senderPubkey, ciphertext);
 	if (!recipientNsec) {
@@ -117,7 +127,8 @@ export async function buildOrganizationKeyGrantEvent(
 		wrappedKey: await encryptToPubkey(
 			input.recipientPubkey,
 			toBase64Url(rawKey),
-			session.snapshot?.nsec ?? null
+			session.snapshot?.nsec ?? null,
+			session.activeSigner ?? undefined
 		),
 		recipientPubkey: input.recipientPubkey,
 		scopes: input.scopes ?? DEFAULT_GRANT_SCOPES,
@@ -139,13 +150,7 @@ export async function buildOrganizationKeyGrantEvent(
 		]
 	};
 
-	return (await signNostrEvent({
-		template,
-		fallbackPubkey: session.snapshot!.pubkey,
-		loginMethod: session.snapshot!.loginMethod,
-		nsec: session.snapshot!.nsec,
-		extensionSigner: session.extensionSigner ?? undefined
-	})) as NostrEvent;
+	return await session.signEvent(template);
 }
 
 /**
@@ -164,7 +169,12 @@ export async function importOrganizationKeyGrantEvent(event: NostrEvent): Promis
 	}
 	if (grant.recipientPubkey !== me || grant.revokedAt) return false;
 	const rawKey = fromBase64Url(
-		await decryptFromPubkey(event.pubkey, grant.wrappedKey, session.snapshot?.nsec ?? null)
+		await decryptFromPubkey(
+			event.pubkey,
+			grant.wrappedKey,
+			session.snapshot?.nsec ?? null,
+			session.activeSigner ?? undefined
+		)
 	);
 	storeSensitiveDataKey(grant.keyId, rawKey);
 	// Wire the opaque kid back to the org scope so scope-based lookups

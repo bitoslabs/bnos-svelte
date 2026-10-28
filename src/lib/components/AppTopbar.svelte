@@ -204,11 +204,14 @@
 
 	async function signOut() {
 		const usesLocalKey = session.loginMethod === 'nsec';
+		const usesRemoteSigner = session.loginMethod === 'nip46';
 		const ok = await confirm({
 			title: 'Sign out and clear this device?',
 			message: usesLocalKey
 				? 'This removes cached workspace data and the private key stored on this device. Make sure your nsec is backed up before continuing.'
-				: 'This removes cached workspace data from this device. Your private key remains safely inside your NIP-07 extension.',
+				: usesRemoteSigner
+					? 'This removes cached workspace data from this device. Your private key remains safely inside your remote signer.'
+					: 'This removes cached workspace data from this device. Your private key remains safely inside your NIP-07 extension.',
 			detail: 'Relay data is not deleted. It can be synced again after you sign in.',
 			tone: 'danger',
 			icon: 'lucide:log-out',
@@ -795,7 +798,9 @@
 							>
 								{session.loginMethod === 'extension'
 									? t('sidebar.nip07Extension')
-									: t('sidebar.privateKey')}
+									: session.loginMethod === 'nip46'
+										? t('sidebar.nip46Signer')
+										: t('sidebar.privateKey')}
 							</span>
 						</div>
 					</div>

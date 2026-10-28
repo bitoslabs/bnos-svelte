@@ -422,6 +422,7 @@ export const en = {
 	},
 	sidebar: {
 		nip07Extension: 'NIP-07 extension',
+		nip46Signer: 'NIP-46 signer',
 		privateKey: 'Private key',
 		bnosDashboard: 'BNOS Dashboard',
 		expandSidebar: 'Expand sidebar',
@@ -1035,6 +1036,7 @@ export const en = {
 		// Identity (settings index)
 		showQr: 'Show QR',
 		nip07Extension: 'NIP-07 extension',
+		nip46Signer: 'NIP-46 signer',
 		privateKey: 'Private key',
 		scanToVerify: 'Scan to follow / verify this Nostr identity',
 		// Encryption (settings index)

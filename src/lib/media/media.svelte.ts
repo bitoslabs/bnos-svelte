@@ -27,7 +27,6 @@ import {
 } from './uploaders';
 import { session } from '$nostr/session.svelte';
 import { BNOS_CLIENT_ID } from '$nostr/client-id';
-import { signNostrEvent, type NostrEvent } from '@bitos/bnos-core';
 
 export const STORAGE_KEY = 'bnos-os:settings-media';
 
@@ -141,24 +140,18 @@ class MediaStore {
 			const snap = session.snapshot;
 			if (!snap) throw new Error('Sign in with a Nostr identity before uploading to Blossom');
 			return uploadToBlossom(file, async (sha256) => {
-				const event = (await signNostrEvent({
-					template: {
-						kind: 24242,
-						created_at: Math.floor(Date.now() / 1000),
-						tags: [
-							['t', 'upload'],
-							['expiration', String(Math.floor(Date.now() / 1000) + 60)],
-							['server', 'blossom.nostr.build'],
-							['x', sha256],
-							['client', BNOS_CLIENT_ID]
-						],
-						content: 'Upload blob to Blossom'
-					},
-					fallbackPubkey: snap.pubkey,
-					loginMethod: snap.loginMethod,
-					nsec: snap.nsec,
-					extensionSigner: session.extensionSigner ?? undefined
-				})) as NostrEvent;
+				const event = await session.signEvent({
+					kind: 24242,
+					created_at: Math.floor(Date.now() / 1000),
+					tags: [
+						['t', 'upload'],
+						['expiration', String(Math.floor(Date.now() / 1000) + 60)],
+						['server', 'blossom.nostr.build'],
+						['x', sha256],
+						['client', BNOS_CLIENT_ID]
+					],
+					content: 'Upload blob to Blossom'
+				});
 				return `Nostr ${base64Url(JSON.stringify(event))}`;
 			});
 		}

@@ -401,6 +401,7 @@ export const th = {
 	},
 	sidebar: {
 		nip07Extension: 'ส่วนขยาย NIP-07',
+		nip46Signer: 'ตัวลงนาม NIP-46',
 		privateKey: 'คีย์ส่วนตัว',
 		bnosDashboard: 'แดชบอร์ด BNOS',
 		expandSidebar: 'ขยายแถบด้านข้าง',
@@ -948,6 +949,7 @@ export const th = {
 		off: 'ปิด',
 		showQr: 'แสดง QR',
 		nip07Extension: 'NIP-07 extension',
+		nip46Signer: 'ตัวลงนาม NIP-46',
 		privateKey: 'คีย์ส่วนตัว',
 		scanToVerify: 'สแกนเพื่อติดตาม / ยืนยันไอเดนติตี้ Nostr นี้',
 		payloadEncryption: 'การเข้ารหัสเพย์โหลด',

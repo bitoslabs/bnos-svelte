@@ -46,7 +46,11 @@
 		<div class="flex items-center gap-2">
 			<Badge color="success"
 				><span class="live-dot"></span>
-				{session.loginMethod === 'extension' ? 'NIP-07' : 'nsec'}</Badge
+				{session.loginMethod === 'extension'
+					? 'NIP-07'
+					: session.loginMethod === 'nip46'
+						? 'NIP-46'
+						: 'nsec'}</Badge
 			><Badge color="primary">{tenant.state.currency}</Badge>
 		</div>
 	</div>

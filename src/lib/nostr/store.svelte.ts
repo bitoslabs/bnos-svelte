@@ -43,7 +43,7 @@ import {
 	type GloVisibility,
 	type KnownGloObjectType
 } from '@bitos/bnos-core/glo';
-import { NOSTR_KINDS, signNostrEvent, type NostrEvent } from '@bitos/bnos-core';
+import { NOSTR_KINDS, type NostrEvent } from '@bitos/bnos-core';
 import { get as idbGet, set as idbSet } from 'idb-keyval';
 import { session } from './session.svelte';
 import { relays } from './relay.svelte';
@@ -785,13 +785,7 @@ class GloStore {
 			// Logout/account switch clears the store; never sign the old
 			// account's object with the new session.
 			if (generation !== this.collections.generation) return false;
-			const event = await signNostrEvent({
-				template,
-				fallbackPubkey: snapshot.pubkey,
-				loginMethod: snapshot.loginMethod,
-				nsec: snapshot.nsec,
-				extensionSigner: session.extensionSigner ?? undefined
-			});
+			const event = await session.signEvent(template);
 			// Retain the signed event in-memory so the Raw Data viewer can show the
 			// live Nostr event (id / sig / tags). Not persisted (writeLocal strips it).
 			(object as AnyGloObject).__event = event as NostrEvent;
