@@ -15,12 +15,13 @@ pnpm desktop:package   # release binary and platform bundles in src-tauri/target
 
 GitHub Actions builds installers on every push to `main` and on manual dispatch.
 Download the macOS DMG, Linux Debian package, and Windows NSIS installer from the
-workflow run's artifacts. To publish a GitHub Release with all three installers,
-update the versions in `package.json`, `src-tauri/tauri.conf.json`, and
-`src-tauri/Cargo.toml`, merge them into `main`, then push the matching tag (for
-example, `git tag v0.1.3` and `git push origin v0.1.3`). The tagged commit must
-be reachable from `main`, and the tag must match the package and Tauri versions.
-The release is published only after all three builds succeed. Installers are
+workflow run's artifacts. After all three builds succeed on `main`, the workflow
+creates a tag from the `package.json` version (for example, `v0.1.3`) and
+publishes a GitHub Release with the installers. Existing releases are left
+unchanged. For a new release, update the versions in `package.json`,
+`src-tauri/tauri.conf.json`, and `src-tauri/Cargo.toml`, then merge into `main`.
+The package and Tauri versions must match. Manually pushed matching version tags
+on commits reachable from `main` can also trigger a release. Installers are
 unsigned, so distribution may trigger OS security warnings.
 
 Build on the target platform and install the required signing credentials if
