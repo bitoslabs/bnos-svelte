@@ -1,0 +1,37 @@
+{
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "BNOS Console",
+	"version": "0.1.2",
+	"identifier": "space.bnos.console",
+	"build": {
+		"beforeDevCommand": "pnpm exec cross-env BNOS_DESKTOP=1 vite dev --host 127.0.0.1 --port 1420 --strictPort",
+		"devUrl": "http://127.0.0.1:1420",
+		"beforeBuildCommand": "pnpm desktop:build",
+		"frontendDist": "../desktop-build"
+	},
+	"app": {
+		"windows": [
+			{
+				"title": "BNOS Console",
+				"width": 1280,
+				"height": 800,
+				"minWidth": 800,
+				"minHeight": 600
+			}
+		],
+		"security": {
+			"csp": null
+		}
+	},
+	"bundle": {
+		"active": true,
+		"targets": "all",
+		"icon": [
+			"icons/32x32.png",
+			"icons/128x128.png",
+			"icons/128x128@2x.png",
+			"icons/icon.icns",
+			"icons/icon.ico"
+		]
+	}
+}
