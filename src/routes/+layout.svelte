@@ -17,6 +17,7 @@
 	import { warmRelays } from '$nostr/client';
 	import { bootstrapAuth } from '$nostr/auth-bootstrap';
 	import { hasActiveWorkspaceContext } from '$nostr/workspace.svelte';
+	import { workspacePicker } from '$nostr/workspace-picker.svelte';
 	import { profile } from '$nostr/profile.svelte';
 	import { organizationKey } from '$lib/crypto/organization-key.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
@@ -27,6 +28,7 @@
 	import Toaster from '$lib/components/ui/Toaster.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
+	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
 	import PwaPrompt from '$lib/components/PwaPrompt.svelte';
 	import OfflineBadge from '$lib/components/OfflineBadge.svelte';
 	import BootSplash from '$lib/components/ui/BootSplash.svelte';
@@ -43,6 +45,8 @@
 	let workspaceResolutionPending = false;
 	let workspaceResolutionPubkey = '';
 	let tenantStoragePubkey = '';
+	/** True once the post-login workspace resolution has finished. */
+	let workspaceResolved = $state(false);
 
 	const isPublicRoute = $derived(
 		page.url.pathname === '/about' ||
@@ -125,6 +129,9 @@
 		if (workspaceResolutionPubkey !== (session.pubkey ?? '')) {
 			workspaceResolutionPubkey = session.pubkey ?? '';
 			workspaceResolutionPending = false;
+			workspaceResolved = false;
+			// A new identity must run its own post-login background sync.
+			postLoginSyncDone = false;
 		}
 		if (!session.isAuthenticated) {
 			void goto(resolve('/login'), { replaceState: true });
@@ -143,12 +150,20 @@
 				// The user may have moved to onboarding / resolve while this ran
 				// (e.g. right after creating an account). Those routes own their
 				// own flow — never bounce them through /resolve again.
-				if (isPublicRoute) return;
+				if (isPublicRoute) {
+					workspaceResolved = true;
+					return;
+				}
 				if (result.access === 'setup' || result.access === 'waiting-workspace') {
 					void goto(resolve('/resolve'), { replaceState: true });
 				} else if (result.access === 'blocked') {
 					void goto(resolve('/blocked'), { replaceState: true });
+				} else if (result.access === 'ready') {
+					// Multi-company identities choose their active workspace before
+					// the background sync starts (see the effect below).
+					workspacePicker.maybePrompt();
 				}
+				workspaceResolved = true;
 			});
 		}
 	});
@@ -168,8 +183,12 @@
 
 	$effect(() => {
 		if (!session.isAuthenticated || !tenant.hydrated || !relays.hydrated) return;
+		if (!workspaceResolved) return;
 		if (postLoginSyncDone) return;
 		if (!hasActiveWorkspaceContext()) return;
+		// Wait for the multi-company picker so operational data is synced for the
+		// workspace the user actually chose, not the one resolved first.
+		if (workspacePicker.open) return;
 		postLoginSyncDone = true;
 
 		void (async () => {
@@ -283,3 +302,6 @@
 <OfflineBadge />
 <ConfirmDialog />
 <CommandPalette />
+{#if !isPublicRoute}
+	<WorkspacePicker />
+{/if}

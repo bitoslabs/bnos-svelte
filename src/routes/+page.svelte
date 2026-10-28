@@ -10,6 +10,7 @@
 	import { session } from '$nostr/session.svelte';
 	import { relays } from '$nostr/relay.svelte';
 	import { CORE_DATA_TYPES, dataSync } from '$nostr/sync.svelte';
+	import { WORKSPACE_SWITCHED_EVENT } from '$nostr/workspace-switch';
 	import { formatMoney, formatNumber, formatInt, relativeTime } from '$lib/utils/format';
 	import {
 		toOrderRows,
@@ -103,6 +104,14 @@
 			}
 		})();
 
+		// Switching company/branch (picker or account menu) must re-hydrate and
+		// re-sync so the dashboard reflects the newly active workspace.
+		const onWorkspaceSwitched = () => {
+			dataSync.hydrate([...CORE_DATA_TYPES, TYPE.expense, TYPE.income]);
+			void dataSync.backgroundOperationalSync();
+		};
+		window.addEventListener(WORKSPACE_SWITCHED_EVENT, onWorkspaceSwitched);
+
 		// live clock — drives both the time display and the shift duration tick
 		const tick = () => (clock = clockFormatter.format(new Date()));
 		tick();
@@ -112,6 +121,7 @@
 		return () => {
 			clearInterval(id);
 			clearInterval(blockId);
+			window.removeEventListener(WORKSPACE_SWITCHED_EVENT, onWorkspaceSwitched);
 		};
 	});
 

@@ -450,6 +450,16 @@ export const lo = {
 		checkingWorkspace: 'ກຳລັງກວດສອບພື້ນທີ່ເຮັດວຽກ',
 		checkingWorkspaceDesc: 'ກຳລັງກູ້ຄືນພື້ນທີ່ເຮັດວຽກແລະສາຂາປັດຈຸບັນ…'
 	},
+	workspacePicker: {
+		title: 'ເລືອກພື້ນທີ່ເຮັດວຽກ',
+		desc: 'ທ່ານມີສິດເຂົ້າເຖິງຫຼາຍບໍລິສັດ. ເລືອກບໍລິສັດທີ່ຕ້ອງການເຮັດວຽກ.',
+		company: 'ບໍລິສັດ',
+		branch: 'ສາຂາ',
+		continue: 'ດຳເນີນການຕໍ່',
+		keepCurrent: 'ໃຊ້ບໍລິສັດປັດຈຸບັນ',
+		switching: 'ກຳລັງສະຫຼັບ…',
+		switched: 'ສະຫຼັບພື້ນທີ່ເຮັດວຽກແລ້ວ'
+	},
 	auth: {
 		privateKey: 'ກະແຈສ່ວນຕົວ (nsec…)',
 		createAccount: 'ສ້າງບັນຊີ',

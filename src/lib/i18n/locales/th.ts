@@ -450,6 +450,16 @@ export const th = {
 		checkingWorkspace: 'กำลังตรวจสอบพื้นที่ทำงาน',
 		checkingWorkspaceDesc: 'กำลังกู้คืนพื้นที่ทำงานและสาขาปัจจุบัน…'
 	},
+	workspacePicker: {
+		title: 'เลือกพื้นที่ทำงาน',
+		desc: 'คุณมีสิทธิ์เข้าถึงหลายบริษัท เลือกบริษัทที่ต้องการทำงาน',
+		company: 'บริษัท',
+		branch: 'สาขา',
+		continue: 'ดำเนินการต่อ',
+		keepCurrent: 'ใช้บริษัทปัจจุบัน',
+		switching: 'กำลังสลับ…',
+		switched: 'สลับพื้นที่ทำงานแล้ว'
+	},
 	auth: {
 		privateKey: 'คีย์ส่วนตัว (nsec…)',
 		createAccount: 'สร้างบัญชี',

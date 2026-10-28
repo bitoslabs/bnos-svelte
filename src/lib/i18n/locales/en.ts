@@ -481,6 +481,16 @@ export const en = {
 		checkingWorkspace: 'Checking workspace',
 		checkingWorkspaceDesc: 'Restoring your active workspace and branch…'
 	},
+	workspacePicker: {
+		title: 'Choose a workspace',
+		desc: 'You have access to multiple companies. Pick the one you want to work in.',
+		company: 'Company',
+		branch: 'Branch',
+		continue: 'Continue',
+		keepCurrent: 'Keep current',
+		switching: 'Switching…',
+		switched: 'Workspace switched'
+	},
 	auth: {
 		privateKey: 'Private key (nsec…)',
 		createAccount: 'Create account',
