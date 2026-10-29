@@ -15,7 +15,8 @@ const AUTH_PUBKEY_KEY = 'nostr_pubkey';
 export type BusinessModel =
 	'single' | 'multi_branch' | 'chain' | 'franchise_hq' | 'franchise_branch';
 
-export type BusinessType = 'retail' | 'restaurant' | 'cafe' | 'service' | 'wholesale' | 'other';
+export type BusinessType =
+	'retail' | 'restaurant' | 'noodle' | 'cafe' | 'service' | 'wholesale' | 'other';
 
 export interface ActiveStaffInfo {
 	id: string;
@@ -166,7 +167,11 @@ class TenantStore {
 	/** Restaurant flows (tables / kitchen / waiter / queue) are enabled for
 	 * eat-in business types — mirrors bdgo-os feature gating. */
 	get restaurantEnabled() {
-		return this.state.businessType === 'restaurant' || this.state.businessType === 'cafe';
+		return (
+			this.state.businessType === 'restaurant' ||
+			this.state.businessType === 'cafe' ||
+			this.state.businessType === 'noodle'
+		);
 	}
 
 	/** Multi-location model — gates branch management UI. */

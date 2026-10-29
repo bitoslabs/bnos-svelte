@@ -39,6 +39,8 @@
 		CATALOG_KIT_TAG,
 		latestActiveCatalogKits,
 		kitToBrowseItem,
+		builtinCatalogItems,
+		builtinTemplateForBusinessType,
 		type RawNostrEvent,
 		type BrowseCatalogItem,
 		type Product,
@@ -783,6 +785,10 @@
 	}
 
 	// ── Import from templates (BNOS catalog presets) ──
+	// Built-in kits ship with the app so a merchant can seed a catalog offline.
+	const BUILTIN_ITEMS = builtinCatalogItems();
+	const RECOMMENDED_BUILTIN = $derived(builtinTemplateForBusinessType(tenant.state.businessType));
+	const RECOMMENDED_BUILTIN_ID = $derived(RECOMMENDED_BUILTIN?.preset.id ?? null);
 	const TEMPLATES_CATALOG_URL =
 		import.meta.env.VITE_TEMPLATES_CATALOG_URL ?? 'http://localhost:8080/bnos-presets.json';
 	let tmplOpen = $state(false);
@@ -799,7 +805,11 @@
 	function openTemplateImport() {
 		tmplOpen = true;
 		tmplError = '';
-		if (!tmplLoaded) loadTemplateCatalog();
+		if (!tmplLoaded) {
+			// Show native kits instantly; remote kits load on demand.
+			mergeTemplateItems(BUILTIN_ITEMS, false);
+			if (RECOMMENDED_BUILTIN_ID) tmplSelected.add(RECOMMENDED_BUILTIN_ID);
+		}
 	}
 
 	function ingestTemplateCatalog(text: string, label: string) {
@@ -818,12 +828,12 @@
 		mergeTemplateItems(result.data.items);
 	}
 
-	function mergeTemplateItems(items: BrowseCatalogItem[]) {
+	function mergeTemplateItems(items: BrowseCatalogItem[], select = true) {
 		const byId: Record<string, BrowseCatalogItem> = {};
 		for (const item of tmplItems) byId[item.presetId] = item;
 		for (const item of items) byId[item.presetId] = item;
 		tmplItems = Object.values(byId);
-		for (const item of items) tmplSelected.add(item.presetId);
+		if (select) for (const item of items) tmplSelected.add(item.presetId);
 		tmplLoaded = true;
 		tmplError = '';
 	}
@@ -919,6 +929,40 @@
 	function catName(id: string): string {
 		const c = glo.get(TYPE.category, id) as { data: CatalogCategory } | undefined;
 		return c?.data.name ?? id;
+	}
+
+	// ── Template product preview ──
+	let previewOpen = $state(false);
+	let previewItem = $state<BrowseCatalogItem | null>(null);
+
+	function openTemplatePreview(item: BrowseCatalogItem) {
+		previewItem = item;
+		previewOpen = true;
+	}
+
+	async function applyPreviewedTemplate() {
+		const item = previewItem;
+		if (!item) return;
+		tmplSelected.clear();
+		tmplSelected.add(item.presetId);
+		previewOpen = false;
+		await applySelectedTemplates();
+	}
+
+	function previewCategoryName(item: BrowseCatalogItem, key?: string): string {
+		if (!key) return '—';
+		return item.preset.categories.find((category) => category.key === key)?.name ?? key;
+	}
+
+	function previewProductPrice(
+		item: BrowseCatalogItem,
+		price?: number,
+		currencyCode?: string
+	): string {
+		return formatMoney(
+			price ?? item.preset.defaultPrice ?? 0,
+			currencyCode ?? item.preset.currency ?? currency
+		);
 	}
 	async function toggleProductActive(id: string, active: boolean) {
 		const obj = glo.get(TYPE.product, id);
@@ -1057,6 +1101,12 @@
 				>
 			</Menu>
 			<Button
+				color="neutral"
+				variant="subtle"
+				icon="lucide:layout-template"
+				onclick={openTemplateImport}>Starter kits</Button
+			>
+			<Button
 				color="primary"
 				icon="lucide:plus"
 				title={t('common.add') + ' ' + t('common.item')}
@@ -1114,12 +1164,21 @@
 				title={t('catalog.noProducts')}
 				description={t('catalog.noProductsDesc')}
 			>
-				{#snippet actions()}<Button
-						color="primary"
-						size="sm"
-						icon="lucide:plus"
-						onclick={() => openCreate('products')}>{t('common.add')} {t('common.product')}</Button
-					>{/snippet}
+				{#snippet actions()}<div class="flex items-center gap-2">
+						<Button
+							color="neutral"
+							variant="subtle"
+							size="sm"
+							icon="lucide:layout-template"
+							onclick={openTemplateImport}>Starter kits</Button
+						>
+						<Button
+							color="primary"
+							size="sm"
+							icon="lucide:plus"
+							onclick={() => openCreate('products')}>{t('common.add')} {t('common.product')}</Button
+						>
+					</div>{/snippet}
 			</EmptyState>
 		{:else}
 			<div class="data-panel">
@@ -2262,10 +2321,11 @@
 <Dialog bind:open={tmplOpen} title="From templates — BNOS catalog presets" size="lg">
 	<div class="space-y-3">
 		<p class="text-[12.5px] text-(--ui-text-muted)">
-			Browse starter-kit product items published by the <span class="font-semibold">templates</span>
-			marketplace and apply them to this catalog. Load the bundled catalog by URL, search your relays
-			for kits published by creators, or paste the JSON. Each kit is namespaced, so re-applying updates
-			its records instead of duplicating them.
+			Native starter kits for a café, noodle shop, restaurant and mini-mart are included — pick one
+			below and hit Apply, no network needed. You can also load the remote
+			<span class="font-semibold">templates</span> marketplace catalog by URL, search your relays for
+			kits published by creators, or paste JSON. Each kit is namespaced, so re-applying updates its records
+			instead of duplicating them.
 		</p>
 		<div class="flex items-end gap-2">
 			<label class="min-w-0 flex-1">
@@ -2320,6 +2380,9 @@
 						<div class="min-w-0 flex-1">
 							<div class="flex items-center gap-2">
 								<span class="truncate text-[13px] font-semibold">{item.name}</span>
+								{#if item.publisher === 'Built-in'}
+									<Badge color="primary">Built-in</Badge>
+								{/if}
 								{#if item.version}
 									<span class="text-[11px] text-(--ui-text-dimmed)">v{item.version}</span>
 								{/if}
@@ -2329,10 +2392,18 @@
 							{/if}
 							<p class="text-[11px] text-(--ui-text-dimmed)">
 								{item.counts.products} products · {item.counts.categories} categories · {item.counts
-									.units} units · {item.counts.modifierGroups} modifiers{item.publisher
+									.units} units · {item.counts.modifierGroups} modifiers{item.publisher &&
+								item.publisher !== 'Built-in'
 									? ` · ${item.publisher}`
 									: ''}
 							</p>
+							<button
+								type="button"
+								class="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-(--ui-text) underline underline-offset-2"
+								onclick={() => openTemplatePreview(item)}
+							>
+								<Icon name="lucide:eye" class="size-3" /> Preview {item.counts.products} products
+							</button>
 						</div>
 					</li>
 				{/each}
@@ -2367,6 +2438,102 @@
 			onclick={applySelectedTemplates}
 			disabled={tmplApplying || tmplSelected.size === 0}
 			>{tmplApplying ? 'Applying…' : `Apply ${tmplSelected.size || ''}`.trim()}</Button
+		>
+	{/snippet}
+</Dialog>
+
+<!-- Preview the products inside a starter kit before applying -->
+<Dialog
+	bind:open={previewOpen}
+	title={previewItem ? `${previewItem.name} · preview` : 'Starter kit preview'}
+	size="lg"
+>
+	{#if previewItem}
+		<div class="space-y-4">
+			<div>
+				{#if previewItem.summary}
+					<p class="text-[12.5px] text-(--ui-text-muted)">{previewItem.summary}</p>
+				{/if}
+				<p class="mt-1 text-[11.5px] text-(--ui-text-dimmed)">
+					{previewItem.counts.products} products · {previewItem.counts.categories} categories ·
+					{previewItem.counts.units} units · {previewItem.counts.modifierGroups} modifier groups
+					{previewItem.publisher && previewItem.publisher !== 'Built-in'
+						? ` · ${previewItem.publisher}`
+						: ''}
+				</p>
+			</div>
+
+			{#if previewItem.preset.categories.length}
+				<div class="flex flex-wrap gap-1.5">
+					{#each previewItem.preset.categories as category (category.key)}
+						<Badge color="neutral">{category.name}</Badge>
+					{/each}
+				</div>
+			{/if}
+
+			<div class="overflow-hidden rounded-xl border border-(--ui-border)">
+				<div
+					class="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-3 border-b border-(--ui-border-muted) bg-(--ui-bg-accented) px-3 py-2 text-[11px] font-semibold tracking-wide text-(--ui-text-muted) uppercase"
+				>
+					<span>Product</span>
+					<span class="text-right">Options</span>
+					<span class="text-right">Price</span>
+				</div>
+				<ul class="max-h-[52vh] divide-y divide-(--ui-border-muted) overflow-y-auto">
+					{#each previewItem.preset.products as product (product.key)}
+						<li class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-3 py-2">
+							<div class="min-w-0">
+								<div class="truncate text-[12.5px] font-medium text-(--ui-text)">
+									{product.name}
+								</div>
+								<div class="truncate text-[11px] text-(--ui-text-dimmed)">
+									{previewCategoryName(previewItem, product.categoryKey)}
+									{#if product.sku}· {product.sku}{/if}
+								</div>
+							</div>
+							<span class="text-right text-[11px] text-(--ui-text-muted)">
+								{product.modifierGroupKeys?.length
+									? `${product.modifierGroupKeys.length} groups`
+									: '—'}
+							</span>
+							<span class="text-right font-mono text-[11.5px] whitespace-nowrap text-(--ui-text)"
+								>{previewProductPrice(previewItem, product.price, product.currency)}</span
+							>
+						</li>
+					{/each}
+				</ul>
+			</div>
+
+			{#if previewItem.preset.modifierGroups.length}
+				<div>
+					<div
+						class="mb-1.5 text-[11px] font-semibold tracking-wide text-(--ui-text-muted) uppercase"
+					>
+						Modifier groups
+					</div>
+					<ul class="space-y-1">
+						{#each previewItem.preset.modifierGroups as group (group.key)}
+							<li class="text-[12px] text-(--ui-text-muted)">
+								<span class="font-medium text-(--ui-text)">{group.name}</span>
+								{group.required ? ' · required' : ''} · {group.modifiers?.length ?? 0}
+								options
+								<span class="text-(--ui-text-dimmed)"
+									>({group.modifiers?.map((m) => m.name).join(', ')})</span
+								>
+							</li>
+						{/each}
+					</ul>
+				</div>
+			{/if}
+		</div>
+	{/if}
+	{#snippet footer()}
+		<Button color="neutral" variant="ghost" onclick={() => (previewOpen = false)}>Close</Button>
+		<Button
+			color="primary"
+			icon="lucide:download"
+			disabled={!previewItem || tmplApplying}
+			onclick={applyPreviewedTemplate}>{tmplApplying ? 'Applying…' : 'Apply this kit'}</Button
 		>
 	{/snippet}
 </Dialog>

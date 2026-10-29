@@ -652,7 +652,8 @@ export interface StockAdjustment {
 
 export type BusinessModel =
 	'single' | 'multi_branch' | 'chain' | 'franchise_hq' | 'franchise_branch';
-export type BusinessType = 'retail' | 'restaurant' | 'cafe' | 'service' | 'wholesale' | 'other';
+export type BusinessType =
+	'retail' | 'restaurant' | 'noodle' | 'cafe' | 'service' | 'wholesale' | 'other';
 
 export interface OperatingHours {
 	mon?: { open: string; close: string };
