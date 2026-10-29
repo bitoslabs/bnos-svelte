@@ -46,6 +46,7 @@ export interface BusinessTypeOption {
 export const businessTypes: BusinessTypeOption[] = [
 	{ value: 'retail', label: 'Retail', icon: 'lucide:shopping-bag' },
 	{ value: 'restaurant', label: 'Restaurant', icon: 'lucide:utensils', restaurant: true },
+	{ value: 'noodle', label: 'Noodle shop', icon: 'lucide:utensils', restaurant: true },
 	{ value: 'cafe', label: 'Café', icon: 'lucide:coffee', restaurant: true },
 	{ value: 'service', label: 'Service', icon: 'lucide:scissors' },
 	{ value: 'wholesale', label: 'Wholesale', icon: 'lucide:truck' },
@@ -65,7 +66,11 @@ export const currencies = [
 	{ value: 'SATS', label: 'SATS · Satoshis' }
 ];
 
-/** Sample catalog seed per business type (used by the catalog setup step). */
+/**
+ * Legacy flat sample products per business type. The catalog setup step now
+ * seeds the richer built-in presets (`$lib/domain/builtin-presets`); this stays
+ * as a lightweight fallback for callers that only need names and prices.
+ */
 export function seedForType(
 	type: BusinessType
 ): { name: string; price: number; categoryId: string }[] {
@@ -84,6 +89,14 @@ export function seedForType(
 				{ name: 'Som Tum', price: 45_000, categoryId: 'starters' },
 				{ name: 'Mango Sticky Rice', price: 50_000, categoryId: 'dessert' },
 				{ name: 'Chang Beer', price: 40_000, categoryId: 'drinks' }
+			];
+		case 'noodle':
+			return [
+				{ name: 'Beef Noodle Soup', price: 55_000, categoryId: 'noodle-soup' },
+				{ name: 'Pork Noodle Soup', price: 50_000, categoryId: 'noodle-soup' },
+				{ name: 'Tom Yum Noodle Soup', price: 60_000, categoryId: 'noodle-soup' },
+				{ name: 'Dry Noodles with Pork', price: 50_000, categoryId: 'dry-noodle' },
+				{ name: 'Spring Rolls', price: 25_000, categoryId: 'sides' }
 			];
 		case 'service':
 			return [
