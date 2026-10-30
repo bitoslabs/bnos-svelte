@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
+	import { pwaInfo } from 'virtual:pwa-info';
 
 	let updateAvailable = $state(false);
 	let offlineReady = $state(false);
@@ -11,6 +12,12 @@
 	let canInstall = $state(false);
 
 	onMount(() => {
+		if (pwaInfo && 'serviceWorker' in navigator) {
+			void navigator.serviceWorker.register('/sw.js').catch((error) => {
+				console.error('Service worker registration failed:', error);
+			});
+		}
+
 		const onBeforeInstall = (event: Event) => {
 			event.preventDefault();
 			deferredPrompt = event as never;
@@ -72,7 +79,9 @@
 				location.reload();
 			};
 			navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
-			navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+			void navigator.serviceWorker.ready.then((registration) => {
+				registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
+			});
 		} else {
 			location.reload();
 		}
@@ -86,8 +95,6 @@
 	function dismissInstall() {
 		canInstall = false;
 	}
-
-	// Expose for import { pwaInfo } from 'virtual:pwa-type-info'
 </script>
 
 {#if updateAvailable}
