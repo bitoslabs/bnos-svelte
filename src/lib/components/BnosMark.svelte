@@ -1,132 +1,128 @@
 <script lang="ts">
 	/**
-	 * BNOS bee mascot mark — the animated logo shared with `bitos.space`.
+	 * BNOS logo mark — hexagon + lightning body with animated wings.
 	 *
-	 * Inlined from `assets/bee-animated.svg`: gold-gradient bee with a lightning
-	 * bolt, floating gently while its wings flap. Ids are namespaced per
-	 * instance so multiple marks on one page keep their own gradients/clip.
+	 * Inlined from `assets/icons/bnos-logo.svg`. The body uses `currentColor`
+	 * so it follows the surrounding text colour (dark on light, light on dark);
+	 * the wings keep the brand orange gradient. Ids are namespaced per instance
+	 * so multiple marks on one page keep their own gradients.
 	 */
 	let { class: className = 'size-6' } = $props<{ class?: string }>();
 
 	const uid = $props.id();
-	const gold = `bee-gold-${uid}`;
-	const wing = `bee-wing-${uid}`;
-	const bodyClip = `bee-body-${uid}`;
+	const wingR = `bnos-wing-r-${uid}`;
+	const wingL = `bnos-wing-l-${uid}`;
 </script>
 
-<svg class={className} viewBox="0 0 320 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<svg
+	class="bnos-mark {className}"
+	viewBox="0 0 240.272 154.869"
+	xmlns="http://www.w3.org/2000/svg"
+	aria-hidden="true"
+>
 	<defs>
-		<linearGradient id={gold} x1="0" y1="0" x2="0.7" y2="1">
-			<stop offset="0" stop-color="#ffd521" />
-			<stop offset="0.55" stop-color="#ffbd08" />
-			<stop offset="1" stop-color="#f69a08" />
+		<linearGradient
+			id={wingR}
+			x1="242.638"
+			y1="26.983"
+			x2="242.638"
+			y2="91.402"
+			gradientUnits="userSpaceOnUse"
+		>
+			<stop offset="0" stop-color="#f7b506" />
+			<stop offset="0.5246" stop-color="#f59f10" />
+			<stop offset="0.9995" stop-color="#f28919" />
 		</linearGradient>
-		<linearGradient id={wing} x1="0" y1="0" x2="0.8" y2="1">
-			<stop offset="0" stop-color="#d1c9b5" />
-			<stop offset="1" stop-color="#a79d8e" />
+		<linearGradient
+			id={wingL}
+			x1="110.166"
+			y1="26.983"
+			x2="110.166"
+			y2="91.402"
+			gradientUnits="userSpaceOnUse"
+		>
+			<stop offset="0" stop-color="#f7b506" />
+			<stop offset="0.5246" stop-color="#f59f10" />
+			<stop offset="0.9995" stop-color="#f28919" />
 		</linearGradient>
-		<clipPath id={bodyClip}>
-			<path
-				d="M155 123 C111 123 84 151 84 192 C84 238 111 267 155 284 C199 267 226 238 226 192 C226 151 199 123 155 123Z"
-			/>
-		</clipPath>
 	</defs>
-	<g class="bee">
-		<g class="wing-left">
-			<path
-				d="M107 135 C70 94 32 95 22 122 C10 155 50 182 98 175 C108 158 111 145 107 135Z"
-				fill="url(#{wing})"
-				stroke="#ffe3a8"
-				stroke-width="6"
-			/>
-		</g>
-		<g class="wing-right">
-			<path
-				d="M203 135 C240 94 278 95 288 122 C300 155 260 182 212 175 C202 158 199 145 203 135Z"
-				fill="url(#{wing})"
-				stroke="#ffe3a8"
-				stroke-width="6"
-			/>
-		</g>
-		<g fill="none" stroke-linecap="round">
-			<path d="M137 49 Q128 30 112 19 M173 49 Q182 30 198 19" stroke="#0b0b0b" stroke-width="15" />
-			<path
-				d="M137 49 Q128 30 112 19 M173 49 Q182 30 198 19"
-				stroke="url(#{gold})"
-				stroke-width="9"
-			/>
-		</g>
-		<circle cx="108" cy="16" r="10" fill="url(#{gold})" />
-		<circle cx="202" cy="16" r="10" fill="url(#{gold})" />
+	<g class="bnos-body" fill="currentColor">
 		<path
-			d="M155 123 C111 123 84 151 84 192 C84 238 111 267 155 284 C199 267 226 238 226 192 C226 151 199 123 155 123Z"
-			fill="url(#{gold})"
-			stroke="#0b0b0b"
-			stroke-width="10"
+			d="M143.762 32.154 L143.762 18.703 C143.762 14.424 141.479 10.47 137.773 8.33 L126.125 1.605 C122.419 -0.535 117.853 -0.535 114.147 1.605 L102.498 8.33 C98.792 10.47 96.509 14.424 96.509 18.703 L96.509 32.154 C96.509 36.433 98.792 40.387 102.498 42.527 L114.147 49.252 C117.853 51.392 122.419 51.392 126.125 49.252 L137.773 42.527 C141.479 40.387 143.762 36.433 143.762 32.154 Z"
 		/>
-		<g clip-path="url(#{bodyClip})" fill="none" stroke="#0b0b0b">
-			<path d="M82 190 Q155 152 228 190" stroke-width="25" />
-			<path d="M88 231 Q155 194 222 231" stroke-width="27" />
-		</g>
 		<path
-			d="M157 158 L173 159 L161 184 L181 184 L145 227 L156 199 L135 199 Z"
-			fill="url(#{gold})"
+			d="M113.396 105.427 L85.215 89.16 C86.031 88.284 86.977 87.515 88.054 86.9 L113.94 71.958 C117.773 69.745 122.505 69.745 126.339 71.958 L152.213 86.9 C153.289 87.515 154.248 88.284 155.064 89.16 L126.871 105.427 C122.718 107.829 117.548 107.829 113.396 105.427 Z"
 		/>
-		<circle cx="155" cy="89" r="49" fill="#0b0b0b" />
-		<circle cx="155" cy="89" r="39" fill="url(#{gold})" />
-		<circle cx="137" cy="89" r="9" fill="#0b0b0b" />
-		<circle cx="173" cy="89" r="9" fill="#0b0b0b" />
+		<path
+			d="M158.412 97.643 L158.412 127.527 C158.412 131.952 156.058 136.046 152.213 138.27 L126.339 153.2 C122.505 155.425 117.773 155.425 113.94 153.2 L88.054 138.27 C84.221 136.046 81.855 131.952 81.855 127.527 L81.855 97.643 C81.855 96.412 82.044 95.194 82.387 94.046 L110.568 110.325 C112.225 111.283 113.999 111.97 115.821 112.384 L108.912 126.238 L119.607 126.238 L110.58 146.551 L134.537 120.109 L124.943 120.109 L132.029 108.976 L157.88 94.046 C158.223 95.194 158.412 96.412 158.412 97.643 Z"
+		/>
+	</g>
+	<g class="bnos-wing bnos-wing-left">
+		<path
+			d="M107.8 61.641 L107.8 61.641 C107.8 58.851 106.263 56.287 103.802 54.973 L44.104 23.096 C39.544 20.661 34.05 20.752 29.573 23.337 L7.482 36.091 C2.852 38.764 0 43.704 0 49.051 L0 74.231 C0 79.578 2.852 84.518 7.482 87.191 L29.573 99.945 C34.05 102.53 39.544 102.621 44.104 100.186 L103.802 68.309 C106.263 66.995 107.8 64.431 107.8 61.641 Z"
+			fill="url(#{wingL})"
+		/>
+	</g>
+	<g class="bnos-wing bnos-wing-right">
+		<path
+			d="M132.472 61.641 L132.472 61.641 C132.472 58.851 134.009 56.287 136.47 54.973 L196.168 23.096 C200.728 20.661 206.222 20.752 210.698 23.337 L232.789 36.091 C237.419 38.764 240.272 43.704 240.272 49.051 L240.272 74.231 C240.272 79.578 237.419 84.518 232.789 87.191 L210.698 99.945 C206.222 102.53 200.728 102.621 196.168 100.186 L136.47 68.309 C134.009 66.995 132.472 64.431 132.472 61.641 Z"
+			fill="url(#{wingR})"
+		/>
 	</g>
 </svg>
 
 <style>
-	.bee {
-		transform-origin: 155px 155px;
-		animation: bee-float 2.6s ease-in-out infinite;
+	.bnos-mark {
+		overflow: visible;
+		animation: bnos-float 2.8s ease-in-out infinite;
 	}
 
-	.wing-left {
-		transform-origin: 100px 144px;
-		animation: bee-flap-left 0.18s ease-in-out infinite alternate;
+	.bnos-wing {
+		transform-box: view-box;
 	}
 
-	.wing-right {
-		transform-origin: 210px 144px;
-		animation: bee-flap-right 0.18s ease-in-out infinite alternate;
+	.bnos-wing-left {
+		transform-origin: 107.8px 61.6px;
+		animation: bnos-flap-left 0.42s ease-in-out infinite alternate;
 	}
 
-	@keyframes bee-float {
+	.bnos-wing-right {
+		transform-origin: 132.5px 61.6px;
+		animation: bnos-flap-right 0.42s ease-in-out infinite alternate;
+	}
+
+	@keyframes bnos-float {
 		0%,
 		100% {
-			transform: translateY(3px) rotate(-2deg);
+			transform: translateY(0) rotate(0deg);
 		}
 		50% {
-			transform: translateY(-7px) rotate(2deg);
+			transform: translateY(-2px) rotate(-1.5deg);
 		}
 	}
 
-	@keyframes bee-flap-left {
+	@keyframes bnos-flap-left {
 		from {
-			transform: rotate(-5deg) scaleY(1);
+			transform: rotate(-6deg);
 		}
 		to {
-			transform: rotate(12deg) scaleY(0.72);
+			transform: rotate(6deg);
 		}
 	}
 
-	@keyframes bee-flap-right {
+	@keyframes bnos-flap-right {
 		from {
-			transform: rotate(5deg) scaleY(1);
+			transform: rotate(6deg);
 		}
 		to {
-			transform: rotate(-12deg) scaleY(0.72);
+			transform: rotate(-6deg);
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.bee,
-		.wing-left,
-		.wing-right {
+		.bnos-mark,
+		.bnos-wing-left,
+		.bnos-wing-right {
 			animation: none;
 		}
 	}
