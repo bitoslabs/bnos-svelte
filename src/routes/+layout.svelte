@@ -238,7 +238,11 @@
 <svelte:head>
 	<link rel="icon" href={favicon} />
 	{#if pwaInfo}
-		{@html pwaInfo.webManifest.linkTag}
+		<link
+			rel="manifest"
+			href={pwaInfo.webManifest.href}
+			crossorigin={pwaInfo.webManifest.useCredentials ? 'use-credentials' : undefined}
+		/>
 	{/if}
 </svelte:head>
 
