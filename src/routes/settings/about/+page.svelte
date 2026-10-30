@@ -91,7 +91,7 @@
 
 			<div class="relative">
 				<div
-					class="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-[linear-gradient(135deg,#16141f,#0a0a0f)] shadow-lg ring-1 shadow-black/30 ring-white/10"
+					class="mx-auto mb-4 grid size-16 place-items-center rounded-2xl text-white bg-[linear-gradient(135deg,#16141f,#0a0a0f)] shadow-lg ring-1 shadow-black/30 ring-white/10"
 				>
 					<BnosMark class="size-12" />
 				</div>
