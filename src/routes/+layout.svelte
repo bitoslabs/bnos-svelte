@@ -18,6 +18,7 @@
 	import { bootstrapAuth } from '$nostr/auth-bootstrap';
 	import { hasActiveWorkspaceContext } from '$nostr/workspace.svelte';
 	import { workspacePicker } from '$nostr/workspace-picker.svelte';
+	import { pwaInfo } from 'virtual:pwa-info';
 	import { profile } from '$nostr/profile.svelte';
 	import { organizationKey } from '$lib/crypto/organization-key.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
@@ -183,10 +184,6 @@
 					void goto(resolve('/resolve'), { replaceState: true });
 				} else if (result.access === 'blocked') {
 					void goto(resolve('/blocked'), { replaceState: true });
-				} else if (result.access === 'ready') {
-					// Multi-company identities choose their active workspace before
-					// the background sync starts (see the effect below).
-					workspacePicker.maybePrompt();
 				}
 				workspaceResolved = true;
 			});
@@ -238,7 +235,12 @@
 	}
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<svelte:head>
+	<link rel="icon" href={favicon} />
+	{#if pwaInfo}
+		{@html pwaInfo.webManifest.linkTag}
+	{/if}
+</svelte:head>
 
 <svelte:window onpointerdown={onGlobalPointerDown} onkeydown={onGlobalKey} />
 
