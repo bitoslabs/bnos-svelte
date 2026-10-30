@@ -150,7 +150,7 @@
 	<header class="mb-5 flex items-center justify-between">
 		<a href={resolve('/')} class="flex items-center gap-2.5">
 			<div
-				class="grid size-9 place-items-center rounded-xl text-white bg-[linear-gradient(135deg,#16141f,#0a0a0f)] ring-1 ring-white/10"
+				class="grid size-9 place-items-center rounded-xl bg-[linear-gradient(135deg,#16141f,#0a0a0f)] text-white ring-1 ring-white/10"
 			>
 				<BnosMark class="size-6" />
 			</div>
