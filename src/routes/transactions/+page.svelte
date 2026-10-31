@@ -320,6 +320,7 @@
 			sortItems={controls.sortItems}
 			searchPlaceholder="Search reference or method…"
 			allowViewModes={['table']}
+			sortInTableHeader
 			applySort={controls.applySort}
 			setViewMode={controls.setViewMode}
 		>

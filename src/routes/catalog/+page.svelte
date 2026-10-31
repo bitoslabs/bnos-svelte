@@ -1156,6 +1156,7 @@
 				sortItems={prodCtrl.sortItems}
 				applySort={prodCtrl.applySort}
 				setViewMode={prodCtrl.setViewMode}
+				sortInTableHeader
 				searchPlaceholder="Search products…"
 			/>
 		{/if}
@@ -1344,6 +1345,7 @@
 				viewMode={catCtrl.viewMode}
 				sortItems={catCtrl.sortItems}
 				allowViewModes={['table']}
+				sortInTableHeader
 				applySort={catCtrl.applySort}
 				searchPlaceholder="Search categories…"
 			/>
@@ -1432,6 +1434,7 @@
 				viewMode={unitCtrl.viewMode}
 				sortItems={unitCtrl.sortItems}
 				allowViewModes={['table']}
+				sortInTableHeader
 				applySort={unitCtrl.applySort}
 				searchPlaceholder="Search units…"
 			/>
@@ -1510,6 +1513,7 @@
 				viewMode={modCtrl.viewMode}
 				sortItems={modCtrl.sortItems}
 				allowViewModes={['table']}
+				sortInTableHeader
 				applySort={modCtrl.applySort}
 				searchPlaceholder="Search modifiers…"
 			/>

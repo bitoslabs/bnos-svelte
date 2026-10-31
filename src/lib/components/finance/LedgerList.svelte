@@ -421,6 +421,7 @@
 			viewMode={controls.viewMode}
 			sortItems={controls.sortItems}
 			allowViewModes={['table']}
+			sortInTableHeader
 			applySort={controls.applySort}
 			searchPlaceholder={labels.searchPlaceholder}
 		>

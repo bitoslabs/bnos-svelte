@@ -541,6 +541,7 @@
 			bind:viewMode={controls.viewMode}
 			sortItems={controls.sortItems}
 			searchPlaceholder="Search order no, customer, status…"
+			sortInTableHeader
 			applySort={controls.applySort}
 			setViewMode={controls.setViewMode}
 		>

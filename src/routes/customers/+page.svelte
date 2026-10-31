@@ -263,6 +263,7 @@
 			bind:viewMode={controls.viewMode}
 			sortItems={controls.sortItems}
 			searchPlaceholder="Search name, phone, email, npub…"
+			sortInTableHeader
 			applySort={controls.applySort}
 			setViewMode={controls.setViewMode}
 		/>

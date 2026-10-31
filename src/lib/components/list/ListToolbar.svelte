@@ -3,6 +3,10 @@
 	 * Toolbar for list/data-table pages: search, sort-key dropdown, asc/desc
 	 * toggle, and grid/table/list view-mode switcher. A `filters` snippet lets
 	 * pages inject extra filter controls (status select, date range, …).
+	 *
+	 * When the table view renders sortable column headers, pass
+	 * `sortInTableHeader` so the toolbar hides its duplicate sort controls in
+	 * table mode (they stay available for grid/list views, which have no headers).
 	 */
 	import type { Snippet } from 'svelte';
 	import { t } from '$lib/i18n/i18n.svelte';
@@ -21,6 +25,7 @@
 		sortItems = [],
 		searchPlaceholder = 'Search…',
 		allowViewModes = ['grid', 'table'] as ('grid' | 'table' | 'list')[],
+		sortInTableHeader = false,
 		applySort,
 		setViewMode,
 		filters,
@@ -33,11 +38,15 @@
 		sortItems?: AnySortOption[];
 		searchPlaceholder?: string;
 		allowViewModes?: ('grid' | 'table' | 'list')[];
+		/** Table view has sortable column headers, so hide the duplicate sort controls there. */
+		sortInTableHeader?: boolean;
 		applySort?: (key: string) => void;
 		setViewMode?: (mode: 'grid' | 'table' | 'list') => void;
 		filters?: Snippet;
 		class?: string;
 	} = $props();
+
+	const showSortControls = $derived(!(sortInTableHeader && viewMode === 'table'));
 </script>
 
 <div class={cn('flex flex-wrap items-center gap-2', className)}>
@@ -62,39 +71,41 @@
 	{/if}
 
 	<div class="ml-auto flex items-center gap-2">
-		<!-- sort key -->
-		{#if sortItems.length > 1}
-			<div
-				class="focus-ring-field relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
-			>
-				<select
-					bind:value={sortKey}
-					class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium text-(--ui-text) focus:outline-none"
-					onchange={(e) => applySort?.((e.currentTarget as HTMLSelectElement).value)}
+		{#if showSortControls}
+			<!-- sort key -->
+			{#if sortItems.length > 1}
+				<div
+					class="focus-ring-field relative inline-flex items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted)"
 				>
-					{#each sortItems as opt (opt.key)}
-						<option value={opt.key}>{opt.label}</option>
-					{/each}
-				</select>
-				<Icon
-					name="lucide:chevron-down"
-					class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
-				/>
-			</div>
-		{/if}
+					<select
+						bind:value={sortKey}
+						class="h-9 appearance-none rounded-lg bg-transparent py-0 pr-8 pl-3 text-[13px] font-medium text-(--ui-text) focus:outline-none"
+						onchange={(e) => applySort?.((e.currentTarget as HTMLSelectElement).value)}
+					>
+						{#each sortItems as opt (opt.key)}
+							<option value={opt.key}>{opt.label}</option>
+						{/each}
+					</select>
+					<Icon
+						name="lucide:chevron-down"
+						class="pointer-events-none absolute right-2 size-3.5 text-(--ui-text-dimmed)"
+					/>
+				</div>
+			{/if}
 
-		<!-- direction toggle -->
-		<button
-			type="button"
-			class="grid size-9 place-items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
-			title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
-			onclick={() => applySort?.(sortKey)}
-		>
-			<Icon
-				name={sortDir === 'asc' ? 'lucide:arrow-up-narrow-wide' : 'lucide:arrow-down-narrow-wide'}
-				class="size-4"
-			/>
-		</button>
+			<!-- direction toggle -->
+			<button
+				type="button"
+				class="grid size-9 place-items-center rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) text-(--ui-text-muted) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
+				title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
+				onclick={() => applySort?.(sortKey)}
+			>
+				<Icon
+					name={sortDir === 'asc' ? 'lucide:arrow-up-narrow-wide' : 'lucide:arrow-down-narrow-wide'}
+					class="size-4"
+				/>
+			</button>
+		{/if}
 
 		<!-- view modes -->
 		{#if setViewMode && allowViewModes.length > 1}
