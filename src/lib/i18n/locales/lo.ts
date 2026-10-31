@@ -445,9 +445,7 @@ export const lo = {
 		installDesc: 'ເພີ່ມ BNOS ໃສ່ໜ້າຈໍຫຼັກ',
 		offlineReady: 'ແອັບພ້ອມໃຊ້ແບບອອບລາຍ'
 	},
-	offline: {
-		banner: 'ອອບລາຍ — ບັນທຶກຂໍ້ມູນໃນເຄື່ອງ'
-	},
+
 	layout: {
 		checkingWorkspace: 'ກຳລັງກວດສອບພື້ນທີ່ເຮັດວຽກ',
 		checkingWorkspaceDesc: 'ກຳລັງກູ້ຄືນພື້ນທີ່ເຮັດວຽກແລະສາຂາປັດຈຸບັນ…'

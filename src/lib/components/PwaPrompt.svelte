@@ -97,52 +97,66 @@
 	}
 </script>
 
-{#if updateAvailable}
-	<div
-		class="fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-xl border border-(--glass-border) bg-(--surface-2) px-4 py-3 shadow-lg"
-	>
-		<div class="text-sm">
-			<div class="font-medium">{t('pwa.updateAvailable')}</div>
-			<div class="text-(--text-muted)">{t('pwa.updateReady')}</div>
-		</div>
-		<button
-			type="button"
-			class="rounded-lg bg-(--accent) px-3 py-1.5 text-sm font-medium text-white"
-			onclick={applyUpdate}
-		>
-			{t('common.update')}
-		</button>
-		<button type="button" class="text-(--text-muted) hover:text-(--text)" onclick={dismiss}>
-			✕
-		</button>
-	</div>
-{/if}
+{#if updateAvailable || canInstall || offlineReady}
+	<div class="fixed right-4 bottom-4 z-50 flex flex-col items-end gap-2">
+		{#if updateAvailable}
+			<div
+				class="flex items-center gap-3 rounded-xl border border-(--ui-border) bg-(--ui-bg-elevated) px-4 py-3 text-(--ui-text) shadow-(--shadow-pop)"
+			>
+				<div class="text-sm">
+					<div class="font-medium">{t('pwa.updateAvailable')}</div>
+					<div class="text-(--ui-text-muted)">{t('pwa.updateReady')}</div>
+				</div>
+				<button
+					type="button"
+					class="rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-400"
+					onclick={applyUpdate}
+				>
+					{t('common.update')}
+				</button>
+				<button
+					type="button"
+					class="text-(--ui-text-muted) transition-colors hover:text-(--ui-text)"
+					aria-label={t('common.close')}
+					onclick={dismiss}
+				>
+					✕
+				</button>
+			</div>
+		{/if}
 
-{#if canInstall}
-	<div
-		class="fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-xl border border-(--glass-border) bg-(--surface-2) px-4 py-3 shadow-lg"
-	>
-		<div class="text-sm">
-			<div class="font-medium">{t('pwa.installApp')}</div>
-			<div class="text-(--text-muted)">{t('pwa.installDesc')}</div>
-		</div>
-		<button
-			type="button"
-			class="rounded-lg bg-(--accent) px-3 py-1.5 text-sm font-medium text-white"
-			onclick={installApp}
-		>
-			{t('pwa.install')}
-		</button>
-		<button type="button" class="text-(--text-muted) hover:text-(--text)" onclick={dismissInstall}>
-			✕
-		</button>
-	</div>
-{/if}
+		{#if canInstall}
+			<div
+				class="flex items-center gap-3 rounded-xl border border-(--ui-border) bg-(--ui-bg-elevated) px-4 py-3 text-(--ui-text) shadow-(--shadow-pop)"
+			>
+				<div class="text-sm">
+					<div class="font-medium">{t('pwa.installApp')}</div>
+					<div class="text-(--ui-text-muted)">{t('pwa.installDesc')}</div>
+				</div>
+				<button
+					type="button"
+					class="rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-400"
+					onclick={installApp}
+				>
+					{t('pwa.install')}
+				</button>
+				<button
+					type="button"
+					class="text-(--ui-text-muted) transition-colors hover:text-(--ui-text)"
+					aria-label={t('common.close')}
+					onclick={dismissInstall}
+				>
+					✕
+				</button>
+			</div>
+		{/if}
 
-{#if offlineReady}
-	<div
-		class="fixed right-4 bottom-4 z-50 rounded-xl border border-(--glass-border) bg-(--surface-2) px-4 py-3 text-sm shadow-lg"
-	>
-		✅ {t('pwa.offlineReady')}
+		{#if offlineReady}
+			<div
+				class="rounded-xl border border-(--ui-border) bg-(--ui-bg-elevated) px-4 py-3 text-sm text-(--ui-text) shadow-(--shadow-pop)"
+			>
+				✅ {t('pwa.offlineReady')}
+			</div>
+		{/if}
 	</div>
 {/if}
