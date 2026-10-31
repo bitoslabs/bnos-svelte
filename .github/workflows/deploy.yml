@@ -26,6 +26,7 @@ jobs:
       - name: Install and verify
         run: |
           pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
           pnpm lint
           pnpm run check
           pnpm test:unit --run
