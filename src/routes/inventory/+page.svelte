@@ -834,6 +834,7 @@
 				viewMode={adjCtrl.viewMode}
 				sortItems={adjCtrl.sortItems}
 				allowViewModes={['table']}
+				sortInTableHeader
 				applySort={adjCtrl.applySort}
 				searchPlaceholder="Search product…"
 			/>{/if}
@@ -933,6 +934,7 @@
 				viewMode={supCtrl.viewMode}
 				sortItems={supCtrl.sortItems}
 				allowViewModes={['table']}
+				sortInTableHeader
 				applySort={supCtrl.applySort}
 				searchPlaceholder="Search supplier…"
 			/>{/if}
@@ -1030,6 +1032,7 @@
 				viewMode={poCtrl.viewMode}
 				sortItems={poCtrl.sortItems}
 				allowViewModes={['table']}
+				sortInTableHeader
 				applySort={poCtrl.applySort}
 				searchPlaceholder="Search PO no…"
 			/>{/if}

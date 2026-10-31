@@ -1042,6 +1042,7 @@
 				bind:viewMode={cCtrl.viewMode}
 				sortItems={cCtrl.sortItems}
 				searchPlaceholder="Search code…"
+				sortInTableHeader
 				applySort={cCtrl.applySort}
 				setViewMode={cCtrl.setViewMode}
 			/>

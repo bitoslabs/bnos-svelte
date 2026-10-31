@@ -377,6 +377,7 @@
 				bind:viewMode={planCtrl.viewMode}
 				sortItems={planCtrl.sortItems}
 				searchPlaceholder="Search plan name…"
+				sortInTableHeader
 				applySort={planCtrl.applySort}
 				setViewMode={planCtrl.setViewMode}
 			/>
@@ -636,6 +637,7 @@
 				bind:viewMode={subCtrl.viewMode}
 				sortItems={subCtrl.sortItems}
 				searchPlaceholder="Search customer…"
+				sortInTableHeader
 				applySort={subCtrl.applySort}
 				setViewMode={subCtrl.setViewMode}
 			/>
@@ -802,6 +804,7 @@
 				bind:viewMode={ciCtrl.viewMode}
 				sortItems={ciCtrl.sortItems}
 				searchPlaceholder="Search customer…"
+				sortInTableHeader
 				applySort={ciCtrl.applySort}
 				setViewMode={ciCtrl.setViewMode}
 			/>

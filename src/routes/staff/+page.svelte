@@ -564,6 +564,7 @@
 					sortItems={controls.sortItems}
 					applySort={controls.applySort}
 					setViewMode={controls.setViewMode}
+					sortInTableHeader
 					searchPlaceholder="Search name, role, email…"
 				/>
 			{/if}
