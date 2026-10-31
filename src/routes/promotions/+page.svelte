@@ -4,6 +4,8 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
+	import DateTimePicker from '$lib/components/ui/DateTimePicker.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
@@ -1254,7 +1256,7 @@
 					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Value {cType === 'percent' ? '(%)' : `(${currency})`}</span
 					>
-					<Input bind:value={cValue} type="number" min="0" class="w-full" />
+					<NumberInput bind:value={cValue} min={0} maxDecimals={2} class="w-full" />
 				</label>
 			</div>
 			<div class="grid grid-cols-2 gap-3">
@@ -1262,13 +1264,13 @@
 					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Min spend (optional)</span
 					>
-					<Input bind:value={cMinSpend} type="number" min="0" class="w-full" />
+					<NumberInput bind:value={cMinSpend} min={0} decimals={2} class="w-full" />
 				</label>
 				<label class="block">
 					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Max uses (optional)</span
 					>
-					<Input bind:value={cMax} type="number" min="0" class="w-full" />
+					<NumberInput bind:value={cMax} min={0} maxDecimals={0} decimals={0} class="w-full" />
 				</label>
 			</div>
 			<label class="block">
@@ -1342,34 +1344,28 @@
 							{isPercentType(fType) ? 'Discount %' : `Discount (${currency})`}
 							<span class="text-red-500">*</span>
 						</span>
-						<div class="relative">
-							<Input
-								bind:value={fValue}
-								type="number"
-								min="0"
-								max={isPercentType(fType) ? 100 : undefined}
-								placeholder={isPercentType(fType) ? '10' : '5.00'}
-								class="w-full"
-							/>
-							{#if isPercentType(fType)}
-								<span
-									class="absolute top-1/2 right-3 -translate-y-1/2 text-[12px] text-(--ui-text-dimmed)"
-									>%</span
-								>
-							{/if}
-						</div>
+						<NumberInput
+							bind:value={fValue}
+							min={0}
+							max={isPercentType(fType) ? 100 : undefined}
+							maxDecimals={2}
+							suffix={isPercentType(fType) ? '%' : currency}
+							placeholder={isPercentType(fType) ? '10' : '5.00'}
+							class="w-full"
+						/>
 					</label>
 					<label class="block">
 						<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Minimum spend</span
 						>
-						<Input
+						<NumberInput
 							bind:value={fMinimumSpend}
-							type="number"
-							min="0"
+							min={0}
+							decimals={2}
+							suffix={currency}
 							placeholder="0.00"
-							class="w-full">{#snippet trailing()}{currency}{/snippet}</Input
-						>
+							class="w-full"
+						/>
 					</label>
 				</div>
 				{#if fType === 'bogo'}
@@ -1402,13 +1398,13 @@
 						<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Valid from</span
 						>
-						<Input bind:value={fValidFrom} type="datetime-local" class="w-full" />
+						<DateTimePicker bind:value={fValidFrom} mode="datetime" class="w-full" />
 					</label>
 					<label class="block">
 						<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Valid until</span
 						>
-						<Input bind:value={fValidUntil} type="datetime-local" class="w-full" />
+						<DateTimePicker bind:value={fValidUntil} mode="datetime" class="w-full" />
 					</label>
 				</div>
 				{#if dateRangeError}
@@ -1466,10 +1462,11 @@
 					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Max usage count (0 = unlimited)</span
 					>
-					<Input
+					<NumberInput
 						bind:value={fMaxUsage}
-						type="number"
-						min="0"
+						min={0}
+						maxDecimals={0}
+						decimals={0}
 						placeholder={t('common.unlimited')}
 						class="w-full"
 					/>

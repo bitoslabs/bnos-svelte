@@ -197,6 +197,8 @@ export const th = {
 		opening: 'เปิด',
 		options: 'ตัวเลือก',
 		period: 'ช่วง',
+		from: 'จาก',
+		to: 'ถึง',
 		progress: 'ความคืบหน้า',
 		reason: 'เหตุผล',
 		result: 'ผลลัพธ์',
@@ -697,6 +699,10 @@ export const th = {
 		methodBank: 'ธนาคาร',
 		methodCard: 'บัตร',
 		methodOther: 'อื่นๆ'
+	},
+	datePicker: {
+		previousMonth: 'เดือนก่อนหน้า',
+		nextMonth: 'เดือนถัดไป'
 	},
 	income: {
 		rawData: 'ข้อมูลดิบของรายรับ',

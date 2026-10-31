@@ -4,7 +4,7 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import ListToolbar from '$lib/components/list/ListToolbar.svelte';
 	import SortableTh from '$lib/components/list/SortableTh.svelte';
@@ -265,11 +265,10 @@
 					>
 				{:else}
 					<div class="flex items-center gap-2">
-						<Input
+						<NumberInput
 							bind:value={closeOpeningCash}
-							type="number"
-							min="0"
-							step="0.01"
+							min={0}
+							decimals={2}
 							placeholder="Opening cash"
 							class="w-36"
 						/>
@@ -465,10 +464,9 @@
 					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Counted Cash</span
 					>
-					<Input
+					<NumberInput
 						bind:value={closeCountedCash}
-						type="number"
-						step="0.01"
+						decimals={2}
 						placeholder="0.00"
 						class="w-full"
 					/>

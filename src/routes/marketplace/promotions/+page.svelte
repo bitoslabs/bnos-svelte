@@ -11,6 +11,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { glo } from '$nostr/store.svelte';
@@ -272,17 +273,24 @@
 				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Value {cType === 'percent' ? '(%)' : `(${currency})`}</span
 				>
-				<Input bind:value={cValue} type="number" min="0" class="w-full" />
+				<NumberInput bind:value={cValue} min={0} maxDecimals={2} class="w-full" />
 			</label>
 		{/if}
 		<div class="grid grid-cols-2 gap-3">
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Min spend</span>
-				<Input bind:value={cMinSpend} type="number" min="0" class="w-full" />
+				<NumberInput bind:value={cMinSpend} min={0} decimals={2} class="w-full" />
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Max uses</span>
-				<Input bind:value={cMaxUses} type="number" min="0" placeholder="∞" class="w-full" />
+				<NumberInput
+					bind:value={cMaxUses}
+					min={0}
+					maxDecimals={0}
+					decimals={0}
+					placeholder="∞"
+					class="w-full"
+				/>
 			</label>
 		</div>
 		<div class="rounded-lg bg-(--ui-bg-accented) p-3 text-center">

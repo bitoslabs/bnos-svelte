@@ -6,6 +6,8 @@
  * both ledgers without forking.
  */
 
+import { dateInputKey, parseDateInput } from '$lib/utils/date-input';
+
 export interface LedgerCategory {
 	value: string;
 	icon: string;
@@ -46,6 +48,7 @@ export interface LedgerLabels {
 	saveChanges: string;
 	cancel: string;
 	delete: string;
+	duplicate: string;
 	view: string;
 	viewRaw: string;
 	clear: string;
@@ -121,14 +124,21 @@ export function readNumber(data: Record<string, unknown>, key = 'amount'): numbe
 	return Number.isFinite(n) ? n : 0;
 }
 
-/** ISO timestamp → `yyyy-mm-dd` for a date input. */
+/** ISO timestamp → local `yyyy-mm-dd` for a date input. */
 export function isoToDateInput(iso: string): string {
 	if (!iso) return '';
-	const d = new Date(iso);
-	return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+	const date = new Date(iso);
+	return Number.isNaN(date.getTime()) ? '' : dateInputKey(date);
 }
 
-/** `yyyy-mm-dd` date-input value → ISO timestamp (defaults to now). */
+/**
+ * Local `yyyy-mm-dd` value → ISO timestamp (defaults to now). Anchored to local
+ * noon so the stored instant still falls on the same calendar day in every
+ * timezone the user might open the ledger from.
+ */
 export function dateInputToIso(value: string): string {
-	return value ? new Date(value).toISOString() : new Date().toISOString();
+	const date = parseDateInput(value);
+	if (!date) return new Date().toISOString();
+	date.setHours(12, 0, 0, 0);
+	return date.toISOString();
 }

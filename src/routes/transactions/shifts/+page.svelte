@@ -4,6 +4,7 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import RawDataDialog from '$lib/components/ui/RawDataDialog.svelte';
@@ -302,11 +303,11 @@
 				<div class="mb-1.5 text-[12px] font-semibold text-(--ui-text-muted)">
 					Opening cash float · {branchLabel}
 				</div>
-				<Input
+				<NumberInput
 					bind:value={opening}
-					type="number"
 					icon="lucide:banknote"
-					min="0"
+					min={0}
+					decimals={2}
 					placeholder="0.00"
 					class="w-full"
 				/>
@@ -321,11 +322,11 @@
 	{#if activeShift}
 		<div class="surface-card flex flex-wrap items-end gap-2 p-4">
 			<div class="min-w-[10rem] flex-1">
-				<Input
+				<NumberInput
 					bind:value={cashAmt}
-					type="number"
 					icon="lucide:banknote"
-					min="0"
+					min={0}
+					decimals={2}
 					placeholder={t('common.amount')}
 					class="w-full"
 				/>
@@ -499,11 +500,11 @@
 				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Counted cash</span
 				>
-				<Input
+				<NumberInput
 					bind:value={countedCash}
-					type="number"
 					icon="lucide:banknote"
-					min="0"
+					min={0}
+					decimals={2}
 					placeholder="0.00"
 					class="w-full"
 				/>

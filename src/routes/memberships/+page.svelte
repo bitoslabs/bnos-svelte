@@ -4,6 +4,7 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
@@ -986,7 +987,7 @@
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Price ({currency})</span
-					><Input bind:value={mPrice} type="number" min="0" class="w-full" /></label
+					><NumberInput bind:value={mPrice} min={0} decimals={2} class="w-full" /></label
 				>
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"

@@ -10,6 +10,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
@@ -941,13 +942,19 @@
 				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Price ({currency}) <span class="text-red-500">*</span></span
 				>
-				<Input bind:value={fPrice} type="number" min="0" class="w-full" />
+				<NumberInput bind:value={fPrice} min={0} decimals={2} class="w-full" />
 			</label>
 			<label class="block">
 				<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Compare-at price</span
 				>
-				<Input bind:value={fCompareAt} type="number" min="0" placeholder="0.00" class="w-full" />
+				<NumberInput
+					bind:value={fCompareAt}
+					min={0}
+					decimals={2}
+					placeholder="0.00"
+					class="w-full"
+				/>
 			</label>
 		</div>
 
@@ -967,7 +974,7 @@
 					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Stock quantity</span
 					>
-					<Input bind:value={fStock} type="number" min="0" class="w-full" />
+					<NumberInput bind:value={fStock} min={0} maxDecimals={0} decimals={0} class="w-full" />
 				</label>
 			{/if}
 		</div>

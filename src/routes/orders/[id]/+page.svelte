@@ -11,6 +11,8 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
+	import DateTimePicker from '$lib/components/ui/DateTimePicker.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -337,19 +339,19 @@
 	// ── Add payment ──────────────────────────────────────────
 	let showAddPayment = $state(false);
 	let newPaymentMethod = $state('cash');
-	let newPaymentAmount = $state(0);
+	let newPaymentAmount = $state<number | ''>(0);
 
 	// Raw data viewer
 	let rawOpen = $state(false);
 
 	async function addPayment() {
-		if (!order || newPaymentAmount <= 0) return;
+		if (!order || Number(newPaymentAmount) <= 0) return;
 		await glo.upsert<Payment>(
 			TYPE.payment,
 			{
 				orderId: id,
 				method: newPaymentMethod,
-				amount: newPaymentAmount,
+				amount: Number(newPaymentAmount),
 				status: 'completed',
 				currency: currency,
 				paidAt: new Date().toISOString()
@@ -855,7 +857,12 @@
 									<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 										>Est. delivery</span
 									>
-									<Input bind:value={trackEta} type="datetime-local" class="w-full" />
+									<DateTimePicker
+										bind:value={trackEta}
+										mode="datetime"
+										placeholder="Est. delivery"
+										class="w-full"
+									/>
 								</label>
 								<label class="block">
 									<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
@@ -1146,13 +1153,12 @@
 										</button>
 									{/each}
 								</div>
-								<input
+								<NumberInput
 									bind:value={newPaymentAmount}
-									type="number"
-									min="0"
-									step="0.01"
-									class="w-full rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 py-1.5 text-right text-[13px] focus:outline-none"
+									min={0}
+									decimals={2}
 									placeholder={t('common.amount')}
+									class="w-full"
 								/>
 								<div class="flex gap-2">
 									<Button

@@ -1,41 +1,36 @@
 <script lang="ts">
-	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
 
 	let {
-		value = $bindable(),
+		value = $bindable<number | ''>(''),
 		label,
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars -- reserved for formatting
 		currency = 'LAK',
 		placeholder
 	}: {
-		value: number | string;
+		value?: number | '';
 		label?: string;
 		currency?: string;
 		placeholder?: string;
 	} = $props();
 </script>
 
-{#if label}
-	<label class="block">
-		<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">{label}</span>
-		<Input
-			bind:value
-			type="number"
-			min="0"
-			step="0.01"
-			{placeholder}
-			icon="lucide:banknote"
-			class="w-full"
-		/>
-	</label>
-{:else}
-	<Input
+{#snippet field()}
+	<NumberInput
 		bind:value
-		type="number"
-		min="0"
-		step="0.01"
+		min={0}
+		decimals={2}
+		suffix={currency}
 		{placeholder}
 		icon="lucide:banknote"
 		class="w-full"
 	/>
+{/snippet}
+
+{#if label}
+	<label class="block">
+		<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">{label}</span>
+		{@render field()}
+	</label>
+{:else}
+	{@render field()}
 {/if}

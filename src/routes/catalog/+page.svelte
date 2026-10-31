@@ -5,6 +5,7 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import MediaImageInput from '$lib/components/media/MediaImageInput.svelte';
 	import MediaImageGallery from '$lib/components/media/MediaImageGallery.svelte';
@@ -1757,19 +1758,18 @@
 			<label class="block"
 				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Fixed price ({currency})</span
-				><Input bind:value={bFixedPrice} type="number" min="0" step="0.01" class="w-full" /></label
+				><NumberInput bind:value={bFixedPrice} min={0} decimals={2} class="w-full" /></label
 			>
 		{/if}
 		{#if bPriceMode === 'discounted'}
 			<label class="block"
 				><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>Discount %</span
-				><Input
+				><NumberInput
 					bind:value={bDiscountPercent}
-					type="number"
-					min="0"
-					max="100"
-					step="1"
+					min={0}
+					max={100}
+					maxDecimals={2}
 					class="w-full"
 				/></label
 			>
@@ -1909,24 +1909,22 @@
 					<label class="block"
 						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Price ({currency})</span
-						><Input
+						><NumberInput
 							bind:value={pPrice}
-							type="number"
 							icon="lucide:banknote"
-							min="0"
-							step="0.01"
+							min={0}
+							decimals={2}
 							class="w-full"
 						/></label
 					>
 					<label class="block"
 						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>{t('common.cost')}</span
-						><Input
+						><NumberInput
 							bind:value={pCostPrice}
-							type="number"
 							icon="lucide:wallet"
-							min="0"
-							step="0.01"
+							min={0}
+							decimals={2}
 							placeholder="0.00"
 							class="w-full"
 						/></label
@@ -1934,12 +1932,11 @@
 					<label class="block"
 						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Compare-at</span
-						><Input
+						><NumberInput
 							bind:value={pCompareAtPrice}
-							type="number"
 							icon="lucide:tag"
-							min="0"
-							step="0.01"
+							min={0}
+							decimals={2}
 							placeholder="0.00"
 							class="w-full"
 						/></label
@@ -2021,10 +2018,11 @@
 					<label class="block"
 						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Prep time (min)</span
-						><Input
+						><NumberInput
 							bind:value={pPrepTime}
-							type="number"
-							min="0"
+							min={0}
+							maxDecimals={0}
+							decimals={0}
 							icon="lucide:timer"
 							placeholder="0"
 							class="w-full"
@@ -2033,10 +2031,11 @@
 					<label class="block"
 						><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 							>Sort order</span
-						><Input
+						><NumberInput
 							bind:value={pSortOrder}
-							type="number"
-							min="0"
+							min={0}
+							maxDecimals={0}
+							decimals={0}
 							icon="lucide:arrow-down-up"
 							placeholder="0"
 							class="w-full"
@@ -2071,7 +2070,12 @@
 					{/if}
 					<div class="flex gap-2">
 						<Input bind:value={pVariantName} placeholder="Large" class="flex-1" />
-						<Input bind:value={pVariantPrice} type="number" placeholder="price adj." class="w-28" />
+						<NumberInput
+							bind:value={pVariantPrice}
+							decimals={2}
+							placeholder="price adj."
+							class="w-28"
+						/>
 						<Button
 							color="neutral"
 							variant="subtle"
@@ -2115,10 +2119,11 @@
 					/>
 					{#if pTrackInv}
 						<div class="mt-2 grid grid-cols-2 gap-2">
-							<Input
+							<NumberInput
 								bind:value={pLowStock}
-								type="number"
-								min="0"
+								min={0}
+								maxDecimals={0}
+								decimals={0}
 								icon="lucide:alert-triangle"
 								placeholder="Low-stock alert at"
 								class="w-full"
@@ -2230,11 +2235,10 @@
 				<label class="block"
 					><span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Conversion factor</span
-					><Input
+					><NumberInput
 						bind:value={uConversionFactor}
-						type="number"
-						min="0"
-						step="0.0001"
+						min={0}
+						maxDecimals={4}
 						placeholder="1"
 						class="w-full"
 					/></label
