@@ -32,7 +32,6 @@
 	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
 	import RemoteSignerBanner from '$lib/components/RemoteSignerBanner.svelte';
 	import PwaPrompt from '$lib/components/PwaPrompt.svelte';
-	import OfflineBadge from '$lib/components/OfflineBadge.svelte';
 	import BootSplash from '$lib/components/ui/BootSplash.svelte';
 	import { popovers } from '$lib/stores/popovers.svelte';
 	import { startSystemNotifications } from '$lib/stores/notifications.svelte';
@@ -330,7 +329,6 @@
 <ModeWatcher themeColors={{ light: '#f5f6f7', dark: '#0a0a0c' }} />
 <Toaster />
 <PwaPrompt />
-<OfflineBadge />
 <ConfirmDialog />
 <CommandPalette />
 {#if !isPublicRoute}

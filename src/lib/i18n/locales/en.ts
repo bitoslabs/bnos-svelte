@@ -476,9 +476,7 @@ export const en = {
 		installDesc: 'Add BNOS to your home screen.',
 		offlineReady: 'App ready to work offline'
 	},
-	offline: {
-		banner: 'Offline — changes saved locally'
-	},
+
 	layout: {
 		checkingWorkspace: 'Checking workspace',
 		checkingWorkspaceDesc: 'Restoring your active workspace and branch…'

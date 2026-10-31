@@ -445,9 +445,7 @@ export const th = {
 		installDesc: 'เพิ่ม BNOS ไปยังหน้าจอหลัก',
 		offlineReady: 'แอปพร้อมใช้งานแบบออฟไลน์'
 	},
-	offline: {
-		banner: 'ออฟไลน์ — บันทึกข้อมูลไว้ในเครื่อง'
-	},
+
 	layout: {
 		checkingWorkspace: 'กำลังตรวจสอบพื้นที่ทำงาน',
 		checkingWorkspaceDesc: 'กำลังกู้คืนพื้นที่ทำงานและสาขาปัจจุบัน…'
