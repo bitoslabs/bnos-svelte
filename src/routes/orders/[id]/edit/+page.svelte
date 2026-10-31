@@ -7,6 +7,8 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
+	import DateTimePicker from '$lib/components/ui/DateTimePicker.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
@@ -88,7 +90,7 @@
 	let covers = $state<number | undefined>(undefined);
 
 	// Shipping
-	let shipping = $state<ShippingInfo>({
+	let shipping = $state<ShippingInfo & { deliveryFee: number | ''; estimatedDeliveryAt: string }>({
 		recipientName: '',
 		phone: '',
 		address: '',
@@ -107,7 +109,7 @@
 	});
 
 	// Pickup
-	let pickup = $state<PickupInfo>({
+	let pickup = $state<PickupInfo & { pickupTime: string }>({
 		pickupName: '',
 		phone: '',
 		pickupTime: '',
@@ -118,8 +120,8 @@
 	let loaded = $state(false);
 
 	// Totals
-	let discountAmount = $state(0);
-	let tipAmount = $state(0);
+	let discountAmount = $state<number | ''>(0);
+	let tipAmount = $state<number | ''>(0);
 
 	// ── Sync form from order data when it loads ──────────────
 	$effect(() => {
@@ -222,7 +224,9 @@
 	const taxAmount = $derived(
 		tenant.state.taxIncludedInPrice ? 0 : subtotal * (defaultTaxRate / 100)
 	);
-	const total = $derived(Math.max(0, subtotal - discountAmount + taxAmount + tipAmount));
+	const total = $derived(
+		Math.max(0, subtotal - Number(discountAmount) + taxAmount + Number(tipAmount))
+	);
 
 	// Bitcoin: live sats preview of the order total (currency-aware).
 	const showSats = $derived(btcRate.canConvert(currency ?? 'USD'));
@@ -634,10 +638,10 @@
 									<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 										>Delivery Fee</span
 									>
-									<Input
+									<NumberInput
 										bind:value={shipping.deliveryFee}
-										type="number"
-										min="0"
+										min={0}
+										decimals={2}
 										placeholder="0"
 										class="w-full"
 									/>
@@ -693,9 +697,10 @@
 										<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 											>Est. delivery</span
 										>
-										<Input
+										<DateTimePicker
 											bind:value={shipping.estimatedDeliveryAt}
-											type="datetime-local"
+											mode="datetime"
+											placeholder="Est. delivery"
 											class="w-full"
 										/>
 									</label>
@@ -762,7 +767,12 @@
 									<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 										>Ready Time</span
 									>
-									<Input bind:value={pickup.pickupTime} type="datetime-local" class="w-full" />
+									<DateTimePicker
+										bind:value={pickup.pickupTime}
+										mode="datetime"
+										placeholder="Ready time"
+										class="w-full"
+									/>
 								</label>
 								<label class="block">
 									<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
@@ -1012,12 +1022,13 @@
 						</div>
 						<div class="flex items-center justify-between gap-3">
 							<span class="text-(--ui-text-muted)">{t('common.discount')}</span>
-							<input
+							<NumberInput
 								bind:value={discountAmount}
-								type="number"
-								min="0"
-								class="w-24 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2 py-1 text-right text-[13px] focus:outline-none"
+								min={0}
+								decimals={2}
+								size="sm"
 								placeholder="0"
+								class="w-28"
 							/>
 						</div>
 						{#if taxAmount > 0}
@@ -1029,12 +1040,13 @@
 						{/if}
 						<div class="flex items-center justify-between gap-3">
 							<span class="text-(--ui-text-muted)">Tip</span>
-							<input
+							<NumberInput
 								bind:value={tipAmount}
-								type="number"
-								min="0"
-								class="w-24 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2 py-1 text-right text-[13px] focus:outline-none"
+								min={0}
+								decimals={2}
+								size="sm"
 								placeholder="0"
+								class="w-28"
 							/>
 						</div>
 						<div

@@ -197,6 +197,8 @@ export const lo = {
 		opening: 'ເປີດ',
 		options: 'ຕົວເລືອກ',
 		period: 'ໄລຍະ',
+		from: 'ຈາກ',
+		to: 'ເຖິງ',
 		progress: 'ຄວາມຄືບໜ້າ',
 		reason: 'ເຫດຜົນ',
 		result: 'ຜົນ',
@@ -697,6 +699,10 @@ export const lo = {
 		methodBank: 'ທະນາຄານ',
 		methodCard: 'ບັດ',
 		methodOther: 'ອື່ນໆ'
+	},
+	datePicker: {
+		previousMonth: 'ເດືອນກ່ອນ',
+		nextMonth: 'ເດືອນຖັດໄປ'
 	},
 	income: {
 		rawData: 'ຂໍ້ມູນດິບຂອງລາຍຮັບ',

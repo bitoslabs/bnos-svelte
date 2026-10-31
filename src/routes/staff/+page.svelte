@@ -6,6 +6,7 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -885,7 +886,7 @@
 		<!-- Hourly rate -->
 		<label class="block">
 			<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)">Hourly rate</span>
-			<Input bind:value={form.hourlyRate} type="number" min="0" step="0.5" class="w-full" />
+			<NumberInput bind:value={form.hourlyRate} min={0} decimals={2} step={0.5} class="w-full" />
 		</label>
 
 		<!-- Status -->

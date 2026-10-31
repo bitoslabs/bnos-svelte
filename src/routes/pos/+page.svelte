@@ -4,6 +4,7 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import Menu from '$lib/components/ui/Menu.svelte';
@@ -702,13 +703,13 @@
 	}
 
 	// Tip
-	let tipAmount = $state(0);
+	let tipAmount = $state<number | ''>(0);
 	function quickTip(pct: number) {
 		tipAmount = Math.round((cart.totals.subtotal * pct) / 100);
 	}
 
 	// Grand total includes tip
-	const grandTotal = $derived(cart.totals.total + tipAmount);
+	const grandTotal = $derived(cart.totals.total + Number(tipAmount));
 
 	// ── Loyalty ──
 	const customers = $derived(glo.all<Customer, typeof TYPE.customer>(TYPE.customer));
@@ -996,7 +997,7 @@
 			if (sale) {
 				loyaltyRedeemOn = false;
 				playSuccessChime();
-				successTip = tipAmount;
+				successTip = Number(tipAmount);
 				successTendered = 0;
 				broadcastCheckoutSuccess(paidAmount, paidMethod);
 				await processLoyalty(sale, redeemedPoints);
@@ -1036,7 +1037,7 @@
 			if (sale) {
 				loyaltyRedeemOn = false;
 				playSuccessChime();
-				successTip = tipAmount;
+				successTip = Number(tipAmount);
 				successTendered = typeof tendered === 'number' ? tendered : 0;
 				broadcastCheckoutSuccess(sale.totals.total, method);
 				await processLoyalty(sale, redeemedPoints);
@@ -1084,7 +1085,7 @@
 			if (sale) {
 				loyaltyRedeemOn = false;
 				playSuccessChime();
-				successTip = tipAmount;
+				successTip = Number(tipAmount);
 				successTendered = splitPayments.reduce((s, p) => s + p.amount, 0);
 				broadcastCheckoutSuccess(sale.totals.total, splitPayments[0].method);
 				await processLoyalty(sale, redeemedPoints);
@@ -2881,11 +2882,10 @@
 					{/each}
 				</div>
 				<div class="flex gap-1.5">
-					<Input
+					<NumberInput
 						bind:value={splitAmount}
-						type="number"
-						min="0"
-						step="0.01"
+						min={0}
+						decimals={2}
 						icon="lucide:banknote"
 						placeholder={t('common.amount')}
 						class="flex-1"
@@ -2928,11 +2928,10 @@
 			<!-- Tip field (card payments) -->
 			{#if method === 'card'}
 				<div class="flex items-center gap-1.5">
-					<Input
+					<NumberInput
 						bind:value={tipAmount}
-						type="number"
-						min="0"
-						step="100"
+						min={0}
+						decimals={2}
 						icon="lucide:heart"
 						placeholder="Tip"
 						class="flex-1"
@@ -2949,7 +2948,7 @@
 						class="shrink-0 rounded-lg border border-(--ui-border) px-2 py-1.5 text-[10.5px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented)"
 						>15%</button
 					>
-					{#if tipAmount > 0}
+					{#if Number(tipAmount) > 0}
 						<button
 							type="button"
 							onclick={() => (tipAmount = 0)}
@@ -2962,7 +2961,7 @@
 			{/if}
 
 			<!-- Grand total with tip -->
-			{#if tipAmount > 0}
+			{#if Number(tipAmount) > 0}
 				<div class="flex justify-between text-[12.5px] text-(--ui-text-muted)">
 					<span>Tip</span><span class="tabular-nums">+{formatMoney(tipAmount, currency)}</span>
 				</div>
@@ -2983,13 +2982,12 @@
 			{/if}
 
 			{#if method === 'cash'}
-				<Input
+				<NumberInput
 					bind:value={tendered}
-					type="number"
 					icon="lucide:banknote"
 					placeholder="Cash tendered"
-					min="0"
-					step="0.01"
+					min={0}
+					decimals={2}
 				/>
 				<!-- Prominent change display -->
 				{#if typeof tendered === 'number' && tendered > 0}
@@ -3029,13 +3027,12 @@
 				</div>
 				<!-- Custom cash amount input -->
 				<div class="flex items-center gap-1.5">
-					<Input
+					<NumberInput
 						bind:value={tendered}
-						type="number"
 						icon="lucide:pencil-line"
 						placeholder="Enter custom amount"
-						min="0"
-						step="0.01"
+						min={0}
+						decimals={2}
 						class="flex-1"
 					/>
 					<button
@@ -3208,11 +3205,10 @@
 				{/each}
 			</div>
 		{/if}
-		<Input
+		<NumberInput
 			bind:value={dValue}
-			type="number"
-			min="0"
-			step="0.01"
+			min={0}
+			decimals={2}
 			icon="lucide:tag"
 			placeholder={dType === 'percent' ? 'Percentage (e.g. 10)' : `Amount in ${currency}`}
 			class="w-full"
@@ -3592,11 +3588,10 @@
 					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>{t('common.price')}</span
 					>
-					<Input
+					<NumberInput
 						bind:value={customPrice}
-						type="number"
-						min="0"
-						step="0.01"
+						min={0}
+						decimals={2}
 						icon="lucide:banknote"
 						placeholder="0"
 						class="w-full"
@@ -3642,11 +3637,10 @@
 					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Counted closing cash</span
 					>
-					<Input
+					<NumberInput
 						bind:value={shiftOpeningCash}
-						type="number"
-						min="0"
-						step="0.01"
+						min={0}
+						decimals={2}
 						icon="lucide:banknote"
 						placeholder="0"
 						class="w-full"
@@ -3665,11 +3659,10 @@
 					<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 						>Opening cash (optional)</span
 					>
-					<Input
+					<NumberInput
 						bind:value={shiftOpeningCash}
-						type="number"
-						min="0"
-						step="0.01"
+						min={0}
+						decimals={2}
 						icon="lucide:banknote"
 						placeholder="0"
 						class="w-full"

@@ -61,6 +61,7 @@
 			saveChanges: t('common.saveChanges'),
 			cancel: t('common.cancel'),
 			delete: t('common.delete'),
+			duplicate: t('common.duplicate'),
 			view: t('common.view'),
 			viewRaw: t('common.viewRaw'),
 			clear: t('common.clear'),

@@ -7,11 +7,13 @@
 	 * never fork. See `finance/ledger.ts`.
 	 */
 	import { onMount, untrack } from 'svelte';
-	import { SvelteDate } from 'svelte/reactivity';
-	import { t } from '$lib/i18n/i18n.svelte';
+	import { t, i18n, localeTag } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
+	import DateTimePicker from '$lib/components/ui/DateTimePicker.svelte';
+	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
@@ -27,10 +29,12 @@
 	import { tenant } from '$nostr/tenant.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
-	import { formatMoney, relativeTime, normalizeCurrencyCode } from '$lib/utils/format';
+	import { formatMoney, normalizeCurrencyCode } from '$lib/utils/format';
 	import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
+	import { dateRangeBounds, todayDateInput } from '$lib/utils/date-input';
 	import { statusColor, statusLabel } from '$lib/domain';
 	import type { LedgerConfig, LedgerValues } from './ledger';
+	import { isoToDateInput } from './ledger';
 
 	let { config }: { config: LedgerConfig } = $props();
 
@@ -73,17 +77,14 @@
 	let dateTo = $state('');
 
 	const filtered = $derived.by(() => {
-		const fromMs = dateFrom ? new Date(dateFrom).getTime() : null;
-		const to = dateTo ? new SvelteDate(dateTo) : null;
-		if (to) to.setHours(23, 59, 59, 999);
-		const toMs = to ? to.getTime() : null;
+		const { start, endExclusive } = dateRangeBounds(dateFrom, dateTo);
 		return entries.filter((e) => {
 			const d = e.data as Record<string, unknown>;
 			if (catFilter !== '__all__' && str(d, 'category') !== catFilter) return false;
 			if (statusFilter !== '__all__' && str(d, 'status') !== statusFilter) return false;
 			const at = new Date(str(d, 'occurredAt')).getTime();
-			if (fromMs !== null && at < fromMs) return false;
-			if (toMs !== null && at > toMs) return false;
+			if (start !== null && at < start) return false;
+			if (endExclusive !== null && at >= endExclusive) return false;
 			return true;
 		});
 	});
@@ -105,23 +106,29 @@
 		storageKey: untrack(() => config.type)
 	});
 
-	// Totals reflect the visible (filtered + searched) set, restricted to the
-	// active currency so mixed-currency sums stay correct.
+	// Ledger totals ignore cancelled entries and foreign currencies. The total
+	// follows the visible (filtered + searched) rows, while "this month" is a
+	// fixed KPI over the whole ledger so a date filter cannot zero it out.
 	const scoped = $derived(controls.list);
-	const totals = $derived.by(() => {
+	function counted(data: Record<string, unknown>): boolean {
+		return str(data, 'status') !== 'cancelled' && matchesCurrency(data);
+	}
+	const totalAmount = $derived.by(() => {
+		let sum = 0;
+		for (const e of scoped) if (counted(e.data)) sum += amountOf(e.data);
+		return sum;
+	});
+	const monthAmount = $derived.by(() => {
 		const now = new Date();
-		let totalOut = 0;
-		let monthOut = 0;
-		for (const e of scoped) {
-			if (str(e.data, 'status') === 'cancelled' || !matchesCurrency(e.data)) continue;
-			const amount = amountOf(e.data);
-			totalOut += amount;
+		let sum = 0;
+		for (const e of entries) {
+			if (!counted(e.data)) continue;
 			const d = new Date(str(e.data, 'occurredAt'));
 			if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) {
-				monthOut += amount;
+				sum += amountOf(e.data);
 			}
 		}
-		return { totalOut, monthOut };
+		return sum;
 	});
 	const entriesCount = $derived(scoped.length);
 	const mixedCurrencyCount = $derived(
@@ -146,7 +153,7 @@
 	}
 
 	function todayInput(): string {
-		return new Date().toISOString().slice(0, 10);
+		return todayDateInput();
 	}
 
 	// Create / edit dialog — one form, `editingId` switches the mode.
@@ -160,10 +167,19 @@
 	let status = $state('paid');
 	let reference = $state('');
 	let occurredAt = $state('');
+	let descriptionError = $state('');
+	let amountError = $state('');
+	let saving = $state(false);
 	const isEditing = $derived(editingId !== null);
+
+	function resetFormState() {
+		descriptionError = '';
+		amountError = '';
+	}
 
 	function openCreate() {
 		editingId = null;
+		resetFormState();
 		description = '';
 		amount = '';
 		category = config.categories[config.categories.length - 1]?.value ?? 'other';
@@ -177,6 +193,7 @@
 
 	function openEdit(entry: { id: string; data: Record<string, unknown> }) {
 		editingId = entry.id;
+		resetFormState();
 		const v = config.readValues(entry.data);
 		description = v.description;
 		amount = v.amount;
@@ -186,6 +203,25 @@
 		status = v.status;
 		reference = v.reference;
 		occurredAt = v.occurredAt;
+		open = true;
+	}
+
+	/**
+	 * Prefill the create dialog from an existing entry — the common case for
+	 * recurring costs (rent, salaries) and repeat income.
+	 */
+	function duplicate(entry: { id: string; data: Record<string, unknown> }) {
+		const v = config.readValues(entry.data);
+		editingId = null;
+		resetFormState();
+		description = v.description;
+		amount = v.amount;
+		category = v.category;
+		party = v.party;
+		method = v.method;
+		status = v.status;
+		reference = v.reference;
+		occurredAt = todayInput();
 		open = true;
 	}
 
@@ -204,9 +240,13 @@
 	}
 
 	async function save() {
-		if (!description.trim()) return toast.warning(labels.descRequiredMsg);
 		const values = currentValues();
-		if (values.amount <= 0) return toast.warning(labels.amountRequiredMsg);
+		descriptionError = values.description ? '' : labels.descRequiredMsg;
+		amountError = values.amount > 0 ? '' : labels.amountRequiredMsg;
+		if (descriptionError || amountError) {
+			toast.warning(descriptionError || amountError);
+			return;
+		}
 
 		const editing = editingId !== null;
 		const existing = editing ? entries.find((x) => x.id === editingId) : undefined;
@@ -215,11 +255,20 @@
 			existingNumber ||
 			nextReadableNumber({ prefix: config.numberPrefix, scope: tenant.state.locationId });
 
-		await glo.upsert(config.type, config.buildData(values, { currency: config.currency, number }), {
-			id: editingId ?? newRecordId(config.scope)
-		});
-		toast.success(editing ? labels.updatedMsg : labels.createdMsg);
-		open = false;
+		saving = true;
+		try {
+			await glo.upsert(
+				config.type,
+				config.buildData(values, { currency: config.currency, number }),
+				{
+					id: editingId ?? newRecordId(config.scope)
+				}
+			);
+			toast.success(editing ? labels.updatedMsg : labels.createdMsg);
+			open = false;
+		} finally {
+			saving = false;
+		}
 	}
 
 	async function remove(entry: { id: string; data: Record<string, unknown> }) {
@@ -245,13 +294,14 @@
 			'method',
 			'status',
 			'amount',
-			'currency'
+			'currency',
+			'reference'
 		];
 		const rows: string[][] = [header];
 		for (const e of scoped) {
 			const d = e.data;
 			rows.push([
-				str(d, 'occurredAt') ? new Date(str(d, 'occurredAt')).toISOString().slice(0, 10) : '',
+				isoToDateInput(str(d, 'occurredAt')),
 				config.getNumber(d),
 				str(d, 'description'),
 				str(d, 'category'),
@@ -259,7 +309,8 @@
 				str(d, 'method'),
 				str(d, 'status'),
 				String(amountOf(d)),
-				str(d, 'currency') || config.currency
+				str(d, 'currency') || config.currency,
+				str(d, 'reference')
 			]);
 		}
 		const csv = rows
@@ -269,14 +320,26 @@
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `${labels.exportFilePrefix}_${new Date().toISOString().slice(0, 10)}.csv`;
+		a.download = `${labels.exportFilePrefix}_${todayDateInput()}.csv`;
 		a.click();
 		URL.revokeObjectURL(url);
 	}
 
 	function fullDate(iso: string): string {
 		const d = new Date(iso);
-		return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString();
+		return Number.isNaN(d.getTime()) ? '' : d.toLocaleString();
+	}
+
+	const shortDateFormatter = $derived(
+		new Intl.DateTimeFormat(localeTag[i18n.locale], {
+			day: 'numeric',
+			month: 'short',
+			year: 'numeric'
+		})
+	);
+	function shortDate(iso: string): string {
+		const d = new Date(iso);
+		return Number.isNaN(d.getTime()) ? '—' : shortDateFormatter.format(d);
 	}
 
 	function catIcon(value: string): string {
@@ -306,21 +369,39 @@
 		</div>
 	</div>
 
-	<div class="grid grid-cols-3 gap-3">
+	<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 		<div class="surface-card p-4">
-			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">{labels.totalOut}</div>
-			<div class="mt-1 font-display text-lg font-bold tabular-nums">
-				{formatMoney(totals.totalOut, config.currency)}
+			<div class="flex items-center gap-1.5 text-[11px] font-semibold text-(--ui-text-dimmed)">
+				<Icon
+					name={config.sign === '+' ? 'lucide:trending-up' : 'lucide:trending-down'}
+					class="size-3.5 {config.tone === 'success'
+						? 'text-(--tone-success-text)'
+						: 'text-(--tone-error-text)'}"
+				/>
+				{labels.totalOut}
+			</div>
+			<div
+				class="mt-1 font-display text-lg font-bold tabular-nums {config.tone === 'success'
+					? 'text-(--tone-success-text)'
+					: 'text-(--tone-error-text)'}"
+			>
+				{formatMoney(totalAmount, config.currency)}
 			</div>
 		</div>
 		<div class="surface-card p-4">
-			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">{labels.thisMonth}</div>
+			<div class="flex items-center gap-1.5 text-[11px] font-semibold text-(--ui-text-dimmed)">
+				<Icon name="lucide:calendar" class="size-3.5" />
+				{labels.thisMonth}
+			</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">
-				{formatMoney(totals.monthOut, config.currency)}
+				{formatMoney(monthAmount, config.currency)}
 			</div>
 		</div>
 		<div class="surface-card p-4">
-			<div class="text-[11px] font-semibold text-(--ui-text-dimmed)">{labels.entries}</div>
+			<div class="flex items-center gap-1.5 text-[11px] font-semibold text-(--ui-text-dimmed)">
+				<Icon name="lucide:list" class="size-3.5" />
+				{labels.entries}
+			</div>
 			<div class="mt-1 font-display text-lg font-bold tabular-nums">{entriesCount}</div>
 		</div>
 	</div>
@@ -357,24 +438,12 @@
 						bind:value={statusFilter}
 						options={statusFilterOptions}
 					/>
-					<input
-						type="date"
-						bind:value={dateFrom}
-						aria-label={labels.date}
-						class="h-9.5 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 text-[13px] font-medium text-(--ui-text) focus:border-(--ui-color-primary-500) focus:outline-none"
-					/>
-					<span class="text-[12px] text-(--ui-text-dimmed)">→</span>
-					<input
-						type="date"
-						bind:value={dateTo}
-						aria-label={labels.date}
-						class="h-9.5 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 text-[13px] font-medium text-(--ui-text) focus:border-(--ui-color-primary-500) focus:outline-none"
-					/>
+					<DateRangePicker bind:from={dateFrom} bind:to={dateTo} />
 					{#if hasActiveFilters}
 						<button
 							type="button"
 							onclick={clearFilters}
-							class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
+							class="focus-ring inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-(--ui-text-muted) hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
 						>
 							<Icon name="lucide:x" class="size-3.5" />
 							{labels.clear}
@@ -403,120 +472,127 @@
 		</EmptyState>
 	{:else}
 		<div class="data-panel">
-			<table class="table-surface w-full text-left">
-				<thead>
-					<tr>
-						<SortableTh
-							column="date"
-							active={controls.sortKey === 'date'}
-							direction={controls.sortDir}
-							applySort={controls.applySort}>{labels.date}</SortableTh
-						>
-						<th class="px-5 py-2.5">{labels.description}</th>
-						<SortableTh
-							column="category"
-							active={controls.sortKey === 'category'}
-							direction={controls.sortDir}
-							applySort={controls.applySort}>{labels.category}</SortableTh
-						>
-						<th class="px-5 py-2.5">{labels.status}</th>
-						<th class="px-5 py-2.5">{labels.receiptUrl}</th>
-						<SortableTh
-							column="amount"
-							active={controls.sortKey === 'amount'}
-							direction={controls.sortDir}
-							align="right"
-							applySort={controls.applySort}>{labels.amount}</SortableTh
-						>
-						<th class="w-10 px-5 py-2.5"></th>
-					</tr>
-				</thead>
-				<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
-					{#each controls.pagedList as e (e.id)}
+			<div class="overflow-x-auto">
+				<table class="table-surface w-full text-left">
+					<thead>
 						<tr>
-							<td
-								class="px-5 py-3 text-[12px] text-(--ui-text-dimmed)"
-								title={fullDate(str(e.data, 'occurredAt'))}
-								>{relativeTime(str(e.data, 'occurredAt'))}</td
+							<SortableTh
+								column="date"
+								active={controls.sortKey === 'date'}
+								direction={controls.sortDir}
+								applySort={controls.applySort}>{labels.date}</SortableTh
 							>
-							<td class="px-5 py-3">
-								<div class="font-semibold">{str(e.data, 'description')}</div>
-								{#if config.getParty(e.data)}
-									<div class="text-[11px] text-(--ui-text-dimmed)">{config.getParty(e.data)}</div>
-								{/if}
-							</td>
-							<td class="px-5 py-3">
-								<span class="inline-flex items-center gap-1">
-									<Icon
-										name={catIcon(str(e.data, 'category'))}
-										class="size-3.5 text-(--ui-text-dimmed)"
-									/>
-									{config.categoryLabel(str(e.data, 'category'))}
-								</span>
-							</td>
-							<td class="px-5 py-3"
-								><Badge color={statusColor(str(e.data, 'status'))}
-									>{statusLabel(str(e.data, 'status'))}</Badge
-								></td
+							<th class="px-5 py-2.5">{labels.description}</th>
+							<SortableTh
+								column="category"
+								active={controls.sortKey === 'category'}
+								direction={controls.sortDir}
+								applySort={controls.applySort}>{labels.category}</SortableTh
 							>
-							<td class="px-5 py-3">
-								{#if str(e.data, 'reference')}
-									<a
-										href={str(e.data, 'reference')}
-										target="_blank"
-										rel="noopener"
-										class="inline-flex items-center gap-1 text-[12px] font-medium text-primary-600 hover:underline dark:text-primary-400"
-									>
-										<Icon name="lucide:paperclip" class="size-3.5" />
-										{labels.view}
-									</a>
-								{:else}
-									<span class="text-(--ui-text-dimmed)">—</span>
-								{/if}
-							</td>
-							<td
-								class="px-5 py-3 text-right font-semibold tabular-nums {config.tone === 'success'
-									? 'text-(--tone-success-text)'
-									: 'text-(--tone-error-text)'}"
+							<th class="px-5 py-2.5">{labels.status}</th>
+							<th class="px-5 py-2.5">{labels.receiptUrl}</th>
+							<SortableTh
+								column="amount"
+								active={controls.sortKey === 'amount'}
+								direction={controls.sortDir}
+								align="right"
+								applySort={controls.applySort}>{labels.amount}</SortableTh
 							>
-								{config.sign}{formatMoney(
-									amountOf(e.data),
-									str(e.data, 'currency') || config.currency
-								)}
-							</td>
-							<td class="px-5 py-3 text-right">
-								<RowActions
-									actions={[
-										[
-											{
-												label: labels.edit,
-												icon: 'lucide:pencil',
-												onSelect: () => openEdit({ id: e.id, data: e.data })
-											},
-											{
-												label: labels.viewRaw,
-												icon: 'lucide:code',
-												onSelect: () => {
-													rawItem = glo.get(config.type, e.id);
-													rawOpen = true;
-												}
-											}
-										],
-										[
-											{
-												label: labels.delete,
-												icon: 'lucide:trash-2',
-												danger: true,
-												onSelect: () => void remove({ id: e.id, data: e.data })
-											}
-										]
-									]}
-								/>
-							</td>
+							<th class="w-10 px-5 py-2.5"></th>
 						</tr>
-					{/each}
-				</tbody>
-			</table>
+					</thead>
+					<tbody class="divide-y divide-(--ui-border-muted) text-[13px]">
+						{#each controls.pagedList as e (e.id)}
+							<tr>
+								<td
+									class="px-5 py-3 text-[12px] whitespace-nowrap text-(--ui-text-muted)"
+									title={fullDate(str(e.data, 'occurredAt'))}
+									>{shortDate(str(e.data, 'occurredAt'))}</td
+								>
+								<td class="px-5 py-3">
+									<div class="font-semibold">{str(e.data, 'description')}</div>
+									{#if config.getParty(e.data)}
+										<div class="text-[11px] text-(--ui-text-dimmed)">{config.getParty(e.data)}</div>
+									{/if}
+								</td>
+								<td class="px-5 py-3">
+									<span class="inline-flex items-center gap-1">
+										<Icon
+											name={catIcon(str(e.data, 'category'))}
+											class="size-3.5 text-(--ui-text-dimmed)"
+										/>
+										{config.categoryLabel(str(e.data, 'category'))}
+									</span>
+								</td>
+								<td class="px-5 py-3"
+									><Badge color={statusColor(str(e.data, 'status'))}
+										>{statusLabel(str(e.data, 'status'))}</Badge
+									></td
+								>
+								<td class="px-5 py-3">
+									{#if str(e.data, 'reference')}
+										<a
+											href={str(e.data, 'reference')}
+											target="_blank"
+											rel="noopener"
+											class="inline-flex items-center gap-1 text-[12px] font-medium text-primary-600 hover:underline dark:text-primary-400"
+										>
+											<Icon name="lucide:paperclip" class="size-3.5" />
+											{labels.view}
+										</a>
+									{:else}
+										<span class="text-(--ui-text-dimmed)">—</span>
+									{/if}
+								</td>
+								<td
+									class="px-5 py-3 text-right font-semibold tabular-nums {config.tone === 'success'
+										? 'text-(--tone-success-text)'
+										: 'text-(--tone-error-text)'}"
+								>
+									{config.sign}{formatMoney(
+										amountOf(e.data),
+										str(e.data, 'currency') || config.currency
+									)}
+								</td>
+								<td class="px-5 py-3 text-right">
+									<RowActions
+										actions={[
+											[
+												{
+													label: labels.edit,
+													icon: 'lucide:pencil',
+													onSelect: () => openEdit({ id: e.id, data: e.data })
+												},
+												{
+													label: labels.duplicate,
+													icon: 'lucide:copy',
+													onSelect: () => duplicate({ id: e.id, data: e.data })
+												},
+												{
+													label: labels.viewRaw,
+													icon: 'lucide:code',
+													onSelect: () => {
+														rawItem = glo.get(config.type, e.id);
+														rawOpen = true;
+													}
+												}
+											],
+											[
+												{
+													label: labels.delete,
+													icon: 'lucide:trash-2',
+													danger: true,
+													onSelect: () => void remove({ id: e.id, data: e.data })
+												}
+											]
+										]}
+									/>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
 			<Pagination {controls} />
 		</div>
 	{/if}
@@ -524,28 +600,55 @@
 
 <!-- Create / Edit Dialog -->
 <Dialog bind:open title={isEditing ? labels.edit : labels.add} size="lg">
-	<div class="space-y-3">
+	<form
+		id="ledger-form"
+		class="space-y-3"
+		onsubmit={(event) => {
+			event.preventDefault();
+			void save();
+		}}
+	>
 		<div>
 			<label for="fin-desc" class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 				>{labels.description}</label
 			>
-			<Input id="fin-desc" bind:value={description} class="w-full" />
+			<Input
+				id="fin-desc"
+				bind:value={description}
+				class="w-full"
+				aria-invalid={!!descriptionError}
+				aria-describedby={descriptionError ? 'fin-desc-error' : undefined}
+				oninput={() => (descriptionError = '')}
+			/>
+			{#if descriptionError}
+				<p id="fin-desc-error" class="mt-1 text-[11px] font-medium text-(--tone-error-text)">
+					{descriptionError}
+				</p>
+			{/if}
 		</div>
-		<div class="grid grid-cols-2 gap-3">
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<div>
 				<label
 					for="fin-amount"
 					class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
-					>{labels.amount} ({config.currency})</label
+					>{labels.amount}</label
 				>
-				<Input
+				<NumberInput
 					id="fin-amount"
 					bind:value={amount}
-					type="number"
-					min="0"
-					step="0.01"
+					min={0}
+					decimals={2}
+					suffix={displayCurrency}
 					class="w-full"
+					aria-invalid={!!amountError}
+					aria-describedby={amountError ? 'fin-amount-error' : undefined}
+					oninput={() => (amountError = '')}
 				/>
+				{#if amountError}
+					<p id="fin-amount-error" class="mt-1 text-[11px] font-medium text-(--tone-error-text)">
+						{amountError}
+					</p>
+				{/if}
 			</div>
 			<div>
 				<label for="fin-cat" class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
@@ -554,7 +657,7 @@
 				<Select id="fin-cat" bind:value={category} options={categoryFormOptions} class="w-full" />
 			</div>
 		</div>
-		<div class="grid grid-cols-2 gap-3">
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<div>
 				<label for="fin-party" class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{labels.party}</label
@@ -575,16 +678,16 @@
 				<Select id="fin-method" bind:value={method} options={config.methods} class="w-full" />
 			</div>
 		</div>
-		<div class="grid grid-cols-2 gap-3">
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<div>
 				<label for="fin-date" class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 					>{labels.date}</label
 				>
-				<input
+				<DateTimePicker
 					id="fin-date"
-					type="date"
 					bind:value={occurredAt}
-					class="h-9.5 w-full rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-3 text-[13.5px] text-(--ui-text) focus:border-(--ui-color-primary-500) focus:outline-none"
+					placeholder={labels.date}
+					class="w-full"
 				/>
 			</div>
 			<div>
@@ -608,10 +711,12 @@
 				class="w-full"
 			/>
 		</div>
-	</div>
+	</form>
 	{#snippet footer()}
-		<Button color="neutral" variant="ghost" onclick={() => (open = false)}>{labels.cancel}</Button>
-		<Button color="primary" icon="lucide:check" onclick={save}
+		<Button type="button" color="neutral" variant="ghost" onclick={() => (open = false)}
+			>{labels.cancel}</Button
+		>
+		<Button type="submit" form="ledger-form" color="primary" icon="lucide:check" disabled={saving}
 			>{isEditing ? labels.saveChanges : labels.save}</Button
 		>
 	{/snippet}

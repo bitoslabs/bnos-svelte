@@ -206,6 +206,8 @@ export const en = {
 		opening: 'Opening',
 		options: 'Options',
 		period: 'Period',
+		from: 'From',
+		to: 'To',
 		progress: 'Progress',
 		reason: 'Reason',
 		result: 'Result',
@@ -783,6 +785,10 @@ export const en = {
 		methodBank: 'Bank',
 		methodCard: 'Card',
 		methodOther: 'Other'
+	},
+	datePicker: {
+		previousMonth: 'Previous month',
+		nextMonth: 'Next month'
 	},
 	income: {
 		rawData: 'Income Raw Data',

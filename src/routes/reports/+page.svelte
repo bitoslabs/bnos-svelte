@@ -4,6 +4,7 @@
 	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import DateTimePicker from '$lib/components/ui/DateTimePicker.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { formatMoney, formatInt } from '$lib/utils/format';
@@ -456,16 +457,18 @@
 		{/each}
 		{#if showCustom}
 			<div class="flex items-center gap-1.5">
-				<input
-					type="date"
-					class="rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2.5 py-1.5 text-[13px] text-(--ui-text) outline-none focus:border-primary-500"
+				<DateTimePicker
 					bind:value={customStart}
+					placeholder={t('common.from')}
+					ariaLabel={t('common.from')}
+					class="min-w-32"
 				/>
-				<span class="text-[12px] text-(--ui-text-dimmed)">→</span>
-				<input
-					type="date"
-					class="rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2.5 py-1.5 text-[13px] text-(--ui-text) outline-none focus:border-primary-500"
+				<span class="text-[12px] text-(--ui-text-dimmed)" aria-hidden="true">→</span>
+				<DateTimePicker
 					bind:value={customEnd}
+					placeholder={t('common.to')}
+					ariaLabel={t('common.to')}
+					class="min-w-32"
 				/>
 			</div>
 		{/if}

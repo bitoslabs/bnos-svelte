@@ -6,6 +6,8 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import NumberInput from '$lib/components/ui/NumberInput.svelte';
+	import DateTimePicker from '$lib/components/ui/DateTimePicker.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import { glo } from '$nostr/store.svelte';
@@ -65,7 +67,7 @@
 	let covers = $state<number | undefined>(undefined);
 
 	// Shipping
-	let shipping = $state<ShippingInfo>({
+	let shipping = $state<ShippingInfo & { deliveryFee: number | ''; estimatedDeliveryAt: string }>({
 		shippingStatus: 'pending',
 		recipientName: '',
 		phone: '',
@@ -84,7 +86,7 @@
 	});
 
 	// Pickup
-	let pickup = $state<PickupInfo>({
+	let pickup = $state<PickupInfo & { pickupTime: string }>({
 		pickupName: '',
 		phone: '',
 		pickupTime: '',
@@ -280,15 +282,15 @@
 	// ── Totals ───────────────────────────────────────────────
 	const subtotal = $derived(lines.reduce((s, l) => s + (l.unitPrice ?? 0) * l.quantity, 0));
 	const itemCount = $derived(lines.reduce((s, l) => s + l.quantity, 0));
-	let discountAmount = $state(0);
-	let tipAmount = $state(0);
+	let discountAmount = $state<number | ''>(0);
+	let tipAmount = $state<number | ''>(0);
 	const defaultTaxRate = $derived(tenant.state.defaultTaxRate || 0);
 	const taxAmount = $derived(
 		tenant.state.taxIncludedInPrice ? 0 : subtotal * (defaultTaxRate / 100)
 	);
 	const deliveryFee = $derived(orderType === 'delivery' ? Number(shipping.deliveryFee) || 0 : 0);
 	const total = $derived(
-		Math.max(0, subtotal - discountAmount + taxAmount + tipAmount + deliveryFee)
+		Math.max(0, subtotal - Number(discountAmount) + taxAmount + Number(tipAmount) + deliveryFee)
 	);
 
 	// Bitcoin: live sats preview of the order total (currency-aware).
@@ -934,10 +936,10 @@
 								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>Delivery fee</span
 								>
-								<Input
+								<NumberInput
 									bind:value={shipping.deliveryFee}
-									type="number"
-									min="0"
+									min={0}
+									decimals={2}
 									placeholder="0"
 									class="w-full"
 								/>
@@ -992,9 +994,10 @@
 									<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 										>Est. delivery</span
 									>
-									<Input
+									<DateTimePicker
 										bind:value={shipping.estimatedDeliveryAt}
-										type="datetime-local"
+										mode="datetime"
+										placeholder="Est. delivery"
 										class="w-full"
 									/>
 								</label>
@@ -1073,7 +1076,12 @@
 								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
 									>Ready time</span
 								>
-								<Input bind:value={pickup.pickupTime} type="datetime-local" class="w-full" />
+								<DateTimePicker
+									bind:value={pickup.pickupTime}
+									mode="datetime"
+									placeholder="Ready time"
+									class="w-full"
+								/>
 							</label>
 							<label class="block">
 								<span class="mb-1.5 block text-[12px] font-semibold text-(--ui-text-muted)"
@@ -1166,17 +1174,14 @@
 					</div>
 					<div class="flex items-center justify-between gap-3">
 						<span class="text-(--ui-text-muted)">{t('common.discount')}</span>
-						<div
-							class="inline-flex items-center gap-1 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2 focus-within:border-primary-500"
-						>
-							<input
-								bind:value={discountAmount}
-								type="number"
-								min="0"
-								class="w-20 bg-transparent py-1 text-right tabular-nums focus:outline-none"
-								placeholder="0"
-							/>
-						</div>
+						<NumberInput
+							bind:value={discountAmount}
+							min={0}
+							decimals={2}
+							size="sm"
+							placeholder="0"
+							class="w-28"
+						/>
 					</div>
 					{#if taxAmount > 0}
 						<div class="flex justify-between">
@@ -1192,17 +1197,14 @@
 					{/if}
 					<div class="flex items-center justify-between gap-3">
 						<span class="text-(--ui-text-muted)">Tip</span>
-						<div
-							class="inline-flex items-center gap-1 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2 focus-within:border-primary-500"
-						>
-							<input
-								bind:value={tipAmount}
-								type="number"
-								min="0"
-								class="w-20 bg-transparent py-1 text-right tabular-nums focus:outline-none"
-								placeholder="0"
-							/>
-						</div>
+						<NumberInput
+							bind:value={tipAmount}
+							min={0}
+							decimals={2}
+							size="sm"
+							placeholder="0"
+							class="w-28"
+						/>
 					</div>
 					<div
 						class="flex justify-between border-t border-(--ui-border-muted) pt-2.5 font-display text-[17px] font-bold"
