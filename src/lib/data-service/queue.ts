@@ -199,6 +199,7 @@ function candidateEncryptedContent(content: unknown): boolean {
 			)
 		)
 			return false;
+		// eslint-disable-next-line no-control-regex -- reject control characters in key ids
 		if (!envelope.kid || envelope.kid.length > 256 || /[\u0000-\u001f\u007f]/.test(envelope.kid))
 			return false;
 		const canonical = (value: string, min: number, max: number) => {
@@ -218,6 +219,7 @@ function candidateEncryptedContent(content: unknown): boolean {
 						typeof value !== 'string' ||
 						!value ||
 						value.length > 256 ||
+						// eslint-disable-next-line no-control-regex -- reject control characters in aad
 						/[\u0000-\u001f\u007f]/.test(value)
 				)
 			)

@@ -93,7 +93,7 @@ describe('service upload queue', () => {
 		queued = enqueueEvent(queued, { ...event('malformed'), content: '{' }).queue;
 		queued = enqueueEvent(queued, {
 			...event('duplicate-key'),
-			content: encrypted.replace('{', '{\"ciphertext\":\"private\",')
+			content: encrypted.replace('{', '{"ciphertext":"private",')
 		}).queue;
 		queued = enqueueEvent(queued, {
 			...event('extra'),
