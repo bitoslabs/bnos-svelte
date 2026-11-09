@@ -11,13 +11,17 @@
 	import { startOfDay, type DashboardOrder } from '$lib/dashboard/metrics';
 	import type { GloOrder, GloProduct } from '@bitos/bnos-core/glo';
 	import { TYPE, type Expense, type Income } from '$lib/domain';
+	import { ensureDailySnapshot } from '$lib/reports/snapshot-service';
 
 	// ── Data hydration ──────────────────────────────────────────────
 	onMount(() => {
 		glo.hydrate('commerce.order');
+		glo.hydrate('commerce.payment');
+		glo.hydrate(TYPE.refund);
 		glo.hydrate('catalog.product');
 		glo.hydrate(TYPE.expense);
 		glo.hydrate(TYPE.income);
+		glo.hydrate(TYPE.reportSnapshot);
 	});
 
 	const orders = $derived(glo.all<GloOrder, 'commerce.order'>('commerce.order'));
@@ -25,6 +29,18 @@
 	const expenses = $derived(glo.all<Expense, typeof TYPE.expense>(TYPE.expense));
 	const incomes = $derived(glo.all<Income, typeof TYPE.income>(TYPE.income));
 	const currency = $derived(tenant.state.currency);
+
+	// Refresh today's aggregate snapshot when the page has real data and the
+	// stored snapshot is stale. Missing periods stay gaps, never zeros.
+	let snapshotRequested = false;
+	$effect(() => {
+		if (snapshotRequested) return;
+		if (!glo.isHydrated('commerce.order') || !glo.isHydrated('commerce.payment')) return;
+		if (!glo.isHydrated('catalog.product') || !glo.isHydrated(TYPE.refund)) return;
+		if (!orders.length) return;
+		snapshotRequested = true;
+		void ensureDailySnapshot().catch(() => {});
+	});
 
 	// ── Date range state ────────────────────────────────────────────
 	type RangePreset = 'today' | '7d' | '30d' | 'month' | 'custom';

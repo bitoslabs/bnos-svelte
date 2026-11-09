@@ -91,6 +91,11 @@ strings live in `src/lib/i18n/locales/*.ts`. Never hard-code UI strings.
 (localStorage) with Nostr sync. Kinds come from `@bitos/bnos-core`. Auth
 (NIP-07 + nsec) is in `session.svelte.ts`.
 
+The optional data service client lives in `src/lib/data-service/`. Report
+snapshot work — encrypted relay copy plus plaintext service push — is specified
+in [`docs/REPORT_SNAPSHOTS.md`](docs/REPORT_SNAPSHOTS.md). Follow it before
+adding snapshot publishing, and never send plaintext aggregates to relays.
+
 ## Layout
 
 - `src/routes/**` — pages (`+page.svelte`, `+layout.svelte`).

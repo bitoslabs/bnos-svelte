@@ -152,6 +152,16 @@ export function queueIds(queue: ServiceQueue): string[] {
 	return queue.items.map((item) => item.id);
 }
 
+/** First value of a Nostr tag on a queued event (e.g. a logical snapshot id). */
+export function eventTagValue(event: ServiceEvent, name: string): string | null {
+	const tags = (event as { tags?: unknown }).tags;
+	if (!Array.isArray(tags)) return null;
+	for (const tag of tags) {
+		if (Array.isArray(tag) && tag[0] === name && typeof tag[1] === 'string') return tag[1];
+	}
+	return null;
+}
+
 /** Apply only acknowledgements for this batch; rejected or conflicting IDs stay queued. */
 export function applyIngestResult(
 	queue: ServiceQueue,

@@ -37,6 +37,18 @@ methods (matching bdgo-os):
 Snapshots are persisted with the canonical BNOS storage keys, so this client is
 interoperable with other BNOS clients, including bdgo-os and bnos-space.
 
+### Data service and report snapshots
+
+The optional backend integration lives in
+[`src/lib/data-service/`](src/lib/data-service). Its current contract covers
+encrypted backup, signed-challenge auth, and status.
+
+Report snapshots are planned. The client implementation guide — covering the GLO
+type, encryption of relay copies, plaintext service push, triggers, and tests —
+is [`docs/REPORT_SNAPSHOTS.md`](docs/REPORT_SNAPSHOTS.md). The matching backend
+design is in
+[`../bnos-data-service/docs/REPORTING.md`](../bnos-data-service/docs/REPORTING.md).
+
 ## Structure
 
 ```

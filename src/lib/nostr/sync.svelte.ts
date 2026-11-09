@@ -46,6 +46,7 @@ export const SECONDARY_DATA_TYPES = [
 	TYPE.membershipSubscription,
 	TYPE.membershipCheckIn,
 	TYPE.cashEvent,
+	TYPE.reportSnapshot,
 	'restaurant.table',
 	'restaurant.queue',
 	'restaurant.waiter-assignment',

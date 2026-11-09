@@ -18,6 +18,7 @@ export const DATA_SERVICE_PATHS = {
 	refresh: 'v1/auth/refresh',
 	logout: 'v1/auth/logout',
 	events: 'v1/events',
+	reportSnapshots: 'v1/reports/snapshots',
 	status: 'v1/status'
 } as const;
 

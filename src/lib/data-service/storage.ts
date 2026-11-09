@@ -9,6 +9,7 @@ import { parseQueue, serializeQueue, type ServiceQueue } from './queue';
 const CONNECTION_PREFIX = 'bnos-os:data-service:connection:';
 const SESSION_PREFIX = 'bnos-os:data-service:session:';
 const QUEUE_PREFIX = 'bnos-os:data-service:queue:';
+const SNAPSHOT_QUEUE_PREFIX = 'bnos-os:data-service:snapshots:';
 
 export interface ConnectionMetadata {
 	version: 1;
@@ -51,6 +52,10 @@ export function sessionKey(organizationId: string): string {
 
 export function queueKey(organizationId: string): string {
 	return `${QUEUE_PREFIX}${organizationId}`;
+}
+
+export function snapshotQueueKey(organizationId: string): string {
+	return `${SNAPSHOT_QUEUE_PREFIX}${organizationId}`;
 }
 
 export function readConnection(
@@ -194,4 +199,36 @@ export function writeQueue(
 export function clearQueue(organizationId: string, storage: Storage | null = local()): void {
 	if (!organizationId || !storage) return;
 	storage.removeItem(queueKey(organizationId));
+}
+
+/** Durable outbox for signed plaintext report snapshots (service-only). */
+export function readSnapshotQueue(
+	organizationId: string,
+	storage: Storage | null = local()
+): ServiceQueue {
+	if (!organizationId || !storage) throw new Error('Snapshot queue storage is unavailable');
+	return parseQueue(storage.getItem(snapshotQueueKey(organizationId)));
+}
+
+export function writeSnapshotQueue(
+	organizationId: string,
+	queue: ServiceQueue,
+	storage: Storage | null = local()
+): void {
+	if (!organizationId || !storage) throw new Error('Snapshot queue storage is unavailable');
+	// Refuse to overwrite data that this version cannot safely read.
+	parseQueue(storage.getItem(snapshotQueueKey(organizationId)));
+	if (!queue.items.length) {
+		storage.removeItem(snapshotQueueKey(organizationId));
+		return;
+	}
+	storage.setItem(snapshotQueueKey(organizationId), serializeQueue(queue));
+}
+
+export function clearSnapshotQueue(
+	organizationId: string,
+	storage: Storage | null = local()
+): void {
+	if (!organizationId || !storage) return;
+	storage.removeItem(snapshotQueueKey(organizationId));
 }

@@ -4,6 +4,7 @@ import {
 	KIND,
 	TYPES_FOR_KIND,
 	GLO_KIND_BY_TYPE,
+	REPORT_SNAPSHOT_KIND,
 	objectFor,
 	dataOf,
 	bnosExt,
@@ -19,7 +20,8 @@ describe('domain kind registry', () => {
 			cashEvent: NOSTR_KINDS.CASH_EVENT,
 			marketplaceConnection: NOSTR_KINDS.STORE_CONNECTION,
 			marketplaceProduct: NOSTR_KINDS.MARKETPLACE_PRODUCT,
-			marketplaceReview: NOSTR_KINDS.MARKETPLACE_REVIEW
+			marketplaceReview: NOSTR_KINDS.MARKETPLACE_REVIEW,
+			reportSnapshot: REPORT_SNAPSHOT_KIND
 		};
 
 		for (const key of Object.keys(TYPE) as (keyof typeof TYPE)[]) {

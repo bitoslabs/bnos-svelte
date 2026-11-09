@@ -37,6 +37,7 @@ export const DEFAULT_GRANT_SCOPES: SensitiveDataDomain[] = [
 	'shift',
 	'cash_event',
 	'settings',
+	'report',
 	'membership',
 	'membership_subscription',
 	'membership_checkin'
