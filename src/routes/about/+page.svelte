@@ -44,8 +44,19 @@
 			<BnosMark class="size-12" />
 		</div>
 		<h1 class="font-display text-3xl font-extrabold tracking-tight">{site.name}</h1>
+		<p class="mt-1 text-[10.5px] font-semibold tracking-[0.16em] text-(--ui-text-dimmed) uppercase">
+			{site.fullName}
+		</p>
 		<p class="mx-auto mt-3 max-w-xl text-[14px] leading-relaxed text-(--ui-text-muted)">
-			{site.fullName} — {site.tagline}
+			{site.description}
+		</p>
+		<p class="mt-2 text-[12.5px] text-(--ui-text-dimmed)">
+			<a
+				href={site.project.url}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="font-semibold hover:text-primary-500">{site.project.label}</a
+			>
 		</p>
 		<div class="mt-5 flex flex-wrap justify-center gap-2">
 			<a
@@ -140,10 +151,10 @@
 	>
 		© {new Date().getFullYear()}
 		{site.name} contributors · {site.license} licensed · Built on Nostr/GLO<br /><a
-			href={site.sponsor.url}
+			href={site.project.url}
 			target="_blank"
 			rel="noopener noreferrer"
-			class="font-semibold hover:text-primary-500">Supported by {site.sponsor.name}</a
+			class="font-semibold hover:text-primary-500">{site.project.label}</a
 		>
 	</footer>
 </main>

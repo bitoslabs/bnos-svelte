@@ -96,8 +96,22 @@
 					<BnosMark class="size-12" />
 				</div>
 				<h2 class="font-display text-xl font-bold tracking-tight">{site.name}</h2>
-				<p class="mx-auto mt-1 max-w-md text-[12.5px] text-(--ui-text-muted)">
-					{site.fullName} — {site.tagline}
+				<p
+					class="mt-1 text-[10px] font-semibold tracking-[0.14em] text-(--ui-text-dimmed) uppercase"
+				>
+					{site.fullName}
+				</p>
+				<p class="mx-auto mt-2 max-w-md text-[12.5px] leading-relaxed text-(--ui-text-muted)">
+					{site.description}
+				</p>
+				<p class="mt-1.5 text-[11.5px] text-(--ui-text-dimmed)">
+					<a
+						href={site.project.url}
+						target="_blank"
+						rel="noopener"
+						class="font-semibold text-(--ui-text-muted) hover:text-primary-500"
+						>{site.project.label}</a
+					>
 				</p>
 
 				<div class="mt-4 flex flex-wrap items-center justify-center gap-1.5">
@@ -298,12 +312,11 @@
 		© {new Date().getFullYear()}
 		{site.name} contributors · {site.license} licensed
 		<br />
-		Built on the {site.fullName}, with thanks to
 		<a
-			href={site.sponsor.url}
+			href={site.project.url}
 			target="_blank"
 			rel="noopener"
-			class="font-semibold text-(--ui-text-muted) hover:text-primary-500">{site.sponsor.name}</a
-		>.
+			class="font-semibold text-(--ui-text-muted) hover:text-primary-500">{site.project.label}</a
+		>
 	</p>
 </div>

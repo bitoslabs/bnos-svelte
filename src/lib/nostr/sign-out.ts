@@ -6,6 +6,7 @@ import { profile } from './profile.svelte';
 import { session } from './session.svelte';
 import { tenant } from './tenant.svelte';
 import { workspacePicker } from './workspace-picker.svelte';
+import { dataService } from '$lib/data-service/state.svelte';
 
 /**
  * Sign out and clear every in-memory workspace/identity store. Callers should
@@ -22,6 +23,7 @@ export function clearIdentityStores(): void {
 }
 
 export async function signOutAndClear(): Promise<void> {
+	dataService.signOutCleanup();
 	await session.logout();
 	glo.clearAll({ signOut: true });
 	clearIdentityStores();

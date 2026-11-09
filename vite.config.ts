@@ -19,7 +19,7 @@ export default defineConfig({
 				name: 'BNOS Lite',
 				short_name: 'BNOS Lite',
 				description:
-					'Bitcoin Nostr Operating System - Open-source point of sale & commerce on Nostr.',
+					'BNOS — Bitcoin Network Operations System. Open-source point of sale & commerce on Nostr.',
 				theme_color: '#f97316',
 				background_color: '#0f0f0f',
 				display: 'standalone',

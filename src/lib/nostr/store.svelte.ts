@@ -54,6 +54,7 @@ import { verifyEvent } from 'nostr-tools/pure';
 import { encryptGloObject, decryptGloEvent, shouldEncryptType } from '$lib/crypto/glo-cipher';
 import { mergeHydratedCollection } from './collection-merge';
 import { mapLimit } from '$lib/utils/async';
+import { recordServiceEvent } from '$lib/data-service/state.svelte';
 import {
 	clearAllDeletions,
 	clearDeletion,
@@ -752,7 +753,15 @@ class GloStore {
 		const { queueOnFailure = true } = options;
 		const generation = this.collections.generation;
 		const snapshot = session.snapshot;
-		if (!snapshot || !relays.online || !relays.writableNormalized.length) {
+		if (!snapshot) {
+			if (queueOnFailure) await this.queuePublish(type, object);
+			return false;
+		}
+		const relayUnavailable = !relays.online || !relays.writableNormalized.length;
+		// A remote signer needs its relay connection, so signing offline would
+		// only stall local saves. Local key/extension signers can sign offline,
+		// which lets the data service queue an event even during a relay outage.
+		if (relayUnavailable && snapshot.loginMethod === 'nip46') {
 			if (queueOnFailure) await this.queuePublish(type, object);
 			return false;
 		}
@@ -792,6 +801,16 @@ class GloStore {
 			(object as AnyGloObject).__eventId = (event as NostrEvent).id;
 			(object as AnyGloObject).__eventCreatedAt = (event as NostrEvent).created_at;
 			if (generation !== this.collections.generation) return false;
+
+			// The data service is an independent destination. Queueing it before
+			// the relay check means a relay outage cannot hide unsent events.
+			recordServiceEvent(event as NostrEvent);
+
+			if (relayUnavailable) {
+				if (queueOnFailure) await this.queuePublish(type, object);
+				return false;
+			}
+
 			const published = await sendEvent(event as NostrEvent);
 			if (!published && queueOnFailure && generation === this.collections.generation) {
 				await this.queuePublish(type, object);

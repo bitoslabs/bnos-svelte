@@ -205,6 +205,16 @@
 			.replace(/^-|-$/g, '');
 	}
 
+	async function copyId(text: string, message: string) {
+		if (!text) return;
+		try {
+			await navigator.clipboard.writeText(text);
+			toast.success(message);
+		} catch {
+			toast.error(t('settings.copyFailed'));
+		}
+	}
+
 	// ── Quick Switch ──
 	function firstBranchOf(companyId: string): Branch | undefined {
 		return (
@@ -566,7 +576,20 @@
 						</div>
 						<div class="min-w-0">
 							<p class="truncate text-[13px] font-bold">{activeCompanyName || activeCompanyId}</p>
-							<p class="font-mono text-[10px] text-(--ui-text-dimmed)">{activeCompanyId}</p>
+							<div class="flex items-center gap-1">
+								<p class="truncate font-mono text-[10px] text-(--ui-text-dimmed)">
+									{activeCompanyId}
+								</p>
+								<button
+									type="button"
+									aria-label={t('settings.copyCompanyId')}
+									title={t('settings.copyCompanyId')}
+									class="grid size-5 shrink-0 place-items-center rounded text-(--ui-text-dimmed) transition-colors hover:text-(--ui-text)"
+									onclick={() => copyId(activeCompanyId, t('settings.companyIdCopied'))}
+								>
+									<Icon name="lucide:copy" class="size-[10px]" />
+								</button>
+							</div>
 						</div>
 					</div>
 				{:else}
@@ -696,6 +719,23 @@
 									{#if activeCompanyId === company.id}
 										<Badge color="success">{t('settings.active')}</Badge>
 									{/if}
+								</div>
+								<div class="mt-1 flex items-center gap-1">
+									<span class="shrink-0 text-[10px] text-(--ui-text-dimmed)">
+										{t('settings.companyId')}
+									</span>
+									<span class="truncate font-mono text-[10px] text-(--ui-text-dimmed)">
+										{company.id}
+									</span>
+									<button
+										type="button"
+										aria-label={t('settings.copyCompanyId')}
+										title={t('settings.copyCompanyId')}
+										class="grid size-5 shrink-0 place-items-center rounded text-(--ui-text-dimmed) transition-colors hover:text-(--ui-text)"
+										onclick={() => copyId(company.id, t('settings.companyIdCopied'))}
+									>
+										<Icon name="lucide:copy" class="size-[10px]" />
+									</button>
 								</div>
 							</div>
 						</div>

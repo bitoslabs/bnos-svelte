@@ -112,10 +112,12 @@
 	<h3>7. Limitation of liability</h3>
 	<p>
 		To the maximum extent permitted by law, neither the authors, contributors, copyright holders,
-		nor sponsor {site.sponsor.name} shall be liable for any direct, indirect, incidental, special, consequential,
-		or punitive damages — including loss of profits, data, or business — arising out of your use of or
-		inability to use the software, even if advised of the possibility of such damages. Point-of-sale and
-		payment handling involves financial risk; you are responsible for reconciliation and backups.
+		nor <a href={site.project.url} target="_blank" rel="noopener">{site.project.name}</a> (the
+		project behind {site.name}) shall be liable for any direct, indirect, incidental, special,
+		consequential, or punitive damages — including loss of profits, data, or business — arising out
+		of your use of or inability to use the software, even if advised of the possibility of such
+		damages. Point-of-sale and payment handling involves financial risk; you are responsible for
+		reconciliation and backups.
 	</p>
 
 	<h3>8. Payments &amp; compliance</h3>
