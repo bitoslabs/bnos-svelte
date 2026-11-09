@@ -154,7 +154,7 @@
 		formError = null;
 		try {
 			const { periodStart, periodEnd } = dayPeriod();
-			await publishReportSnapshot({ granularity: 'day', periodStart, periodEnd });
+			await publishReportSnapshot({ granularity: 'day', periodStart, periodEnd, audit: true });
 			toast.success(t('settings.dataService.snapshotPublished'));
 		} catch (error) {
 			formError = describeError(error);
@@ -406,6 +406,14 @@
 					</div>
 				{/if}
 			</div>
+
+			{#if reporting}
+				<p class="text-[11px] text-(--ui-text-dimmed)">
+					{t('settings.dataService.snapshotDiagnostics', {
+						n: dataService.snapshotQueueSize ?? 0
+					})}
+				</p>
+			{/if}
 
 			{#if dataService.lastRejected.length}
 				<p class="text-[11px] text-(--tone-warning-text)">

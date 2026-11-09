@@ -1,6 +1,6 @@
 # Report snapshots — client implementation guide
 
-Status: proposed, not implemented. This is the client-side companion to
+Status: implemented. This is the client-side companion to
 [`bnos-data-service/docs/REPORTING.md`](../../bnos-data-service/docs/REPORTING.md)
 and [`PROTOCOL.md`](../../bnos-data-service/docs/PROTOCOL.md).
 
@@ -302,10 +302,12 @@ async pushReportSnapshot(snapshot: ReportSnapshot): Promise<void> {
 		kind: REPORT_SNAPSHOT_KIND,
 		created_at: Math.floor(Date.now() / 1000),
 		tags: [
+			['d', `org.bitos.glo:v1:report.snapshot:${id}`],
 			['organization', this.organizationId],
+			...(snapshot.locationId ? [['location', snapshot.locationId]] : []),
 			['granularity', snapshot.granularity],
-			['period-start', String(Date.parse(snapshot.periodStart) / 1000)],
-			['period-end', String(Date.parse(snapshot.periodEnd) / 1000)],
+			['period-start', String(Math.floor(Date.parse(snapshot.periodStart) / 1000))],
+			['period-end', String(Math.floor(Date.parse(snapshot.periodEnd) / 1000))],
 			['currency', snapshot.currency]
 		],
 		content: JSON.stringify(snapshot)
@@ -383,12 +385,24 @@ the same logical period.
 		"pubkey": "...",
 		"created_at": 1760000000,
 		"kind": 30970,
-		"tags": [],
+		"tags": [
+			["d", "org.bitos.glo:v1:report.snapshot:<logical-id>"],
+			["organization", "<workspaceId>"],
+			["location", "<locationId>"],
+			["granularity", "day"],
+			["period-start", "1760000000"],
+			["period-end", "1760086400"],
+			["currency", "USD"]
+		],
 		"content": "{...aggregates...}",
 		"sig": "..."
 	}
 }
 ```
+
+`location` is omitted for organization-wide snapshots. The client also keeps a
+local `snapshot-id` tag for outbox deduplication; the service uses `d` and the
+period tags.
 
 Response:
 
@@ -403,6 +417,19 @@ Rules:
 - `403` → permission denied; keep the snapshot queued.
 - `5xx` or network error → keep queued and retry later.
 - `rejected` → keep locally, surface the reason, do not drop silently.
+
+### 6.1 Summary query (confirmed)
+
+`GET /v1/reports/summary?from=<unix>&to=<unix>&granularity=hour|day|week|month[&location=<id>][&currency=<code>]`
+
+- `from` is inclusive and `to` is exclusive, both Unix seconds.
+- The response carries `snapshot`, `generatedAt`, `range`, `currency`, `buckets`,
+  and `watermark`.
+- Each bucket has `start`, `end`, `gross_minor`, `orders_count`, and optional
+  `completeness`.
+- Missing buckets are gaps; the client never fabricates zeros.
+- The Reports card sums returned buckets for display and shows the returned
+  period count and watermark. It does not blend server totals into live data.
 
 ## 7. Security and privacy checklist
 

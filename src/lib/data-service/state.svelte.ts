@@ -8,6 +8,7 @@
  */
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
+import { SvelteURLSearchParams } from 'svelte/reactivity';
 import { session } from '$nostr/session.svelte';
 import { tenant } from '$nostr/tenant.svelte';
 import {
@@ -18,6 +19,7 @@ import {
 	parseCapabilities,
 	parseChallenge,
 	parseIngestResult,
+	parseReportSummary,
 	parseSession,
 	parseStatus,
 	serviceEndpoint,
@@ -26,7 +28,8 @@ import {
 	type DataServiceErrorCode,
 	type DataServiceIngestResult,
 	type DataServiceStatus,
-	type ServiceEvent
+	type ServiceEvent,
+	type ServiceReportSummary
 } from './protocol';
 import { requestJson } from './transport';
 import {
@@ -54,7 +57,11 @@ import {
 	type ConnectionMetadata,
 	type StoredServiceSession
 } from './storage';
-import { REPORT_SNAPSHOT_KIND, type ReportSnapshot } from '$lib/domain/report-snapshot';
+import {
+	REPORT_SNAPSHOT_KIND,
+	type ReportGranularity,
+	type ReportSnapshot
+} from '$lib/domain/report-snapshot';
 
 /**
  * bdGo Cloud endpoint from the deployment's public configuration. Never
@@ -131,6 +138,8 @@ class DataServiceStore {
 	private drainPromise: Promise<void> | null = null;
 	private snapshotDrainPromise: Promise<void> | null = null;
 	private refreshPromise: Promise<StoredServiceSession | null> | null = null;
+	/** Short-lived cache for service-computed period summaries. */
+	private summaryCache = new Map<string, { at: number; value: ServiceReportSummary }>();
 
 	private readQueueOrFail(organizationId: string): ServiceQueue | null {
 		try {
@@ -188,6 +197,7 @@ class DataServiceStore {
 		if (!browser) return;
 		const key = `${organizationId}:${pubkey}`;
 		if (this.contextKey === key) return;
+		this.summaryCache.clear();
 
 		if (this.organizationId && this.organizationId !== organizationId) {
 			// Switching workspaces drops the previous workspace's browser session.
@@ -387,6 +397,7 @@ class DataServiceStore {
 	/** Logout / identity switch: drop every browser session for the service. */
 	signOutCleanup(): void {
 		clearAllSessions();
+		this.summaryCache.clear();
 		this.sessionInfo = null;
 		this.metadata = null;
 		this.statusReport = null;
@@ -585,6 +596,82 @@ class DataServiceStore {
 	}
 
 	/**
+	 * Fetch a service-computed aggregate for one period.
+	 *
+	 * Contract: `GET v1/reports/summary?from&to&granularity[&location][&currency]`
+	 * where `from`/`to` are Unix seconds and the response carries buckets
+	 * (`gross_minor`, `orders_count`). Missing buckets are gaps. Returns null when
+	 * reporting is unavailable; throws on network/auth/parse errors so callers can
+	 * fall back to local snapshots and live data.
+	 */
+	async fetchReportSummary(input: {
+		granularity: ReportGranularity;
+		periodStart: number;
+		periodEnd: number;
+		locationId?: string | null;
+	}): Promise<ServiceReportSummary | null> {
+		const metadata = this.metadata;
+		const organizationId = this.organizationId;
+		if (!metadata?.capabilities.reporting || !organizationId) return null;
+
+		const currency = tenant.state.currency;
+		const locationId = input.locationId ?? tenant.state.locationId ?? undefined;
+		const cacheKey = [
+			input.granularity,
+			input.periodStart,
+			input.periodEnd,
+			currency,
+			locationId ?? 'all'
+		].join(':');
+		const cached = this.summaryCache.get(cacheKey);
+		if (cached && Date.now() - cached.at < 60_000) return cached.value;
+
+		let stored = readSession(organizationId);
+		if (!stored || stored.expiresAt <= Math.floor(Date.now() / 1000)) {
+			const next = stored ? await this.refreshAccessToken(metadata, stored) : null;
+			if (!next) {
+				throw new DataServiceError('unauthorized', 'Sign in to read the server report summary');
+			}
+			stored = next;
+			this.sessionInfo = next;
+		}
+
+		const params = new SvelteURLSearchParams({
+			granularity: input.granularity,
+			from: String(Math.floor(input.periodStart / 1000)),
+			to: String(Math.floor(input.periodEnd / 1000)),
+			currency
+		});
+		if (locationId) params.set('location', locationId);
+		const base = serviceEndpoint(metadata.baseUrl, DATA_SERVICE_PATHS.reportSummary);
+		const url = `${base}?${params.toString()}`;
+
+		const fetchSummary = (token: string) => requestJson({ url, token, timeoutMs: 15_000 });
+		let raw: unknown;
+		try {
+			raw = await fetchSummary(stored.token);
+		} catch (error) {
+			const failure = asDataServiceError(error);
+			if (failure.code === 'unauthorized') {
+				const next = await this.refreshAccessToken(metadata, stored);
+				if (!next) throw failure;
+				this.sessionInfo = next;
+				raw = await fetchSummary(next.token);
+			} else {
+				throw failure;
+			}
+		}
+
+		const payload =
+			raw && typeof raw === 'object' && !Array.isArray(raw) && 'summary' in raw
+				? (raw as { summary: unknown }).summary
+				: raw;
+		const summary = parseReportSummary(payload);
+		this.summaryCache.set(cacheKey, { at: Date.now(), value: summary });
+		return summary;
+	}
+
+	/**
 	 * Sign and queue a plaintext aggregate snapshot for the service only.
 	 *
 	 * This event is never relay-published and never routed through
@@ -607,7 +694,9 @@ class DataServiceStore {
 				kind: REPORT_SNAPSHOT_KIND,
 				created_at: Math.floor(Date.now() / 1000),
 				tags: [
+					['d', `org.bitos.glo:v1:report.snapshot:${id}`],
 					['organization', organizationId],
+					...(snapshot.locationId ? [['location', snapshot.locationId]] : []),
 					['snapshot-id', id],
 					['granularity', snapshot.granularity],
 					['period-start', String(Math.floor(Date.parse(snapshot.periodStart) / 1000))],

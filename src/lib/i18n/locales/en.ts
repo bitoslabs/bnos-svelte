@@ -1012,6 +1012,8 @@ export const en = {
 			publishSnapshot: 'Publish snapshot',
 			publishingSnapshot: 'Publishing…',
 			snapshotPublished: 'Report snapshot queued',
+			snapshotDiagnostics:
+				'Report snapshots: {n} pending. They retry automatically on reconnect and with Sync now.',
 			lastSync: 'Last upload',
 			backupFreshness: 'Server backup',
 			backupUnknown: 'Not reported',

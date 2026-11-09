@@ -1,17 +1,33 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import { SvelteDate } from 'svelte/reactivity';
 	import { t } from '$lib/i18n/i18n.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
 	import DateTimePicker from '$lib/components/ui/DateTimePicker.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { tenant } from '$nostr/tenant.svelte';
 	import { formatMoney, formatInt } from '$lib/utils/format';
 	import { startOfDay, type DashboardOrder } from '$lib/dashboard/metrics';
-	import type { GloOrder, GloProduct } from '@bitos/bnos-core/glo';
-	import { TYPE, type Expense, type Income } from '$lib/domain';
-	import { ensureDailySnapshot } from '$lib/reports/snapshot-service';
+	import type { GloOrder, GloPayment, GloProduct } from '@bitos/bnos-core/glo';
+	import { TYPE, type Expense, type Income, type Refund } from '$lib/domain';
+	import {
+		buildReportSnapshot,
+		fromMinorUnits,
+		type ReportSnapshot
+	} from '$lib/domain/report-snapshot';
+	import {
+		businessTimeZone,
+		dayPeriod,
+		ensureDailySnapshot,
+		findSnapshot,
+		publishReportSnapshot
+	} from '$lib/reports/snapshot-service';
+	import { toast } from '$lib/stores/toast.svelte';
+	import { dataService } from '$lib/data-service/state.svelte';
+	import type { ServiceReportSummary } from '$lib/data-service/protocol';
 
 	// ── Data hydration ──────────────────────────────────────────────
 	onMount(() => {
@@ -37,6 +53,8 @@
 		if (snapshotRequested) return;
 		if (!glo.isHydrated('commerce.order') || !glo.isHydrated('commerce.payment')) return;
 		if (!glo.isHydrated('catalog.product') || !glo.isHydrated(TYPE.refund)) return;
+		// Periods depend on the organization timezone; wait for it before saving.
+		if (!glo.isHydrated(TYPE.organization)) return;
 		if (!orders.length) return;
 		snapshotRequested = true;
 		void ensureDailySnapshot().catch(() => {});
@@ -104,6 +122,124 @@
 
 	const isLoading = $derived(glo.hydrating);
 	const hasData = $derived(filteredOrders.length > 0);
+
+	// ── Report snapshots ────────────────────────────────────────────
+	const snapshotRows = $derived.by(() =>
+		glo
+			.all<ReportSnapshot, typeof TYPE.reportSnapshot>(TYPE.reportSnapshot)
+			.map((object) => ({ object, data: object.data }))
+			.sort(
+				(a, b) =>
+					Date.parse(b.data.periodStart) - Date.parse(a.data.periodStart) ||
+					Date.parse(b.data.generatedAt) - Date.parse(a.data.generatedAt)
+			)
+	);
+	const todayPeriod = $derived.by(() => dayPeriod());
+	const latestDay = $derived(
+		findSnapshot({ granularity: 'day', periodStart: todayPeriod.periodStart })
+	);
+	const hasOrdersToday = $derived(
+		orders.some((order) => {
+			const at = Date.parse(order.data.occurredAt);
+			return Number.isFinite(at) && at >= todayPeriod.periodStart && at < todayPeriod.periodEnd;
+		})
+	);
+	const todayDrift = $derived.by(() => {
+		const stored = latestDay?.data;
+		if (!stored) return null;
+		const live = buildReportSnapshot({
+			periodStart: todayPeriod.periodStart,
+			periodEnd: todayPeriod.periodEnd,
+			granularity: 'day',
+			orders,
+			payments: glo.all<GloPayment, 'commerce.payment'>('commerce.payment'),
+			refunds: glo.all<Refund, typeof TYPE.refund>(TYPE.refund),
+			products: glo.all<GloProduct, 'catalog.product'>('catalog.product'),
+			currency: tenant.state.currency,
+			locationId: tenant.state.locationId ?? undefined,
+			timezone: businessTimeZone()
+		});
+		return {
+			ordersDelta: live.ordersCount - stored.ordersCount,
+			netDelta: live.netMinor - stored.netMinor
+		};
+	});
+	const snapshotDataReady = $derived(
+		glo.isHydrated('commerce.order') &&
+			glo.isHydrated('commerce.payment') &&
+			glo.isHydrated(TYPE.refund) &&
+			glo.isHydrated('catalog.product') &&
+			glo.isHydrated(TYPE.organization)
+	);
+	let showAllSnapshots = $state(false);
+	let snapshotBusy = $state(false);
+	let snapshotError = $state<string | null>(null);
+	const visibleSnapshots = $derived(showAllSnapshots ? snapshotRows : snapshotRows.slice(0, 6));
+
+	// ── Service-computed summary (optional) ─────────────────────────
+	const reporting = $derived(dataService.metadata?.capabilities.reporting === true);
+	type ServerSummaryState = {
+		loading: boolean;
+		error: string | null;
+		value: ServiceReportSummary | null;
+		fetchedAt: number | null;
+		key: string | null;
+	};
+	let serverSummary = $state<ServerSummaryState>({
+		loading: false,
+		error: null,
+		value: null,
+		fetchedAt: null,
+		key: null
+	});
+	const liveRangeSnapshot = $derived.by(() => {
+		if (!serverSummary.value) return null;
+		return buildReportSnapshot({
+			periodStart: rangeStart,
+			periodEnd: Math.max(rangeEnd + 1, rangeStart + 1),
+			granularity: 'day',
+			orders,
+			payments: glo.all<GloPayment, 'commerce.payment'>('commerce.payment'),
+			refunds: glo.all<Refund, typeof TYPE.refund>(TYPE.refund),
+			products: glo.all<GloProduct, 'catalog.product'>('catalog.product'),
+			currency: tenant.state.currency,
+			locationId: tenant.state.locationId ?? undefined,
+			timezone: businessTimeZone()
+		});
+	});
+	const serverSummaryTotals = $derived.by(() => {
+		const summary = serverSummary.value;
+		if (!summary) return null;
+		let grossMinor = 0;
+		let ordersCount = 0;
+		for (const bucket of summary.buckets) {
+			grossMinor += bucket.grossMinor;
+			ordersCount += bucket.ordersCount;
+		}
+		return { grossMinor, ordersCount, buckets: summary.buckets.length };
+	});
+	const serverSummaryDelta = $derived.by(() => {
+		const totals = serverSummaryTotals;
+		const live = liveRangeSnapshot;
+		if (!totals || !live) return null;
+		return {
+			gross: totals.grossMinor - live.grossMinor,
+			orders: totals.ordersCount - live.ordersCount
+		};
+	});
+	const summaryRequestKey = $derived(
+		`${rangeStart}:${rangeEnd}:${currency}:${tenant.state.locationId ?? ''}`
+	);
+	let autoSummaryKey = '';
+	$effect(() => {
+		if (!reporting || !customRangeReady || !snapshotDataReady) return;
+		// Multi-day/closed ranges load their server aggregate automatically.
+		if (rangePreset === 'today') return;
+		const key = summaryRequestKey;
+		if (autoSummaryKey === key) return;
+		autoSummaryKey = key;
+		void loadServerSummary();
+	});
 
 	// ── Summary stats (one pass per period) ─────────────────────────
 	const stats = $derived.by(() => {
@@ -420,6 +556,121 @@
 		URL.revokeObjectURL(url);
 	}
 
+	// ── Snapshot actions + labels ───────────────────────────────────
+	function relativeTime(isoOrEpoch: string | number): string {
+		const at = typeof isoOrEpoch === 'number' ? isoOrEpoch : Date.parse(isoOrEpoch);
+		if (!Number.isFinite(at)) return '—';
+		const seconds = Math.max(0, Math.round((Date.now() - at) / 1000));
+		if (seconds < 60) return 'just now';
+		const minutes = Math.round(seconds / 60);
+		if (minutes < 60) return `${minutes}m ago`;
+		const hours = Math.round(minutes / 60);
+		if (hours < 24) return `${hours}h ago`;
+		const days = Math.round(hours / 24);
+		return `${days}d ago`;
+	}
+
+	function formatSnapshotPeriod(data: ReportSnapshot): string {
+		const start = new Date(data.periodStart);
+		if (!Number.isFinite(start.getTime())) return '—';
+		try {
+			return new Intl.DateTimeFormat(undefined, {
+				year: 'numeric',
+				month: 'short',
+				day: 'numeric',
+				timeZone: data.timezone
+			}).format(start);
+		} catch {
+			return start.toLocaleDateString();
+		}
+	}
+
+	function snapshotScope(data: ReportSnapshot): string {
+		if (!data.locationId) return 'All locations';
+		const location = glo.get(TYPE.location, data.locationId) as
+			{ data?: { name?: string } } | undefined;
+		return location?.data?.name ?? data.locationId.slice(0, 8);
+	}
+
+	function snapshotPublished(object: unknown): boolean {
+		return Boolean((object as { __eventId?: string })?.__eventId);
+	}
+
+	async function loadServerSummary() {
+		if (!reporting) return;
+		const key = summaryRequestKey;
+		serverSummary = { loading: true, error: null, value: null, fetchedAt: null, key };
+		try {
+			const value = await dataService.fetchReportSummary({
+				granularity: 'day',
+				periodStart: rangeStart,
+				periodEnd: Math.max(rangeEnd + 1, rangeStart + 1),
+				locationId: tenant.state.locationId ?? undefined
+			});
+			if (serverSummary.key !== key) return;
+			serverSummary = { loading: false, error: null, value, fetchedAt: Date.now(), key };
+		} catch (error) {
+			if (serverSummary.key !== key) return;
+			serverSummary = {
+				loading: false,
+				error: error instanceof Error ? error.message : 'Server summary unavailable',
+				value: null,
+				fetchedAt: null,
+				key
+			};
+		}
+	}
+
+	async function saveSnapshot() {
+		snapshotBusy = true;
+		snapshotError = null;
+		try {
+			const { periodStart, periodEnd } = dayPeriod();
+			const result = await publishReportSnapshot({
+				granularity: 'day',
+				periodStart,
+				periodEnd,
+				audit: true
+			});
+			toast.success(
+				'Snapshot saved',
+				`${formatMoney(fromMinorUnits(result.snapshot.netMinor, result.snapshot.currency), result.snapshot.currency)} net`
+			);
+		} catch (error) {
+			snapshotError = error instanceof Error ? error.message : 'Could not save snapshot';
+		} finally {
+			snapshotBusy = false;
+		}
+	}
+
+	async function republishSnapshot(data: ReportSnapshot) {
+		snapshotBusy = true;
+		snapshotError = null;
+		try {
+			await publishReportSnapshot({
+				granularity: data.granularity,
+				periodStart: Date.parse(data.periodStart),
+				periodEnd: Date.parse(data.periodEnd),
+				locationId: data.locationId ?? null,
+				audit: true
+			});
+			toast.success('Snapshot re-published');
+		} catch (error) {
+			snapshotError = error instanceof Error ? error.message : 'Could not publish snapshot';
+		} finally {
+			snapshotBusy = false;
+		}
+	}
+
+	async function copySnapshotId(id: string) {
+		try {
+			await navigator.clipboard.writeText(id);
+			toast.success('Snapshot id copied');
+		} catch {
+			toast.error('Could not copy snapshot id');
+		}
+	}
+
 	// ── Helpers ─────────────────────────────────────────────────────
 	function fmtPct(val: number | null): string {
 		if (val === null) return '—';
@@ -445,17 +696,30 @@
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.reports')}</h1>
-			<p class="text-[12.5px] text-(--ui-text-muted)">Derived live from signed order records</p>
+			<p class="text-[12.5px] text-(--ui-text-muted)">
+				Live from signed orders · period snapshots for faster, consistent reports
+			</p>
 		</div>
-		<Button
-			variant="subtle"
-			size="sm"
-			icon="lucide:download"
-			onclick={exportCSV}
-			disabled={!hasData}
-		>
-			Export CSV
-		</Button>
+		<div class="flex flex-wrap items-center gap-2">
+			<Button
+				href={resolve('/reports/snapshots')}
+				color="neutral"
+				variant="subtle"
+				size="sm"
+				icon="lucide:history"
+			>
+				Snapshots
+			</Button>
+			<Button
+				variant="subtle"
+				size="sm"
+				icon="lucide:download"
+				onclick={exportCSV}
+				disabled={!hasData}
+			>
+				Export CSV
+			</Button>
+		</div>
 	</div>
 
 	<!-- Date range selector -->
@@ -489,6 +753,162 @@
 			</div>
 		{/if}
 	</div>
+
+	<!-- Snapshot status -->
+	<div class="surface-card flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+		<div class="flex min-w-0 items-start gap-3">
+			<div class="rounded-lg bg-primary-500/10 p-2 text-primary-600 dark:text-primary-400">
+				<Icon name="lucide:file-chart-column" class="size-4" />
+			</div>
+			<div class="min-w-0">
+				<div class="flex flex-wrap items-center gap-2">
+					<span class="text-[13px] font-semibold">Report snapshot</span>
+					{#if latestDay}
+						{@const drift = todayDrift}
+						{#if drift && (drift.ordersDelta !== 0 || drift.netDelta !== 0)}
+							<Badge color="warning">Live changed</Badge>
+						{:else}
+							<Badge color="success">In sync</Badge>
+						{/if}
+					{:else}
+						<Badge color="neutral">Live only</Badge>
+					{/if}
+				</div>
+				<div class="mt-0.5 text-[11px] leading-relaxed text-(--ui-text-dimmed)">
+					{#if latestDay}
+						{latestDay.data.granularity} · {formatSnapshotPeriod(latestDay.data)} · {snapshotScope(
+							latestDay.data
+						)} · {latestDay.data.currency} · generated {relativeTime(latestDay.data.generatedAt)}
+						{#if todayDrift && todayDrift.ordersDelta > 0}
+							· {todayDrift.ordersDelta} new order{todayDrift.ordersDelta === 1 ? '' : 's'} since snapshot
+						{:else if todayDrift && (todayDrift.netDelta !== 0 || todayDrift.ordersDelta !== 0)}
+							· live totals changed since snapshot
+						{/if}
+					{:else}
+						No snapshot for today yet. Save one to sync a period checkpoint to relays.
+					{/if}
+				</div>
+			</div>
+		</div>
+		<div class="flex flex-wrap items-center justify-end gap-2">
+			{#if snapshotError}
+				<span role="alert" class="text-[11px] text-(--tone-error-text)">{snapshotError}</span>
+			{/if}
+			<Button
+				color="primary"
+				variant="soft"
+				size="sm"
+				onclick={saveSnapshot}
+				disabled={snapshotBusy || !hasOrdersToday || !snapshotDataReady}
+			>
+				<Icon name="lucide:file-chart-column" class="size-4" />
+				{snapshotBusy ? 'Saving…' : 'Save snapshot'}
+			</Button>
+		</div>
+	</div>
+
+	{#if reporting}
+		<!-- Optional server-computed summary -->
+		<div class="surface-card px-4 py-3">
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<div class="flex min-w-0 items-center gap-2">
+					<Icon name="lucide:database" class="size-4 text-primary-500" />
+					<span class="text-[13px] font-semibold">Server summary</span>
+					{#if serverSummary.value}
+						<Badge color="info">{serverSummary.value.snapshot ? 'Snapshot' : 'Partial'}</Badge>
+						{#if serverSummaryDelta}
+							{#if serverSummaryDelta.gross === 0 && serverSummaryDelta.orders === 0}
+								<Badge color="success">Matches live</Badge>
+							{:else}
+								<Badge color="warning">Differs from live</Badge>
+							{/if}
+						{/if}
+					{/if}
+				</div>
+				<Button
+					color="neutral"
+					variant="subtle"
+					size="sm"
+					onclick={loadServerSummary}
+					disabled={serverSummary.loading || !customRangeReady}
+				>
+					<Icon name="lucide:cloud-download" class="size-4" />
+					{serverSummary.loading ? 'Loading…' : serverSummary.value ? 'Refresh' : 'Load summary'}
+				</Button>
+			</div>
+			{#if serverSummary.loading}
+				<p class="mt-2 text-[12px] text-(--ui-text-dimmed)">Loading the server aggregate…</p>
+			{:else if serverSummary.error}
+				<p role="alert" class="mt-2 text-[12px] text-(--tone-error-text)">
+					{serverSummary.error} — using live local data.
+				</p>
+			{:else if serverSummary.value && serverSummaryTotals}
+				<div class="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+					<div class="rounded-lg bg-(--ui-bg-muted) p-3">
+						<div class="text-[10.5px] font-semibold text-(--ui-text-dimmed) uppercase">Gross</div>
+						<div class="mt-0.5 font-display text-[15px] font-bold tabular-nums">
+							{formatMoney(
+								fromMinorUnits(serverSummaryTotals.grossMinor, serverSummary.value.currency),
+								serverSummary.value.currency
+							)}
+						</div>
+					</div>
+					<div class="rounded-lg bg-(--ui-bg-muted) p-3">
+						<div class="text-[10.5px] font-semibold text-(--ui-text-dimmed) uppercase">Orders</div>
+						<div class="mt-0.5 font-display text-[15px] font-bold tabular-nums">
+							{formatInt(serverSummaryTotals.ordersCount)}
+						</div>
+					</div>
+					<div class="rounded-lg bg-(--ui-bg-muted) p-3">
+						<div class="text-[10.5px] font-semibold text-(--ui-text-dimmed) uppercase">
+							Avg order
+						</div>
+						<div class="mt-0.5 font-display text-[15px] font-bold tabular-nums">
+							{formatMoney(
+								fromMinorUnits(
+									serverSummaryTotals.ordersCount
+										? Math.round(serverSummaryTotals.grossMinor / serverSummaryTotals.ordersCount)
+										: 0,
+									serverSummary.value.currency
+								),
+								serverSummary.value.currency
+							)}
+						</div>
+					</div>
+					<div class="rounded-lg bg-(--ui-bg-muted) p-3">
+						<div class="text-[10.5px] font-semibold text-(--ui-text-dimmed) uppercase">Periods</div>
+						<div class="mt-0.5 font-display text-[15px] font-bold tabular-nums">
+							{formatInt(serverSummaryTotals.buckets)}
+						</div>
+					</div>
+				</div>
+				<p class="mt-2 text-[11px] leading-relaxed text-(--ui-text-dimmed)">
+					{serverSummary.value.snapshot ? 'Snapshot' : 'Partial snapshot'} · generated {relativeTime(
+						serverSummary.value.generatedAt * 1000
+					)} · {serverSummary.value.currency}
+					{#if serverSummaryDelta}
+						· live delta: {serverSummaryDelta.orders >= 0 ? '+' : ''}{serverSummaryDelta.orders}
+						order{Math.abs(serverSummaryDelta.orders) === 1 ? '' : 's'},
+						{serverSummaryDelta.gross >= 0 ? '+' : '−'}{formatMoney(
+							fromMinorUnits(Math.abs(serverSummaryDelta.gross), serverSummary.value.currency),
+							serverSummary.value.currency
+						)} gross
+					{/if}
+				</p>
+				{#if serverSummary.value.watermark !== null}
+					<p class="mt-1 text-[11px] text-(--ui-text-dimmed)">
+						Newest stored snapshot {relativeTime(serverSummary.value.watermark * 1000)}. Missing
+						periods are gaps, not zeros.
+					</p>
+				{/if}
+			{:else}
+				<p class="mt-2 text-[12px] text-(--ui-text-muted)">
+					Load the service-computed aggregate for this period. Local data remains the source of
+					truth.
+				</p>
+			{/if}
+		</div>
+	{/if}
 
 	<!-- Loading state -->
 	{#if isLoading && !hasData}
@@ -811,6 +1231,113 @@
 			{/if}
 		</div>
 	{/if}
+
+	<!-- Snapshot history -->
+	<div class="surface-card overflow-hidden">
+		<div class="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
+			<div class="flex items-center gap-2">
+				<Icon name="lucide:history" class="size-4 text-primary-500" />
+				<h2 class="font-display text-[14px] font-semibold tracking-tight">Snapshots</h2>
+				<Badge color="neutral">{snapshotRows.length}</Badge>
+			</div>
+			{#if snapshotRows.length > 6}
+				<Button
+					color="neutral"
+					variant="ghost"
+					size="sm"
+					onclick={() => (showAllSnapshots = !showAllSnapshots)}
+				>
+					{showAllSnapshots ? 'Show less' : `Show all ${snapshotRows.length}`}
+				</Button>
+			{/if}
+		</div>
+		{#if !snapshotRows.length}
+			<p class="border-t border-(--ui-border-muted) px-5 py-6 text-[12.5px] text-(--ui-text-muted)">
+				No snapshots yet. Open Reports with sales or close a shift to create one.
+			</p>
+		{:else}
+			<div class="overflow-x-auto border-t border-(--ui-border-muted)">
+				<table class="w-full min-w-[820px] text-[12px]">
+					<thead class="bg-(--ui-bg-muted)/50">
+						<tr class="text-left text-(--ui-text-dimmed)">
+							<th class="px-5 py-2.5 font-semibold">Period</th>
+							<th class="px-3 py-2.5 font-semibold">Type</th>
+							<th class="px-3 py-2.5 font-semibold">Scope</th>
+							<th class="px-3 py-2.5 text-right font-semibold">Gross</th>
+							<th class="px-3 py-2.5 text-right font-semibold">Net</th>
+							<th class="px-3 py-2.5 text-right font-semibold">Orders</th>
+							<th class="px-3 py-2.5 font-semibold">Generated</th>
+							<th class="px-3 py-2.5 font-semibold">Status</th>
+							<th class="px-5 py-2.5 text-right font-semibold">Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each visibleSnapshots as row (row.object.id)}
+							<tr
+								class="border-t border-(--ui-border)/50 transition-colors hover:bg-(--ui-bg-accented)/40"
+							>
+								<td class="px-5 py-2.5 font-semibold whitespace-nowrap">
+									{formatSnapshotPeriod(row.data)}
+								</td>
+								<td class="px-3 py-2.5">
+									<Badge color="neutral">{row.data.granularity}</Badge>
+								</td>
+								<td class="px-3 py-2.5 text-(--ui-text-muted)">{snapshotScope(row.data)}</td>
+								<td class="px-3 py-2.5 text-right tabular-nums">
+									{formatMoney(
+										fromMinorUnits(row.data.grossMinor, row.data.currency),
+										row.data.currency
+									)}
+								</td>
+								<td class="px-3 py-2.5 text-right font-semibold tabular-nums">
+									{formatMoney(
+										fromMinorUnits(row.data.netMinor, row.data.currency),
+										row.data.currency
+									)}
+								</td>
+								<td class="px-3 py-2.5 text-right tabular-nums">
+									{formatInt(row.data.ordersCount)}
+								</td>
+								<td class="px-3 py-2.5 whitespace-nowrap text-(--ui-text-muted)">
+									{relativeTime(row.data.generatedAt)}
+								</td>
+								<td class="px-3 py-2.5">
+									<Badge color={snapshotPublished(row.object) ? 'success' : 'neutral'}>
+										{snapshotPublished(row.object) ? 'Published' : 'Local'}
+									</Badge>
+								</td>
+								<td class="px-5 py-2.5">
+									<div class="flex items-center justify-end gap-1">
+										<Button
+											color="neutral"
+											variant="ghost"
+											size="icon-sm"
+											aria-label="Re-publish snapshot"
+											title="Re-publish snapshot"
+											onclick={() => republishSnapshot(row.data)}
+											disabled={snapshotBusy}
+										>
+											<Icon name="lucide:refresh-cw" class="size-4" />
+										</Button>
+										<Button
+											color="neutral"
+											variant="ghost"
+											size="icon-sm"
+											aria-label="Copy snapshot id"
+											title="Copy snapshot id"
+											onclick={() => copySnapshotId(row.object.id)}
+										>
+											<Icon name="lucide:copy" class="size-4" />
+										</Button>
+									</div>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+	</div>
 </div>
 
 {#snippet statCard(props: {

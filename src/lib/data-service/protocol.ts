@@ -5,6 +5,7 @@
  * pure so it can be unit-tested without a browser, network, or signer.
  */
 import type { EventTemplate } from 'nostr-tools/pure';
+import type { ReportGranularity } from '../domain/report-snapshot';
 
 export const DATA_SERVICE_PROTOCOL_VERSION = 1;
 
@@ -19,6 +20,7 @@ export const DATA_SERVICE_PATHS = {
 	logout: 'v1/auth/logout',
 	events: 'v1/events',
 	reportSnapshots: 'v1/reports/snapshots',
+	reportSummary: 'v1/reports/summary',
 	status: 'v1/status'
 } as const;
 
@@ -98,6 +100,29 @@ export interface DataServiceStatus {
 	workspace: { id: string; name: string } | null;
 	serverTime: number | null;
 	backup: DataServiceBackupStatus;
+}
+
+/** One service bucket. Missing buckets are gaps, never zero-filled. */
+export interface ServiceReportBucket {
+	/** Unix seconds, inclusive. */
+	start: number;
+	/** Unix seconds, exclusive. */
+	end: number;
+	grossMinor: number;
+	ordersCount: number;
+	completeness: string | null;
+}
+
+/** `GET v1/reports/summary` response (service-side aggregate). */
+export interface ServiceReportSummary {
+	snapshot: boolean;
+	/** Unix seconds. */
+	generatedAt: number;
+	range: { from: number; to: number; granularity: ReportGranularity };
+	currency: string;
+	buckets: ServiceReportBucket[];
+	/** Unix seconds of the newest stored snapshot, or null when unavailable. */
+	watermark: number | null;
 }
 
 export interface DataServiceIngestResult {
@@ -353,6 +378,93 @@ export function parseIngestResult(raw: unknown): DataServiceIngestResult {
 		accepted: Array.isArray(root.accepted) ? asStringArray(root.accepted, 'accepted') : [],
 		duplicates: Array.isArray(root.duplicates) ? asStringArray(root.duplicates, 'duplicates') : [],
 		rejected
+	};
+}
+
+function asFiniteNumber(value: unknown, label: string): number {
+	if (typeof value === 'number' && Number.isFinite(value)) return value;
+	if (typeof value === 'string' && value.trim()) {
+		const parsed = Number(value);
+		if (Number.isFinite(parsed)) return parsed;
+	}
+	throw new DataServiceError('invalid-response', `${label} must be a number`);
+}
+
+/** Accept Unix seconds, milliseconds, numeric strings, or ISO timestamps. */
+function asUnixSeconds(value: unknown, label: string): number {
+	if (typeof value === 'string') {
+		const parsed = Date.parse(value);
+		if (Number.isFinite(parsed)) return Math.floor(parsed / 1000);
+	}
+	const numeric = asFiniteNumber(value, label);
+	return Math.floor(numeric > 1e11 ? numeric / 1000 : numeric);
+}
+
+function asGranularity(value: unknown): ReportGranularity {
+	const granularity = asString(value, 'range.granularity');
+	if (
+		granularity !== 'hour' &&
+		granularity !== 'day' &&
+		granularity !== 'week' &&
+		granularity !== 'month'
+	) {
+		throw new DataServiceError(
+			'invalid-response',
+			`range.granularity must be hour, day, week or month`
+		);
+	}
+	return granularity;
+}
+
+function parseRange(raw: unknown): ServiceReportSummary['range'] {
+	const range = asRecord(raw, 'range');
+	const from = asUnixSeconds(range.from, 'range.from');
+	const to = asUnixSeconds(range.to, 'range.to');
+	if (to <= from) {
+		throw new DataServiceError('invalid-response', 'range.to must be after range.from');
+	}
+	return { from, to, granularity: asGranularity(range.granularity) };
+}
+
+function parseBucket(raw: unknown): ServiceReportBucket {
+	const bucket = asRecord(raw, 'bucket');
+	const start = asUnixSeconds(bucket.start, 'bucket.start');
+	const end = asUnixSeconds(bucket.end, 'bucket.end');
+	if (end <= start) {
+		throw new DataServiceError('invalid-response', 'bucket.end must be after bucket.start');
+	}
+	const gross = bucket.gross_minor ?? bucket.grossMinor ?? bucket.gross;
+	const orders = bucket.orders_count ?? bucket.ordersCount ?? bucket.orders;
+	return {
+		start,
+		end,
+		grossMinor: asFiniteNumber(gross, 'bucket.gross'),
+		ordersCount: asFiniteNumber(orders, 'bucket.orders'),
+		completeness: typeof bucket.completeness === 'string' ? bucket.completeness : null
+	};
+}
+
+/**
+ * Parse `GET v1/reports/summary` (see the data service `PROTOCOL.md` and
+ * `REPORTING.md`). Missing periods stay gaps; the parser never fabricates
+ * buckets or zeros.
+ */
+export function parseReportSummary(raw: unknown): ServiceReportSummary {
+	const root = asRecord(raw, 'Report summary');
+	if (!Array.isArray(root.buckets)) {
+		throw new DataServiceError('invalid-response', 'buckets must be an array');
+	}
+	const buckets = root.buckets.map((bucket) => parseBucket(bucket));
+	return {
+		snapshot: root.snapshot !== false,
+		generatedAt: asUnixSeconds(root.generatedAt, 'generatedAt'),
+		range: parseRange(root.range),
+		currency: asString(root.currency, 'currency').toUpperCase(),
+		buckets,
+		watermark:
+			root.watermark === null || root.watermark === undefined
+				? null
+				: asUnixSeconds(root.watermark, 'watermark')
 	};
 }
 

@@ -11,6 +11,7 @@ import type { GloObject } from '@bitos/bnos-core/glo';
 import { glo } from '$nostr/store.svelte';
 import { tenant } from '$nostr/tenant.svelte';
 import { dataService } from '$lib/data-service/state.svelte';
+import { logActivity } from '$lib/audit.svelte';
 import { TYPE, type Refund } from '$lib/domain';
 import {
 	buildReportSnapshot,
@@ -21,12 +22,91 @@ import {
 
 const DAY_MS = 86_400_000;
 
+/** Organization timezone when configured, otherwise undefined (device-local). */
+export function businessTimeZone(): string | undefined {
+	const organizationId = tenant.state.organizationId;
+	const organization =
+		(organizationId
+			? (glo.get(TYPE.organization, organizationId) as { data?: { timezone?: string } } | undefined)
+			: undefined) ??
+		glo.all<{ timezone?: string }, typeof TYPE.organization>(TYPE.organization)[0];
+	const timezone = organization?.data?.timezone;
+	return typeof timezone === 'string' && timezone.trim() ? timezone.trim() : undefined;
+}
+
+function timeZoneOffsetMs(timeZone: string, at: number): number {
+	const formatter = new Intl.DateTimeFormat('en-US', {
+		timeZone,
+		hour12: false,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit'
+	});
+	const parts: Record<string, number> = {};
+	for (const part of formatter.formatToParts(new Date(at))) {
+		if (part.type !== 'literal') parts[part.type] = Number(part.value);
+	}
+	const asUtc = Date.UTC(
+		parts.year ?? 1970,
+		(parts.month ?? 1) - 1,
+		parts.day ?? 1,
+		(parts.hour ?? 0) % 24,
+		parts.minute ?? 0,
+		parts.second ?? 0
+	);
+	return asUtc - at;
+}
+
+/** Day bounds `[start, end)` for one IANA timezone. */
+export function zonedDayPeriod(
+	now: number,
+	timeZone: string
+): { periodStart: number; periodEnd: number } {
+	const formatter = new Intl.DateTimeFormat('en-CA', {
+		timeZone,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit'
+	});
+	const parts: Record<string, number> = {};
+	for (const part of formatter.formatToParts(new Date(now))) {
+		if (part.type !== 'literal') parts[part.type] = Number(part.value);
+	}
+	const year = parts.year ?? 1970;
+	const month = (parts.month ?? 1) - 1;
+	const day = parts.day ?? 1;
+
+	const startWall = Date.UTC(year, month, day);
+	const startOffset = timeZoneOffsetMs(timeZone, startWall);
+	const periodStart = startWall - timeZoneOffsetMs(timeZone, startWall - startOffset);
+
+	const endWall = Date.UTC(year, month, day + 1);
+	const endOffset = timeZoneOffsetMs(timeZone, endWall);
+	const periodEnd = endWall - timeZoneOffsetMs(timeZone, endWall - endOffset);
+
+	return { periodStart, periodEnd };
+}
+
+function fallbackDayPeriod(now: number): { periodStart: number; periodEnd: number } {
+	const start = new Date(now);
+	start.setHours(0, 0, 0, 0);
+	const periodStart = start.getTime();
+	const end = new Date(periodStart + DAY_MS);
+	end.setHours(0, 0, 0, 0);
+	return { periodStart, periodEnd: end.getTime() };
+}
+
 export interface PublishReportSnapshotInput {
 	granularity: ReportGranularity;
 	periodStart: number;
 	periodEnd: number;
 	locationId?: string | null;
 	now?: number;
+	/** Write an activity-log entry for this publish (manual actions only). */
+	audit?: boolean;
 }
 
 export interface PublishReportSnapshotResult {
@@ -41,6 +121,7 @@ export async function publishReportSnapshot(
 	input: PublishReportSnapshotInput
 ): Promise<PublishReportSnapshotResult> {
 	const locationId = input.locationId ?? tenant.state.locationId ?? undefined;
+	const timezone = businessTimeZone();
 	const snapshot = buildReportSnapshot({
 		periodStart: input.periodStart,
 		periodEnd: input.periodEnd,
@@ -51,6 +132,7 @@ export async function publishReportSnapshot(
 		products: glo.all<GloProduct, 'catalog.product'>('catalog.product'),
 		currency: tenant.state.currency,
 		locationId,
+		timezone,
 		now: input.now
 	});
 
@@ -59,7 +141,8 @@ export async function publishReportSnapshot(
 		locationId,
 		granularity: input.granularity,
 		periodStart: input.periodStart,
-		currency: snapshot.currency
+		currency: snapshot.currency,
+		timezone
 	});
 
 	const object = (await glo.upsert('report.snapshot', snapshot, {
@@ -71,17 +154,44 @@ export async function publishReportSnapshot(
 	// copy stays in its durable outbox and is retried on reconnect.
 	const pushed = await dataService.pushReportSnapshot(snapshot, id).catch(() => false);
 
+	if (input.audit) {
+		void logActivity({
+			action: 'create',
+			resource: 'report.snapshot',
+			resourceId: id,
+			summary: `Saved ${snapshot.granularity} report snapshot`,
+			currency: snapshot.currency,
+			meta: {
+				granularity: snapshot.granularity,
+				periodStart: snapshot.periodStart,
+				periodEnd: snapshot.periodEnd,
+				locationId: snapshot.locationId,
+				timezone: snapshot.timezone,
+				netMinor: snapshot.netMinor,
+				ordersCount: snapshot.ordersCount
+			}
+		});
+	}
+
 	return { snapshot, id, object, pushed };
 }
 
-/** Local-day bounds `[start, end)` in the device timezone. */
-export function dayPeriod(now = Date.now()): { periodStart: number; periodEnd: number } {
-	const start = new Date(now);
-	start.setHours(0, 0, 0, 0);
-	const periodStart = start.getTime();
-	const end = new Date(periodStart + DAY_MS);
-	end.setHours(0, 0, 0, 0);
-	return { periodStart, periodEnd: end.getTime() };
+/**
+ * Day bounds `[start, end)` in the organization timezone, falling back to the
+ * device timezone when the workspace has no timezone configured.
+ */
+export function dayPeriod(
+	now = Date.now(),
+	timeZone = businessTimeZone()
+): { periodStart: number; periodEnd: number } {
+	if (timeZone) {
+		try {
+			return zonedDayPeriod(now, timeZone);
+		} catch {
+			/* invalid stored timezone — fall through to device local */
+		}
+	}
+	return fallbackDayPeriod(now);
 }
 
 function timestampOf(object: GloObject<ReportSnapshot, string>): number {
@@ -97,9 +207,11 @@ export function findSnapshot(input: {
 	periodStart: number;
 	locationId?: string | null;
 	currency?: string;
+	timezone?: string;
 }): GloObject<ReportSnapshot, string> | undefined {
 	const currency = (input.currency ?? tenant.state.currency).toUpperCase();
 	const locationId = input.locationId ?? tenant.state.locationId ?? undefined;
+	const timezone = input.timezone ?? businessTimeZone();
 	let newest: GloObject<ReportSnapshot, string> | undefined;
 	for (const object of glo.all<ReportSnapshot, 'report.snapshot'>('report.snapshot')) {
 		const data = object.data;
@@ -107,6 +219,7 @@ export function findSnapshot(input: {
 		if (Date.parse(data.periodStart) !== input.periodStart) continue;
 		if (data.currency.toUpperCase() !== currency) continue;
 		if ((data.locationId ?? undefined) !== locationId) continue;
+		if ((data.timezone ?? undefined) !== timezone) continue;
 		if (!newest || timestampOf(object) > timestampOf(newest)) newest = object;
 	}
 	return newest;
@@ -127,6 +240,58 @@ function hasOrdersInPeriod(
 		const at = Date.parse(data.occurredAt);
 		return Number.isFinite(at) && at >= periodStart && at < periodEnd;
 	});
+}
+
+/**
+ * Create missing daily snapshots for the last `days` days from local data.
+ * Only periods with orders are considered; existing snapshots are skipped
+ * unless `onlyMissing` is false.
+ */
+export async function backfillDailySnapshots(
+	options: { days?: number; onlyMissing?: boolean; now?: number } = {}
+): Promise<{ created: number; skipped: number }> {
+	const days = Math.min(Math.max(options.days ?? 30, 1), 90);
+	const now = options.now ?? Date.now();
+	const timezone = businessTimeZone();
+	const currency = tenant.state.currency;
+	const locationId = tenant.state.locationId ?? undefined;
+	const seen = new Set<number>();
+	let created = 0;
+	let skipped = 0;
+
+	for (let offset = days - 1; offset >= 0; offset--) {
+		const { periodStart, periodEnd } = dayPeriod(now - offset * DAY_MS, timezone);
+		if (seen.has(periodStart)) continue;
+		seen.add(periodStart);
+		if (!hasOrdersInPeriod(periodStart, periodEnd, currency, locationId)) {
+			skipped += 1;
+			continue;
+		}
+		if (options.onlyMissing !== false && findSnapshot({ granularity: 'day', periodStart })) {
+			skipped += 1;
+			continue;
+		}
+		await publishReportSnapshot({ granularity: 'day', periodStart, periodEnd, now });
+		created += 1;
+	}
+	return { created, skipped };
+}
+
+/**
+ * Remove local hourly snapshots older than the cutoff. Relays keep their
+ * ciphertext copies; only this device's cached aggregate is pruned.
+ */
+export function pruneHourlySnapshots(options: { olderThanMs?: number; now?: number } = {}): number {
+	const cutoff = (options.now ?? Date.now()) - (options.olderThanMs ?? 90 * DAY_MS);
+	let removed = 0;
+	for (const object of [...glo.all<ReportSnapshot, 'report.snapshot'>('report.snapshot')]) {
+		if (object.data.granularity !== 'hour') continue;
+		const endedAt = Date.parse(object.data.periodEnd);
+		if (!Number.isFinite(endedAt) || endedAt >= cutoff) continue;
+		glo.remove('report.snapshot', object.id);
+		removed += 1;
+	}
+	return removed;
 }
 
 /**

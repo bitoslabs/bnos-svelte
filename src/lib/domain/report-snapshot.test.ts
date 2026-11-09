@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
 	buildReportSnapshot,
+	fromMinorUnits,
+	parseReportSnapshot,
 	snapshotId,
 	toMinorUnits,
 	type SnapshotOrderRecord,
@@ -97,6 +99,13 @@ describe('toMinorUnits', () => {
 		expect(toMinorUnits(5, 'SAT')).toBe(5);
 		expect(toMinorUnits(Number.NaN, 'USD')).toBe(0);
 	});
+
+	it('converts minor units back for display', () => {
+		expect(fromMinorUnits(12_750, 'USD')).toBe(127.5);
+		expect(fromMinorUnits(101, 'LAK')).toBe(101);
+		expect(fromMinorUnits(1, 'BTC')).toBe(0.00000001);
+		expect(fromMinorUnits(Number.NaN, 'USD')).toBe(0);
+	});
 });
 
 describe('buildReportSnapshot', () => {
@@ -147,6 +156,7 @@ describe('buildReportSnapshot', () => {
 		expect(snapshot.avgTicketMinor).toBe(7_375);
 		expect(snapshot.payments).toEqual({ cash: 9_500, card: 5_250 });
 		expect(snapshot.orderStatus).toEqual({ completed: 2 });
+		expect(snapshot.timezone).toBeUndefined();
 		expect(snapshot.topProducts).toEqual([
 			{ productId: 'p1', qty: 3, revenueMinor: 9_000 },
 			{ productId: 'p2', qty: 1, revenueMinor: 6_000 }
@@ -317,11 +327,13 @@ describe('buildReportSnapshot', () => {
 			periodEnd: END,
 			granularity: 'day',
 			currency: 'USD',
+			timezone: 'Asia/Bangkok',
 			orders: [],
 			payments: [],
 			refunds: [],
 			products: []
 		});
+		expect(snapshot.timezone).toBe('Asia/Bangkok');
 		expect(snapshot).toMatchObject({
 			grossMinor: 0,
 			netMinor: 0,
@@ -332,6 +344,61 @@ describe('buildReportSnapshot', () => {
 			orderStatus: {},
 			topProducts: []
 		});
+	});
+});
+
+describe('parseReportSnapshot', () => {
+	it('parses a service response and normalizes aggregate fields', () => {
+		const parsed = parseReportSnapshot({
+			granularity: 'week',
+			periodStart: new Date(START).toISOString(),
+			periodEnd: new Date(END).toISOString(),
+			locationId: 'loc-1',
+			timezone: 'Asia/Bangkok',
+			currency: 'usd',
+			grossMinor: 15_000.4,
+			netMinor: 12_750,
+			taxMinor: 750,
+			discountMinor: 1_000,
+			refundMinor: 2_000,
+			ordersCount: 2,
+			itemsCount: 4,
+			avgTicketMinor: 7_375,
+			payments: { cash: 9_500 },
+			orderStatus: { completed: 2 },
+			topProducts: [{ productId: 'p1', qty: 3, revenueMinor: 9_000 }],
+			generatedAt: new Date(END).toISOString(),
+			customerName: 'ignored'
+		});
+
+		expect(parsed).toMatchObject({
+			type: 'report.snapshot',
+			version: 1,
+			granularity: 'week',
+			currency: 'USD',
+			grossMinor: 15_000,
+			netMinor: 12_750,
+			locationId: 'loc-1',
+			timezone: 'Asia/Bangkok',
+			payments: { cash: 9_500 },
+			orderStatus: { completed: 2 },
+			topProducts: [{ productId: 'p1', qty: 3, revenueMinor: 9_000 }]
+		});
+		expect(JSON.stringify(parsed)).not.toContain('customerName');
+	});
+
+	it('rejects malformed money and period fields', () => {
+		expect(() => parseReportSnapshot(null)).toThrow('must be an object');
+		expect(() =>
+			parseReportSnapshot({ periodStart: 'x', periodEnd: 'y', currency: 'USD' })
+		).toThrow('grossMinor');
+		expect(() =>
+			parseReportSnapshot({
+				periodStart: '',
+				periodEnd: new Date(END).toISOString(),
+				currency: 'USD'
+			})
+		).toThrow('periodStart');
 	});
 });
 
@@ -355,5 +422,6 @@ describe('snapshotId', () => {
 		expect(snapshotId({ ...base, currency: 'THB' })).not.toBe(snapshotId(base));
 		expect(snapshotId({ ...base, locationId: 'loc-2' })).not.toBe(snapshotId(base));
 		expect(snapshotId({ ...base, granularity: 'week' })).not.toBe(snapshotId(base));
+		expect(snapshotId({ ...base, timezone: 'Asia/Bangkok' })).not.toBe(snapshotId(base));
 	});
 });

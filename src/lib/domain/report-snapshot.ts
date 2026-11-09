@@ -27,6 +27,8 @@ export interface ReportSnapshot {
 	periodStart: string;
 	periodEnd: string;
 	locationId?: string;
+	/** IANA timezone used to compute the period; absent means device-local. */
+	timezone?: string;
 	currency: string;
 	/** All amounts are integer minor units for `currency`. */
 	grossMinor: number;
@@ -57,6 +59,13 @@ export function toMinorUnits(amount: number, currency: string): number {
 	const digits = MINOR_DIGITS[currency.toUpperCase()] ?? 2;
 	if (!Number.isFinite(amount)) return 0;
 	return Math.round(amount * 10 ** digits);
+}
+
+/** Convert integer minor units back to a decimal amount for display. */
+export function fromMinorUnits(minor: number, currency: string): number {
+	const digits = MINOR_DIGITS[currency.toUpperCase()] ?? 2;
+	if (!Number.isFinite(minor)) return 0;
+	return minor / 10 ** digits;
 }
 
 interface ScopedRecord {
@@ -97,6 +106,8 @@ export interface BuildReportSnapshotInput {
 	products?: readonly SnapshotProductRecord[];
 	currency: string;
 	locationId?: string;
+	/** IANA timezone used to compute the period (stored on the snapshot). */
+	timezone?: string;
 	now?: number;
 	topProductsLimit?: number;
 }
@@ -147,7 +158,7 @@ function normalizedName(value: string | undefined): string {
  */
 export function buildReportSnapshot(input: BuildReportSnapshotInput): ReportSnapshot {
 	const currency = input.currency.toUpperCase();
-	const { periodStart, periodEnd, granularity, locationId, now = Date.now() } = input;
+	const { periodStart, periodEnd, granularity, locationId, timezone, now = Date.now() } = input;
 
 	let grossMinor = 0;
 	let discountMinor = 0;
@@ -235,6 +246,7 @@ export function buildReportSnapshot(input: BuildReportSnapshotInput): ReportSnap
 		periodStart: new Date(periodStart).toISOString(),
 		periodEnd: new Date(periodEnd).toISOString(),
 		...(locationId ? { locationId } : {}),
+		...(timezone ? { timezone } : {}),
 		currency,
 		grossMinor,
 		netMinor: grossMinor - discountMinor + taxMinor - refundMinor,
@@ -263,6 +275,93 @@ function lineRevenue(line: GloOrderLine): number {
 	return quantity * unit;
 }
 
+function payloadString(value: unknown, label: string): string {
+	if (typeof value !== 'string' || !value.trim()) {
+		throw new Error(`Report snapshot ${label} must be a non-empty string`);
+	}
+	return value;
+}
+
+function payloadNumber(value: unknown, label: string): number {
+	if (typeof value !== 'number' || !Number.isFinite(value)) {
+		throw new Error(`Report snapshot ${label} must be a number`);
+	}
+	return Math.round(value);
+}
+
+function payloadNumberRecord(value: unknown): Record<string, number> {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+	const out: Record<string, number> = {};
+	for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+		if (typeof entry === 'number' && Number.isFinite(entry)) out[key] = Math.round(entry);
+	}
+	return out;
+}
+
+/**
+ * Validate a snapshot-shaped object received from the data service. Unknown
+ * fields are ignored; only aggregate fields are read. Throws on malformed money
+ * or period fields so callers can fall back to local data.
+ */
+export function parseReportSnapshot(raw: unknown): ReportSnapshot {
+	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+		throw new Error('Report snapshot must be an object');
+	}
+	const value = raw as Record<string, unknown>;
+	const granularityValue = value.granularity;
+	const granularity: ReportGranularity =
+		granularityValue === 'hour' ||
+		granularityValue === 'day' ||
+		granularityValue === 'week' ||
+		granularityValue === 'month'
+			? granularityValue
+			: 'day';
+
+	const topProducts: ReportSnapshot['topProducts'] = [];
+	if (Array.isArray(value.topProducts)) {
+		for (const entry of value.topProducts) {
+			if (!entry || typeof entry !== 'object') continue;
+			const row = entry as Record<string, unknown>;
+			if (typeof row.productId !== 'string' || !row.productId) continue;
+			if (typeof row.qty !== 'number' || !Number.isFinite(row.qty)) continue;
+			if (typeof row.revenueMinor !== 'number' || !Number.isFinite(row.revenueMinor)) continue;
+			topProducts.push({
+				productId: row.productId,
+				qty: row.qty,
+				revenueMinor: Math.round(row.revenueMinor)
+			});
+		}
+	}
+
+	return {
+		type: 'report.snapshot',
+		version: 1,
+		granularity,
+		periodStart: payloadString(value.periodStart, 'periodStart'),
+		periodEnd: payloadString(value.periodEnd, 'periodEnd'),
+		...(typeof value.locationId === 'string' && value.locationId
+			? { locationId: value.locationId }
+			: {}),
+		...(typeof value.timezone === 'string' && value.timezone ? { timezone: value.timezone } : {}),
+		currency: payloadString(value.currency, 'currency').toUpperCase(),
+		grossMinor: payloadNumber(value.grossMinor, 'grossMinor'),
+		netMinor: payloadNumber(value.netMinor, 'netMinor'),
+		taxMinor: payloadNumber(value.taxMinor ?? 0, 'taxMinor'),
+		discountMinor: payloadNumber(value.discountMinor ?? 0, 'discountMinor'),
+		refundMinor: payloadNumber(value.refundMinor ?? 0, 'refundMinor'),
+		ordersCount: payloadNumber(value.ordersCount ?? 0, 'ordersCount'),
+		itemsCount: payloadNumber(value.itemsCount ?? 0, 'itemsCount'),
+		avgTicketMinor: payloadNumber(value.avgTicketMinor ?? 0, 'avgTicketMinor'),
+		payments: payloadNumberRecord(value.payments),
+		orderStatus: payloadNumberRecord(value.orderStatus),
+		topProducts,
+		generatedAt:
+			typeof value.generatedAt === 'string' && value.generatedAt
+				? value.generatedAt
+				: new Date().toISOString()
+	};
+}
+
 /** Stable logical period key shared by the client id and the service dedupe. */
 export function snapshotPeriodKey(input: {
 	workspaceId: string;
@@ -270,16 +369,20 @@ export function snapshotPeriodKey(input: {
 	granularity: ReportGranularity;
 	periodStart: number | string;
 	currency: string;
+	timezone?: string;
 }): string {
 	const start =
 		typeof input.periodStart === 'number' ? input.periodStart : Date.parse(input.periodStart);
-	return [
+	const parts = [
 		input.workspaceId,
 		input.locationId ?? 'all',
 		input.granularity,
 		Number.isFinite(start) ? start : 0,
 		input.currency.toUpperCase()
-	].join('|');
+	];
+	// Keep pre-timezone ids stable; only add the segment when configured.
+	if (input.timezone) parts.push(input.timezone);
+	return parts.join('|');
 }
 
 /** Deterministic GLO id (segment-safe) for one logical snapshot period. */
@@ -289,6 +392,7 @@ export function snapshotId(input: {
 	granularity: ReportGranularity;
 	periodStart: number | string;
 	currency: string;
+	timezone?: string;
 }): string {
 	const digest = bytesToHex(sha256(new TextEncoder().encode(snapshotPeriodKey(input))));
 	return `snap-${digest.slice(0, 40)}`;
