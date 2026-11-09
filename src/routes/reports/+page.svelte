@@ -586,7 +586,7 @@
 	}
 
 	function snapshotScope(data: ReportSnapshot): string {
-		if (!data.locationId) return 'All locations';
+		if (!data.locationId) return t('reports.snapshot.allLocations');
 		const location = glo.get(TYPE.location, data.locationId) as
 			{ data?: { name?: string } } | undefined;
 		return location?.data?.name ?? data.locationId.slice(0, 8);
@@ -613,7 +613,7 @@
 			if (serverSummary.key !== key) return;
 			serverSummary = {
 				loading: false,
-				error: error instanceof Error ? error.message : 'Server summary unavailable',
+				error: error instanceof Error ? error.message : t('reports.snapshot.serverUnavailable'),
 				value: null,
 				fetchedAt: null,
 				key
@@ -633,11 +633,14 @@
 				audit: true
 			});
 			toast.success(
-				'Snapshot saved',
-				`${formatMoney(fromMinorUnits(result.snapshot.netMinor, result.snapshot.currency), result.snapshot.currency)} net`
+				t('reports.snapshot.saved'),
+				`${formatMoney(
+					fromMinorUnits(result.snapshot.netMinor, result.snapshot.currency),
+					result.snapshot.currency
+				)} ${t('reports.snapshot.net').toLowerCase()}`
 			);
 		} catch (error) {
-			snapshotError = error instanceof Error ? error.message : 'Could not save snapshot';
+			snapshotError = error instanceof Error ? error.message : t('reports.snapshot.saveFailed');
 		} finally {
 			snapshotBusy = false;
 		}
@@ -654,9 +657,9 @@
 				locationId: data.locationId ?? null,
 				audit: true
 			});
-			toast.success('Snapshot re-published');
+			toast.success(t('reports.snapshot.republished'));
 		} catch (error) {
-			snapshotError = error instanceof Error ? error.message : 'Could not publish snapshot';
+			snapshotError = error instanceof Error ? error.message : t('reports.snapshot.publishFailed');
 		} finally {
 			snapshotBusy = false;
 		}
@@ -665,9 +668,9 @@
 	async function copySnapshotId(id: string) {
 		try {
 			await navigator.clipboard.writeText(id);
-			toast.success('Snapshot id copied');
+			toast.success(t('reports.snapshot.idCopied'));
 		} catch {
-			toast.error('Could not copy snapshot id');
+			toast.error(t('reports.snapshot.copyFailed'));
 		}
 	}
 
@@ -697,7 +700,7 @@
 		<div>
 			<h1 class="font-display text-xl font-bold tracking-tight">{t('nav.reports')}</h1>
 			<p class="text-[12.5px] text-(--ui-text-muted)">
-				Live from signed orders · period snapshots for faster, consistent reports
+				{t('reports.snapshot.liveFromOrders')}
 			</p>
 		</div>
 		<div class="flex flex-wrap items-center gap-2">
@@ -708,7 +711,7 @@
 				size="sm"
 				icon="lucide:history"
 			>
-				Snapshots
+				{t('reports.snapshot.snapshots')}
 			</Button>
 			<Button
 				variant="subtle"
@@ -717,7 +720,7 @@
 				onclick={exportCSV}
 				disabled={!hasData}
 			>
-				Export CSV
+				{t('reports.snapshot.exportCsv')}
 			</Button>
 		</div>
 	</div>
@@ -762,30 +765,33 @@
 			</div>
 			<div class="min-w-0">
 				<div class="flex flex-wrap items-center gap-2">
-					<span class="text-[13px] font-semibold">Report snapshot</span>
+					<span class="text-[13px] font-semibold">{t('reports.snapshot.title')}</span>
 					{#if latestDay}
 						{@const drift = todayDrift}
 						{#if drift && (drift.ordersDelta !== 0 || drift.netDelta !== 0)}
-							<Badge color="warning">Live changed</Badge>
+							<Badge color="warning">{t('reports.snapshot.liveChanged')}</Badge>
 						{:else}
-							<Badge color="success">In sync</Badge>
+							<Badge color="success">{t('reports.snapshot.inSync')}</Badge>
 						{/if}
 					{:else}
-						<Badge color="neutral">Live only</Badge>
+						<Badge color="neutral">{t('reports.snapshot.liveOnly')}</Badge>
 					{/if}
 				</div>
 				<div class="mt-0.5 text-[11px] leading-relaxed text-(--ui-text-dimmed)">
 					{#if latestDay}
 						{latestDay.data.granularity} · {formatSnapshotPeriod(latestDay.data)} · {snapshotScope(
 							latestDay.data
-						)} · {latestDay.data.currency} · generated {relativeTime(latestDay.data.generatedAt)}
+						)} · {latestDay.data.currency} · {t('reports.snapshot.generated')}
+						{relativeTime(latestDay.data.generatedAt)}
 						{#if todayDrift && todayDrift.ordersDelta > 0}
-							· {todayDrift.ordersDelta} new order{todayDrift.ordersDelta === 1 ? '' : 's'} since snapshot
+							· {todayDrift.ordersDelta === 1
+								? t('reports.snapshot.newOrderSince', { n: todayDrift.ordersDelta })
+								: t('reports.snapshot.newOrdersSince', { n: todayDrift.ordersDelta })}
 						{:else if todayDrift && (todayDrift.netDelta !== 0 || todayDrift.ordersDelta !== 0)}
-							· live totals changed since snapshot
+							· {t('reports.snapshot.liveTotalsChanged')}
 						{/if}
 					{:else}
-						No snapshot for today yet. Save one to sync a period checkpoint to relays.
+						{t('reports.snapshot.noToday')}
 					{/if}
 				</div>
 			</div>
@@ -802,7 +808,7 @@
 				disabled={snapshotBusy || !hasOrdersToday || !snapshotDataReady}
 			>
 				<Icon name="lucide:file-chart-column" class="size-4" />
-				{snapshotBusy ? 'Saving…' : 'Save snapshot'}
+				{snapshotBusy ? t('reports.snapshot.saving') : t('reports.snapshot.save')}
 			</Button>
 		</div>
 	</div>
@@ -813,14 +819,18 @@
 			<div class="flex flex-wrap items-center justify-between gap-2">
 				<div class="flex min-w-0 items-center gap-2">
 					<Icon name="lucide:database" class="size-4 text-primary-500" />
-					<span class="text-[13px] font-semibold">Server summary</span>
+					<span class="text-[13px] font-semibold">{t('reports.snapshot.serverTitle')}</span>
 					{#if serverSummary.value}
-						<Badge color="info">{serverSummary.value.snapshot ? 'Snapshot' : 'Partial'}</Badge>
+						<Badge color="info">
+							{serverSummary.value.snapshot
+								? t('reports.snapshot.statusSnapshot')
+								: t('reports.snapshot.statusPartial')}
+						</Badge>
 						{#if serverSummaryDelta}
 							{#if serverSummaryDelta.gross === 0 && serverSummaryDelta.orders === 0}
-								<Badge color="success">Matches live</Badge>
+								<Badge color="success">{t('reports.snapshot.matchesLive')}</Badge>
 							{:else}
-								<Badge color="warning">Differs from live</Badge>
+								<Badge color="warning">{t('reports.snapshot.differsLive')}</Badge>
 							{/if}
 						{/if}
 					{/if}
@@ -833,19 +843,27 @@
 					disabled={serverSummary.loading || !customRangeReady}
 				>
 					<Icon name="lucide:cloud-download" class="size-4" />
-					{serverSummary.loading ? 'Loading…' : serverSummary.value ? 'Refresh' : 'Load summary'}
+					{serverSummary.loading
+						? t('reports.snapshot.loading')
+						: serverSummary.value
+							? t('reports.snapshot.refresh')
+							: t('reports.snapshot.loadSummary')}
 				</Button>
 			</div>
 			{#if serverSummary.loading}
-				<p class="mt-2 text-[12px] text-(--ui-text-dimmed)">Loading the server aggregate…</p>
+				<p class="mt-2 text-[12px] text-(--ui-text-dimmed)">
+					{t('reports.snapshot.loadingServer')}
+				</p>
 			{:else if serverSummary.error}
 				<p role="alert" class="mt-2 text-[12px] text-(--tone-error-text)">
-					{serverSummary.error} — using live local data.
+					{t('reports.snapshot.usingLocal', { error: serverSummary.error })}
 				</p>
 			{:else if serverSummary.value && serverSummaryTotals}
 				<div class="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
 					<div class="rounded-lg bg-(--ui-bg-muted) p-3">
-						<div class="text-[10.5px] font-semibold text-(--ui-text-dimmed) uppercase">Gross</div>
+						<div class="text-[10.5px] font-semibold text-(--ui-text-dimmed) uppercase">
+							{t('reports.snapshot.gross')}
+						</div>
 						<div class="mt-0.5 font-display text-[15px] font-bold tabular-nums">
 							{formatMoney(
 								fromMinorUnits(serverSummaryTotals.grossMinor, serverSummary.value.currency),
@@ -854,14 +872,16 @@
 						</div>
 					</div>
 					<div class="rounded-lg bg-(--ui-bg-muted) p-3">
-						<div class="text-[10.5px] font-semibold text-(--ui-text-dimmed) uppercase">Orders</div>
+						<div class="text-[10.5px] font-semibold text-(--ui-text-dimmed) uppercase">
+							{t('reports.snapshot.orders')}
+						</div>
 						<div class="mt-0.5 font-display text-[15px] font-bold tabular-nums">
 							{formatInt(serverSummaryTotals.ordersCount)}
 						</div>
 					</div>
 					<div class="rounded-lg bg-(--ui-bg-muted) p-3">
 						<div class="text-[10.5px] font-semibold text-(--ui-text-dimmed) uppercase">
-							Avg order
+							{t('reports.snapshot.avgOrder')}
 						</div>
 						<div class="mt-0.5 font-display text-[15px] font-bold tabular-nums">
 							{formatMoney(
@@ -876,35 +896,39 @@
 						</div>
 					</div>
 					<div class="rounded-lg bg-(--ui-bg-muted) p-3">
-						<div class="text-[10.5px] font-semibold text-(--ui-text-dimmed) uppercase">Periods</div>
+						<div class="text-[10.5px] font-semibold text-(--ui-text-dimmed) uppercase">
+							{t('reports.snapshot.periods')}
+						</div>
 						<div class="mt-0.5 font-display text-[15px] font-bold tabular-nums">
 							{formatInt(serverSummaryTotals.buckets)}
 						</div>
 					</div>
 				</div>
 				<p class="mt-2 text-[11px] leading-relaxed text-(--ui-text-dimmed)">
-					{serverSummary.value.snapshot ? 'Snapshot' : 'Partial snapshot'} · generated {relativeTime(
-						serverSummary.value.generatedAt * 1000
-					)} · {serverSummary.value.currency}
+					{serverSummary.value.snapshot
+						? t('reports.snapshot.statusSnapshot')
+						: t('reports.snapshot.statusPartialSnapshot')} · {t('reports.snapshot.generated')}
+					{relativeTime(serverSummary.value.generatedAt * 1000)} · {serverSummary.value.currency}
 					{#if serverSummaryDelta}
-						· live delta: {serverSummaryDelta.orders >= 0 ? '+' : ''}{serverSummaryDelta.orders}
-						order{Math.abs(serverSummaryDelta.orders) === 1 ? '' : 's'},
-						{serverSummaryDelta.gross >= 0 ? '+' : '−'}{formatMoney(
-							fromMinorUnits(Math.abs(serverSummaryDelta.gross), serverSummary.value.currency),
-							serverSummary.value.currency
-						)} gross
+						· {t('reports.snapshot.liveDelta', {
+							orders: `${serverSummaryDelta.orders >= 0 ? '+' : ''}${serverSummaryDelta.orders}`,
+							gross: `${serverSummaryDelta.gross >= 0 ? '+' : '−'}${formatMoney(
+								fromMinorUnits(Math.abs(serverSummaryDelta.gross), serverSummary.value.currency),
+								serverSummary.value.currency
+							)}`
+						})}
 					{/if}
 				</p>
 				{#if serverSummary.value.watermark !== null}
 					<p class="mt-1 text-[11px] text-(--ui-text-dimmed)">
-						Newest stored snapshot {relativeTime(serverSummary.value.watermark * 1000)}. Missing
-						periods are gaps, not zeros.
+						{t('reports.snapshot.watermark')}
+						{relativeTime(serverSummary.value.watermark * 1000)}.
+						{t('reports.snapshot.missingGaps')}
 					</p>
 				{/if}
 			{:else}
 				<p class="mt-2 text-[12px] text-(--ui-text-muted)">
-					Load the service-computed aggregate for this period. Local data remains the source of
-					truth.
+					{t('reports.snapshot.loadHint')}
 				</p>
 			{/if}
 		</div>
@@ -1237,7 +1261,9 @@
 		<div class="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
 			<div class="flex items-center gap-2">
 				<Icon name="lucide:history" class="size-4 text-primary-500" />
-				<h2 class="font-display text-[14px] font-semibold tracking-tight">Snapshots</h2>
+				<h2 class="font-display text-[14px] font-semibold tracking-tight">
+					{t('reports.snapshot.snapshots')}
+				</h2>
 				<Badge color="neutral">{snapshotRows.length}</Badge>
 			</div>
 			{#if snapshotRows.length > 6}
@@ -1247,28 +1273,32 @@
 					size="sm"
 					onclick={() => (showAllSnapshots = !showAllSnapshots)}
 				>
-					{showAllSnapshots ? 'Show less' : `Show all ${snapshotRows.length}`}
+					{showAllSnapshots
+						? t('reports.snapshot.showLess')
+						: t('reports.snapshot.showAll', { n: snapshotRows.length })}
 				</Button>
 			{/if}
 		</div>
 		{#if !snapshotRows.length}
 			<p class="border-t border-(--ui-border-muted) px-5 py-6 text-[12.5px] text-(--ui-text-muted)">
-				No snapshots yet. Open Reports with sales or close a shift to create one.
+				{t('reports.snapshot.noSnapshotsHint')}
 			</p>
 		{:else}
 			<div class="overflow-x-auto border-t border-(--ui-border-muted)">
 				<table class="w-full min-w-[820px] text-[12px]">
 					<thead class="bg-(--ui-bg-muted)/50">
 						<tr class="text-left text-(--ui-text-dimmed)">
-							<th class="px-5 py-2.5 font-semibold">Period</th>
-							<th class="px-3 py-2.5 font-semibold">Type</th>
-							<th class="px-3 py-2.5 font-semibold">Scope</th>
-							<th class="px-3 py-2.5 text-right font-semibold">Gross</th>
-							<th class="px-3 py-2.5 text-right font-semibold">Net</th>
-							<th class="px-3 py-2.5 text-right font-semibold">Orders</th>
-							<th class="px-3 py-2.5 font-semibold">Generated</th>
-							<th class="px-3 py-2.5 font-semibold">Status</th>
-							<th class="px-5 py-2.5 text-right font-semibold">Actions</th>
+							<th class="px-5 py-2.5 font-semibold">{t('reports.snapshot.period')}</th>
+							<th class="px-3 py-2.5 font-semibold">{t('reports.snapshot.type')}</th>
+							<th class="px-3 py-2.5 font-semibold">{t('reports.snapshot.scope')}</th>
+							<th class="px-3 py-2.5 text-right font-semibold">{t('reports.snapshot.gross')}</th>
+							<th class="px-3 py-2.5 text-right font-semibold">{t('reports.snapshot.net')}</th>
+							<th class="px-3 py-2.5 text-right font-semibold">{t('reports.snapshot.orders')}</th>
+							<th class="px-3 py-2.5 font-semibold">{t('reports.snapshot.generated')}</th>
+							<th class="px-3 py-2.5 font-semibold">{t('reports.snapshot.status')}</th>
+							<th class="px-5 py-2.5 text-right font-semibold">
+								{t('reports.snapshot.actions')}
+							</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -1303,7 +1333,9 @@
 								</td>
 								<td class="px-3 py-2.5">
 									<Badge color={snapshotPublished(row.object) ? 'success' : 'neutral'}>
-										{snapshotPublished(row.object) ? 'Published' : 'Local'}
+										{snapshotPublished(row.object)
+											? t('reports.snapshot.published')
+											: t('reports.snapshot.local')}
 									</Badge>
 								</td>
 								<td class="px-5 py-2.5">
@@ -1312,8 +1344,8 @@
 											color="neutral"
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Re-publish snapshot"
-											title="Re-publish snapshot"
+											aria-label={t('reports.snapshot.republish')}
+											title={t('reports.snapshot.republish')}
 											onclick={() => republishSnapshot(row.data)}
 											disabled={snapshotBusy}
 										>
@@ -1323,8 +1355,8 @@
 											color="neutral"
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Copy snapshot id"
-											title="Copy snapshot id"
+											aria-label={t('reports.snapshot.copyId')}
+											title={t('reports.snapshot.copyId')}
 											onclick={() => copySnapshotId(row.object.id)}
 										>
 											<Icon name="lucide:copy" class="size-4" />

@@ -6,6 +6,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
+	import DateRangePicker from '$lib/components/ui/DateRangePicker.svelte';
 	import { glo } from '$nostr/store.svelte';
 	import { dataSync } from '$nostr/sync.svelte';
 	import { formatMoney, formatInt } from '$lib/utils/format';
@@ -64,24 +65,24 @@
 	let busy = $state<'sync' | 'backfill' | 'prune' | null>(null);
 	let retentionDays = $state(loadHourlyRetentionDays());
 
-	const granularityOptions = [
-		{ value: 'all', label: 'All types' },
-		{ value: 'hour', label: 'Hourly' },
-		{ value: 'day', label: 'Daily' },
-		{ value: 'week', label: 'Weekly' },
-		{ value: 'month', label: 'Monthly' }
-	];
+	const granularityOptions = $derived([
+		{ value: 'all', label: t('reports.snapshot.allTypes') },
+		{ value: 'hour', label: t('reports.snapshot.hourly') },
+		{ value: 'day', label: t('reports.snapshot.daily') },
+		{ value: 'week', label: t('reports.snapshot.weekly') },
+		{ value: 'month', label: t('reports.snapshot.monthly') }
+	]);
 
 	const locationOptions = $derived([
-		{ value: 'all', label: 'All scopes' },
-		{ value: 'org', label: 'Organization-wide' },
+		{ value: 'all', label: t('reports.snapshot.allScopes') },
+		{ value: 'org', label: t('reports.snapshot.orgWide') },
 		...locations.map((location) => ({
 			value: location.id,
 			label: location.data.name ?? location.id.slice(0, 8)
 		}))
 	]);
 	const currencyOptions = $derived([
-		{ value: 'all', label: 'All currencies' },
+		{ value: 'all', label: t('reports.snapshot.allCurrencies') },
 		...[...new Set(rows.map((row) => row.data.currency))].map((currency) => ({
 			value: currency,
 			label: currency
@@ -142,12 +143,12 @@
 		const at = Date.parse(iso);
 		if (!Number.isFinite(at)) return '—';
 		const seconds = Math.max(0, Math.round((Date.now() - at) / 1000));
-		if (seconds < 60) return 'just now';
+		if (seconds < 60) return t('reports.snapshot.justNow');
 		const minutes = Math.round(seconds / 60);
-		if (minutes < 60) return `${minutes}m ago`;
+		if (minutes < 60) return t('reports.snapshot.minutesAgo', { n: minutes });
 		const hours = Math.round(minutes / 60);
-		if (hours < 24) return `${hours}h ago`;
-		return `${Math.round(hours / 24)}d ago`;
+		if (hours < 24) return t('reports.snapshot.hoursAgo', { n: hours });
+		return t('reports.snapshot.daysAgo', { n: Math.round(hours / 24) });
 	}
 
 	function formatPeriod(data: ReportSnapshot): string {
@@ -166,7 +167,7 @@
 	}
 
 	function scopeLabel(data: ReportSnapshot): string {
-		if (!data.locationId) return 'All locations';
+		if (!data.locationId) return t('reports.snapshot.allLocations');
 		const location = locations.find((entry) => entry.id === data.locationId);
 		return location?.data.name ?? data.locationId.slice(0, 8);
 	}
@@ -261,7 +262,7 @@
 				silent: false,
 				scope: 'snapshots'
 			});
-			if (synced) toast.success('Snapshots synced from relays');
+			if (synced) toast.success(t('reports.snapshot.synced'));
 		} finally {
 			busy = null;
 		}
@@ -280,12 +281,15 @@
 				});
 			}
 			toast.success(
-				'Daily snapshots backfilled',
-				`${result.created} created · ${result.skipped} skipped`
+				t('reports.snapshot.backfillTitle'),
+				t('reports.snapshot.backfillDone', {
+					created: result.created,
+					skipped: result.skipped
+				})
 			);
 		} catch (error) {
 			toast.error(
-				'Could not backfill snapshots',
+				t('reports.snapshot.backfillFailed'),
 				error instanceof Error ? error.message : undefined
 			);
 		} finally {
@@ -296,18 +300,21 @@
 	async function pruneHourly() {
 		if (
 			!(await confirm({
-				title: 'Prune local hourly snapshots?',
-				message: `Hourly snapshots older than ${retentionDays} days are removed from this device. Relay copies remain.`,
+				title: t('reports.snapshot.pruneTitle'),
+				message: t('reports.snapshot.pruneMessage', { days: retentionDays }),
 				tone: 'danger',
 				icon: 'lucide:trash-2',
-				confirmText: 'Prune'
+				confirmText: t('reports.snapshot.prune')
 			}))
 		)
 			return;
 		busy = 'prune';
 		try {
 			const removed = pruneHourlySnapshots({ olderThanMs: retentionDays * 86_400_000 });
-			toast.success('Hourly snapshots pruned', `${removed} removed`);
+			toast.success(
+				t('reports.snapshot.pruneDone'),
+				t('reports.snapshot.pruneCount', { n: removed })
+			);
 		} finally {
 			busy = null;
 		}
@@ -323,9 +330,12 @@
 				locationId: data.locationId ?? null,
 				audit: true
 			});
-			toast.success('Snapshot re-published');
+			toast.success(t('reports.snapshot.republished'));
 		} catch (error) {
-			toast.error('Could not publish snapshot', error instanceof Error ? error.message : undefined);
+			toast.error(
+				t('reports.snapshot.publishFailed'),
+				error instanceof Error ? error.message : undefined
+			);
 		} finally {
 			busy = null;
 		}
@@ -334,32 +344,33 @@
 	async function copyId(id: string) {
 		try {
 			await navigator.clipboard.writeText(id);
-			toast.success('Snapshot id copied');
+			toast.success(t('reports.snapshot.idCopied'));
 		} catch {
-			toast.error('Could not copy snapshot id');
+			toast.error(t('reports.snapshot.copyFailed'));
 		}
 	}
 </script>
 
-<svelte:head><title>{t('common.appName')} · Report snapshots</title></svelte:head>
+<svelte:head><title>{t('common.appName')} · {t('reports.snapshot.pageTitle')}</title></svelte:head>
 
 <div class="space-y-5">
 	<div class="flex flex-wrap items-start justify-between gap-3">
 		<div>
 			<Button href={resolve('/reports')} color="neutral" variant="ghost" size="sm" class="-ml-2">
 				<Icon name="lucide:arrow-left" class="size-4" />
-				Reports
+				{t('reports.snapshot.reportsBack')}
 			</Button>
-			<h1 class="mt-1 font-display text-xl font-bold tracking-tight">Report snapshots</h1>
+			<h1 class="mt-1 font-display text-xl font-bold tracking-tight">
+				{t('reports.snapshot.pageTitle')}
+			</h1>
 			<p class="text-[12.5px] text-(--ui-text-muted)">
-				Aggregate checkpoints, newest first. Relay copies are encrypted; aggregates contain no
-				customer data.
+				{t('reports.snapshot.pageDescription')}
 			</p>
 		</div>
 		<div class="flex flex-wrap items-center gap-2">
 			<Button color="neutral" variant="subtle" size="sm" onclick={syncNow} disabled={busy !== null}>
 				<Icon name="lucide:refresh-cw" class="size-4" />
-				{busy === 'sync' ? 'Syncing…' : 'Sync relays'}
+				{busy === 'sync' ? t('reports.snapshot.syncing') : t('reports.snapshot.syncRelays')}
 			</Button>
 			<Button
 				color="neutral"
@@ -369,7 +380,9 @@
 				disabled={busy !== null}
 			>
 				<Icon name="lucide:history" class="size-4" />
-				{busy === 'backfill' ? 'Backfilling…' : 'Backfill 30d'}
+				{busy === 'backfill'
+					? t('reports.snapshot.backfilling')
+					: t('reports.snapshot.backfill30d')}
 			</Button>
 		</div>
 	</div>
@@ -379,28 +392,25 @@
 			bind:value={granularity}
 			options={granularityOptions}
 			size="sm"
-			aria-label="Granularity"
+			aria-label={t('reports.snapshot.type')}
 		/>
-		<Select bind:value={locationFilter} options={locationOptions} size="sm" aria-label="Scope" />
-		<Select bind:value={currencyFilter} options={currencyOptions} size="sm" aria-label="Currency" />
-		<label class="flex items-center gap-1.5 text-[11px] text-(--ui-text-dimmed)">
-			From
-			<input
-				type="date"
-				bind:value={fromDate}
-				class="h-8 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2 text-[12px]"
-			/>
-		</label>
-		<label class="flex items-center gap-1.5 text-[11px] text-(--ui-text-dimmed)">
-			To
-			<input
-				type="date"
-				bind:value={toDate}
-				class="h-8 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2 text-[12px]"
-			/>
-		</label>
+		<Select
+			bind:value={locationFilter}
+			options={locationOptions}
+			size="sm"
+			aria-label={t('reports.snapshot.scope')}
+		/>
+		<Select
+			bind:value={currencyFilter}
+			options={currencyOptions}
+			size="sm"
+			aria-label={t('reports.snapshot.allCurrencies')}
+		/>
+		<DateRangePicker bind:from={fromDate} bind:to={toDate} />
 		<div class="ml-auto flex items-center gap-2">
-			<span class="text-[11px] text-(--ui-text-dimmed)">{filtered.length} of {rows.length}</span>
+			<span class="text-[11px] text-(--ui-text-dimmed)">
+				{t('reports.snapshot.filteredOf', { filtered: filtered.length, total: rows.length })}
+			</span>
 			<Button
 				color="neutral"
 				variant="ghost"
@@ -409,7 +419,7 @@
 				disabled={!filtered.length}
 			>
 				<Icon name="lucide:file-json" class="size-4" />
-				JSON
+				{t('reports.snapshot.exportJson')}
 			</Button>
 			<Button
 				color="neutral"
@@ -419,7 +429,7 @@
 				disabled={!filtered.length}
 			>
 				<Icon name="lucide:download" class="size-4" />
-				CSV
+				{t('reports.snapshot.exportCsv')}
 			</Button>
 		</div>
 	</div>
@@ -427,21 +437,21 @@
 	<div class="surface-card flex flex-wrap items-center justify-between gap-2 px-3 py-2">
 		<label class="flex items-center gap-2 text-[12px] text-(--ui-text-muted)">
 			<Icon name="lucide:trash-2" class="size-4 text-(--ui-text-dimmed)" />
-			Hourly retention
+			{t('reports.snapshot.retention')}
 			<input
 				type="number"
 				min="1"
 				max="3650"
 				bind:value={retentionDays}
 				onchange={updateRetention}
-				aria-label="Hourly snapshot retention days"
+				aria-label={t('reports.snapshot.retentionDays')}
 				class="h-8 w-20 rounded-lg border border-(--ui-border) bg-(--ui-bg-muted) px-2 text-right text-[12px] tabular-nums"
 			/>
-			days
+			{t('reports.snapshot.daysShort')}
 		</label>
 		<div class="flex flex-wrap items-center gap-2">
 			<span class="text-[11px] text-(--ui-text-dimmed)">
-				Daily, weekly and monthly snapshots are always kept.
+				{t('reports.snapshot.retainedTypes')}
 			</span>
 			<Button
 				color="neutral"
@@ -451,7 +461,7 @@
 				disabled={busy !== null}
 			>
 				<Icon name="lucide:trash-2" class="size-4" />
-				{busy === 'prune' ? 'Pruning…' : 'Prune now'}
+				{busy === 'prune' ? t('reports.snapshot.pruning') : t('reports.snapshot.prune')}
 			</Button>
 		</div>
 	</div>
@@ -460,9 +470,9 @@
 		{#if !filtered.length}
 			<div class="flex flex-col items-center justify-center gap-2 px-5 py-14 text-center">
 				<Icon name="lucide:file-chart-column" class="size-8 text-(--ui-text-dimmed)" />
-				<p class="text-[13px] font-semibold">No snapshots match these filters</p>
+				<p class="text-[13px] font-semibold">{t('reports.snapshot.noMatchTitle')}</p>
 				<p class="text-[12px] text-(--ui-text-muted)">
-					Open Reports with sales, close a shift, or backfill the last 30 days.
+					{t('reports.snapshot.noMatchHint')}
 				</p>
 			</div>
 		{:else}
@@ -470,15 +480,15 @@
 				<table class="w-full min-w-[980px] text-[12px]">
 					<thead class="bg-(--ui-bg-muted)/50">
 						<tr class="text-left text-(--ui-text-dimmed)">
-							<th class="px-4 py-2.5 font-semibold">Period</th>
-							<th class="px-3 py-2.5 font-semibold">Type</th>
-							<th class="px-3 py-2.5 font-semibold">Scope</th>
-							<th class="px-3 py-2.5 text-right font-semibold">Gross</th>
-							<th class="px-3 py-2.5 text-right font-semibold">Net</th>
-							<th class="px-3 py-2.5 text-right font-semibold">Orders</th>
-							<th class="px-3 py-2.5 font-semibold">Generated</th>
-							<th class="px-3 py-2.5 font-semibold">Status</th>
-							<th class="px-4 py-2.5 text-right font-semibold">Actions</th>
+							<th class="px-4 py-2.5 font-semibold">{t('reports.snapshot.period')}</th>
+							<th class="px-3 py-2.5 font-semibold">{t('reports.snapshot.type')}</th>
+							<th class="px-3 py-2.5 font-semibold">{t('reports.snapshot.scope')}</th>
+							<th class="px-3 py-2.5 text-right font-semibold">{t('reports.snapshot.gross')}</th>
+							<th class="px-3 py-2.5 text-right font-semibold">{t('reports.snapshot.net')}</th>
+							<th class="px-3 py-2.5 text-right font-semibold">{t('reports.snapshot.orders')}</th>
+							<th class="px-3 py-2.5 font-semibold">{t('reports.snapshot.generated')}</th>
+							<th class="px-3 py-2.5 font-semibold">{t('reports.snapshot.status')}</th>
+							<th class="px-4 py-2.5 text-right font-semibold">{t('reports.snapshot.actions')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -511,7 +521,9 @@
 								</td>
 								<td class="px-3 py-2.5">
 									<Badge color={published(row.object) ? 'success' : 'neutral'}>
-										{published(row.object) ? 'Published' : 'Local'}
+										{published(row.object)
+											? t('reports.snapshot.published')
+											: t('reports.snapshot.local')}
 									</Badge>
 								</td>
 								<td class="px-4 py-2.5">
@@ -520,8 +532,12 @@
 											color="neutral"
 											variant="ghost"
 											size="icon-sm"
-											aria-label={expandedId === row.object.id ? 'Hide details' : 'View details'}
-											title={expandedId === row.object.id ? 'Hide details' : 'View details'}
+											aria-label={expandedId === row.object.id
+												? t('reports.snapshot.hideDetails')
+												: t('reports.snapshot.viewDetails')}
+											title={expandedId === row.object.id
+												? t('reports.snapshot.hideDetails')
+												: t('reports.snapshot.viewDetails')}
 											onclick={() =>
 												(expandedId = expandedId === row.object.id ? null : row.object.id)}
 										>
@@ -536,8 +552,8 @@
 											color="neutral"
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Re-publish snapshot"
-											title="Re-publish snapshot"
+											aria-label={t('reports.snapshot.republish')}
+											title={t('reports.snapshot.republish')}
 											onclick={() => republish(row.data)}
 											disabled={busy !== null}
 										>
@@ -547,8 +563,8 @@
 											color="neutral"
 											variant="ghost"
 											size="icon-sm"
-											aria-label="Copy snapshot id"
-											title="Copy snapshot id"
+											aria-label={t('reports.snapshot.copyId')}
+											title={t('reports.snapshot.copyId')}
 											onclick={() => copyId(row.object.id)}
 										>
 											<Icon name="lucide:copy" class="size-4" />
@@ -564,33 +580,33 @@
 												<div
 													class="mb-1.5 text-[11px] font-semibold text-(--ui-text-dimmed) uppercase"
 												>
-													Totals
+													{t('reports.snapshot.totals')}
 												</div>
 												<dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-[12px]">
-													<dt class="text-(--ui-text-dimmed)">Tax</dt>
+													<dt class="text-(--ui-text-dimmed)">{t('reports.snapshot.tax')}</dt>
 													<dd class="text-right tabular-nums">
 														{formatMoney(
 															fromMinorUnits(row.data.taxMinor, row.data.currency),
 															row.data.currency
 														)}
 													</dd>
-													<dt class="text-(--ui-text-dimmed)">Discount</dt>
+													<dt class="text-(--ui-text-dimmed)">{t('reports.snapshot.discount')}</dt>
 													<dd class="text-right tabular-nums">
 														{formatMoney(
 															fromMinorUnits(row.data.discountMinor, row.data.currency),
 															row.data.currency
 														)}
 													</dd>
-													<dt class="text-(--ui-text-dimmed)">Refund</dt>
+													<dt class="text-(--ui-text-dimmed)">{t('reports.snapshot.refund')}</dt>
 													<dd class="text-right tabular-nums">
 														{formatMoney(
 															fromMinorUnits(row.data.refundMinor, row.data.currency),
 															row.data.currency
 														)}
 													</dd>
-													<dt class="text-(--ui-text-dimmed)">Items</dt>
+													<dt class="text-(--ui-text-dimmed)">{t('reports.snapshot.items')}</dt>
 													<dd class="text-right tabular-nums">{formatInt(row.data.itemsCount)}</dd>
-													<dt class="text-(--ui-text-dimmed)">Avg ticket</dt>
+													<dt class="text-(--ui-text-dimmed)">{t('reports.snapshot.avgTicket')}</dt>
 													<dd class="text-right tabular-nums">
 														{formatMoney(
 															fromMinorUnits(row.data.avgTicketMinor, row.data.currency),
@@ -603,7 +619,7 @@
 												<div
 													class="mb-1.5 text-[11px] font-semibold text-(--ui-text-dimmed) uppercase"
 												>
-													Payments
+													{t('reports.snapshot.payments')}
 												</div>
 												{#if Object.keys(row.data.payments).length}
 													<dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-[12px]">
@@ -618,12 +634,14 @@
 														{/each}
 													</dl>
 												{:else}
-													<p class="text-[12px] text-(--ui-text-dimmed)">No payment records</p>
+													<p class="text-[12px] text-(--ui-text-dimmed)">
+														{t('reports.snapshot.noPayments')}
+													</p>
 												{/if}
 												<div
 													class="mt-3 mb-1.5 text-[11px] font-semibold text-(--ui-text-dimmed) uppercase"
 												>
-													Statuses
+													{t('reports.snapshot.statuses')}
 												</div>
 												<div class="flex flex-wrap gap-1">
 													{#each Object.entries(row.data.orderStatus) as [status, count] (status)}
@@ -635,7 +653,7 @@
 												<div
 													class="mb-1.5 text-[11px] font-semibold text-(--ui-text-dimmed) uppercase"
 												>
-													Top products
+													{t('reports.snapshot.topProducts')}
 												</div>
 												{#if row.data.topProducts.length}
 													<table class="w-full text-[12px]">
@@ -661,7 +679,9 @@
 														</tbody>
 													</table>
 												{:else}
-													<p class="text-[12px] text-(--ui-text-dimmed)">No product lines</p>
+													<p class="text-[12px] text-(--ui-text-dimmed)">
+														{t('reports.snapshot.noProducts')}
+													</p>
 												{/if}
 											</div>
 										</div>
@@ -673,19 +693,18 @@
 											<span>· {formatPeriod(row.data)}</span>
 											{#if expandedDrift}
 												{#if expandedDrift.net === 0 && expandedDrift.orders === 0 && expandedDrift.items === 0}
-													<Badge color="success">Matches local data</Badge>
+													<Badge color="success">{t('reports.snapshot.matchesLocal')}</Badge>
 												{:else}
-													<Badge color="warning">Differs from local data</Badge>
+													<Badge color="warning">{t('reports.snapshot.differsLocal')}</Badge>
 													<span>
-														· local delta: {expandedDrift.orders >= 0
-															? '+'
-															: ''}{expandedDrift.orders} orders, {expandedDrift.net >= 0
-															? '+'
-															: '−'}{formatMoney(
-															fromMinorUnits(Math.abs(expandedDrift.net), row.data.currency),
-															row.data.currency
-														)} net,
-														{expandedDrift.items >= 0 ? '+' : ''}{expandedDrift.items} items
+														· {t('reports.snapshot.localDelta', {
+															orders: `${expandedDrift.orders >= 0 ? '+' : ''}${expandedDrift.orders}`,
+															net: `${expandedDrift.net >= 0 ? '+' : '−'}${formatMoney(
+																fromMinorUnits(Math.abs(expandedDrift.net), row.data.currency),
+																row.data.currency
+															)}`,
+															items: `${expandedDrift.items >= 0 ? '+' : ''}${expandedDrift.items}`
+														})}
 													</span>
 												{/if}
 											{/if}
