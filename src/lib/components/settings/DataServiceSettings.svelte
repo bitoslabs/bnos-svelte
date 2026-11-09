@@ -15,6 +15,7 @@
 	import type { DataServiceErrorCode } from '$lib/data-service/protocol';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
+	import { dayPeriod, publishReportSnapshot } from '$lib/reports/snapshot-service';
 
 	const canManage = $derived(permissions.can('settings', 'write'));
 	const cloudAvailable = cloudServiceUrl !== null;
@@ -22,7 +23,7 @@
 	let mode = $state<'selfHosted' | 'cloud'>('selfHosted');
 	let url = $state('');
 	let setupCode = $state('');
-	let busy = $state<'connect' | 'test' | 'disconnect' | 'sync' | null>(null);
+	let busy = $state<'connect' | 'test' | 'disconnect' | 'sync' | 'snapshot' | null>(null);
 	let formError = $state<string | null>(null);
 
 	$effect(() => {
@@ -31,6 +32,7 @@
 	});
 
 	const configured = $derived(dataService.configured);
+	const reporting = $derived(dataService.metadata?.capabilities.reporting === true);
 	const stateLabel = $derived(statusText(dataService.status));
 	const stateTone = $derived(statusTone(dataService.status));
 
@@ -142,6 +144,20 @@
 		formError = null;
 		try {
 			await dataService.drain();
+		} finally {
+			busy = null;
+		}
+	}
+
+	async function publishSnapshot() {
+		busy = 'snapshot';
+		formError = null;
+		try {
+			const { periodStart, periodEnd } = dayPeriod();
+			await publishReportSnapshot({ granularity: 'day', periodStart, periodEnd, audit: true });
+			toast.success(t('settings.dataService.snapshotPublished'));
+		} catch (error) {
+			formError = describeError(error);
 		} finally {
 			busy = null;
 		}
@@ -351,6 +367,14 @@
 					</div>
 					<div class="mt-0.5 tabular-nums">{dataService.queueSize ?? '—'}</div>
 				</div>
+				{#if reporting}
+					<div>
+						<div class="font-semibold text-(--ui-text-muted)">
+							{t('settings.dataService.snapshotsPending')}
+						</div>
+						<div class="mt-0.5 tabular-nums">{dataService.snapshotQueueSize ?? '—'}</div>
+					</div>
+				{/if}
 				<div>
 					<div class="font-semibold text-(--ui-text-muted)">
 						{t('settings.dataService.lastSync')}
@@ -383,6 +407,14 @@
 				{/if}
 			</div>
 
+			{#if reporting}
+				<p class="text-[11px] text-(--ui-text-dimmed)">
+					{t('settings.dataService.snapshotDiagnostics', {
+						n: dataService.snapshotQueueSize ?? 0
+					})}
+				</p>
+			{/if}
+
 			{#if dataService.lastRejected.length}
 				<p class="text-[11px] text-(--tone-warning-text)">
 					{t('settings.dataService.rejectedHint', { n: dataService.lastRejected.length })}
@@ -408,6 +440,19 @@
 					<Icon name="lucide:refresh-cw" class="size-4" />
 					{busy === 'sync' ? t('settings.dataService.syncing') : t('settings.dataService.syncNow')}
 				</Button>
+				{#if reporting}
+					<Button
+						color="neutral"
+						variant="subtle"
+						onclick={publishSnapshot}
+						disabled={busy !== null}
+					>
+						<Icon name="lucide:file-chart-column" class="size-4" />
+						{busy === 'snapshot'
+							? t('settings.dataService.publishingSnapshot')
+							: t('settings.dataService.publishSnapshot')}
+					</Button>
+				{/if}
 				<Button color="neutral" variant="subtle" onclick={test} disabled={busy !== null}>
 					<Icon name="lucide:activity" class="size-4" />
 					{busy === 'test'

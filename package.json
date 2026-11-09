@@ -1,7 +1,7 @@
 {
 	"name": "bnos-svelte",
 	"private": true,
-	"version": "0.1.6",
+	"version": "0.1.7",
 	"type": "module",
 	"license": "MIT",
 	"description": "BNOS — Bitcoin Network Operations System. Open-source point of sale & commerce on Nostr.",

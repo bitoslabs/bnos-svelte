@@ -38,6 +38,7 @@ import {
 } from '$lib/domain';
 import { logActivity } from '$lib/audit.svelte';
 import { newRecordId, nextReadableNumber } from '$lib/utils/record-id';
+import { ensureDailySnapshot } from '$lib/reports/snapshot-service';
 
 /** Cash-event types that *add* bills to the drawer (vs. remove). */
 const CASH_IN_TYPES = new Set<CashEvent['type']>(['cash_in', 'paid_in']);
@@ -426,6 +427,8 @@ class ShiftsStore {
 			},
 			{ id: active.id, scope: { locationId: branchId ?? undefined } }
 		);
+		// Refresh the day's aggregate snapshot after the shift is reconciled.
+		void ensureDailySnapshot().catch(() => {});
 		toast.success(
 			input.force ? 'Shift force-closed' : 'Shift closed',
 			`${active.data.number} · variance ${difference >= 0 ? '+' : ''}${difference.toFixed(2)}`

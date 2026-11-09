@@ -8,6 +8,7 @@
  */
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
+import { SvelteURLSearchParams } from 'svelte/reactivity';
 import { session } from '$nostr/session.svelte';
 import { tenant } from '$nostr/tenant.svelte';
 import {
@@ -18,6 +19,7 @@ import {
 	parseCapabilities,
 	parseChallenge,
 	parseIngestResult,
+	parseReportSummary,
 	parseSession,
 	parseStatus,
 	serviceEndpoint,
@@ -26,13 +28,16 @@ import {
 	type DataServiceErrorCode,
 	type DataServiceIngestResult,
 	type DataServiceStatus,
-	type ServiceEvent
+	type ServiceEvent,
+	type ServiceReportSummary
 } from './protocol';
 import { requestJson } from './transport';
 import {
+	acknowledgeEvents,
 	applyIngestResult,
 	encryptedUploadBatch,
 	enqueueEvent,
+	eventTagValue,
 	markAttempts,
 	MAX_QUEUE_ITEMS,
 	type ServiceQueue
@@ -44,12 +49,19 @@ import {
 	readConnection,
 	readQueue,
 	readSession,
+	readSnapshotQueue,
 	writeConnection,
 	writeQueue,
 	writeSession,
+	writeSnapshotQueue,
 	type ConnectionMetadata,
 	type StoredServiceSession
 } from './storage';
+import {
+	REPORT_SNAPSHOT_KIND,
+	type ReportGranularity,
+	type ReportSnapshot
+} from '$lib/domain/report-snapshot';
 
 /**
  * bdGo Cloud endpoint from the deployment's public configuration. Never
@@ -111,6 +123,7 @@ class DataServiceStore {
 	lastError = $state<string | null>(null);
 	lastErrorCode = $state<DataServiceErrorCode | null>(null);
 	queueSize = $state<number | null>(0);
+	snapshotQueueSize = $state<number | null>(0);
 	lastSyncAt = $state<number | null>(null);
 	lastRejected = $state<DataServiceIngestResult['rejected']>([]);
 	statusReport = $state<DataServiceStatus | null>(null);
@@ -123,7 +136,10 @@ class DataServiceStore {
 	private initialized = false;
 	private drainTimer: ReturnType<typeof setTimeout> | null = null;
 	private drainPromise: Promise<void> | null = null;
+	private snapshotDrainPromise: Promise<void> | null = null;
 	private refreshPromise: Promise<StoredServiceSession | null> | null = null;
+	/** Short-lived cache for service-computed period summaries. */
+	private summaryCache = new Map<string, { at: number; value: ServiceReportSummary }>();
 
 	private readQueueOrFail(organizationId: string): ServiceQueue | null {
 		try {
@@ -132,6 +148,17 @@ class DataServiceStore {
 			this.lastErrorCode = 'queue-unavailable';
 			this.lastError =
 				'The local data service queue is unreadable or unavailable; existing events were preserved';
+			return null;
+		}
+	}
+
+	private readSnapshotQueueOrFail(organizationId: string): ServiceQueue | null {
+		try {
+			return readSnapshotQueue(organizationId);
+		} catch {
+			this.lastErrorCode = 'queue-unavailable';
+			this.lastError =
+				'The local snapshot queue is unreadable or unavailable; existing snapshots were preserved';
 			return null;
 		}
 	}
@@ -170,6 +197,7 @@ class DataServiceStore {
 		if (!browser) return;
 		const key = `${organizationId}:${pubkey}`;
 		if (this.contextKey === key) return;
+		this.summaryCache.clear();
 
 		if (this.organizationId && this.organizationId !== organizationId) {
 			// Switching workspaces drops the previous workspace's browser session.
@@ -186,11 +214,13 @@ class DataServiceStore {
 			this.status = 'disconnected';
 			this.statusReport = null;
 			this.queueSize = 0;
+			this.snapshotQueueSize = 0;
 			return;
 		}
 
 		this.metadata = readConnection(organizationId);
 		this.queueSize = this.readQueueOrFail(organizationId)?.items.length ?? null;
+		this.snapshotQueueSize = this.readSnapshotQueueOrFail(organizationId)?.items.length ?? null;
 		this.lastSyncAt = this.metadata?.lastSyncAt ?? null;
 		this.statusReport = null;
 		this.lastRejected = [];
@@ -315,6 +345,7 @@ class DataServiceStore {
 			this.sessionInfo = stored;
 			this.lastSyncAt = metadata.lastSyncAt;
 			this.queueSize = this.readQueueOrFail(workspaceId)?.items.length ?? null;
+			this.snapshotQueueSize = this.readSnapshotQueueOrFail(workspaceId)?.items.length ?? null;
 			this.status = 'connected';
 
 			void this.refreshStatus();
@@ -360,17 +391,20 @@ class DataServiceStore {
 		this.status = 'disconnected';
 		this.lastError = null;
 		this.lastErrorCode = null;
+		this.snapshotQueueSize = 0;
 	}
 
 	/** Logout / identity switch: drop every browser session for the service. */
 	signOutCleanup(): void {
 		clearAllSessions();
+		this.summaryCache.clear();
 		this.sessionInfo = null;
 		this.metadata = null;
 		this.statusReport = null;
 		this.lastRejected = [];
 		this.status = 'disconnected';
 		this.queueSize = 0;
+		this.snapshotQueueSize = 0;
 		this.lastSyncAt = null;
 		this.organizationId = '';
 		this.contextKey = '';
@@ -420,8 +454,8 @@ class DataServiceStore {
 	private hasRefresh(stored: StoredServiceSession): boolean {
 		return Boolean(
 			stored.refreshToken &&
-				stored.refreshExpiresAt &&
-				stored.refreshExpiresAt > Math.floor(Date.now() / 1000)
+			stored.refreshExpiresAt &&
+			stored.refreshExpiresAt > Math.floor(Date.now() / 1000)
 		);
 	}
 
@@ -561,14 +595,177 @@ class DataServiceStore {
 		if (this.status === 'connected' || this.status === 'offline') this.scheduleDrain();
 	}
 
+	/**
+	 * Fetch a service-computed aggregate for one period.
+	 *
+	 * Contract: `GET v1/reports/summary?from&to&granularity[&location][&currency]`
+	 * where `from`/`to` are Unix seconds and the response carries buckets
+	 * (`gross_minor`, `orders_count`). Missing buckets are gaps. Returns null when
+	 * reporting is unavailable; throws on network/auth/parse errors so callers can
+	 * fall back to local snapshots and live data.
+	 */
+	async fetchReportSummary(input: {
+		granularity: ReportGranularity;
+		periodStart: number;
+		periodEnd: number;
+		locationId?: string | null;
+	}): Promise<ServiceReportSummary | null> {
+		const metadata = this.metadata;
+		const organizationId = this.organizationId;
+		if (!metadata?.capabilities.reporting || !organizationId) return null;
+
+		const currency = tenant.state.currency;
+		const locationId = input.locationId ?? tenant.state.locationId ?? undefined;
+		const cacheKey = [
+			input.granularity,
+			input.periodStart,
+			input.periodEnd,
+			currency,
+			locationId ?? 'all'
+		].join(':');
+		const cached = this.summaryCache.get(cacheKey);
+		if (cached && Date.now() - cached.at < 60_000) return cached.value;
+
+		let stored = readSession(organizationId);
+		if (!stored || stored.expiresAt <= Math.floor(Date.now() / 1000)) {
+			const next = stored ? await this.refreshAccessToken(metadata, stored) : null;
+			if (!next) {
+				throw new DataServiceError('unauthorized', 'Sign in to read the server report summary');
+			}
+			stored = next;
+			this.sessionInfo = next;
+		}
+
+		const params = new SvelteURLSearchParams({
+			granularity: input.granularity,
+			from: String(Math.floor(input.periodStart / 1000)),
+			to: String(Math.floor(input.periodEnd / 1000)),
+			currency
+		});
+		if (locationId) params.set('location', locationId);
+		const base = serviceEndpoint(metadata.baseUrl, DATA_SERVICE_PATHS.reportSummary);
+		const url = `${base}?${params.toString()}`;
+
+		const fetchSummary = (token: string) => requestJson({ url, token, timeoutMs: 15_000 });
+		let raw: unknown;
+		try {
+			raw = await fetchSummary(stored.token);
+		} catch (error) {
+			const failure = asDataServiceError(error);
+			if (failure.code === 'unauthorized') {
+				const next = await this.refreshAccessToken(metadata, stored);
+				if (!next) throw failure;
+				this.sessionInfo = next;
+				raw = await fetchSummary(next.token);
+			} else {
+				throw failure;
+			}
+		}
+
+		const payload =
+			raw && typeof raw === 'object' && !Array.isArray(raw) && 'summary' in raw
+				? (raw as { summary: unknown }).summary
+				: raw;
+		const summary = parseReportSummary(payload);
+		this.summaryCache.set(cacheKey, { at: Date.now(), value: summary });
+		return summary;
+	}
+
+	/**
+	 * Sign and queue a plaintext aggregate snapshot for the service only.
+	 *
+	 * This event is never relay-published and never routed through
+	 * `recordServiceEvent` (that queue is encrypted-backup only).
+	 */
+	async pushReportSnapshot(snapshot: ReportSnapshot, id: string): Promise<boolean> {
+		if (!browser) return false;
+		const metadata = this.metadata;
+		const organizationId = this.organizationId;
+		if (!metadata?.capabilities.reporting || !organizationId) return false;
+		if (!session.pubkey) {
+			this.lastErrorCode = 'not-signed-in';
+			this.lastError = 'Sign in before publishing report snapshots';
+			return false;
+		}
+
+		let event: ServiceEvent;
+		try {
+			event = (await session.signEvent({
+				kind: REPORT_SNAPSHOT_KIND,
+				created_at: Math.floor(Date.now() / 1000),
+				tags: [
+					['d', `org.bitos.glo:v1:report.snapshot:${id}`],
+					['organization', organizationId],
+					...(snapshot.locationId ? [['location', snapshot.locationId]] : []),
+					['snapshot-id', id],
+					['granularity', snapshot.granularity],
+					['period-start', String(Math.floor(Date.parse(snapshot.periodStart) / 1000))],
+					['period-end', String(Math.floor(Date.parse(snapshot.periodEnd) / 1000))],
+					['currency', snapshot.currency]
+				],
+				content: JSON.stringify(snapshot)
+			})) as unknown as ServiceEvent;
+		} catch {
+			this.lastErrorCode = 'not-signed-in';
+			this.lastError = 'Could not sign the report snapshot';
+			return false;
+		}
+
+		if (!this.enqueueSnapshot(organizationId, event, id)) return false;
+		await this.drainSnapshots();
+		return true;
+	}
+
+	/** Replace the previous outbox copy of the same logical period, then queue. */
+	private enqueueSnapshot(organizationId: string, event: ServiceEvent, logicalId: string): boolean {
+		const queue = this.readSnapshotQueueOrFail(organizationId);
+		if (!queue) return false;
+		const stale = queue.items
+			.filter((item) => eventTagValue(item.event, 'snapshot-id') === logicalId)
+			.map((item) => item.id);
+		const result = enqueueEvent(acknowledgeEvents(queue, stale), event);
+		if (result.overflow) {
+			this.lastErrorCode = 'queue-full';
+			this.lastError = `The local snapshot queue is full (${MAX_QUEUE_ITEMS} events)`;
+			return false;
+		}
+		if (!result.added) {
+			this.snapshotQueueSize = result.queue.items.length;
+			return true;
+		}
+		try {
+			writeSnapshotQueue(organizationId, result.queue);
+		} catch {
+			this.lastErrorCode = 'queue-unavailable';
+			this.lastError = 'This device could not store the report snapshot';
+			return false;
+		}
+		this.snapshotQueueSize = result.queue.items.length;
+		if (this.status === 'connected' || this.status === 'offline') this.scheduleDrain();
+		return true;
+	}
+
 	/** Trigger an immediate retry (UI "Sync now" / "Retry"). */
 	async drain(): Promise<void> {
 		if (!browser) return;
 		if (this.drainPromise) return this.drainPromise;
-		this.drainPromise = this.drainOnce().finally(() => {
+		this.drainPromise = (async () => {
+			await this.drainOnce();
+			await this.drainSnapshots();
+		})().finally(() => {
 			this.drainPromise = null;
 		});
 		return this.drainPromise;
+	}
+
+	/** Drain only the plaintext snapshot outbox. */
+	async drainSnapshots(): Promise<void> {
+		if (!browser) return;
+		if (this.snapshotDrainPromise) return this.snapshotDrainPromise;
+		this.snapshotDrainPromise = this.drainSnapshotsOnce().finally(() => {
+			this.snapshotDrainPromise = null;
+		});
+		return this.snapshotDrainPromise;
 	}
 
 	private scheduleDrain(): void {
@@ -685,6 +882,105 @@ class DataServiceStore {
 			}
 		} finally {
 			this.draining = false;
+		}
+	}
+
+	private async drainSnapshotsOnce(): Promise<void> {
+		const organizationId = this.organizationId;
+		const metadata = this.metadata;
+		if (!organizationId || !metadata || !metadata.capabilities.reporting) return;
+
+		let stored = readSession(organizationId);
+		if (!stored || stored.expiresAt <= Math.floor(Date.now() / 1000)) {
+			const next = stored ? await this.refreshAccessToken(metadata, stored) : null;
+			if (!next) {
+				this.sessionInfo = stored;
+				this.status = navigator.onLine ? 'auth-required' : 'offline';
+				return;
+			}
+			stored = next;
+			this.sessionInfo = next;
+		}
+		if (typeof navigator !== 'undefined' && !navigator.onLine) {
+			this.status = 'offline';
+			return;
+		}
+
+		let refreshed = false;
+		// Bound each pass so a large backlog cannot monopolize the tab.
+		for (let round = 0; round < 10; round++) {
+			const queue = this.readSnapshotQueueOrFail(organizationId);
+			if (!queue) return;
+			if (!queue.items.length) {
+				this.snapshotQueueSize = 0;
+				return;
+			}
+
+			const item = queue.items[0];
+			let raw: unknown;
+			try {
+				raw = await requestJson({
+					url: serviceEndpoint(metadata.baseUrl, DATA_SERVICE_PATHS.reportSnapshots),
+					method: 'POST',
+					token: stored.token,
+					body: { snapshot: item.event },
+					timeoutMs: 15_000
+				});
+			} catch (error) {
+				const failure = asDataServiceError(error);
+				if (failure.code === 'unauthorized' && !refreshed) {
+					const next = await this.refreshAccessToken(metadata, stored);
+					if (next) {
+						stored = next;
+						this.sessionInfo = next;
+						refreshed = true;
+						continue;
+					}
+				}
+				const current = this.readSnapshotQueueOrFail(organizationId);
+				if (!current) return;
+				const failed = markAttempts(current, [item.id], failure.message);
+				try {
+					writeSnapshotQueue(organizationId, failed);
+				} catch {
+					this.lastErrorCode = 'queue-unavailable';
+					this.lastError = 'This device could not update the snapshot queue';
+					return;
+				}
+				this.snapshotQueueSize = failed.items.length;
+				this.handleFailure(failure);
+				return;
+			}
+
+			const result = parseIngestResult(raw);
+			const current = this.readSnapshotQueueOrFail(organizationId);
+			if (!current) return;
+			const applied = applyIngestResult(current, [item.id], result);
+			try {
+				writeSnapshotQueue(organizationId, applied.queue);
+			} catch {
+				this.lastErrorCode = 'queue-unavailable';
+				this.lastError = 'This device could not update the snapshot queue';
+				return;
+			}
+			this.snapshotQueueSize = applied.queue.items.length;
+			if (result.rejected.length) this.lastRejected = result.rejected;
+			if (!applied.acknowledged) {
+				this.lastErrorCode = 'rejected';
+				this.lastError = 'The data service rejected the report snapshot';
+				return;
+			}
+
+			this.status = 'connected';
+			this.lastError = null;
+			this.lastErrorCode = null;
+			this.lastSyncAt = Date.now();
+			const latest = readConnection(organizationId);
+			if (latest) {
+				latest.lastSyncAt = this.lastSyncAt;
+				writeConnection(latest);
+				this.metadata = latest;
+			}
 		}
 	}
 

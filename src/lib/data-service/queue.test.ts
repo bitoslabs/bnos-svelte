@@ -6,6 +6,7 @@ import {
 	emptyQueue,
 	encryptedUploadBatch,
 	enqueueEvent,
+	eventTagValue,
 	markAttempts,
 	parseQueue,
 	serializeQueue
@@ -111,6 +112,14 @@ describe('service upload queue', () => {
 			'extra',
 			'invalid'
 		]);
+	});
+
+	it('reads a queued event tag without trusting its shape', () => {
+		expect(eventTagValue({ id: 'a', tags: [['snapshot-id', 'snap-1']] }, 'snapshot-id')).toBe(
+			'snap-1'
+		);
+		expect(eventTagValue({ id: 'a', tags: [['x', 1]] }, 'snapshot-id')).toBeNull();
+		expect(eventTagValue({ id: 'a' }, 'snapshot-id')).toBeNull();
 	});
 
 	it('refuses to drop events past the queue cap', () => {

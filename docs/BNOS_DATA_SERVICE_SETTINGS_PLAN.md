@@ -2,6 +2,11 @@
 
 Status: the client integration described below is implemented in bnos-svelte and bdGo OS (protocol client, one-time setup-code flow, signed challenge, durable service upload queue, connection/backup status and disconnect). The data service, cloud offering, reporting and integration keys are still not implemented; both clients target a compatible external service. Coordinate protocol and privacy decisions with bdGo OS and the BNOS data service before changing the protocol.
 
+Related: [`REPORT_SNAPSHOTS.md`](REPORT_SNAPSHOTS.md) describes the planned
+client-side report snapshot implementation, and
+[`../../bnos-data-service/docs/`](../../bnos-data-service/docs) contains the
+backend plan, protocol, data model, and security rules.
+
 ## Goal
 
 Let an authorized owner connect a workspace to a self-hosted BNOS data service by entering its URL and one-time setup code, or select bdGo Cloud when an actual endpoint and offering are available. Both use the same versioned protocol. Existing local-first operations and relay sync continue when the service is offline or disconnected. Service backup and reporting must never block checkout.

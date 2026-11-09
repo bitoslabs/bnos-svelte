@@ -33,7 +33,6 @@ import {
 	createGloTags,
 	decodeGloContent,
 	encodeGloContent,
-	getTagValue,
 	getGloKindForType,
 	parseGloEvent,
 	isGloObject,
@@ -51,10 +50,16 @@ import { tenant } from './tenant.svelte';
 import { fetchEvents, fetchEventsPrimaryFirst, sendEvent } from './client';
 import { BNOS_CLIENT_ID } from './client-id';
 import { verifyEvent } from 'nostr-tools/pure';
-import { encryptGloObject, decryptGloEvent, shouldEncryptType } from '$lib/crypto/glo-cipher';
+import {
+	encryptGloObject,
+	encryptGloObjectRequired,
+	decryptGloContent,
+	shouldEncryptType
+} from '$lib/crypto/glo-cipher';
 import { mergeHydratedCollection } from './collection-merge';
 import { mapLimit } from '$lib/utils/async';
 import { recordServiceEvent } from '$lib/data-service/state.svelte';
+import { REPORT_SNAPSHOT_KIND } from '$lib/domain/report-snapshot';
 import {
 	clearAllDeletions,
 	clearDeletion,
@@ -74,8 +79,12 @@ const APP_KIND_BY_TYPE: Record<string, number> = {
 	// adds them to GLO_KIND_BY_TYPE). Keeps wire format standards-compliant.
 	'marketplace.connection': NOSTR_KINDS.STORE_CONNECTION,
 	'marketplace.product': NOSTR_KINDS.MARKETPLACE_PRODUCT,
-	'marketplace.review': NOSTR_KINDS.MARKETPLACE_REVIEW
+	'marketplace.review': NOSTR_KINDS.MARKETPLACE_REVIEW,
+	'report.snapshot': REPORT_SNAPSHOT_KIND
 };
+
+/** Types whose relay copies must never contain plaintext. */
+const MUST_BE_CIPHERTEXT = new Set(['report.snapshot']);
 
 function uid(): string {
 	if (browser && crypto.randomUUID) return crypto.randomUUID();
@@ -177,21 +186,30 @@ function createAppGloEventTemplate(
 	return template;
 }
 
+/**
+ * Validate an event's GLO envelope against its tags. App-side kind overrides
+ * (marketplace, report.snapshot) cannot pass bnos-core's canonical kind check,
+ * so they are validated under their canonical kind and then checked against the
+ * override kind.
+ */
+function parseValidated(event: NostrEvent, content: string): AnyGloObject {
+	const object = decodeGloContent(content) as AnyGloObject;
+	const overrideKind = APP_KIND_BY_TYPE[object.type];
+	if (!overrideKind) {
+		return parseGloEvent({ ...event, content } as never).object as AnyGloObject;
+	}
+	if (event.kind !== overrideKind) {
+		throw new Error('GLO object kind does not match its app-side override');
+	}
+	const canonicalKind = getGloKindForType(object.type);
+	return parseGloEvent({ ...event, kind: canonicalKind, content } as never).object as AnyGloObject;
+}
+
 async function parseAppGloEvent(event: NostrEvent): Promise<AnyGloObject> {
 	// Encrypted event (SECURITY.md): decrypt content → full GLO envelope, then
-	// let the standard parseGloEvent validate envelope-vs-tags. decryptGloEvent
-	// returns null for plaintext content, so we fall through unchanged.
-	const decrypted = await decryptGloEvent<AnyGloObject>(event).catch(() => null);
-	if (decrypted) return decrypted;
-	try {
-		return parseGloEvent(event as never).object as AnyGloObject;
-	} catch (e) {
-		const object = decodeGloContent(event.content) as AnyGloObject;
-		const overrideKind = APP_KIND_BY_TYPE[object.type];
-		if (!overrideKind || event.kind !== overrideKind) throw e;
-		if (getTagValue(event.tags, 'd') !== createGloIdentifier(object.type, object.id)) throw e;
-		return object;
-	}
+	// let the parser validate envelope-vs-tags. Returns null for plaintext.
+	const plaintext = await decryptGloContent(event);
+	return parseValidated(event, plaintext ?? event.content);
 }
 
 /** The `createGloFilter` params `glo.sync` builds for a given type + context.
@@ -779,16 +797,28 @@ class GloStore {
 			// plaintext GLO content for an AES-256-GCM ciphertext envelope and add
 			// bnos-core's honest encrypted/encryption/encryption-key tags. Local
 			// cache keeps the plaintext object; only the wire event is encrypted.
+			let encrypted = false;
 			if (shouldEncryptType(type)) {
 				try {
-					const enc = await encryptGloObject(publishObject);
+					// Relay-only snapshot sync must work even when the user has not
+					// enabled global payload encryption and has no data service.
+					const enc = MUST_BE_CIPHERTEXT.has(type)
+						? await encryptGloObjectRequired(publishObject)
+						: await encryptGloObject(publishObject);
 					if (enc) {
 						template.content = enc.content;
 						template.tags = [...template.tags, ...enc.encryptionTags];
+						encrypted = true;
 					}
 				} catch {
 					// No company key yet (e.g. staff awaiting a grant) → publish plaintext.
 				}
+			}
+			// Aggregate reports are relay-visible only as ciphertext. Never fall
+			// back to the generic plaintext publish when encryption is unavailable.
+			if (MUST_BE_CIPHERTEXT.has(type) && !encrypted) {
+				if (queueOnFailure) await this.queuePublish(type, object);
+				return false;
 			}
 
 			// Logout/account switch clears the store; never sign the old

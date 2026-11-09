@@ -11,6 +11,7 @@
  * entity against the GLO canonical model.
  */
 export * from './kind';
+export * from './report-snapshot';
 export * from './types';
 export * from './helpers';
 export * from './meta';

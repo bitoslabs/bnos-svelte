@@ -16,6 +16,7 @@
  */
 import { NOSTR_KINDS } from '@bitos/bnos-core';
 import { GLO_KIND_BY_TYPE, getGloKindForType, type GloObjectType } from '@bitos/bnos-core/glo';
+import { REPORT_SNAPSHOT_KIND } from './report-snapshot';
 
 /**
  * The object types bnos-svelte reads and writes.
@@ -62,6 +63,8 @@ export const TYPE = {
 	cashEvent: 'cash-event',
 	// audit / activity feed (NIP-78 fallback 30078)
 	activity: 'activity',
+	// reporting (app-side kind until bnos-core publishes REPORT_SNAPSHOT)
+	reportSnapshot: 'report.snapshot',
 	// marketplace (dedicated BNOS marketplace kinds 30950–30955)
 	marketplaceConnection: 'marketplace.connection',
 	marketplaceProduct: 'marketplace.product',
@@ -83,7 +86,9 @@ const APP_KIND_OVERRIDES: Partial<Record<DomainType, number>> = {
 	// reserved in @bitos/bnos-core but not yet registered in GLO_KIND_BY_TYPE.
 	marketplaceConnection: NOSTR_KINDS.STORE_CONNECTION,
 	marketplaceProduct: NOSTR_KINDS.MARKETPLACE_PRODUCT,
-	marketplaceReview: NOSTR_KINDS.MARKETPLACE_REVIEW
+	marketplaceReview: NOSTR_KINDS.MARKETPLACE_REVIEW,
+	// Reporting snapshots ride the dedicated BNOS kind reserved by bnos-core.
+	reportSnapshot: REPORT_SNAPSHOT_KIND
 };
 
 export const KIND = Object.fromEntries(

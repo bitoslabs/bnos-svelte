@@ -7,6 +7,7 @@ import {
 	parseCapabilities,
 	parseChallenge,
 	parseIngestResult,
+	parseReportSummary,
 	parseSession,
 	parseStatus,
 	serviceEndpoint
@@ -157,6 +158,65 @@ describe('challenge and session validation', () => {
 			])
 		);
 		expect(JSON.stringify(template)).not.toContain('setup-code');
+	});
+});
+
+describe('report summary responses', () => {
+	it('parses service buckets in Unix seconds and keeps gaps intact', () => {
+		const parsed = parseReportSummary({
+			snapshot: true,
+			generatedAt: 1760000000,
+			range: { from: 1759968000, to: 1760054400, granularity: 'day' },
+			currency: 'usd',
+			buckets: [
+				{ start: 1759968000, end: 1760054400, gross_minor: 123400, orders_count: 42 },
+				{ start: 1760054400, end: 1760140800, gross: 1000, orders: 1, completeness: 'partial' }
+			],
+			watermark: 1759999000
+		});
+
+		expect(parsed.currency).toBe('USD');
+		expect(parsed.generatedAt).toBe(1760000000);
+		expect(parsed.buckets).toHaveLength(2);
+		expect(parsed.buckets[0]).toMatchObject({ grossMinor: 123400, ordersCount: 42 });
+		expect(parsed.buckets[1].completeness).toBe('partial');
+		expect(parsed.watermark).toBe(1759999000);
+	});
+
+	it('normalizes ISO timestamps and rejects malformed buckets', () => {
+		const parsed = parseReportSummary({
+			snapshot: false,
+			generatedAt: '2026-11-09T00:00:00.000Z',
+			range: {
+				from: '2026-11-08T00:00:00.000Z',
+				to: '2026-11-10T00:00:00.000Z',
+				granularity: 'week'
+			},
+			currency: 'THB',
+			buckets: [],
+			watermark: null
+		});
+		expect(parsed.generatedAt).toBe(Date.parse('2026-11-09T00:00:00.000Z') / 1000);
+		expect(parsed.range.granularity).toBe('week');
+		expect(parsed.snapshot).toBe(false);
+		expect(parsed.watermark).toBeNull();
+
+		expect(() =>
+			parseReportSummary({
+				generatedAt: 1,
+				range: { from: 2, to: 1, granularity: 'day' },
+				currency: 'USD',
+				buckets: []
+			})
+		).toThrow(/range\.to/);
+		expect(() =>
+			parseReportSummary({
+				generatedAt: 1,
+				range: { from: 1, to: 2, granularity: 'year' },
+				currency: 'USD',
+				buckets: []
+			})
+		).toThrow(/granularity/);
 	});
 });
 

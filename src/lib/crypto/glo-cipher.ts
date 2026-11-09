@@ -55,6 +55,8 @@ export const ENCRYPTED_DOMAIN_BY_TYPE: Record<string, SensitiveDataDomain> = {
 	'settings.bitcoin': 'settings',
 	'settings.payment-method': 'settings',
 	'settings.pay-config': 'settings',
+	// Aggregate report snapshots must only ever reach relays as ciphertext.
+	'report.snapshot': 'report',
 	// Marketplace channel connections carry API keys/credentials in `config` →
 	// org-internal, must be encrypted. (Listings/reviews stay plaintext.)
 	'marketplace.connection': 'settings'
@@ -94,15 +96,12 @@ export interface EncryptedPayload {
  * The plaintext bound into the AAD is the full GLO envelope JSON, keyed by the
  * record id so the same ciphertext can't be replayed against another object.
  */
-export async function encryptGloObject(
-	object: GloObject<unknown>
-): Promise<EncryptedPayload | null> {
-	if (object.visibility === 'public') return null; // discovery data stays public
-	const domain = sensitiveDomainForType(object.type);
-	const scopeId = organizationKey.activeScopeId;
-	const keyId = organizationKey.activeKeyId;
-	if (!domain || !scopeId || !keyId || !cipherActive()) return null;
-
+async function encryptWithKey(
+	object: GloObject<unknown>,
+	domain: SensitiveDataDomain,
+	scopeId: string,
+	keyId: string
+): Promise<EncryptedPayload> {
 	const plainEnvelope = encodeGloContent(object);
 	const content = await protectSensitiveJson(plainEnvelope, {
 		domain,
@@ -124,6 +123,61 @@ export async function encryptGloObject(
 	return { content, encryptionTags, keyId };
 }
 
+export async function encryptGloObject(
+	object: GloObject<unknown>
+): Promise<EncryptedPayload | null> {
+	if (object.visibility === 'public') return null; // discovery data stays public
+	const domain = sensitiveDomainForType(object.type);
+	const scopeId = organizationKey.activeScopeId;
+	const keyId = organizationKey.activeKeyId;
+	if (!domain || !scopeId || !keyId || !cipherActive()) return null;
+	return encryptWithKey(object, domain, scopeId, keyId);
+}
+
+/**
+ * Encrypt a GLO object even when the global payload-encryption toggle is off.
+ *
+ * Used only for types that must never reach relays as plaintext (aggregate
+ * report snapshots). It still requires an organization key: the local key is
+ * used when present, otherwise the owner/admin mints one or a staff device
+ * pulls an existing NIP-44 key grant. Returns null when no key can be obtained,
+ * so the caller can keep the object local instead of publishing plaintext.
+ */
+export async function encryptGloObjectRequired(
+	object: GloObject<unknown>
+): Promise<EncryptedPayload | null> {
+	if (object.visibility === 'public') return null;
+	const domain = sensitiveDomainForType(object.type);
+	const scopeId = organizationKey.activeScopeId;
+	if (!domain || !scopeId) return null;
+
+	let keyId = organizationKey.activeKeyId;
+	if (!keyId || !organizationKey.hasActiveKey) {
+		try {
+			await organizationKey.ensureActiveKey({ allowCreate: organizationKey.canCreateKey });
+		} catch {
+			return null;
+		}
+		keyId = organizationKey.activeKeyId;
+	}
+	if (!keyId || !organizationKey.hasActiveKey) return null;
+	return encryptWithKey(object, domain, scopeId, keyId);
+}
+
+/**
+ * Decrypt an encrypted event's `content` back to the plaintext GLO envelope.
+ * Returns null when the content is not an encryption envelope (so callers can
+ * fall through to the plaintext parse). Throws when the envelope cannot be
+ * decrypted (for example, this device lacks the organization key).
+ *
+ * Callers that support app-side kind overrides parse the returned plaintext
+ * themselves; `decryptGloEvent` remains the strict standard-kind helper.
+ */
+export async function decryptGloContent(event: { content: string }): Promise<string | null> {
+	if (!isEncryptionEnvelope(parseJson(event.content))) return null;
+	return unprotectSensitiveJson<string>(event.content);
+}
+
 /**
  * Decrypt an event whose `content` is an AES-GCM envelope back into a validated
  * GLO object. Mirrors the contract: decrypt, then `parseGloEvent` validates the
@@ -136,8 +190,8 @@ export async function decryptGloEvent<T>(event: {
 	tags: readonly (readonly string[])[];
 	pubkey?: string;
 }): Promise<T | null> {
-	if (!isEncryptionEnvelope(parseJson(event.content))) return null;
-	const plaintext = await unprotectSensitiveJson<string>(event.content);
+	const plaintext = await decryptGloContent(event);
+	if (plaintext === null) return null;
 	// Validate the decrypted envelope against the (still-present) tags.
 	const parsed = parseGloEvent({ ...event, content: plaintext } as never);
 	return parsed.object as unknown as T;
