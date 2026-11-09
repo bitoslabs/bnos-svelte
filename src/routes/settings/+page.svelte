@@ -90,13 +90,32 @@
 	// Organization fields (name / code / currency / business model / type) are
 	// owned by the Workspace page to avoid duplicate editors fighting over the
 	// same `tenant` fields. They are shown read-only here.
-	const orgRows = $derived([
+	interface OrgRow {
+		label: string;
+		value: string;
+		icon: string;
+		mono?: boolean;
+		copy?: string;
+		copyLabel?: string;
+		copiedMessage?: string;
+	}
+
+	const orgRows: OrgRow[] = $derived([
 		{
 			label: t('common.name'),
 			value: tenant.state.organizationName || '—',
 			icon: 'lucide:building-2'
 		},
 		{ label: t('common.code'), value: tenant.state.organizationCode || '—', icon: 'lucide:hash' },
+		{
+			label: t('settings.workspaceId'),
+			value: tenant.state.organizationId || '—',
+			icon: 'lucide:fingerprint',
+			mono: true,
+			copy: tenant.state.organizationId,
+			copyLabel: t('settings.copyWorkspaceId'),
+			copiedMessage: t('settings.workspaceIdCopied')
+		},
 		{
 			label: t('settings.branchLabel'),
 			value: tenant.state.locationName || '—',
@@ -115,13 +134,18 @@
 		}
 	]);
 
-	async function copyNpub() {
+	async function copyText(text: string, message: string) {
+		if (!text) return;
 		try {
-			await navigator.clipboard.writeText(session.npub ?? '');
-			toast.success('npub copied');
+			await navigator.clipboard.writeText(text);
+			toast.success(message);
 		} catch {
-			toast.error('Copy failed');
+			toast.error(t('settings.copyFailed'));
 		}
+	}
+
+	async function copyNpub() {
+		await copyText(session.npub ?? '', t('common.copied'));
 	}
 </script>
 
@@ -150,12 +174,30 @@
 					class="settings-home-org-item flex items-center gap-3 rounded-xl border border-(--ui-border) bg-(--ui-bg-muted) px-3.5 py-2.5"
 				>
 					<Icon name={row.icon} class="size-4 shrink-0 text-(--ui-text-dimmed)" />
-					<div class="min-w-0">
+					<div class="min-w-0 flex-1">
 						<p class="text-[10px] font-semibold tracking-wider text-(--ui-text-dimmed) uppercase">
 							{row.label}
 						</p>
-						<p class="truncate text-[13px] font-bold capitalize">{row.value}</p>
+						<p
+							class="truncate text-[13px] font-bold"
+							class:capitalize={!row.mono}
+							class:font-mono={row.mono}
+							title={row.value}
+						>
+							{row.value}
+						</p>
 					</div>
+					{#if row.copy}
+						<button
+							type="button"
+							aria-label={row.copyLabel}
+							title={row.copyLabel}
+							class="grid size-7 shrink-0 place-items-center rounded-lg text-(--ui-text-dimmed) transition-colors hover:bg-(--ui-bg-accented) hover:text-(--ui-text)"
+							onclick={() => copyText(row.copy ?? '', row.copiedMessage ?? t('common.copied'))}
+						>
+							<Icon name="lucide:copy" class="size-3.5" />
+						</button>
+					{/if}
 				</div>
 			{/each}
 		</div>

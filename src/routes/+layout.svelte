@@ -37,6 +37,7 @@
 	import { startSystemNotifications } from '$lib/stores/notifications.svelte';
 	import { startOwnerFeed } from '$nostr/owner-feed.svelte';
 	import { clearIdentityStores } from '$nostr/sign-out';
+	import { dataService } from '$lib/data-service/state.svelte';
 	import { permissionForPath } from '$lib/nav';
 	import { permissions } from '$lib/permissions.svelte';
 	import favicon from '$lib/assets/favicon.svg';
@@ -106,6 +107,7 @@
 		window.addEventListener('online', onOnline);
 		session.load();
 		tenant.load();
+		dataService.load();
 		profile.load();
 		i18n.init();
 		if (session.isAuthenticated) void warmRelays();
@@ -147,6 +149,11 @@
 		// Tenant state is identity-scoped. Reload it when the active Nostr key
 		// changes so one account cannot inherit another account's setup flag.
 		tenant.load();
+	});
+
+	$effect(() => {
+		if (!session.hydrated || !tenant.hydrated) return;
+		dataService.syncContext(tenant.state.organizationId, session.pubkey ?? '');
 	});
 
 	$effect(() => {

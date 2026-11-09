@@ -161,9 +161,9 @@ SOFTWARE.</code
 
 	<h3>Acknowledgments</h3>
 	<p>
-		Built on the foundational architecture of the <strong>{site.fullName}</strong>, with thanks to
-		<a href={site.sponsor.url} target="_blank" rel="noopener">{site.sponsor.name}</a> for sponsoring
-		and supporting the open BNOS ecosystem, and to the wider
+		Built on the foundational architecture of the <strong>{site.fullName}</strong>. {site.name} is a
+		<a href={site.project.url} target="_blank" rel="noopener">{site.project.name}</a> project.
+		Thanks to the BitDigo team for supporting the open BNOS ecosystem, and to the wider
 		<a href={site.nostr.nips} target="_blank" rel="noopener">Nostr</a> community for the protocol and
 		tools this project depends on.
 	</p>

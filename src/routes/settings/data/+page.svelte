@@ -5,6 +5,7 @@
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import DataServiceSettings from '$lib/components/settings/DataServiceSettings.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { goto } from '$app/navigation';
@@ -202,6 +203,8 @@
 		title={t('settings.data')}
 		description={t('settings.dataDesc')}
 	/>
+
+	<DataServiceSettings />
 
 	<!-- Storage usage -->
 	<section class="surface-card p-5">

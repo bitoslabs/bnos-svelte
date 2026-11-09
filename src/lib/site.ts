@@ -15,6 +15,7 @@ export const site = {
 	name: 'BNOS',
 	fullName: 'Bitcoin Network Operations System',
 	tagline: 'Point-of-sale & commerce on Nostr · open source',
+	description: 'Open-source business infrastructure for POS, ERP, CRM and decentralized commerce.',
 	version,
 	license: 'MIT',
 
@@ -30,6 +31,13 @@ export const site = {
 		url: 'https://github.com/bitoslabs/bnos-svelte',
 		issues: 'https://github.com/bitoslabs/bnos-svelte/issues',
 		releases: 'https://github.com/bitoslabs/bnos-svelte/releases'
+	},
+
+	/** The project that builds BNOS. */
+	project: {
+		name: 'BitDigo',
+		url: 'https://bitdigo.com',
+		label: 'A BitDigo project.'
 	},
 
 	/** Sponsors / acknowledgments. */

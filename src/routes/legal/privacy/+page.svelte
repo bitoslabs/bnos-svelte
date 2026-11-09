@@ -27,8 +27,9 @@
 
 	<p class="text-(--ui-text)">
 		{site.fullName} (“{site.name}”) is a <strong>local-first, open-source</strong> point-of-sale and
-		commerce application built on the Nostr protocol. This policy explains what data {site.name}
-		holds, where it lives, and the choices you have over it.
+		commerce application built on the Nostr protocol. It is a
+		<a href={site.project.url} target="_blank" rel="noopener">{site.project.name}</a> project. This
+		policy explains what data {site.name} holds, where it lives, and the choices you have over it.
 	</p>
 
 	<div class="not-prose my-6 rounded-xl border border-primary-500/30 bg-primary-500/5 p-4">

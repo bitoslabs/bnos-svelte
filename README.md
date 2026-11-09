@@ -1,7 +1,7 @@
 # BNOS — Svelte
 
-BNOS (Bitcoin Network Operations System) point-of-sale & commerce, rebuilt on
-**SvelteKit** with the **Nostr / GLO** data standard from
+BNOS (Bitcoin Network Operations System) — open-source point of sale & commerce on
+Nostr, rebuilt on **SvelteKit** with the **Nostr / GLO** data standard from
 [`@bitos/bnos-core`](../packages/bnos-core).
 
 This is an open-source Svelte port of the original Vue/Nuxt app ([`../bdgo-os`](../bdgo-os)):
@@ -96,6 +96,6 @@ Run this from a checkout containing the updated helper on the server. Node.js
 
 ## Acknowledgments
 
-Built on the foundational architecture of the **Bitcoin Network Operations
-System**, with thanks to **BitDigo** for sponsorship and support of the open
-BNOS ecosystem.
+BNOS is a **BitDigo** project, built on the foundational architecture of the
+**Bitcoin Network Operations System**. Thanks to the BitDigo team for supporting
+the open BNOS ecosystem.

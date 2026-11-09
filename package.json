@@ -4,7 +4,7 @@
 	"version": "0.1.6",
 	"type": "module",
 	"license": "MIT",
-	"description": "BNOS Lite point-of-sale & commerce, rebuilt on SvelteKit with the Nostr/GLO data standard (@bitos/bnos-core).",
+	"description": "BNOS — Bitcoin Network Operations System. Open-source point of sale & commerce on Nostr.",
 	"dependencies": {
 		"@bitos/bnos-core": "^0.3.0",
 		"@iconify-json/lucide": "^1.2.117",
