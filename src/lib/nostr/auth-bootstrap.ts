@@ -10,6 +10,7 @@ import { session } from './session.svelte';
 import { tenant } from './tenant.svelte';
 import { memberships } from './memberships.svelte';
 import { resolveWorkspace, hasActiveWorkspaceContext } from './workspace.svelte';
+import { autoSyncBitosPayWorkspace } from '$lib/pay/state.svelte';
 
 export type BootstrapAccess = 'ready' | 'setup' | 'waiting-workspace' | 'blocked';
 
@@ -74,6 +75,7 @@ async function runBootstrap(pubkey: string): Promise<BootstrapResult> {
 		return { access: 'blocked', source };
 	}
 
+	void autoSyncBitosPayWorkspace();
 	return { access: 'ready', source };
 }
 

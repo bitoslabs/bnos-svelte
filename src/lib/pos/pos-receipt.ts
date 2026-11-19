@@ -15,8 +15,10 @@
  * applied), tax, total, tender method and change.
  */
 import type { ReceiptSettings } from '$lib/settings/local';
+import { getActivePrinter, sendEscPosToPrinter } from '$lib/settings/printers';
 import { formatMoney } from '$lib/utils/format';
 import type { CompletedSale } from './cart.svelte';
+import { buildEscPosReceipt, type EscPosReceiptData } from './escpos';
 import { toast } from '$lib/stores/toast.svelte';
 
 export interface PrintPosReceiptOptions {
@@ -51,14 +53,75 @@ export function printPosReceipt(sale: CompletedSale, opts: PrintPosReceiptOption
 	const s = sale;
 	const r = opts.receipt;
 	const currency = opts.currency;
-	const width = r.paperSize === '58mm' ? 320 : 420;
-	const paperWidth = r.paperSize === '58mm' ? '58mm' : '80mm';
-	const fontSize = r.paperSize === '58mm' ? '10px' : '12px';
 
 	const modTotal = (it: CompletedSale['items'][number]) =>
 		(it.modifiers ?? []).reduce((a, m) => a + m.priceAdjustment, 0);
 	const lineTotal = (it: CompletedSale['items'][number]) =>
 		(it.unitPrice + modTotal(it)) * it.quantity;
+
+	const activePrinter = getActivePrinter();
+	if (
+		activePrinter &&
+		activePrinter.enabled &&
+		(activePrinter.connectionType === 'network' ||
+			activePrinter.connectionType === 'webhook' ||
+			activePrinter.connectionType === 'websocket')
+	) {
+		const meta: EscPosReceiptData['meta'] = [];
+		if (r.showDate) meta.push({ label: 'Date', value: new Date(s.completedAt).toLocaleString() });
+		if (r.showOrderNumber) meta.push({ label: 'Order', value: s.number });
+		if (r.showCashierName && opts.cashier) meta.push({ label: 'Cashier', value: opts.cashier });
+		if (opts.customerName) meta.push({ label: 'Customer', value: opts.customerName });
+		meta.push({ label: 'Type', value: s.orderType.replace('_', ' ') });
+
+		const totals: EscPosReceiptData['totals'] = [
+			{ label: 'Subtotal', amount: formatMoney(s.totals.subtotal, currency) }
+		];
+		if (s.totals.discountAmount > 0) {
+			const label = s.promotion?.name ? `Discount (${s.promotion.name})` : 'Discount';
+			totals.push({ label, amount: `-${formatMoney(s.totals.discountAmount, currency)}` });
+		} else if (s.promotion) {
+			totals.push({ label: 'Promo', amount: s.promotion.name });
+		}
+		totals.push({ label: 'Tax', amount: formatMoney(s.totals.tax, currency) });
+		totals.push({ label: 'TOTAL', amount: formatMoney(s.totals.total, currency), bold: true });
+		if (opts.satsTotal && opts.satsTotal > 0) {
+			totals.push({ label: 'in sats', amount: `~ ${opts.satsTotal.toLocaleString()} sats` });
+		}
+
+		const payments: EscPosReceiptData['payments'] = [
+			{ label: s.method, amount: formatMoney(s.totals.total, currency) }
+		];
+		if (s.change > 0) {
+			payments.push({ label: 'Change', amount: formatMoney(s.change, currency) });
+		}
+
+		const escposData: EscPosReceiptData = {
+			header: r.header || undefined,
+			storeName: r.showStoreName ? r.storeName || 'Store' : undefined,
+			phone: r.showPhone && r.phone ? r.phone : undefined,
+			address: r.showAddress && r.address ? r.address : undefined,
+			taxId: r.showTaxId && r.taxId ? r.taxId : undefined,
+			meta,
+			items: s.items.map((it) => ({
+				label: `${it.quantity}x ${it.name}${it.variantName ? ` (${it.variantName})` : ''}`,
+				amount: formatMoney(lineTotal(it), currency)
+			})),
+			totals,
+			payments,
+			footer: r.footer || undefined
+		};
+
+		const bytes = buildEscPosReceipt(escposData, activePrinter);
+		void sendEscPosToPrinter(activePrinter, bytes).then((res) => {
+			if (!res.ok) toast.error('Print failed', res.message);
+		});
+		return;
+	}
+
+	const width = r.paperSize === '58mm' ? 320 : 420;
+	const paperWidth = r.paperSize === '58mm' ? '58mm' : '80mm';
+	const fontSize = r.paperSize === '58mm' ? '10px' : '12px';
 
 	const itemsHtml = s.items
 		.map((it) => {

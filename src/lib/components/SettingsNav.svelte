@@ -117,6 +117,12 @@
 					icon: 'lucide:credit-card',
 					label: t('settings.billing'),
 					labelKey: 'settings.billing'
+				},
+				{
+					to: '/settings/bitos-pay',
+					icon: 'lucide:zap',
+					label: t('settings.bitosPay'),
+					labelKey: 'settings.bitosPay'
 				}
 			]
 		},
