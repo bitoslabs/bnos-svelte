@@ -10,10 +10,12 @@
  */
 import type { Order, Refund } from '$lib/domain';
 import { loadReceiptSettings } from '$lib/settings/local';
+import { getActivePrinter, sendEscPosToPrinter } from '$lib/settings/printers';
 import type { OrderLine } from '$lib/domain';
 import { formatMoney } from '$lib/utils/format';
 import { sourceLabel } from '$lib/domain/order-sources';
 import { toast } from '$lib/stores/toast.svelte';
+import { buildEscPosReceipt, type EscPosReceiptData } from './escpos';
 
 export interface PrintOrderOptions {
 	currency?: string;
@@ -82,9 +84,80 @@ export function printReceiptForOrder(order: { data: Order }, opts: PrintOrderOpt
 	const d = order.data as ReceiptOrder;
 	const s = loadReceiptSettings();
 	const currency = opts.currency ?? d.currency ?? 'USD';
-	const width = s.paperSize === '58mm' ? 320 : 420;
-
 	const lines = d.lines ?? [];
+	const payments = opts.payments ?? [];
+
+	const activePrinter = getActivePrinter();
+	if (
+		activePrinter &&
+		activePrinter.enabled &&
+		(activePrinter.connectionType === 'network' ||
+			activePrinter.connectionType === 'webhook' ||
+			activePrinter.connectionType === 'websocket')
+	) {
+		const meta: EscPosReceiptData['meta'] = [];
+		if (s.showDate) {
+			meta.push({ label: 'Date', value: new Date(d.occurredAt ?? Date.now()).toLocaleString() });
+		}
+		if (s.showOrderNumber) meta.push({ label: 'Order', value: `#${orderNumber(d)}` });
+		if (d.customerName) meta.push({ label: 'Customer', value: d.customerName });
+		if (s.showCashierName && d.cashierPubkey) {
+			meta.push({ label: 'Cashier', value: d.cashierPubkey });
+		}
+
+		const totals: EscPosReceiptData['totals'] = [];
+		if (d.subtotal != null) {
+			totals.push({ label: 'Subtotal', amount: formatMoney(d.subtotal, currency) });
+		}
+		if (d.discount) {
+			totals.push({ label: 'Discount', amount: `-${formatMoney(d.discount, currency)}` });
+		}
+		if (d.taxAmount ?? d.tax) {
+			totals.push({ label: 'Tax', amount: formatMoney(d.taxAmount ?? d.tax ?? 0, currency) });
+		}
+		if (d.tip) {
+			totals.push({ label: 'Tip', amount: formatMoney(d.tip, currency) });
+		}
+		totals.push({ label: 'TOTAL', amount: formatMoney(d.total ?? 0, currency), bold: true });
+		if (opts.satsTotal && opts.satsTotal > 0) {
+			totals.push({ label: 'in sats', amount: `~ ${opts.satsTotal.toLocaleString()} sats` });
+		}
+
+		const escposData: EscPosReceiptData = {
+			header: s.header || undefined,
+			storeName: s.showStoreName ? s.storeName || 'Store' : undefined,
+			phone: s.showPhone && s.phone ? s.phone : undefined,
+			address: s.showAddress && s.address ? s.address : undefined,
+			taxId: s.showTaxId && s.taxId ? s.taxId : undefined,
+			meta,
+			items: lines.map((l) => {
+				const unitWithMods =
+					lineUnit(l) +
+					(l.modifiers ?? []).reduce((a: number, m) => a + (m.priceAdjustment ?? 0), 0);
+				return {
+					label: `${lineQty(l)}x ${lineName(l)}`,
+					amount: formatMoney(unitWithMods * lineQty(l), currency)
+				};
+			}),
+			totals,
+			payments: payments.map((p) => {
+				const pd = 'data' in p ? p.data : p;
+				return {
+					label: pd.method ?? 'payment',
+					amount: formatMoney(pd.amount ?? 0, currency)
+				};
+			}),
+			footer: s.footer || undefined
+		};
+
+		const bytes = buildEscPosReceipt(escposData, activePrinter);
+		void sendEscPosToPrinter(activePrinter, bytes).then((res) => {
+			if (!res.ok) toast.error('Print failed', res.message);
+		});
+		return;
+	}
+
+	const width = s.paperSize === '58mm' ? 320 : 420;
 	const itemsHtml = lines
 		.map(
 			(l) =>
@@ -99,7 +172,6 @@ export function printReceiptForOrder(order: { data: Order }, opts: PrintOrderOpt
 		)
 		.join('');
 
-	const payments = opts.payments ?? [];
 	const paymentsHtml = payments.length
 		? payments
 				.map((p) => {

@@ -62,6 +62,7 @@ optional and exposed to the browser — never put secrets in `PUBLIC_*` values.
 | ------------------------------- | ---------------------------------------------------------------------------------------- |
 | `PUBLIC_RELAYS`                 | Comma-separated default relay URLs for new/reset configurations                          |
 | `PUBLIC_DATA_SERVICE_CLOUD_URL` | Verified HTTPS URL that enables the "bdGo Cloud" data-service option                     |
+| `PUBLIC_BITOS_PAY_URL`          | BitOS Pay origin that enables **Settings → Billing → BitOS Pay** workspace linking       |
 | `PUBLIC_OWNER_NPUBS`            | Allow-list of npubs that may publish in-app owner notices and receive encrypted feedback |
 | `BNOS_CLOUDINARY_*`             | Optional server-side Cloudinary fallback for media uploads                               |
 
@@ -109,6 +110,20 @@ Report snapshots are implemented. Each snapshot has two destinations: an
 **signed plaintext aggregate** over authenticated HTTPS to the service for fast
 reporting. Plaintext aggregates are never published to relays, and the relay copy
 is skipped when the organization key is unavailable.
+
+### BitOS Pay link
+
+The optional payment monitoring link lives in [`src/lib/pay/`](src/lib/pay).
+An owner can connect the active BNOS organization from **Settings → Billing →
+BitOS Pay** when `PUBLIC_BITOS_PAY_URL` is set. The app signs a one-time kind
+`22242` challenge with a `subject=bnos:<organizationId>` tag; Pay verifies it and
+maps the workspace to `subject_ref`. The first sync provisions a sandbox
+organization, merchant and one-time API key; later logins refresh names and the
+existing mapping without reissuing the key.
+
+The proof shows owner-key control only. It is not a legal-business check, an ID
+workspace or staff authorization. The sandbox API key is stored per workspace in
+this browser and never published to a relay.
 
 See [`docs/REPORT_SNAPSHOTS.md`](docs/REPORT_SNAPSHOTS.md) for the client
 implementation guide and

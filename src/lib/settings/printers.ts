@@ -12,6 +12,7 @@
  * Printers page becomes the one place printers are configured.
  */
 import { browser } from '$app/environment';
+import { buildTestReceiptBytes, bytesToBase64 } from '$lib/pos/escpos';
 import {
 	loadHardwareSettings,
 	saveHardwareSettings,
@@ -284,11 +285,139 @@ export function isPrinterComplete(p: Printer): boolean {
 export type TestResult = { ok: boolean; message: string };
 
 /**
+ * Send raw ESC/POS bytes to a configured `network`, `webhook`, or `websocket` printer.
+ */
+export async function sendEscPosToPrinter(p: Printer, bytes: Uint8Array): Promise<TestResult> {
+	const dataBase64 = bytesToBase64(bytes);
+
+	switch (p.connectionType) {
+		case 'network': {
+			try {
+				const res = await fetch('/api/print', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						ip: p.ip.trim(),
+						port: Number(p.port) || 9100,
+						dataBase64
+					}),
+					signal: AbortSignal.timeout(15000)
+				});
+				const json = (await res.json().catch(() => null)) as {
+					ok?: boolean;
+					error?: string;
+					bytes?: number;
+				} | null;
+				if (!res.ok || !json?.ok) {
+					return {
+						ok: false,
+						message: json?.error ?? `Print server responded ${res.status}`
+					};
+				}
+				return {
+					ok: true,
+					message: `Sent ${json.bytes ?? bytes.length} bytes to ${p.ip}:${p.port || '9100'}`
+				};
+			} catch (e) {
+				return {
+					ok: false,
+					message:
+						e instanceof Error && e.name === 'TimeoutError'
+							? 'Timed out reaching /api/print'
+							: 'Could not reach /api/print'
+				};
+			}
+		}
+		case 'webhook': {
+			try {
+				const isRaw = p.payloadFormat === 'raw';
+				const res = await fetch(p.url, {
+					method: 'POST',
+					headers: {
+						'Content-Type': isRaw ? 'application/octet-stream' : 'application/json',
+						...(p.authToken ? { Authorization: p.authToken } : {})
+					},
+					body: isRaw
+						? new Blob([bytes.slice()])
+						: JSON.stringify({
+								type: 'print',
+								printer: p.id,
+								format: 'escpos-base64',
+								dataBase64,
+								ts: Date.now()
+							}),
+					signal: AbortSignal.timeout(15000)
+				});
+				if (!res.ok) return { ok: false, message: `Endpoint responded ${res.status}` };
+				return { ok: true, message: 'Print job sent to webhook' };
+			} catch (e) {
+				return {
+					ok: false,
+					message:
+						e instanceof Error && e.name === 'TimeoutError'
+							? 'Timed out reaching the endpoint'
+							: 'Could not reach the endpoint (CORS or network)'
+				};
+			}
+		}
+		case 'websocket': {
+			return await new Promise<TestResult>((resolve) => {
+				let settled = false;
+				let ws: WebSocket;
+				const done = (r: TestResult) => {
+					if (settled) return;
+					settled = true;
+					try {
+						ws.close();
+					} catch {
+						/* ignore */
+					}
+					resolve(r);
+				};
+				try {
+					ws = new WebSocket(p.url);
+				} catch {
+					return resolve({ ok: false, message: 'Invalid WebSocket URL' });
+				}
+				const timer = setTimeout(() => done({ ok: false, message: 'Timed out connecting' }), 8000);
+				ws.onopen = () => {
+					clearTimeout(timer);
+					try {
+						if (p.payloadFormat === 'raw') {
+							ws.send(bytes.slice());
+						} else {
+							ws.send(
+								JSON.stringify({
+									type: 'print',
+									printer: p.id,
+									format: 'escpos-base64',
+									dataBase64
+								})
+							);
+						}
+						done({ ok: true, message: 'Print job sent via WebSocket' });
+					} catch {
+						done({ ok: false, message: 'Failed to send print data over WebSocket' });
+					}
+				};
+				ws.onerror = () => {
+					clearTimeout(timer);
+					done({ ok: false, message: 'Socket connection failed' });
+				};
+			});
+		}
+		default:
+			return { ok: false, message: `Direct ESC/POS not supported for ${p.connectionType}` };
+	}
+}
+
+/**
  * Attempt a real connection test where the browser allows it:
- *  - `browser`  → opens the system print dialog
- *  - `webhook`  → POSTs a small JSON probe to the endpoint
- *  - `websocket`→ opens a short-lived socket and pings a probe
- *  - `network` / `usb` / `bluetooth` → browsers can't open raw sockets, so we
+ *  - `browser`   → opens the system print dialog
+ *  - `network`   → sends an ESC/POS test receipt via `/api/print`
+ *  - `webhook`   → POSTs a small JSON probe to the endpoint
+ *  - `websocket` → opens a short-lived socket and pings a probe
+ *  - `usb` / `bluetooth` → browsers can't open raw sockets, so we
  *    validate the config and report that a driver/agent bridge is required.
  */
 export async function testPrinter(p: Printer): Promise<TestResult> {
@@ -314,7 +443,7 @@ export async function testPrinter(p: Printer): Promise<TestResult> {
 						...(p.authToken ? { Authorization: p.authToken } : {})
 					},
 					body: JSON.stringify({ type: 'test', printer: p.id, charset: 'raw', ts: Date.now() }),
-					signal: AbortSignal.timeout(8000)
+					signal: AbortSignal.timeout(15000)
 				});
 				if (!res.ok) return { ok: false, message: `Endpoint responded ${res.status}` };
 				return { ok: true, message: 'Endpoint accepted the test job' };
@@ -364,6 +493,7 @@ export async function testPrinter(p: Printer): Promise<TestResult> {
 			});
 		}
 		case 'network':
+			return await sendEscPosToPrinter(p, buildTestReceiptBytes(p));
 		case 'usb':
 		case 'bluetooth':
 			return {

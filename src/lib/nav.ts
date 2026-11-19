@@ -108,6 +108,7 @@ export const routePermissions: Record<string, RoutePermission> = {
 	'/settings/hardware': { resource: 'settings', action: 'write' },
 	'/settings/printers': { resource: 'settings', action: 'write' },
 	'/settings/billing': { resource: 'settings', action: 'write' },
+	'/settings/bitos-pay': { resource: 'settings', action: 'write' },
 	'/settings/notifications': { resource: 'settings', action: 'write' },
 	'/settings/relays': { resource: 'settings', action: 'write' },
 	'/settings/data': { resource: 'settings', action: 'write' },
