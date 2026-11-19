@@ -1444,6 +1444,8 @@ export const en = {
 		editPrinter: 'Edit printer',
 		ipAddress: 'IP address',
 		port: 'Port',
+		useApiProxy: 'Send via server (/api/print)',
+		useApiProxyDesc: 'Turn off to send directly to http://IP:port without /api/print',
 		macAddress: 'MAC address',
 		authToken: 'Authorization token (optional)',
 		payloadFormat: 'Payload format',
