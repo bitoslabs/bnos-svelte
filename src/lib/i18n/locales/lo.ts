@@ -1340,6 +1340,8 @@ export const lo = {
 		editPrinter: 'ແກ້ໄຂເຄື່ອງພິມ',
 		ipAddress: 'ທີ່ຢູ່ IP',
 		port: 'ພອຣ໌ຕ',
+		useApiProxy: 'ສົ່ງຜ່ານເຊີບເວີ (/api/print)',
+		useApiProxyDesc: 'ປິດເພື່ອສົ່ງໂດຍກົງໄປທີ່ http://IP:port ໂດຍບໍ່ຜ່ານ /api/print',
 		macAddress: 'ທີ່ຢູ່ MAC',
 		authToken: 'ໂທເຄັນຢືນຢັນ (ບໍ່ບັງຄັບ)',
 		payloadFormat: 'ຮູບແບບຂໍ້ມູນ',

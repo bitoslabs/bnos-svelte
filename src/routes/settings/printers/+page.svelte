@@ -469,25 +469,45 @@
 				</p>
 
 				{#if form.connectionType === 'network'}
-					<div class="grid grid-cols-2 gap-3">
-						<label class="block">
-							<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
-								>{t('settings.ipAddress')}</span
-							>
-							<Input bind:value={form.ip} placeholder="192.168.1.100" class="w-full" />
-							{#if errors.ip}<p class="mt-1 text-[10.5px] font-medium text-red-500">
-									{errors.ip}
-								</p>{/if}
-						</label>
-						<label class="block">
-							<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
-								>{t('settings.port')}</span
-							>
-							<Input bind:value={form.port} placeholder="9100" class="w-full" inputmode="numeric" />
-							{#if errors.port}<p class="mt-1 text-[10.5px] font-medium text-red-500">
-									{errors.port}
-								</p>{/if}
-						</label>
+					<div class="space-y-3">
+						<div class="grid grid-cols-2 gap-3">
+							<label class="block">
+								<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
+									>{t('settings.ipAddress')}</span
+								>
+								<Input bind:value={form.ip} placeholder="192.168.1.100" class="w-full" />
+								{#if errors.ip}<p class="mt-1 text-[10.5px] font-medium text-red-500">
+										{errors.ip}
+									</p>{/if}
+							</label>
+							<label class="block">
+								<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
+									>{t('settings.port')}</span
+								>
+								<Input
+									bind:value={form.port}
+									placeholder="9100"
+									class="w-full"
+									inputmode="numeric"
+								/>
+								{#if errors.port}<p class="mt-1 text-[10.5px] font-medium text-red-500">
+										{errors.port}
+									</p>{/if}
+							</label>
+						</div>
+						<div
+							class="flex items-center justify-between gap-3 rounded-xl border border-(--ui-border) bg-(--ui-bg-muted)/40 px-3 py-2.5"
+						>
+							<div>
+								<div class="text-[12px] font-semibold text-(--ui-text)">
+									{t('settings.useApiProxy')}
+								</div>
+								<div class="text-[10.5px] text-(--ui-text-dimmed)">
+									{t('settings.useApiProxyDesc')}
+								</div>
+							</div>
+							<Switch bind:checked={form.useApiProxy} label={t('settings.useApiProxy')} />
+						</div>
 					</div>
 				{/if}
 

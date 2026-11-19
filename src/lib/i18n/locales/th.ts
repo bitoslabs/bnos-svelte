@@ -1343,6 +1343,8 @@ export const th = {
 		editPrinter: 'แก้ไขปริ้นเตอร์',
 		ipAddress: 'ที่อยู่ IP',
 		port: 'พอร์ต',
+		useApiProxy: 'ส่งผ่านเซิร์ฟเวอร์ (/api/print)',
+		useApiProxyDesc: 'ปิดเพื่อส่งตรงไปที่ http://IP:port โดยไม่ผ่าน /api/print',
 		macAddress: 'ที่อยู่ MAC',
 		authToken: 'โทเค็นยืนยัน (ไม่บังคับ)',
 		payloadFormat: 'รูปแบบข้อมูล',

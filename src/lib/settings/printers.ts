@@ -34,6 +34,7 @@ export interface Printer {
 	connectionType: ConnectionType;
 	ip: string;
 	port: string;
+	useApiProxy: boolean;
 	macAddress: string;
 	url: string;
 	authToken: string;
@@ -118,6 +119,7 @@ export function defaultPrinter(): Printer {
 		connectionType: 'browser',
 		ip: '',
 		port: '9100',
+		useApiProxy: false,
 		macAddress: '',
 		url: '',
 		authToken: '',
@@ -147,6 +149,7 @@ function sanitize(raw: unknown): Printer {
 		printDensity: clampInt(r.printDensity, 1, 15, 8),
 		enabled: r.enabled !== false,
 		isDefault: r.isDefault === true,
+		useApiProxy: r.useApiProxy === true,
 		autoPrint: r.autoPrint === true,
 		autoCut: r.autoCut === true,
 		cashDrawerEnabled: r.cashDrawerEnabled === true
@@ -292,13 +295,38 @@ export async function sendEscPosToPrinter(p: Printer, bytes: Uint8Array): Promis
 
 	switch (p.connectionType) {
 		case 'network': {
+			const port = Number(p.port) || 9100;
+			const ip = p.ip.trim();
+			if (!p.useApiProxy) {
+				const target = `http://${ip}:${port}`;
+				try {
+					await fetch(target, {
+						method: 'POST',
+						mode: 'no-cors',
+						body: new Blob([bytes.slice()]),
+						signal: AbortSignal.timeout(15000)
+					});
+					return {
+						ok: true,
+						message: `Sent ${bytes.length} bytes directly to ${ip}:${port}`
+					};
+				} catch (e) {
+					return {
+						ok: false,
+						message:
+							e instanceof Error && e.name === 'TimeoutError'
+								? `Timed out connecting to ${ip}:${port}`
+								: `Could not reach ${target} directly from browser`
+					};
+				}
+			}
 			try {
 				const res = await fetch('/api/print', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
-						ip: p.ip.trim(),
-						port: Number(p.port) || 9100,
+						ip,
+						port,
 						dataBase64
 					}),
 					signal: AbortSignal.timeout(15000)
