@@ -35,6 +35,8 @@
 	import BootSplash from '$lib/components/ui/BootSplash.svelte';
 	import { popovers } from '$lib/stores/popovers.svelte';
 	import { startSystemNotifications } from '$lib/stores/notifications.svelte';
+	import { toast } from '$lib/stores/toast.svelte';
+	import { consumePrintCallback } from '$lib/print/native';
 	import { startOwnerFeed } from '$nostr/owner-feed.svelte';
 	import { clearIdentityStores } from '$nostr/sign-out';
 	import { dataService } from '$lib/data-service/state.svelte';
@@ -70,6 +72,13 @@
 		if (splash) {
 			splash.classList.add('bs-out');
 			setTimeout(() => splash.remove(), 400);
+		}
+		// Surface the result when the native print app returns through the
+		// bnos-print:// callback (`?ok=1&jobId=…` / `?ok=0&error=…`).
+		const printResult = consumePrintCallback();
+		if (printResult) {
+			if (printResult.ok) toast.success('Printed', 'BNOS Print Service completed the job.');
+			else toast.error('Print failed', printResult.error ?? 'The print app reported an error.');
 		}
 		preferences.load();
 		preferences.apply();

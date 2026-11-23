@@ -19,6 +19,7 @@ PWA, or a native desktop shell (Tauri), and stays usable offline.
 | Area                  | What it covers                                                                  |
 | --------------------- | ------------------------------------------------------------------------------- |
 | **Point of sale**     | Cart, payments (cash, QR, Lightning), shifts, receipts, success overlay         |
+| **Printing**          | ESC/POS thermal printers, native daemon & `bnos-print://` mobile deeplinks      |
 | **Orders & payments** | Order history, refunds, transactions, daily shifts                              |
 | **Catalog**           | Products, categories, units, modifier groups, images, catalog kits              |
 | **Inventory**         | Stock levels, adjustments, transfers, multi-branch support                      |
@@ -222,24 +223,26 @@ Deployment details are in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## Documentation
 
-| Document                                                               | Contents                               |
-| ---------------------------------------------------------------------- | -------------------------------------- |
-| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)                             | Server layout, CI, and release process |
-| [`docs/REPORT_SNAPSHOTS.md`](docs/REPORT_SNAPSHOTS.md)                 | Client report-snapshot implementation  |
-| [`docs/REPORT_SNAPSHOTS_UI_PLAN.md`](docs/REPORT_SNAPSHOTS_UI_PLAN.md) | Reporting UI plan                      |
-| [`docs/OBP_OVERVIEW.md`](docs/OBP_OVERVIEW.md)                         | Open Business Protocol overview        |
-| [`docs/MARKETPLACE_PLAN.md`](docs/MARKETPLACE_PLAN.md)                 | Marketplace design                     |
-| [`TAURI.md`](TAURI.md)                                                 | Desktop shell and packaging            |
-| [`AGENTS.md`](AGENTS.md)                                               | Contributor/agent conventions          |
+| Document                                                               | Contents                                     |
+| ---------------------------------------------------------------------- | -------------------------------------------- |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)                             | Server layout, CI, and release process       |
+| [`docs/REPORT_SNAPSHOTS.md`](docs/REPORT_SNAPSHOTS.md)                 | Client report-snapshot implementation        |
+| [`docs/THERMAL_PRINTING.md`](docs/THERMAL_PRINTING.md)                 | Thermal printing, native service & deeplinks |
+| [`docs/REPORT_SNAPSHOTS_UI_PLAN.md`](docs/REPORT_SNAPSHOTS_UI_PLAN.md) | Reporting UI plan                            |
+| [`docs/OBP_OVERVIEW.md`](docs/OBP_OVERVIEW.md)                         | Open Business Protocol overview              |
+| [`docs/MARKETPLACE_PLAN.md`](docs/MARKETPLACE_PLAN.md)                 | Marketplace design                           |
+| [`TAURI.md`](TAURI.md)                                                 | Desktop shell and packaging                  |
+| [`AGENTS.md`](AGENTS.md)                                               | Contributor/agent conventions                |
 
 ## Ecosystem
 
-| Project                                                               | Description                                            |
-| --------------------------------------------------------------------- | ------------------------------------------------------ |
-| [`@bitos/bnos-core`](https://github.com/bitoslabs/bnos-core)          | Shared kinds, GLO model, auth, relays, sync, migration |
-| [`bnos-data-service`](https://github.com/bitoslabs/bnos-data-service) | Optional encrypted backup and report service           |
-| `bdgo-os`                                                             | Original Vue/Nuxt BNOS console                         |
-| [bnos.space](https://bnos.space)                                      | Project website                                        |
+| Project                                                                   | Description                                                |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| [`@bitos/bnos-core`](https://github.com/bitoslabs/bnos-core)              | Shared kinds, GLO model, auth, relays, sync, migration     |
+| [`bitos-print-service`](https://github.com/bitoslabs/bitos-print-service) | Native print daemon, `bnos-print://` mobile apps & web SDK |
+| [`bnos-data-service`](https://github.com/bitoslabs/bnos-data-service)     | Optional encrypted backup and report service               |
+| `bdgo-os`                                                                 | Original Vue/Nuxt BNOS console                             |
+| [bnos.space](https://bnos.space)                                          | Project website                                            |
 
 Project support key: `npub1e65vutc5cfgutyvjetu5wp3ael48asklchtrut8m2svtt4lxdp4sruf0pk`.
 

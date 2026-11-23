@@ -15,7 +15,7 @@
  * applied), tax, total, tender method and change.
  */
 import type { ReceiptSettings } from '$lib/settings/local';
-import { getActivePrinter, sendEscPosToPrinter } from '$lib/settings/printers';
+import { getActivePrinter, isEscPosTarget, sendEscPosToPrinter } from '$lib/settings/printers';
 import { formatMoney } from '$lib/utils/format';
 import type { CompletedSale } from './cart.svelte';
 import { buildEscPosReceipt, type EscPosReceiptData } from './escpos';
@@ -48,8 +48,12 @@ function openWindow(width: number) {
 	return w;
 }
 
-/** Print a POS `CompletedSale` as a customer receipt, honouring Receipt settings. */
-export function printPosReceipt(sale: CompletedSale, opts: PrintPosReceiptOptions) {
+/** Print a POS `CompletedSale` as a customer receipt, honouring Receipt settings.
+ *  Returns `true` when the print job was dispatched / opened successfully. */
+export async function printPosReceipt(
+	sale: CompletedSale,
+	opts: PrintPosReceiptOptions
+): Promise<boolean> {
 	const s = sale;
 	const r = opts.receipt;
 	const currency = opts.currency;
@@ -60,13 +64,7 @@ export function printPosReceipt(sale: CompletedSale, opts: PrintPosReceiptOption
 		(it.unitPrice + modTotal(it)) * it.quantity;
 
 	const activePrinter = getActivePrinter();
-	if (
-		activePrinter &&
-		activePrinter.enabled &&
-		(activePrinter.connectionType === 'network' ||
-			activePrinter.connectionType === 'webhook' ||
-			activePrinter.connectionType === 'websocket')
-	) {
+	if (activePrinter && isEscPosTarget(activePrinter)) {
 		const meta: EscPosReceiptData['meta'] = [];
 		if (r.showDate) meta.push({ label: 'Date', value: new Date(s.completedAt).toLocaleString() });
 		if (r.showOrderNumber) meta.push({ label: 'Order', value: s.number });
@@ -113,10 +111,13 @@ export function printPosReceipt(sale: CompletedSale, opts: PrintPosReceiptOption
 		};
 
 		const bytes = buildEscPosReceipt(escposData, activePrinter);
-		void sendEscPosToPrinter(activePrinter, bytes).then((res) => {
-			if (!res.ok) toast.error('Print failed', res.message);
-		});
-		return;
+		const res = await sendEscPosToPrinter(activePrinter, bytes);
+		if (res.ok) {
+			toast.success('Sent to printer', activePrinter.name || res.message);
+			return true;
+		}
+		toast.error('Print failed', res.message);
+		return false;
 	}
 
 	const width = r.paperSize === '58mm' ? 320 : 420;
@@ -205,7 +206,7 @@ export function printPosReceipt(sale: CompletedSale, opts: PrintPosReceiptOption
 	`;
 
 	const w = openWindow(width);
-	if (!w) return;
+	if (!w) return false;
 	w.document.write(
 		`<!doctype html><html><head><meta charset="utf-8"/><title>Receipt ${esc(s.number)}</title><style>${style}</style></head><body>` +
 			headerHtml +
@@ -221,4 +222,5 @@ export function printPosReceipt(sale: CompletedSale, opts: PrintPosReceiptOption
 	w.document.close();
 	w.focus();
 	w.print();
+	return true;
 }

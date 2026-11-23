@@ -32,9 +32,10 @@ const LF = 0x0a;
 
 const encoder = new TextEncoder();
 
-/** Replace common Unicode symbols that raw ESC/POS codepages render poorly. */
+/** Replace common Unicode symbols/spaces that raw ESC/POS codepages render poorly. */
 function normalizeText(input: string): string {
 	return input
+		.replace(/[\u00A0\u2000-\u200B\u202F\u205F\u3000]/g, ' ')
 		.replace(/×/g, 'x')
 		.replace(/−/g, '-')
 		.replace(/≈/g, '~')
@@ -63,7 +64,8 @@ class EscPosBuilder {
 	}
 
 	init() {
-		return this.raw(ESC, 0x40);
+		// ESC @ (initialize), FS . (exit Chinese/Kanji 2-byte mode), ESC t 0 (PC437)
+		return this.raw(ESC, 0x40, 0x1c, 0x2e, ESC, 0x74, 0x00);
 	}
 
 	align(mode: 'left' | 'center' | 'right') {

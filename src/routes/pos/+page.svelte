@@ -1108,7 +1108,10 @@
 		}
 	}
 
-	function printReceipt() {
+	let printing = $state(false);
+
+	async function printReceipt() {
+		if (printing) return;
 		refreshLocalSettings();
 		const sale = cart.lastCompleted;
 		if (!sale) return;
@@ -1116,17 +1119,23 @@
 			toast.warning('Receipt printer is disabled in Hardware settings');
 			return;
 		}
-		printPosReceipt(sale, {
-			receipt: receiptSettings,
-			currency,
-			cashier: tenant.state.activeStaffInfo?.name ?? shiftStaffName.trim() ?? '',
-			customerName: sale.customerName,
-			satsTotal:
-				sale.totalSats ??
-				(btcRate.receiptShowSats && btcRate.canConvert(currency)
-					? btcRate.satsFromAmount(sale.totals.total, currency)
-					: undefined)
-		});
+		printing = true;
+		try {
+			const ok = await printPosReceipt(sale, {
+				receipt: receiptSettings,
+				currency,
+				cashier: tenant.state.activeStaffInfo?.name ?? shiftStaffName.trim() ?? '',
+				customerName: sale.customerName,
+				satsTotal:
+					sale.totalSats ??
+					(btcRate.receiptShowSats && btcRate.canConvert(currency)
+						? btcRate.satsFromAmount(sale.totals.total, currency)
+						: undefined)
+			});
+			if (ok && receiptOpen) receiptOpen = false;
+		} finally {
+			printing = false;
+		}
 	}
 
 	function recordValue<T>(value: T): T & Record<string, unknown> {
@@ -3561,8 +3570,13 @@
 		{/if}
 		{#snippet footer()}
 			<div class="flex gap-2">
-				<Button color="neutral" variant="subtle" icon="lucide:printer" onclick={printReceipt}
-					>{t('common.print')}</Button
+				<Button
+					color="neutral"
+					variant="subtle"
+					icon={printing ? 'lucide:loader-2' : 'lucide:printer'}
+					disabled={printing}
+					class={printing ? '[&_svg]:animate-spin' : ''}
+					onclick={printReceipt}>{t('common.print')}</Button
 				>
 				<Button color="primary" block onclick={() => (receiptOpen = false)}
 					>{t('common.new') + ' ' + t('common.sale')}</Button

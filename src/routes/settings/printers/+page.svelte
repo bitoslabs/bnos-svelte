@@ -24,6 +24,15 @@
 		type FieldErrors,
 		type Printer
 	} from '$lib/settings/printers';
+	import {
+		PRINT_SERVICE_DAEMON_URL,
+		PRINT_SERVICE_GITHUB_URL,
+		currentPrintPlatform,
+		nativeTargetLabel,
+		openNativeSetup,
+		probePrintService
+	} from '$lib/print/native';
+	import type { PrintHealth, PrintPlatform, PrintTransport } from '$lib/print/sdk';
 
 	let printers = $state<Printer[]>([]);
 	let showForm = $state(false);
@@ -34,6 +43,10 @@
 	let deletingName = $state('');
 	let form = $state<Printer>(defaultPrinter());
 	let errors = $state<FieldErrors>({});
+	/** Native print service probe state. */
+	let platform = $state<PrintPlatform>('desktop');
+	let serviceState = $state<'checking' | 'online' | 'offline' | 'mobile'>('checking');
+	let serviceHealth = $state<PrintHealth | null>(null);
 	/** id → "idle" | "testing" | "ok" | "fail" + message. */
 	let status = $state<
 		Record<string, { state: 'idle' | 'testing' | 'ok' | 'fail'; message?: string }>
@@ -42,7 +55,22 @@
 	onMount(() => {
 		if (!browser) return;
 		printers = loadPrinters();
+		platform = currentPrintPlatform();
+		void refreshService();
 	});
+
+	async function refreshService() {
+		serviceState = 'checking';
+		platform = currentPrintPlatform();
+		const health = await probePrintService();
+		serviceHealth = health;
+		if (!health.ok) serviceState = 'offline';
+		else serviceState = platform === 'desktop' ? 'online' : 'mobile';
+	}
+
+	function connectNative() {
+		openNativeSetup();
+	}
 
 	function persist() {
 		savePrinters(printers);
@@ -209,6 +237,12 @@
 		{ id: '58mm' as const, label: '58mm' },
 		{ id: '80mm' as const, label: '80mm' }
 	];
+	const nativeTransports: { id: PrintTransport; label: string }[] = [
+		{ id: 'tcp', label: 'LAN TCP' },
+		{ id: 'ble', label: 'Bluetooth LE' },
+		{ id: 'bt_spp', label: 'Bluetooth SPP' },
+		{ id: 'usb', label: 'USB' }
+	];
 	const cutModes = [
 		{ id: 'full' as const, label: 'Full' },
 		{ id: 'partial' as const, label: 'Partial' }
@@ -238,6 +272,101 @@
 			>
 		{/snippet}
 	</PageHeader>
+
+	<!-- Native print service (desktop daemon + bnos-print:// mobile app) -->
+	<section class="surface-card overflow-hidden">
+		<div class="flex items-center gap-2 px-5 py-3">
+			<Icon name="lucide:radio-tower" class="size-4 text-indigo-500" />
+			<h2 class="font-display text-[14px] font-semibold">BNOS Print Service</h2>
+			<span class="ml-auto">
+				<Badge
+					color={serviceState === 'online'
+						? 'success'
+						: serviceState === 'mobile'
+							? 'primary'
+							: serviceState === 'offline'
+								? 'warning'
+								: 'neutral'}
+				>
+					{#if serviceState === 'checking'}
+						<Icon name="lucide:loader-circle" class="size-3 animate-spin" /> Checking…
+					{:else if serviceState === 'online'}
+						Connected
+					{:else if serviceState === 'mobile'}
+						Mobile app
+					{:else}
+						Not running
+					{/if}
+				</Badge>
+			</span>
+		</div>
+
+		<div class="space-y-3 px-5 py-4">
+			<p class="text-[11.5px] leading-relaxed text-(--ui-text-muted)">
+				Native transport for receipt printers. Desktop uses the local daemon at
+				<span class="font-mono text-(--ui-text)">{PRINT_SERVICE_DAEMON_URL}</span>; iOS &amp;
+				Android hand off to the BNOS Print app via
+				<span class="font-mono text-(--ui-text)">bnos-print://</span>. Add a printer with the
+				<strong>BNOS Print Service</strong> connection to use LAN TCP, Bluetooth, or USB.
+			</p>
+
+			{#if serviceState === 'online'}
+				<div
+					class="grid grid-cols-2 gap-x-4 gap-y-1.5 rounded-xl border border-(--ui-border) bg-(--ui-bg-muted)/40 px-3 py-2.5 text-[11px] sm:grid-cols-4"
+				>
+					<span class="text-(--ui-text-dimmed)">Daemon</span>
+					<span class="font-mono">{serviceHealth?.service ?? 'bnos-print-daemon'}</span>
+					<span class="text-(--ui-text-dimmed)">Version</span>
+					<span class="font-mono">{serviceHealth?.version ?? '—'}</span>
+					<span class="text-(--ui-text-dimmed)">Platform</span>
+					<span class="font-mono">{serviceHealth?.platform ?? platform}</span>
+					<span class="text-(--ui-text-dimmed)">Mode</span>
+					<span class="font-mono">desktop-http</span>
+				</div>
+			{:else if serviceState === 'mobile'}
+				<p
+					class="rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2.5 text-[11px] text-indigo-600 dark:text-indigo-400"
+				>
+					Running in a mobile browser ({platform}). Print jobs open the native app and return here
+					with the result.
+				</p>
+			{:else if serviceState === 'offline'}
+				<p
+					class="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-[11px] text-amber-600 dark:text-amber-400"
+				>
+					No daemon answered on <span class="font-mono">{PRINT_SERVICE_DAEMON_URL}</span>. Install
+					or start the BNOS Print Service, then check again.
+				</p>
+			{/if}
+
+			<div class="flex flex-wrap items-center gap-2">
+				<Button
+					size="sm"
+					color="neutral"
+					variant="subtle"
+					icon="lucide:refresh-cw"
+					disabled={serviceState === 'checking'}
+					onclick={refreshService}>Check connection</Button
+				>
+				<Button
+					size="sm"
+					color="primary"
+					variant="soft"
+					icon="lucide:smartphone"
+					onclick={connectNative}>Set up on this device</Button
+				>
+				<Button
+					size="sm"
+					color="neutral"
+					variant="ghost"
+					icon="lucide:github"
+					href={PRINT_SERVICE_GITHUB_URL}
+					target="_blank"
+					rel="noopener noreferrer">GitHub</Button
+				>
+			</div>
+		</div>
+	</section>
 
 	{#if printers.length === 0}
 		<EmptyState
@@ -309,6 +438,10 @@
 							{#if printer.connectionType === 'network' && printer.ip}
 								<span>·</span>
 								<span class="font-mono">{printer.ip}:{printer.port || '9100'}</span>
+							{/if}
+							{#if printer.connectionType === 'native'}
+								<span>·</span>
+								<span class="font-mono">{nativeTargetLabel(printer)}</span>
 							{/if}
 							{#if printer.cashDrawerEnabled}
 								<span>·</span>
@@ -441,6 +574,9 @@
 							type="button"
 							onclick={() => {
 								form.connectionType = ct.id as ConnectionType;
+								if (ct.id === 'native' && !form.nativeTransport) {
+									form.nativeTransport = 'tcp';
+								}
 								errors = {};
 							}}
 							class="rounded-xl border-2 p-3 text-center transition-all {form.connectionType ===
@@ -467,6 +603,97 @@
 				<p class="text-[10.5px] text-(--ui-text-dimmed)">
 					{CONNECTION_OPTIONS.find((c) => c.id === form.connectionType)?.hint}
 				</p>
+
+				{#if form.connectionType === 'native'}
+					<div class="space-y-3">
+						<div>
+							<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
+								>Transport</span
+							>
+							<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+								{#each nativeTransports as tr (tr.id)}
+									<button
+										type="button"
+										onclick={() => {
+											form.nativeTransport = tr.id;
+											errors = {};
+										}}
+										class="rounded-lg border px-3 py-2 text-[11px] font-bold transition-all {(form.nativeTransport ??
+											'tcp') === tr.id
+											? 'border-primary-500 bg-primary-500 text-white'
+											: 'border-(--ui-border) bg-(--ui-bg-muted) text-(--ui-text-muted)'}"
+									>
+										{tr.label}
+									</button>
+								{/each}
+							</div>
+						</div>
+
+						{#if (form.nativeTransport ?? 'tcp') === 'tcp'}
+							<div class="grid grid-cols-2 gap-3">
+								<label class="block">
+									<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
+										>{t('settings.ipAddress')}</span
+									>
+									<Input bind:value={form.ip} placeholder="192.168.1.100" class="w-full" />
+									{#if errors.ip}<p class="mt-1 text-[10.5px] font-medium text-red-500">
+											{errors.ip}
+										</p>{/if}
+								</label>
+								<label class="block">
+									<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
+										>{t('settings.port')}</span
+									>
+									<Input
+										bind:value={form.port}
+										placeholder="9100"
+										class="w-full"
+										inputmode="numeric"
+									/>
+									{#if errors.port}<p class="mt-1 text-[10.5px] font-medium text-red-500">
+											{errors.port}
+										</p>{/if}
+								</label>
+							</div>
+						{:else if form.nativeTransport === 'ble' || form.nativeTransport === 'bt_spp'}
+							<label class="block">
+								<span class="mb-1 block text-[12px] font-semibold text-(--ui-text-muted)"
+									>{t('settings.macAddress')}</span
+								>
+								<Input
+									bind:value={form.macAddress}
+									placeholder="00:1A:7D:DA:71:13"
+									class="w-full"
+								/>
+								{#if errors.macAddress}
+									<p class="mt-1 text-[10.5px] font-medium text-red-500">{errors.macAddress}</p>
+								{/if}
+							</label>
+						{:else}
+							<p class="text-[10.5px] text-(--ui-text-dimmed)">
+								The daemon (desktop) or print app (mobile) uses its saved USB printer. No extra
+								address is required here.
+							</p>
+						{/if}
+
+						<div
+							class="flex items-start gap-2 rounded-lg border border-indigo-500/20 bg-indigo-500/10 p-3"
+						>
+							<Icon name="lucide:info" class="mt-0.5 size-4 shrink-0 text-indigo-500" />
+							<div class="space-y-1 text-[11px] text-indigo-600 dark:text-indigo-400">
+								<p>
+									Desktop uses the local daemon at <span class="font-mono"
+										>{PRINT_SERVICE_DAEMON_URL}</span
+									>. iOS &amp; Android open the BNOS Print app via a
+									<span class="font-mono">bnos-print://</span> deeplink.
+								</p>
+								<button type="button" class="font-semibold underline" onclick={connectNative}>
+									Open app setup
+								</button>
+							</div>
+						</div>
+					</div>
+				{/if}
 
 				{#if form.connectionType === 'network'}
 					<div class="space-y-3">
