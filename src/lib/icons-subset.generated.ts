@@ -627,6 +627,9 @@ export const LUCIDE_SUBSET = {
 		'radio-off': {
 			body: '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.414 13.414a2 2 0 1 1-2.828-2.828m5.661-2.825a6 6 0 0 1 1.744 4.572m1.084-7.4a10 10 0 0 1 2.234 10.72M2 2l20 20M4.925 19.067a10 10 0 0 1 0-14.134m2.828 11.306a6 6 0 0 1 0-8.478"/>'
 		},
+		'radio-tower': {
+			body: '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9m2.9 2.8a6.14 6.14 0 0 0-.8 7.5"/><circle cx="12" cy="9" r="2"/><path d="M16.2 4.8c2 2 2.26 5.11.8 7.47M19.1 1.9a9.96 9.96 0 0 1 0 14.1m-9.6 2h5M8 22l4-11l4 11"/></g>'
+		},
 		receipt: {
 			body: '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 17V7m4 1h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"/><path d="M4 3a1 1 0 0 1 1-1a1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1a1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2a1 1 0 0 1-1-1z"/></g>'
 		},
@@ -884,6 +887,7 @@ export const LUCIDE_SUBSET = {
 		'file-video': { parent: 'file-play' },
 		fingerprint: { parent: 'fingerprint-pattern' },
 		history: { parent: 'rotate-ccw-clock' },
+		'loader-2': { parent: 'loader-circle' },
 		'minus-circle': { parent: 'circle-minus' },
 		'more-horizontal': { parent: 'ellipsis' },
 		'plus-circle': { parent: 'circle-plus' },

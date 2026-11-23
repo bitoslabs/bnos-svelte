@@ -10,7 +10,7 @@
  */
 import type { Order, Refund } from '$lib/domain';
 import { loadReceiptSettings } from '$lib/settings/local';
-import { getActivePrinter, sendEscPosToPrinter } from '$lib/settings/printers';
+import { getActivePrinter, isEscPosTarget, sendEscPosToPrinter } from '$lib/settings/printers';
 import type { OrderLine } from '$lib/domain';
 import { formatMoney } from '$lib/utils/format';
 import { sourceLabel } from '$lib/domain/order-sources';
@@ -88,13 +88,7 @@ export function printReceiptForOrder(order: { data: Order }, opts: PrintOrderOpt
 	const payments = opts.payments ?? [];
 
 	const activePrinter = getActivePrinter();
-	if (
-		activePrinter &&
-		activePrinter.enabled &&
-		(activePrinter.connectionType === 'network' ||
-			activePrinter.connectionType === 'webhook' ||
-			activePrinter.connectionType === 'websocket')
-	) {
+	if (activePrinter && isEscPosTarget(activePrinter)) {
 		const meta: EscPosReceiptData['meta'] = [];
 		if (s.showDate) {
 			meta.push({ label: 'Date', value: new Date(d.occurredAt ?? Date.now()).toLocaleString() });
@@ -152,7 +146,8 @@ export function printReceiptForOrder(order: { data: Order }, opts: PrintOrderOpt
 
 		const bytes = buildEscPosReceipt(escposData, activePrinter);
 		void sendEscPosToPrinter(activePrinter, bytes).then((res) => {
-			if (!res.ok) toast.error('Print failed', res.message);
+			if (res.ok) toast.success('Sent to printer', activePrinter.name || res.message);
+			else toast.error('Print failed', res.message);
 		});
 		return;
 	}

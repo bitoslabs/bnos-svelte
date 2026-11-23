@@ -13,6 +13,8 @@
  */
 import { browser } from '$app/environment';
 import { buildTestReceiptBytes, bytesToBase64 } from '$lib/pos/escpos';
+import { isMobilePrintPlatform, printEscPosNative, printTestNative } from '$lib/print/native';
+import type { PrintTransport } from '$lib/print/sdk';
 import {
 	loadHardwareSettings,
 	saveHardwareSettings,
@@ -21,7 +23,8 @@ import {
 
 export const PRINTERS_KEY = 'bnos-os:printers';
 
-export type ConnectionType = 'browser' | 'usb' | 'network' | 'bluetooth' | 'websocket' | 'webhook';
+export type ConnectionType =
+	'native' | 'browser' | 'usb' | 'network' | 'bluetooth' | 'websocket' | 'webhook';
 /** Legacy enum consumed by the POS auto-print gate & workspace-settings sync. */
 export type LegacyPrinterType = 'browser' | 'usb' | 'network' | 'none';
 export type PaperSize = '58mm' | '80mm';
@@ -32,6 +35,8 @@ export interface Printer {
 	enabled: boolean;
 	isDefault: boolean;
 	connectionType: ConnectionType;
+	/** Transport used when `connectionType === 'native'`. */
+	nativeTransport?: PrintTransport;
 	ip: string;
 	port: string;
 	useApiProxy: boolean;
@@ -62,6 +67,13 @@ export interface ConnectionMeta {
 }
 
 export const CONNECTION_OPTIONS: ConnectionMeta[] = [
+	{
+		id: 'native',
+		label: 'BNOS Print Service',
+		icon: 'lucide:radio-tower',
+		color: 'bg-indigo-500/10 text-indigo-500',
+		hint: 'Native daemon on desktop or the BNOS Print app on iOS & Android.'
+	},
 	{
 		id: 'browser',
 		label: 'Browser',
@@ -117,6 +129,7 @@ export function defaultPrinter(): Printer {
 		enabled: true,
 		isDefault: false,
 		connectionType: 'browser',
+		nativeTransport: 'tcp',
 		ip: '',
 		port: '9100',
 		useApiProxy: false,
@@ -143,6 +156,7 @@ function sanitize(raw: unknown): Printer {
 	return {
 		...d,
 		...r,
+		nativeTransport: normalizeTransport(r.nativeTransport),
 		// Clamp / coerce numeric fields so a corrupt payload can't crash the UI.
 		copies: clampInt(r.copies, 1, 5, 1),
 		charsPerLine: clampInt(r.charsPerLine, 16, 96, 48),
@@ -160,6 +174,10 @@ function clampInt(v: unknown, min: number, max: number, fallback: number): numbe
 	const n = Math.floor(Number(v));
 	if (!Number.isFinite(n)) return fallback;
 	return Math.min(max, Math.max(min, n));
+}
+
+function normalizeTransport(v: unknown): PrintTransport {
+	return v === 'ble' || v === 'bt_spp' || v === 'usb' || v === 'tcp' ? v : 'tcp';
 }
 
 export function loadPrinters(): Printer[] {
@@ -200,6 +218,7 @@ export function toLegacyPrinterType(p: Printer | null): LegacyPrinterType {
 		case 'usb':
 		case 'bluetooth':
 			return 'usb';
+		case 'native':
 		case 'network':
 		case 'websocket':
 		case 'webhook':
@@ -211,6 +230,27 @@ export function toLegacyPrinterType(p: Printer | null): LegacyPrinterType {
 
 export function getActivePaperSize(list: Printer[] = loadPrinters()): PaperSize {
 	return getActivePrinter(list)?.paperSize ?? '80mm';
+}
+
+/**
+ * True when `sendEscPosToPrinter` can deliver raw ESC/POS for this profile.
+ * `usb` / `bluetooth` route through the native mobile app (deeplink); on
+ * desktop they fall back to the system print dialog.
+ */
+export function isEscPosTarget(p: Printer | null): boolean {
+	if (!p || !p.enabled) return false;
+	switch (p.connectionType) {
+		case 'network':
+		case 'webhook':
+		case 'websocket':
+		case 'native':
+			return true;
+		case 'usb':
+		case 'bluetooth':
+			return isMobilePrintPlatform();
+		default:
+			return false;
+	}
 }
 
 export function hasActiveCashDrawer(list: Printer[] = loadPrinters()): boolean {
@@ -249,6 +289,21 @@ export function validatePrinter(p: Printer): FieldErrors {
 	if (!p.id.trim()) errs.id = 'ID is required';
 
 	switch (p.connectionType) {
+		case 'native': {
+			const transport = p.nativeTransport ?? 'tcp';
+			if (transport === 'tcp') {
+				if (!p.ip.trim()) errs.ip = 'IP address is required';
+				else if (!IPV4.test(p.ip.trim()) || p.ip.split('.').some((o) => Number(o) > 255))
+					errs.ip = 'Enter a valid IPv4 address';
+				const port = Number(p.port);
+				if (!p.port.trim() || !Number.isInteger(port) || port < 1 || port > 65535)
+					errs.port = 'Port must be 1–65535';
+			} else if (transport === 'ble' || transport === 'bt_spp') {
+				if (!p.macAddress.trim()) errs.macAddress = 'MAC address is required';
+				else if (!MAC.test(p.macAddress.trim())) errs.macAddress = 'Format AA:BB:CC:DD:EE:FF';
+			}
+			break;
+		}
 		case 'network': {
 			if (!p.ip.trim()) errs.ip = 'IP address is required';
 			else if (!IPV4.test(p.ip.trim()) || p.ip.split('.').some((o) => Number(o) > 255))
@@ -294,9 +349,19 @@ export async function sendEscPosToPrinter(p: Printer, bytes: Uint8Array): Promis
 	const dataBase64 = bytesToBase64(bytes);
 
 	switch (p.connectionType) {
+		case 'native': {
+			const res = await printEscPosNative(p, bytes);
+			return { ok: res.ok, message: res.message };
+		}
 		case 'network': {
 			const port = Number(p.port) || 9100;
 			const ip = p.ip.trim();
+			// Mobile browsers cannot open raw TCP sockets — hand off to the
+			// native app through a bnos-print:// deeplink instead.
+			if (isMobilePrintPlatform()) {
+				const res = await printEscPosNative(p, bytes);
+				return { ok: res.ok, message: res.message };
+			}
 			if (!p.useApiProxy) {
 				const target = `http://${ip}:${port}`;
 				try {
@@ -434,6 +499,18 @@ export async function sendEscPosToPrinter(p: Printer, bytes: Uint8Array): Promis
 				};
 			});
 		}
+		case 'usb':
+		case 'bluetooth': {
+			if (isMobilePrintPlatform()) {
+				const res = await printEscPosNative(p, bytes);
+				return { ok: res.ok, message: res.message };
+			}
+			return {
+				ok: false,
+				message:
+					'Browsers cannot open raw device sockets — use the OS print dialog or the BNOS Print Service.'
+			};
+		}
 		default:
 			return { ok: false, message: `Direct ESC/POS not supported for ${p.connectionType}` };
 	}
@@ -458,6 +535,10 @@ export async function testPrinter(p: Printer): Promise<TestResult> {
 	}
 
 	switch (p.connectionType) {
+		case 'native': {
+			const res = await printTestNative(p);
+			return { ok: res.ok, message: res.message };
+		}
 		case 'browser': {
 			window.print();
 			return { ok: true, message: 'System print dialog opened' };
@@ -524,6 +605,10 @@ export async function testPrinter(p: Printer): Promise<TestResult> {
 			return await sendEscPosToPrinter(p, buildTestReceiptBytes(p));
 		case 'usb':
 		case 'bluetooth':
+			if (isMobilePrintPlatform()) {
+				const res = await printEscPosNative(p, buildTestReceiptBytes(p));
+				return { ok: res.ok, message: res.message };
+			}
 			return {
 				ok: false,
 				message:
